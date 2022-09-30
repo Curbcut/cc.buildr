@@ -2,10 +2,13 @@ Package: susbuilder
 Title: Builder Package for Sus
 Version: 0.0.0.9000
 Authors@R: 
-    c(person("Sus-MSSI", email = "contact@susmontreal.ca", role = c("aut", "cre")),
+    c(person("Sus-MSSI", email = "contact@susmontreal.ca", role = "aut"),
     person("Maxime", "Bélanger De Blois", email = "maxime.belangerdeblois@mcgill.ca", role = "cre"),
-    person("David", "Wachsmuth", email = "david.wachsmuth@mcgill.ca", role  = "cre"))
+    person("David", "Wachsmuth", email = "david.wachsmuth@mcgill.ca", role  = "ctb"))
 Description: Functions to create a new instance of Sus, or to rebuild the data necessary for an already existing instance.
+Imports:
+    cancensus,
+    sf
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
