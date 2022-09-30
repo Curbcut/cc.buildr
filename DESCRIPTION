@@ -5,7 +5,7 @@ Authors@R:
     c(person("Sus-MSSI", email = "contact@susmontreal.ca", role = "aut"),
     person("Maxime", "Bélanger De Blois", email = "maxime.belangerdeblois@mcgill.ca", role = "cre"),
     person("David", "Wachsmuth", email = "david.wachsmuth@mcgill.ca", role  = "ctb"))
-Description: Functions to create a new instance of Sus, or to rebuild the data necessary for an already existing instance.
+Description: Functions to create data necessary for a new instance of Sus, or to rebuild the data necessary for an already existing instance.
 Imports:
     cancensus,
     sf
