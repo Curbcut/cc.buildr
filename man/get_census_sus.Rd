@@ -23,7 +23,9 @@ geometries for which census data must be gathered.}
 regions, e.g. \code{"CA16"}.}
 
 \item{regions}{<\verb{named list}> A named list of census regions to retrieve.
-Names must be valid census aggregation levels.}
+Names must be valid census aggregation levels. Preferably a whole province
+to make sure all geometries present in the <\code{master_polygon}> is added.
+e.g. \code{list(PR = 24)} for Montreal.}
 
 \item{level}{<\code{character}> The census aggregation level to retrieve. One of \code{"CMA"},
 \code{"CD"}, \code{"CT"}, \code{"DA"}, \code{"DB"}, ...}
