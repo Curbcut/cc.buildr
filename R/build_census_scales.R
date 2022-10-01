@@ -209,15 +209,14 @@ build_census_scales <- function(master_polygon, census_dataset, regions,
       if ("name_2" %in% names(x)) return(x)
       if (y == "CSD") {
         x$name_2 <- default_name_2_for_CSD
-        x
       } else {
         csds <- sf::st_drop_geometry(census_datasets$CSD[, c("ID", "name")])
         names(csds) <- c("CSDUID", "name_2")
-
         x <- merge(x, csds, by = "CSDUID")
-        x[, c("ID", "name", "name_2", names(x)[
-          !names(x) %in% c("ID", "name", "name_2")])]
       }
+
+      x[, c("ID", "name", "name_2", names(x)[
+        !names(x) %in% c("ID", "name", "name_2")])]
     }, census_datasets, names(census_datasets))
 
   census_datasets
