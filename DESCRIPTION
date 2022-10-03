@@ -9,7 +9,10 @@ Description: Functions to create data necessary for a new instance of Sus, or to
 Imports:
     cancensus,
     sf,
-    stats
+    stats,
+    osmdata,
+    geojsonsf,
+    utils
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
