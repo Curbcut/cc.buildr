@@ -19,18 +19,22 @@
 #' @return Returns a data.frame of all buildings in the boundaries of the
 #' \code{"DA_table"}, with \code{"ID"}, \code{"name_2"}, \code{"DAUID"},
 #' \code{"CTUID"}, \code{"CSDUID"}, \code{"osm_ID"} and, \code{"geometry"} columns.
+#' @export
 build_buildings <- function(DA_table, crs, download_MS_buildings = TRUE,
                             MS_province) {
-
   possible_province <-
-    c("Alberta", "BritishColumbia", "Manitoba", "NewBrunswick",
+    c(
+      "Alberta", "BritishColumbia", "Manitoba", "NewBrunswick",
       "NewfoundlandAndLabrador", "NorthwestTerritories", "NovaScotia",
       "Nunavut", "Ontario", "PrinceEdwardIsland", "Quebec", "Saskatchewan",
-      "YukonTerritory")
+      "YukonTerritory"
+    )
 
   if (download_MS_buildings && {
-    missing(MS_province) || !MS_province %in% possible_province})
+    missing(MS_province) || !MS_province %in% possible_province
+  }) {
     stop("Please provide a valid `MS_province`. See function documentation.")
+  }
 
   # Get DA_table bbox
   DA_table_bbox <- sf::st_bbox(DA_table)
@@ -48,21 +52,24 @@ build_buildings <- function(DA_table, crs, download_MS_buildings = TRUE,
 
   # Make a uniform dataframe off the building polygons and multipolygons
   valid_buildings <-
-    lapply(list(building_osm$osm_polygons, building_osm$osm_multipolygons),
-           \(x) {
-             suppressWarnings({
-               x <- sf::st_as_sf(x)
-               x <- x[, c("osm_id", "geometry")]
-               names(x) <- c("osm_ID", "geometry")
-               x <- sf::st_cast(x, "MULTIPOLYGON")
-               sf::st_make_valid(x)
-             })
-           })
+    lapply(
+      list(building_osm$osm_polygons, building_osm$osm_multipolygons),
+      \(x) {
+        suppressWarnings({
+          x <- sf::st_as_sf(x)
+          x <- x[, c("osm_id", "geometry")]
+          names(x) <- c("osm_ID", "geometry")
+          x <- sf::st_cast(x, "MULTIPOLYGON")
+          sf::st_make_valid(x)
+        })
+      }
+    )
   building <- do.call(rbind, valid_buildings)
   building <- sf::st_transform(building, crs)
   building <- building[!sf::st_is_empty(building$geometry), ]
-  if (length(unique(building$osm_ID)) != nrow(building))
+  if (length(unique(building$osm_ID)) != nrow(building)) {
     building <- unique(building)
+  }
   building <- sf::st_cast(building, "MULTIPOLYGON")
   # Filter centroid in our geometry
   building_centroid <- suppressWarnings(sf::st_centroid(building))
@@ -88,7 +95,9 @@ build_buildings <- function(DA_table, crs, download_MS_buildings = TRUE,
         merged <- list(sort(merged))
         not_merged <- a[-merge_index]
         out <- c(merged, not_merged)
-      } else out <- c(a, list(b))
+      } else {
+        out <- c(a, list(b))
+      }
     }, x, init = list())
   }
   merged <- reduce(to_merge)
@@ -114,14 +123,18 @@ build_buildings <- function(DA_table, crs, download_MS_buildings = TRUE,
   # Get Microsoft buildings -------------------------------------------------
   # Source <`https://github.com/Microsoft/CanadianBuildingFootprints`>
   if (download_MS_buildings) {
-    if (!MS_province %in% possible_province)
+    if (!MS_province %in% possible_province) {
       stop(paste0("`MS_province` must be one of ", paste0(possible_province,
-                                                          collapse = ", ")))
+        collapse = ", "
+      )))
+    }
 
     # Download building json from the source
     province_url <-
-      paste0("https://usbuildingdata.blob.core.windows.net/canadian-buildings-v2/",
-             MS_province, ".zip")
+      paste0(
+        "https://usbuildingdata.blob.core.windows.net/canadian-buildings-v2/",
+        MS_province, ".zip"
+      )
     tmp <- tempfile(pattern = "ms_buildings", fileext = ".zip")
     utils::download.file(province_url, destfile = tmp)
     # Manipulation to get the data from the zip file
@@ -135,7 +148,8 @@ build_buildings <- function(DA_table, crs, download_MS_buildings = TRUE,
     ms_building <- sf::st_transform(ms_building, crs)
     ms_building <- sf::st_filter(ms_building, DA_table)
     ms_building <- ms_building[
-      lengths(sf::st_intersects(ms_building$geometry, building)) == 0, ]
+      lengths(sf::st_intersects(ms_building$geometry, building)) == 0,
+    ]
 
     # Drop very small polygons and add temporary ID
     ms_building_area <- sf::st_area(ms_building$geometry)
@@ -174,13 +188,14 @@ build_buildings <- function(DA_table, crs, download_MS_buildings = TRUE,
   # Consolidate and clean output --------------------------------------------
 
   building$name <- NA_character_
-  building <- building[, c("ID", "name", "name_2", "DAUID", "CTUID", "CSDUID",
-                           "osm_ID", "geometry")]
+  building <- building[, c(
+    "ID", "name", "name_2", "DAUID", "CTUID", "CSDUID",
+    "osm_ID", "geometry"
+  )]
   building <- sf::st_make_valid(building)
   building <- building[!sf::st_is_empty(building$geometry), ]
   building <- sf::st_transform(building, 4326)
   building <- sf::st_set_agr(building, "constant")
 
   return(building)
-
 }
