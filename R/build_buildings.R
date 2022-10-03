@@ -105,7 +105,7 @@ build_buildings <- function(DA_table, crs, download_MS_buildings = TRUE,
   building_remaining <- building[!building$ID %in% unlist(merged), ]
   # Merge buildings that have self-intersection
   building_merged <- lapply(merged, \(x) {
-    z <- building[building$ID %in% x, ]
+    z <- building[building$ID %in% paste0("building_", x), ]
     geo <- sf::st_union(z)
     z <- z[1, ]
     z$geometry <- geo
@@ -125,7 +125,7 @@ build_buildings <- function(DA_table, crs, download_MS_buildings = TRUE,
   if (download_MS_buildings) {
     if (!MS_province %in% possible_province) {
       stop(paste0("`MS_province` must be one of ", paste0(possible_province,
-        collapse = ", "
+                                                          collapse = ", "
       )))
     }
 
@@ -189,7 +189,7 @@ build_buildings <- function(DA_table, crs, download_MS_buildings = TRUE,
 
   building$name <- NA_character_
   building <- building[, c(
-    "ID", "name", "name_2", "DAUID", "CTUID", "CSDUID",
+    "ID", "name", "name_2", "CSDUID", "CTUID", "DAUID",
     "osm_ID", "geometry"
   )]
   building <- sf::st_make_valid(building)
