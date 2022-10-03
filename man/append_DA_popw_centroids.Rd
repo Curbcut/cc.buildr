@@ -8,7 +8,7 @@ append_DA_popw_centroids(DA_table, name = "popw_centroids_coords")
 }
 \arguments{
 \item{DA_table}{<\code{data.frame}> A DA data.frame for which to merge IDs with the
-\code{susbuilder::da_centroids_popw} data.}
+\code{susbuildr::da_centroids_popw} data.}
 
 \item{name}{<\code{character}> The name of the new column. Defaults to
 \code{"popw_centroids_coords"}.}

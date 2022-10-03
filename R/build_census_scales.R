@@ -41,7 +41,7 @@ build_census_scales <- function(master_polygon, census_dataset, regions,
                                 fill_CTs_with_CSDs = TRUE, split_CSD,
                                 default_name_2_for_CSD = "City") {
 
-  # Get census data with the help of susbuilder::get_census_sus()
+  # Get census data with the help of susbuildr::get_census_sus()
   census_datasets <-
     sapply(levels, \(x) {
       get_census_sus(
