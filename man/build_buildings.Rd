@@ -7,7 +7,7 @@
 build_buildings(DA_table, crs, download_MS_buildings = TRUE, MS_province)
 }
 \arguments{
-\item{DA_table}{<\code{data.frame}> A \code{DA} data.frame from which boundaries
+\item{DA_table}{<\verb{sf data.frame}> A \code{DA} sf data.frame from which boundaries
 are used to filter the buildings, and add other DA information.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
@@ -25,10 +25,10 @@ should be download. One of: \code{"Alberta"}, \code{"BritishColumbia"},
 }
 \value{
 Returns a data.frame of all buildings in the boundaries of the
-\code{"DA_table"}, with an \code{"ID"}, \code{"name_2"}, \code{"DAUID"},
-\code{"CTUID"}, \code{"CSDUID"}, \code{"osm_ID"} and, \code{"geometry"} column.
+\code{"DA_table"}, with \code{"ID"}, \code{"name_2"}, \code{"DAUID"},
+\code{"CTUID"}, \code{"CSDUID"}, \code{"osm_ID"} and, \code{"geometry"} columns.
 }
 \description{
-\code{build_buildings()} uses the a DA table to download building data from
-Open Street Map and from Microsoft's Canadian Building Footprints.
+\code{build_buildings()} uses a DA table to download building data from
+Open Street Map and Microsoft's Canadian Building Footprints.
 }

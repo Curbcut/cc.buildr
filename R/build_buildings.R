@@ -3,7 +3,7 @@
 #' `build_buildings()` uses a DA table to download building data from
 #' Open Street Map and Microsoft's Canadian Building Footprints.
 #'
-#' @param DA_table <`data.frame`> A \code{DA} data.frame from which boundaries
+#' @param DA_table <`sf data.frame`> A \code{DA} sf data.frame from which boundaries
 #' are used to filter the buildings, and add other DA information.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32618} for Montreal.
@@ -76,7 +76,7 @@ build_buildings <- function(DA_table, crs, download_MS_buildings = TRUE,
   building_in_DA <- sf::st_filter(building_centroid, DA_table)$osm_ID
   building <- building[building$osm_ID %in% building_in_DA, ]
   # Add ID
-  building$ID <- as.character(seq_along(building$osm_ID))
+  building$ID <- paste0("building_", seq_along(building$osm_ID))
   building <- building[, c("ID", "osm_ID", "geometry")]
 
   # Get centroid for self-intersection, and find self-intersections
@@ -166,7 +166,7 @@ build_buildings <- function(DA_table, crs, download_MS_buildings = TRUE,
     building_area <- sf::st_area(building$geometry)
     class(building_area) <- "numeric"
     building <- building[building_area > 10, ]
-    building$ID <- as.character(seq_along(building$geometry))
+    building$ID <- paste0("building_", seq_along(building$geometry))
     building <- sf::st_set_agr(building, "constant")
     building <- sf::st_make_valid(building)
   }
