@@ -11,3 +11,17 @@
 #'   of each dissemination area}
 #' }
 "da_centroids_popw"
+
+#' 2016 Dissemination Areas Can-ALE Index
+#'
+#' Canadian Active Living Environments Database.
+#'
+#' @format ## `centraide_data`
+#' A data frame of 2 columns and the same number of rows as there are DAs in
+#' the 2016 Canadian Census.
+#' \describe{
+#'   \item{DA_ID}{The ID of each dissemination area}
+#'   \item{canale_2016}{The 2016 Can-ALE index}
+#' }
+#' @source <http://canue.ca/wp-content/uploads/2018/03/CanALE_UserGuide.pdf>
+"canale_data"

@@ -1,7 +1,7 @@
-## code to prepare `da_centroids_popw` dataset goes here
+## IMPORT POPULATION-WEIGHTED DA CENTROIDS #####################################
 
 da_centroids_popw <-
-  read.csv("data-raw/da_centroids_popw.csv")[
+  utils::read.csv("data-raw/da_centroids_popw.csv")[
     , c("DAuid.ADidu", "DArplong.ADlong", "DArplat.Adlat")] |>
   unique() |>
   sf::st_as_sf(coords = c("DArplong.ADlong", "DArplat.Adlat"),
