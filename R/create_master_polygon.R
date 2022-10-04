@@ -7,8 +7,8 @@
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32618} for Montreal.
 #'
-#' @return The output is a named list of length 2. The master polygon
-#' as well as all the individual geos present in \code{all_tables}.
+#' @return The output is a named list of length 2: The master polygon
+#' and all the individual geos present in \code{all_tables}.
 #' @export
 create_master_polygon <- function(all_tables, shapefiles_folder, crs) {
 
