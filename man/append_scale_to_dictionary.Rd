@@ -18,7 +18,7 @@ append_scale_to_dictionary(
 \item{scales_dictionary}{<\code{data.frame}> An already built scales dictionary
 data.frame, most probably built using \code{\link[susbuildr]{census_scales_dictionary}}.}
 
-\item{scale}{<\code{character}> The scale code name, e.g. \code{"CSD"}..}
+\item{scale}{<\code{character}> The scale code name, e.g. \code{"CSD"}.}
 
 \item{sing}{<\code{character}> The scale name in singular, e.g. \code{"city"}.}
 

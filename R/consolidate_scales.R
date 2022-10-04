@@ -22,9 +22,10 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
     mapply(\(scale_name, scale_df) {
 
       # For all column names that end with `UID`, change it to `_ID`
-      if (sum(grepl("UID$", names(scale_df))) > 0)
+      if (sum(grepl("UID$", names(scale_df))) > 0) {
         names(scale_df)[grepl("UID$", names(scale_df))] <-
           gsub("UID", "_ID", names(scale_df)[grepl("UID$", names(scale_df))])
+      }
 
       # Add own ID to scale
       scale_df[[paste0(scale_name, "_ID")]] <- scale_df$ID
@@ -34,7 +35,6 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
         c("ID", "name", "name_2", names(scale_df)[grepl("_ID$", names(scale_df))])
       rest_cols <- names(scale_df)[!names(scale_df) %in% names_ids]
       scale_df[, c(names_ids, rest_cols)]
-
     }, names(all_scales), all_scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
 
@@ -52,7 +52,6 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
         df <- df[df$ID %in% ids_in, ]
 
         sf::st_transform(df, 4326)
-
       }, simplify = FALSE, USE.NAMES = TRUE)
     }, names(all_tables), all_tables, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
@@ -63,7 +62,9 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
     mapply(\(geo, scales) {
       sapply(scales, \(scale) {
         # If the top level of the scales is CSD, do not modify
-        if (all_tables[[geo]][1] == "CSD") return(spatially_filtered[[geo]][[scale]])
+        if (all_tables[[geo]][1] == "CSD") {
+          return(spatially_filtered[[geo]][[scale]])
+        }
 
         # If the top level is not CSD, update name_2
         top_level <- sf::st_transform(spatially_filtered[[geo]][[1]], crs)
@@ -73,7 +74,8 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
         df <- df[, names(df) != "name_2"]
         df_centroids <- suppressWarnings(sf::st_centroid(df))
         top_level <- top_level[, c("name", names(top_level)[
-          grepl("_ID$", names(top_level))], "geometry")]
+          grepl("_ID$", names(top_level))
+        ], "geometry")]
         names(top_level)[1] <- "name_2"
         df_name_2 <-
           suppressWarnings(sf::st_intersection(df_centroids, top_level)) |>
@@ -87,12 +89,12 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
         names_id <- c("ID", "name", "name_2")
         all_ids <- names(df)[names(df) %in% paste0(all_tables[[geo]], "_ID")]
         all_ids <- paste0(all_tables[[geo]], "_ID")[
-          paste0(all_tables[[geo]], "_ID") %in% all_ids]
+          paste0(all_tables[[geo]], "_ID") %in% all_ids
+        ]
         rest_cols <- names(df)[!names(df) %in% c(names_id, all_ids)]
         rest_cols <- rest_cols[!grepl("_ID$", rest_cols)]
 
         df[, c(names_id, all_ids, rest_cols)]
-
       }, simplify = FALSE, USE.NAMES = TRUE)
     }, names(all_tables), all_tables, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
@@ -100,5 +102,4 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
   # Return the final output -------------------------------------------------
 
   return(out)
-
 }

@@ -2,7 +2,7 @@
 #'
 #' @param scales_dictionary <`data.frame`> An already built scales dictionary
 #' data.frame, most probably built using \code{\link[susbuildr]{census_scales_dictionary}}.
-#' @param scale <`character`> The scale code name, e.g. \code{"CSD"}..
+#' @param scale <`character`> The scale code name, e.g. \code{"CSD"}.
 #' @param sing <`character`> The scale name in singular, e.g. \code{"city"}.
 #' @param plur <`character`> The scale name in plurial, e.g. \code{"cities"}.
 #' @param slider_title <`character`> The scale name used on the map slider,
@@ -21,9 +21,8 @@ append_scale_to_dictionary <- function(scales_dictionary, scale, sing, plur,
                                        place_name) {
 
   # Add a new row
-  scales_dictionary[nrow(scales_dictionary) + 1,] <-
+  scales_dictionary[nrow(scales_dictionary) + 1, ] <-
     c(scale, sing, plur, slider_title, place_heading, place_name)
 
   scales_dictionary
-
 }
