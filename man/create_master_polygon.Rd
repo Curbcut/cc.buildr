@@ -17,8 +17,8 @@ the shapefiles of the geometries to read (names of all_table).}
 \code{32618} for Montreal.}
 }
 \value{
-The output is a named list of length 2. The master polygon
-as well as all the individual geos present in \code{all_tables}.
+The output is a named list of length 2: The master polygon
+and all the individual geos present in \code{all_tables}.
 }
 \description{
 Create master polygon

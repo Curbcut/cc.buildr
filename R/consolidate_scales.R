@@ -43,6 +43,7 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
   spatially_filtered <-
     mapply(\(geo, scales) {
       sapply(scales, \(scale) {
+
         unioned_geo <- sf::st_transform(geos[[geo]], crs)
         df <- sf::st_transform(uniform_IDs[[scale]], crs)
 
@@ -52,6 +53,7 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
         df <- df[df$ID %in% ids_in, ]
 
         sf::st_transform(df, 4326)
+
       }, simplify = FALSE, USE.NAMES = TRUE)
     }, names(all_tables), all_tables, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
@@ -59,16 +61,19 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
   # Update name_2 and IDs if the top level of the geo isn't census data ------
 
   out <-
-    mapply(\(geo, scales) {
-      sapply(scales, \(scale) {
+    susbuildr::map_over_scales(
+      all_scales = spatially_filtered,
+      fun = \(geo = geo, scales = scales,
+              scale_name = scale_name, scale_df = scale_df) {
         # If the top level of the scales is CSD, do not modify
-        if (all_tables[[geo]][1] == "CSD") {
-          return(spatially_filtered[[geo]][[scale]])
+        if (all_tables[[geo]][1] == "CSD" ||
+            all_tables[[geo]][1] == scale_name) {
+          return(scale_df)
         }
 
         # If the top level is not CSD, update name_2
-        top_level <- sf::st_transform(spatially_filtered[[geo]][[1]], crs)
-        df <- sf::st_transform(spatially_filtered[[geo]][[scale]], crs)
+        top_level <- sf::st_transform(scales[[1]], crs)
+        df <- sf::st_transform(scale_df, crs)
 
         # Filter spatially with the top level geo to intersect
         df <- df[, names(df) != "name_2"]
@@ -95,8 +100,7 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
         rest_cols <- rest_cols[!grepl("_ID$", rest_cols)]
 
         df[, c(names_id, all_ids, rest_cols)]
-      }, simplify = FALSE, USE.NAMES = TRUE)
-    }, names(all_tables), all_tables, SIMPLIFY = FALSE, USE.NAMES = TRUE)
+      })
 
 
   # Return the final output -------------------------------------------------
