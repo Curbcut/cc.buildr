@@ -23,7 +23,7 @@ by \code{\link[susbuildr]{create_master_polygon}}.}
 }
 \value{
 A list of the same length as there are in \code{all_tables}, containing
-spatially filtered dataframes with updated name_2 if needed.
+spatially filtered dataframes with updated name_2 and IDs if needed.
 }
 \description{
 Filter spatially scales in their parent geometry
