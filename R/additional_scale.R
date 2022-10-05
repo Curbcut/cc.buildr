@@ -34,15 +34,11 @@ additional_scale <- function(additional_table, DA_table, ID_prefix, name_2,
   das <- sf::st_transform(das, crs)
   das <- sf::st_set_agr(das, "constant")
   # Add DA area
-  das_area <- sf::st_area(das$geometry)
-  class(das_area) <- "numeric"
-  das$area <- das_area
+  das$area <- susbuildr::get_area(das$geometry)
   # Add new table area
   additional_table <- sf::st_transform(additional_table, crs)
   intersected_table <- suppressWarnings(sf::st_intersection(additional_table, das))
-  intersected_table_area <- sf::st_area(intersected_table$geometry)
-  class(intersected_table_area) <- "numeric"
-  intersected_table$new_area <- intersected_table_area
+  intersected_table$new_area <- susbuildr::get_area(intersected_table$geometry)
 
   # Get proportion of area per zone, and get population and households
   intersected_table$area_prop <- intersected_table$new_area / intersected_table$area

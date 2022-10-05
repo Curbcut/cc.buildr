@@ -152,8 +152,7 @@ build_buildings <- function(DA_table, crs, download_MS_buildings = TRUE,
     ]
 
     # Drop very small polygons and add temporary ID
-    ms_building_area <- sf::st_area(ms_building$geometry)
-    class(ms_building_area) <- "numeric"
+    ms_building_area <- susbuildr::get_area(ms_building$geometry)
     ms_building <- ms_building[ms_building_area > 10, ]
     ms_building <- sf::st_cast(ms_building, "MULTIPOLYGON")
     ms_building <- sf::st_make_valid(ms_building)
@@ -163,8 +162,7 @@ build_buildings <- function(DA_table, crs, download_MS_buildings = TRUE,
     # Bind OSM buildings and MS buildings
     ms_building$osm_ID <- NA
     building <- rbind(building, ms_building)
-    building_area <- sf::st_area(building$geometry)
-    class(building_area) <- "numeric"
+    building_area <- susbuildr::get_area(building$geometry)
     building <- building[building_area > 10, ]
     building$ID <- paste0("building_", seq_along(building$geometry))
     building <- sf::st_set_agr(building, "constant")
