@@ -21,3 +21,7 @@ append_empty_modules_table <- function(scales) {
 
   c(scales, list(modules = modules))
 }
+
+# add_module <- function(modules, ) {
+#
+# }

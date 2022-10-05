@@ -14,8 +14,10 @@
 #' (The boundaries of the census geometries fit into each other, but this is not
 #' the case for the other geometries, hence the need to identify them).
 #'
-#' @return Returns the same list that is fed in `all_scales`, with the columns
-#' from `data` interpolated in.
+#' @return Returns a list of length 2. The first is the same list that is fed in
+#' `all_scales`, with the columns from `data` interpolated in. The second
+#' is an interpolated reference, to know for which scales the data has been
+#' interpolated.
 #' @export
 interpolate_from_census_geo <- function(data, base_scale, all_scales,
                                         weight_by = "households", crs,
@@ -27,7 +29,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
   all_tables <- susbuildr::reconstruct_all_tables(all_scales)
   construct_for <-
     lapply(all_tables, \(scales) scales[seq_len(which(scales == base_scale))])
-  all_scales <-
+  scales_to_interpolate <-
     mapply(\(scales, kept_scales) {
       scales[names(scales) %in% kept_scales]
     }, all_scales, construct_for, SIMPLIFY = FALSE, USE.NAMES = TRUE)
@@ -36,7 +38,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
   ## Interpolate over all the scales -----------------------------------------
 
   interpolated <-
-    sapply(all_scales, \(scales) {
+    sapply(scales_to_interpolate, \(scales) {
 
       # Get the base scale and clean up columns
       base <- merge(scales[[base_scale]], data, by = paste0(base_scale, "_ID"))
@@ -56,10 +58,13 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
       census_interpolated <-
         mapply(\(scale_name, scale_df) {
           # If the scale is already the one containing data, merge and return
-          if (scale_name == base_scale)
+          if (scale_name == base_scale) {
             return(merge(scale_df, data, by = paste0(base_scale, "_ID")))
+          }
           # If the scale is not a census scale, do nothing
-          if (!scale_name %in% existing_census_scales) return(scale_df)
+          if (!scale_name %in% existing_census_scales) {
+            return(scale_df)
+          }
 
           # Preparation
           scale_id <- paste0(scale_name, "_ID")
@@ -72,30 +77,38 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
               dat <- stats::ave(
                 from, from[[scale_id]],
                 FUN = \(x) stats::weighted.mean(x[[col_name]], x[[weight_by]],
-                                         na.rm = TRUE))[col_name]
+                  na.rm = TRUE
+                )
+              )[col_name]
               dat[[scale_id]] <- from[[scale_id]]
               # Get unique values per zone
               unique(dat)
             })
 
           # Merge all data out of the weighted averages
-          out <- if (length(summarized) > 1) do.call(merge, summarized) else
+          out <- if (length(summarized) > 1) {
+            do.call(merge, summarized)
+          } else {
             summarized[[1]]
+          }
 
           # Merge to the existing data
           merge(scale_df, out, by = scale_id)
-
         }, names(scales), scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
       # Interpolate to non-census scales ----------------------------------------
 
       non_census_scales <- names(scales)[!names(scales) %in% existing_census_scales]
-      if (length(non_census_scales) == 0) return(census_interpolated)
+      if (length(non_census_scales) == 0) {
+        return(census_interpolated)
+      }
 
       all_scales_interpolated <-
         mapply(\(scale_name, scale_df) {
           # If the scale is a census scale, just return it
-          if (!scale_name %in% non_census_scales) return(scale_df)
+          if (!scale_name %in% non_census_scales) {
+            return(scale_df)
+          }
 
           # Preparation
           scale_df <- sf::st_transform(scale_df, crs)
@@ -118,29 +131,75 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
               dat <- stats::ave(
                 intersected, intersected$ID,
                 FUN = \(x) stats::weighted.mean(x[[col_name]], x[["n_weight_by"]],
-                                         na.rm = TRUE))[col_name]
+                  na.rm = TRUE
+                )
+              )[col_name]
               dat$ID <- intersected$ID
               # Get unique values per zone
               unique(dat)
             })
 
           # Merge all data out of the weighted averages
-          out <- if (length(summarized) > 1) do.call(merge, summarized) else
+          out <- if (length(summarized) > 1) {
+            do.call(merge, summarized)
+          } else {
             summarized[[1]]
+          }
 
           # Merge to the existing data
           merge(scale_df, out, by = "ID")
-
         }, names(census_interpolated), census_interpolated,
-        SIMPLIFY = FALSE, USE.NAMES = TRUE)
+        SIMPLIFY = FALSE, USE.NAMES = TRUE
+        )
 
       all_scales_interpolated
-
     }, simplify = FALSE, USE.NAMES = TRUE)
 
 
-  ## Reorder all columns -----------------------------------------------------
+  ## Reorder all columns ----------------------------------------------------
 
-  reorder_columns(all_scales = interpolated)
+  interpolated <- susbuildr::reorder_columns(all_scales = interpolated)
 
+
+  ## Get the CRS back to WGS 84 ---------------------------------------------
+
+  interpolated <-
+    susbuildr::map_over_scales(
+      all_scales = interpolated,
+      fun = \(scale_df = scale_df, ...) sf::st_transform(scale_df, 4326)
+    )
+
+
+  ## Reattach non-interpolated scales ---------------------------------------
+
+  all_scales_reattached <-
+    mapply(\(needed_tables, interpolated_tables, all_tables) {
+      sapply(needed_tables, \(table_name) {
+        if (table_name %in% names(interpolated_tables)) {
+          return(interpolated_tables[[table_name]])
+        }
+        return(all_tables[[table_name]])
+      }, simplify = FALSE, USE.NAMES = TRUE)
+    }, all_tables, interpolated, all_scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
+
+
+  ## Create interpolated references ------------------------------------------
+
+  interpolated_ref <-
+    sapply(construct_for, \(scales) {
+      sapply(scales, \(scale) {
+        if (scale != base_scale) {
+          return(base_scale)
+        }
+        return(FALSE)
+      }, simplify = FALSE, USE.NAMES = TRUE)
+    }, simplify = FALSE, USE.NAMES = TRUE)
+
+
+  ## Return ------------------------------------------------------------------
+
+  return(list(
+    scales = all_scales_reattached,
+    interpolated_ref = interpolated_ref
+  ))
 }

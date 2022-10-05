@@ -89,6 +89,36 @@ reorder_columns <- function(all_scales) {
 
     })
 }
-# TKTK Add a re-order columns function! -----------------------------------
 
+#' Reimplemntation of dplyr::ntile in base R
+#'
+#' @param x <`numeric vector`> A vector of values to rank. Missing values are
+#' left as is. If you want to treat them as the smallest or largest values,
+#' replace with Inf or -Inf before ranking.
+#' @param n <`numeric`> Number of groups to split up into.
+#'
+#' @return A rough rank, which breaks the input vector into n buckets. The size
+#' of the buckets may differ by up to one, larger buckets have lower rank.
+#' @export
+rough_rank <- function(x, n) {
+  x <- rank(x, ties.method = "first", na.last = "keep")
+  len <- length(x) - sum(is.na(x))
+  if (len == 0L) {
+    rep(NA_integer_, length(x))
+  }
+  else {
+    n <- as.integer(floor(n))
+    n_larger <- as.integer(len %% n)
+    n_smaller <- as.integer(n - n_larger)
+    size <- len / n
+    larger_size <- as.integer(ceiling(size))
+    smaller_size <- as.integer(floor(size))
+    larger_threshold <- larger_size * n_larger
+    bins <- ifelse(x <= larger_threshold,
+                   (x + (larger_size - 1L)) / larger_size,
+                   (x + (-larger_threshold + smaller_size - 1L)) /
+                     smaller_size + n_larger)
+    as.integer(floor(bins))
+  }
+}
 

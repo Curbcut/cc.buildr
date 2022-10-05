@@ -1,0 +1,270 @@
+### BREAK FUNCTIONS #######################################################
+
+#' Append q3 column to the dataframe
+#'
+#' @param df <`data.frame`> Contains all columns in `vars`.
+#' @param vars <`vector of character`> Contains all variable names from which
+#' to add q3s. Must fit with a name in `df`.
+#' @param time_regex <`character`> Regular expression which corresponds to
+#' a timeframe, placed at the end of the `vars` vector. e.g. \code{"\\d{4}"} for
+#' years.
+#'
+#' @return Returns the same data.frame as df with q3 columns appended.
+add_q3 <- function(df, vars, time_regex = "\\d{4}") {
+
+  time_regex_end <- paste0("_", time_regex, "$")
+
+  # Get all q3s arranged in a dataframe
+  q3s <-
+    sapply(vars, \(var) susbuildr::rough_rank(df[[var]], 3)) |>
+    as.data.frame()
+
+  # Change names to get q3 between the variable name and the timeframe
+  names(q3s) <- paste0(gsub(time_regex_end, "", names(q3s)), "_q3",
+                       sapply(names(q3s), \(x) {
+                         loc <- regexpr(time_regex_end, x)
+                         if (loc < 0) return("")
+                         substring(x, loc)
+                       }))
+
+  cbind(df, q3s)
+
+}
+
+#' Get q3 break values
+#'
+#' @param df <`data.frame`> Contains all columns in `vars` as well as their
+#' q3s. The result of \code{\link[susbuildr]{add_q3}}.
+#' @param vars <`vector of character`> Contains all variable names from which
+#' to add q3s. Must fit with a name in `df`.
+#'
+#' @return A data.frame where each column in a var, and the rows are the q3
+#' breaks.
+get_breaks_q3 <- function(df, vars) {
+
+  sapply(vars, \(var) {
+    dat <- sf::st_drop_geometry(df)
+    dat <- dat[, grepl(var, gsub("_q3", "", names(dat)))]
+    names(dat) <- c("v", "q3")
+
+    out <- c(
+      min(dat$v, na.rm = TRUE),
+      min(dat$v[dat$q3 == 2], na.rm = TRUE),
+      min(dat$v[dat$q3 == 3], na.rm = TRUE),
+      max(dat$v, na.rm = TRUE))
+
+    ifelse(is.infinite(out), NA_real_, out)
+
+  }) |> as.data.frame()
+
+}
+
+
+# q5 breaks ---------------------------------------------------------------
+
+#' Append q5 column to a dataframe
+#'
+#' @param df <`data.frame`> Contains all columns in `vars`.
+#' @param breaks <`data.frame`> A data.frame containing all the q5 breaks. The
+#' output of \code{\link[susbuildr]{get_breaks_q5}}.
+#' @param time_regex <`character`> Regular expression which corresponds to
+#' a timeframe, placed at the end of the `vars` vector. e.g. \code{"\\d{4}"} for
+#' years.
+#'
+#' @return Returns the same data.frame as df with q5 columns appended.
+add_q5 <- function(df, breaks, time_regex = "\\d{4}") {
+
+  time_regex_end <- paste0("_", time_regex, "$")
+
+  all_q5s <- mapply(\(var, values) {
+    values[1] <- -Inf
+    values[length(values)] <- Inf
+
+    q5s <- as.numeric(cut(df[[var]], values, include.lowest = TRUE)) |>
+      as.data.frame()
+
+    # Change names to get q3 between the variable name and the timeframe
+    names(q5s) <- paste0(gsub(time_regex_end, "", var), "_q5",
+                         sapply(var, \(x) {
+                           loc <- regexpr(time_regex_end, x)
+                           if (loc < 0) return("")
+                           substring(x, loc)
+                         }))
+
+    q5s
+
+  }, names(breaks), breaks, SIMPLIFY = FALSE, USE.NAMES = TRUE)
+
+  to_bind <- if (length(all_q5s) > 0) do.call(cbind, all_q5s) else all_q5s[[1]]
+
+  cbind(df, to_bind)
+
+}
+
+#' Find pretty q5 breaks
+#'
+#' @param min_val <`numeric`>
+#' @param max_val <`numeric`>
+#'
+#' @return Returns a numeric vector with pretty q5 break values.
+find_breaks_q5 <- function(min_val, max_val) {
+
+  breaks <- unlist(lapply(-3:7, \(x) (10 ^ x) * c(1, 1.5, 2, 2.5, 3, 4, 5, 6)))
+
+  range <- max_val - min_val
+  break_val <- range / 5
+  break_val <- breaks[as.numeric(cut(break_val, breaks)) + 1]
+  break_digits <- floor(log10(break_val))
+  new_min <- floor(min_val / (10 ^ break_digits)) * 10 ^ break_digits
+
+  return(c(new_min + 0:5 * break_val))
+}
+
+#' Get q5 break values
+#'
+#' @param df <`data.frame`> Contains all columns in `vars`.
+#' @param vars <`vector of character`> Contains all variable names from q5s should
+#' be calculated. Must fit with a name in `df`.
+#'
+#' @return A data.frame where each column in a var, and the rows are the q3
+get_breaks_q5 <- function(df, vars) {
+
+  sapply(vars, \(var) {
+
+  # Extract the variable in a numeric vector
+  as_vec <- stats::na.omit(df[[var]])
+
+  # Calculate minimum and maximum
+  cat_min <- min(as_vec)
+  cat_max <- max(as_vec)
+
+  # Calculate mean and standard deviation with outliers filtered out
+  prep_mean <- as_vec[!as_vec <= stats::quantile(as_vec, .01)]
+  prep_mean <- prep_mean[!prep_mean >= stats::quantile(prep_mean, .99)]
+  var_mean <- mean(prep_mean)
+  standard_d <- stats::sd(prep_mean)
+
+  # Create pretty breaks
+  min_val <- max(var_mean - (4 * standard_d), cat_min)
+  max_val <- min(var_mean + (4 * standard_d), cat_max)
+  # susbuildr::
+    find_breaks_q5(min_val, max_val)
+
+  }) |> as.data.frame()
+
+}
+
+#' Calculate all breaks
+#'
+#' @param all_scales <`named_list`> A named list of scales. The first level is
+#' the geo, and the second is the scales. They must contain all columns of `vars`
+#' @param vars <`vector of character`> Contains all variable names from which
+#' to add q3s. Must fit with a name in `df`.
+#' @param time_regex <`character`> Regular expression which corresponds to
+#' a timeframe, placed at the end of the `vars` vector. e.g. \code{"\\}\code{d{4}"} for
+#' years.
+#'
+#' @return Returns a list of length 3. The first is the same data.frame as df
+#' with q3 and q5 columns appended. The second is the q3 breaks table, and the third
+#' is the q5 breaks table.
+#' @export
+calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
+
+  # Append q3s
+  out_tables <- map_over_scales(
+    all_scales = all_scales,
+    fun = \(scale_df = scale_df, ...) {
+      if (!all(vars %in% names(scale_df))) return(scale_df)
+      add_q3(scale_df, vars)
+    })
+
+  # Get breaks
+  tables_q3 <- map_over_scales(
+    all_scales = out_tables,
+    fun = \(scale_df = scale_df, ...) {
+      if (!all(vars %in% names(scale_df))) return(data.frame())
+      get_breaks_q3(scale_df, vars)
+    })
+  tables_q5 <- map_over_scales(
+    all_scales = out_tables,
+    fun = \(scale_df = scale_df, ...) {
+      if (!all(vars %in% names(scale_df))) return(data.frame())
+      get_breaks_q5(scale_df, vars)
+    })
+
+  # Append q5s
+  out_tables <- map_over_scales(
+    all_scales = out_tables,
+    fun = \(geo = geo, scale_name = scale_name, scale_df = scale_df, ...) {
+      if (!all(vars %in% names(scale_df))) return(scale_df)
+      add_q5(scale_df, tables_q5[[geo]][[scale_name]], time_regex = time_regex)
+    })
+
+  # Arrange the breaks tables
+  time_regex_end <- paste0(time_regex, "$")
+  # q3
+  q3_breaks_table <-
+    sapply(vars, \(var) {
+      map_over_scales(
+        all_scales = tables_q3,
+        fun = \(geo = geo, scale_name = scale_name, scale_df = scale_df, ...) {
+          if (nrow(scale_df) == 0) return(scale_df)
+          date <- {
+            loc <- regexpr(time_regex_end, var)
+            if (loc < 0) return(NA)
+            substring(var, loc)
+          }
+          data.frame(geo = geo,
+                     scale = scale_name,
+                     date = date,
+                     rank = seq_len(nrow(scale_df)) - 1,
+                     var = scale_df)
+        })
+    }, simplify = FALSE, USE.NAMES = TRUE)
+  q3_breaks_table <-
+    sapply(q3_breaks_table, \(x) {
+      out <-
+        sapply(x, \(y) {
+          do.call(rbind, y)
+        }, simplify = FALSE, USE.NAMES = TRUE)
+      do.call(rbind, out)
+    }, simplify = FALSE, USE.NAMES = TRUE)
+  row.names(q3_breaks_table) <- NULL
+  # q5
+  q5_breaks_table <-
+    sapply(vars, \(var) {
+      map_over_scales(
+        all_scales = tables_q5,
+        fun = \(geo = geo, scale_name = scale_name, scale_df = scale_df, ...) {
+          if (nrow(scale_df) == 0) return(scale_df)
+          date <- {
+            loc <- regexpr(time_regex_end, var)
+            if (loc < 0) return(NA)
+            substring(var, loc)
+          }
+          data.frame(geo = geo,
+                     scale = scale_name,
+                     date = date,
+                     rank = seq_len(nrow(scale_df)) - 1,
+                     var = scale_df)
+        })
+    }, simplify = FALSE, USE.NAMES = TRUE)
+  q5_breaks_table <-
+    sapply(q5_breaks_table, \(x) {
+      out <-
+        sapply(x, \(y) {
+          do.call(rbind, y)
+        }, simplify = FALSE, USE.NAMES = TRUE)
+      do.call(rbind, out)
+    }, simplify = FALSE, USE.NAMES = TRUE)
+  row.names(q5_breaks_table) <- NULL
+
+
+  # Return
+  return(list(scales = out_tables,
+              q3_breaks_table = q3_breaks_table,
+              q5_breaks_table = q5_breaks_table))
+
+}
+
+
