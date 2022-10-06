@@ -25,7 +25,7 @@ add_variable(
 }
 \arguments{
 \item{variables}{<\code{data.frame}> The \code{variables} data.frame to which add a
-new column.}
+new row.}
 
 \item{var_code}{<\code{character}> The code used to refer to the variables, e.g.
 \code{canale}}

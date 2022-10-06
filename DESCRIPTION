@@ -7,12 +7,15 @@ Authors@R:
     person("David", "Wachsmuth", email = "david.wachsmuth@mcgill.ca", role  = "ctb"))
 Description: Functions to create data necessary for a new instance of Sus, or to rebuild the data necessary for an already existing instance.
 Imports:
-    cancensus,
-    sf,
+    utils,
+    tools,
     stats,
+    httr,
+    sf,
+    cancensus,
     osmdata,
     geojsonsf,
-    utils
+    jsonlite
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

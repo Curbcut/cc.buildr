@@ -5,7 +5,7 @@
 \alias{canale_data}
 \title{2016 Dissemination Areas Can-ALE Index}
 \format{
-\subsection{\code{centraide_data}}{
+\subsection{\code{canale_data}}{
 
 A data frame of 2 columns and the same number of rows as there are DAs in
 the 2016 Canadian Census.

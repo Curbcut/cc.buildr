@@ -48,7 +48,8 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
         df <- sf::st_transform(uniform_IDs[[scale]], crs)
 
         # Filter spatially with the unioned geo
-        df_centroids <- suppressWarnings(sf::st_centroid(df))
+        df_centroids <-
+          suppressWarnings(sf::st_centroid(df, of_largest_polygon = TRUE))
         ids_in <- sf::st_filter(df_centroids, unioned_geo)$ID
         df <- df[df$ID %in% ids_in, ]
 
@@ -77,7 +78,8 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
 
         # Filter spatially with the top level geo to intersect
         df <- df[, names(df) != "name_2"]
-        df_centroids <- suppressWarnings(sf::st_centroid(df))
+        df_centroids <-
+          suppressWarnings(sf::st_centroid(df, of_largest_polygon = TRUE))
         top_level <- top_level[, c("name", names(top_level)[
           grepl("_ID$", names(top_level))
         ], "geometry")]

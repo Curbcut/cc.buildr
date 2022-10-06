@@ -162,7 +162,8 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
 
   ## Reorder all columns ----------------------------------------------------
 
-  interpolated <- susbuildr::reorder_columns(all_scales = interpolated)
+  interpolated <-
+    susbuildr::reorder_columns(all_scales = interpolated)
 
 
   ## Get the CRS back to WGS 84 ---------------------------------------------

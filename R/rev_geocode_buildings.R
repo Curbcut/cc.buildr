@@ -1,0 +1,132 @@
+#' Reverse geocode buildings
+#'
+#' This geocoding works in three steps. The province database of addresses is
+#' first downloaded from the National Open Database of Addresses, with URLs to
+#' download the zip files available in \code{\link[susbuildr]{addresses_db_links}}.
+#' For the missing addresses, we use the province's reverse geolocating service
+#' (at the moment only available for QC and BC). Third, we reverse geocode using
+#' the OSM service.
+#'
+#' @param master_polygon <`sfc_MULTIPOLYGON`> Unioned multipolygon of all the
+#' geometries for which building's addresses should be gathered. The National
+#' Open Database of Addresses will then be spatially filter using it, reducing
+#' computation time of \code{\link[sf]{st_nearest_feature}}
+#' @param building <`sf data.frame`> The `building` data.frame.
+#' @param province_code <`character`> Province code used to download the
+#' Open Database of Addresses. One of \code{"AB"}, \code{"BC"}, \code{"MB"},
+#' \code{"NB"}, \code{"NT"}, \code{"NS"}, \code{"ON"}, \code{"PE"}, \code{"QC"} or
+#' \code{"SK"}.
+#' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
+#' \code{32618} for Montreal.
+#'
+#' @return The same building data.frame fed, with the `name` column populated
+#' with the reverse geocoded addresses.
+#' @export
+rev_geocode_buildings <- function(master_polygon, building, province_code, crs) {
+
+  if (!province_code %in% susbuildr::addresses_db_links$province_code)
+    stop(paste0("`province_code` must be an available province_code in ",
+                "`susbuildr::addresses_db_links`."))
+
+  # Download and load the addresses -----------------------------------------
+
+  url <- susbuildr::addresses_db_links$link[
+    susbuildr::addresses_db_links$province_code == province_code]
+  tmp <- tempfile(pattern = "addresses_db", fileext = ".zip")
+  utils::download.file(url, destfile = tmp)
+  all_files <- utils::unzip(tmp, list = TRUE)
+  csv_to_extract <- all_files$Name[all_files$Length == max(all_files$Length)]
+  connection_to_csv <- unz(tmp, csv_to_extract)
+  addresses_raw <- utils::read.csv(connection_to_csv)
+  # close(connection_to_csv)
+
+
+  # Addresses as sf, and spatially filtered ---------------------------------
+
+  addresses <- sf::st_as_sf(addresses_raw, coords = c("longitude", "latitude"),
+                            crs = 4326)
+  addresses <- sf::st_transform(addresses, crs = crs)
+
+  master_polygon <- sf::st_transform(master_polygon, crs = crs)
+  addresses <- sf::st_filter(addresses, master_polygon)
+
+
+  # Get buildings centroid --------------------------------------------------
+
+  building_crs <- sf::st_transform(building, crs)
+  building_centroids <- sf::st_centroid(building_crs)
+
+
+  # Get closest address for each building -----------------------------------
+
+  nearest <- sf::st_nearest_feature(building_centroids, addresses)
+  building_centroids$name <-
+    # The toTitleCase from tools is pretty slow...
+    paste(tools::toTitleCase(tolower(addresses$full_addr[nearest])),
+          addresses$csdname[nearest], sep = ", ")
+
+
+  # Detect values used too many times ---------------------------------------
+  # This indicated the CSD did not share addresses database with The Open Database
+  # of Addresses
+
+  same_addresses <- table(building_centroids$name)
+  same_addresses <- same_addresses[same_addresses > 5]
+  same_addresses <- names(same_addresses)
+  building_centroids[
+    building_centroids$name %in% same_addresses, ]$name <- NA_character_
+
+
+  # Get addresses from provincial government databases ----------------------
+
+  if (province_code %in% c("QC", "BC")) {
+    for (i in seq_len(nrow(building_centroids))) {
+      if (!is.na(building_centroids$name[i])) next
+
+      # Inform progress
+      message('\r',
+              paste0("Reverse geocoding - ",
+                     i, "/", nrow(building_centroids), " - ",
+                     round(i/nrow(building_centroids), digits = 5)*100, "%"),
+              appendLF = FALSE)
+
+      # Save the result
+      building_centroids$name[i] <-
+        do.call(paste0("rev_geocode_", province_code),
+                list(building_centroids$geometry[i]))
+    }
+  }
+
+
+  # Get rest of missing address through OSM ---------------------------------
+
+  for (i in seq_len(nrow(building_centroids))) {
+    if (!is.na(building_centroids$name[i])) next
+
+    # Inform progress
+    message('\r',
+            paste0("Reverse geocoding from OSM - ",
+                   i, "/", nrow(building_centroids), " - ",
+                   round(i/nrow(building_centroids), digits = 5)*100, "%"),
+            appendLF = FALSE)
+
+    # Save the result
+    building_centroids$name[i] <-
+      rev_geocode_OSM(building_centroids$geometry[i])
+  }
+
+
+  # Bind to raw building ----------------------------------------------------
+
+  out <-
+    merge(building[, names(building)[names(building) != "name"]],
+          sf::st_drop_geometry(building_centroids[, c("ID", "name")], by = "ID"))
+  out_reordered <-
+    out[, c("ID", "name", names(out)[!names(out) %in% c("ID", "name")])]
+
+
+  # Return ------------------------------------------------------------------
+
+  return(out_reordered)
+
+}

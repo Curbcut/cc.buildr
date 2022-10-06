@@ -20,6 +20,7 @@ build_and_append_var(
   variable_private,
   variable_source,
   module_id,
+  module_title,
   module_metadata,
   module_dataset_info
 )
@@ -65,6 +66,8 @@ years.}
 \item{variable_source}{<\code{charater}> See \code{\link[susbuildr]{add_variable}}.}
 
 \item{module_id}{<\code{charater}> Optional. See \code{\link[susbuildr]{add_module}}.}
+
+\item{module_title}{<\code{charater}> Optional. See \code{\link[susbuildr]{add_module}}.}
 
 \item{module_metadata}{<\code{charater}> Optional. See \code{\link[susbuildr]{add_module}}.}
 

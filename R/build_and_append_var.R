@@ -26,6 +26,7 @@
 #' @param variable_private <`charater`> See \code{\link[susbuildr]{add_variable}}.
 #' @param variable_source <`charater`> See \code{\link[susbuildr]{add_variable}}.
 #' @param module_id <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
+#' @param module_title <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
 #' @param module_metadata <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
 #' @param module_dataset_info <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
 #'
@@ -39,7 +40,8 @@ build_and_append_var <- function(data, scales_variables_modules, base_scale,
                                  variable_type, variable_var_title,
                                  variable_var_short, variable_explanation,
                                  variable_theme, variable_private, variable_source,
-                                 module_id, module_metadata, module_dataset_info) {
+                                 module_id, module_title, module_metadata,
+                                 module_dataset_info) {
 
   # Get list of data variables ----------------------------------------------
 
@@ -80,7 +82,7 @@ build_and_append_var <- function(data, scales_variables_modules, base_scale,
   # Variables table ---------------------------------------------------------
 
   variables <-
-    add_variable(
+    susbuildr::add_variable(
       variables = scales_variables_modules$variables,
       var_code = variable_var_code,
       type = variable_type,
@@ -101,11 +103,13 @@ build_and_append_var <- function(data, scales_variables_modules, base_scale,
 
   modules <-
     if (!missing(module_id) &&
+        !missing(module_title) &&
         !missing(module_metadata) &&
         !missing(module_dataset_info)) {
       scales_variables_modules$modules |>
-        add_modules(
+        susbuildr::add_module(
           id = module_id,
+          title = module_title,
           metadata = module_metadata,
           dataset_info = module_dataset_info)
     } else {
