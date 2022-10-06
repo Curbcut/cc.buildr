@@ -14,10 +14,14 @@
 #' (The boundaries of the census geometries fit into each other, but this is not
 #' the case for the other geometries, hence the need to identify them).
 #'
-#' @return Returns a list of length 2. The first is the same list that is fed in
-#' `all_scales`, with the columns from `data` interpolated in. The second
-#' is an interpolated reference, to know for which scales the data has been
-#' interpolated.
+#' @return Returns a list of length 3. The first is the same list that is fed in
+#' `all_scales`, with the columns from `data` interpolated in. The second is
+#' a data.frame of scales reference, to know for which scales the data is
+#' available. It can directly be fed to the \code{scales}
+#' argument of \code{\link[susbuildr]{add_variable}}.The third
+#' is a data.frame of interpolation reference, to know for which scales the data
+#' has been interpolated. It can directly be fed to the \code{interpolated}
+#' argument of \code{\link[susbuildr]{add_variable}}.
 #' @export
 interpolate_from_census_geo <- function(data, base_scale, all_scales,
                                         weight_by = "households", crs,
@@ -183,7 +187,22 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
     }, all_tables, interpolated, all_scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
 
-  ## Create interpolated references ------------------------------------------
+  ## Scales at which the data is available -----------------------------------
+
+  avail_scales <-
+    map_over_scales(interpolated,
+                    fun = \(geo = geo, scale_name = scale_name, ...) {
+                      data.frame(geo = geo,
+                                 scale = scale_name)
+                    })
+  avail_scales <-
+    sapply(avail_scales, \(x) do.call(rbind, x),
+           simplify = FALSE, USE.NAMES = TRUE) |>
+    (\(x) do.call(rbind, x))()
+  row.names(avail_scales) <- NULL
+
+
+  ## Create interpolated references as a data.frame --------------------------
 
   interpolated_ref <-
     sapply(construct_for, \(scales) {
@@ -194,12 +213,26 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
         return(FALSE)
       }, simplify = FALSE, USE.NAMES = TRUE)
     }, simplify = FALSE, USE.NAMES = TRUE)
+  interpolated_ref <-
+    map_over_scales(interpolated_ref,
+                    fun = \(geo = geo, scale_name = scale_name,
+                            scale_df = scale_df, ...) {
+                      data.frame(geo = geo,
+                                 scale = scale_name,
+                                 interpolated_from = scale_df)
+                    })
+  interpolated_ref <-
+    sapply(interpolated_ref, \(x) do.call(rbind, x),
+           simplify = FALSE, USE.NAMES = TRUE) |>
+    (\(x) do.call(rbind, x))()
+  row.names(interpolated_ref) <- NULL
 
 
   ## Return ------------------------------------------------------------------
 
   return(list(
     scales = all_scales_reattached,
+    avail_scales = avail_scales,
     interpolated_ref = interpolated_ref
   ))
 }

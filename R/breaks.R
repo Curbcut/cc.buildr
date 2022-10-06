@@ -6,7 +6,7 @@
 #' @param vars <`vector of character`> Contains all variable names from which
 #' to add q3s. Must fit with a name in `df`.
 #' @param time_regex <`character`> Regular expression which corresponds to
-#' a timeframe, placed at the end of the `vars` vector. e.g. \code{"\\d{4}"} for
+#' a timeframe, placed at the end of the `vars` vector. e.g. `\\d{4}` for
 #' years.
 #'
 #' @return Returns the same data.frame as df with q3 columns appended.
@@ -68,7 +68,7 @@ get_breaks_q3 <- function(df, vars) {
 #' @param breaks <`data.frame`> A data.frame containing all the q5 breaks. The
 #' output of \code{\link[susbuildr]{get_breaks_q5}}.
 #' @param time_regex <`character`> Regular expression which corresponds to
-#' a timeframe, placed at the end of the `vars` vector. e.g. \code{"\\d{4}"} for
+#' a timeframe, placed at the end of the `vars` vector. e.g. `\\d{4}` for
 #' years.
 #'
 #' @return Returns the same data.frame as df with q5 columns appended.
@@ -161,12 +161,13 @@ get_breaks_q5 <- function(df, vars) {
 #' @param vars <`vector of character`> Contains all variable names from which
 #' to add q3s. Must fit with a name in `df`.
 #' @param time_regex <`character`> Regular expression which corresponds to
-#' a timeframe, placed at the end of the `vars` vector. e.g. \code{"\\}\code{d{4}"} for
+#' a timeframe, placed at the end of the `vars` vector. e.g. `\\d{4}` for
 #' years.
 #'
-#' @return Returns a list of length 3. The first is the same data.frame as df
+#' @return Returns a list of length 4. The first is the same data.frame as df
 #' with q3 and q5 columns appended. The second is the q3 breaks table, and the third
-#' is the q5 breaks table.
+#' is the q5 breaks table. The fourth is vectors of characters of all dates at
+#' which variables are available for.
 #' @export
 calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
 
@@ -259,11 +260,17 @@ calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
     }, simplify = FALSE, USE.NAMES = TRUE)
   row.names(q5_breaks_table) <- NULL
 
+  # Available dates
+  avail_dates <-
+    sapply(q5_breaks_table, \(var_q5_breaks_table) {
+      unique(var_q5_breaks_table$date)
+    },  simplify = FALSE, USE.NAMES = TRUE)
 
   # Return
   return(list(scales = out_tables,
               q3_breaks_table = q3_breaks_table,
-              q5_breaks_table = q5_breaks_table))
+              q5_breaks_table = q5_breaks_table,
+              avail_dates = avail_dates))
 
 }
 

@@ -34,10 +34,14 @@ existing in the project. To detect for which scales data needs to be intersected
 the case for the other geometries, hence the need to identify them).}
 }
 \value{
-Returns a list of length 2. The first is the same list that is fed in
-\code{all_scales}, with the columns from \code{data} interpolated in. The second
-is an interpolated reference, to know for which scales the data has been
-interpolated.
+Returns a list of length 3. The first is the same list that is fed in
+\code{all_scales}, with the columns from \code{data} interpolated in. The second is
+a data.frame of scales reference, to know for which scales the data is
+available. It can directly be fed to the \code{scales}
+argument of \code{\link[susbuildr]{add_variable}}.The third
+is a data.frame of interpolation reference, to know for which scales the data
+has been interpolated. It can directly be fed to the \code{interpolated}
+argument of \code{\link[susbuildr]{add_variable}}.
 }
 \description{
 Interpolate from a census geometry to all scales above
