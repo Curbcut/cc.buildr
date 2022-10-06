@@ -14,13 +14,14 @@ the geo, and the second is the scales. They must contain all columns of \code{va
 to add q3s. Must fit with a name in \code{df}.}
 
 \item{time_regex}{<\code{character}> Regular expression which corresponds to
-a timeframe, placed at the end of the \code{vars} vector. e.g. \code{"\\}\code{d{4}"} for
+a timeframe, placed at the end of the \code{vars} vector. e.g. \verb{\\\\d\{4\}} for
 years.}
 }
 \value{
-Returns a list of length 3. The first is the same data.frame as df
+Returns a list of length 4. The first is the same data.frame as df
 with q3 and q5 columns appended. The second is the q3 breaks table, and the third
-is the q5 breaks table.
+is the q5 breaks table. The fourth is vectors of characters of all dates at
+which variables are available for.
 }
 \description{
 Calculate all breaks

@@ -13,7 +13,7 @@ add_q5(df, breaks, time_regex = "\\\\d{4}")
 output of \code{\link[susbuildr]{get_breaks_q5}}.}
 
 \item{time_regex}{<\code{character}> Regular expression which corresponds to
-a timeframe, placed at the end of the \code{vars} vector. e.g. \code{"\\d{4}"} for
+a timeframe, placed at the end of the \code{vars} vector. e.g. \verb{\\\\d\{4\}} for
 years.}
 }
 \value{
