@@ -13,5 +13,5 @@ append_DA_popw_centroids <- function(DA_table, name = "popw_centroids_coords") {
   centroids[[name]] <- lapply(centroids$geometry, sf::st_coordinates)
   centroids <- sf::st_drop_geometry(centroids)
 
-  merge(DA_table, centroids, by = "ID")
+  susbuildr::merge(DA_table, centroids, by = "ID")
 }

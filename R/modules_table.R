@@ -13,11 +13,12 @@
 append_empty_modules_table <- function(scales) {
 
   modules <-
-    data.frame(
+    tibble::tibble(
       id = character(),
       title = character(),
       metadata = logical(),
-      dataset_info = character()
+      dataset_info = character(),
+      geos = list()
     )
 
   c(scales, list(modules = modules))
@@ -35,15 +36,19 @@ append_empty_modules_table <- function(scales) {
 #' (information regarding if the data has been interpolated, source, etc.).
 #' @param dataset_info <`character`> HTML text with further data information
 #' from the module.
+#' @param geos <`character vector`> List of all the geos the module should be
+#' able to showé
 #'
 #' @return The same `modules` data.frame fed, with the added row.
 #' @export
-add_module <- function(modules, id, title, metadata, dataset_info) {
+add_module <- function(modules, id, title, metadata, dataset_info, geos = NULL) {
 
-  new_module <- data.frame(id = id,
-                           title = title,
-                           metadata = metadata,
-                           dataset_inf = dataset_info)
+  new_module <-
+    tibble(id = id,
+           title = title,
+           geos = if (is.null(geos)) list() else list(geos),
+           metadata = metadata,
+           dataset_inf = dataset_info)
 
   rbind(modules, new_module)
 

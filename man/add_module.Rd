@@ -4,7 +4,7 @@
 \alias{add_module}
 \title{Add a new module to the modules table}
 \usage{
-add_module(modules, id, title, metadata, dataset_info)
+add_module(modules, id, title, metadata, dataset_info, geos = NULL)
 }
 \arguments{
 \item{modules}{<\code{data.frame}> The \code{modules} data.frame to which add a
@@ -21,6 +21,9 @@ if there should be further data info when the \verb{Export data} popup is clicke
 
 \item{dataset_info}{<\code{character}> HTML text with further data information
 from the module.}
+
+\item{geos}{<\verb{character vector}> List of all the geos the module should be
+able to showé}
 }
 \value{
 The same \code{modules} data.frame fed, with the added row.

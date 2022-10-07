@@ -4,19 +4,23 @@
 \alias{geos_dictionary}
 \title{Build the geos dictionary}
 \usage{
-geos_dictionary(geo, name, to_compare)
+geos_dictionary(all_tables, geo, name, to_compare)
 }
 \arguments{
+\item{all_tables}{<\verb{named list}> Named list of geos and their scales within,
+ordered in priority.}
+
 \item{geo}{<\verb{vector of character}> A vector of characters used to identify
 which large geometry the user is interested in, e.g.
 \code{c("CMA", "city", "island")}.}
 
-\item{name}{<\verb{vector of character}> A vector of character the same length as
-the vector fed in the \code{geo} argument. Used to name the geo when the user will
-want to change which large geometry they are interested in. e.g.
+\item{name}{<\verb{named character vector}> Named with their corresponding geo value.
+Same length as the vector fed in the \code{geo} argument. Used to name the geo
+when the user will want to change which large geometry they are interested in. e.g.
 \code{c("Metropolitan Area", "City of Montreal", "Island of Montreal")}.}
 
-\item{to_compare}{<\verb{vector of character}> A vector of character the same length as
+\item{to_compare}{<\verb{named character vector}> Named with their corresponding geo value.
+Same length as the vector fed in the \code{geo} argument. The same length as
 the vector fed in the \code{geo} argument. Used at the end of dynamically generated
 text, when a particular zone is compared with the whole geography. 'x DA
 has a higher value than y\% of DAs in the Montreal region'.
@@ -24,7 +28,8 @@ e.g. \code{c("in the Montreal region", "in the City of Montreal",
 "on the island of Montreal")}}
 }
 \value{
-Returns the same vectors fed arranged in a data.frame.
+Returns the same vectors fed arranged in a data.frame ordered in
+priorty.
 }
 \description{
 Build the geos dictionary

@@ -119,7 +119,7 @@ rev_geocode_buildings <- function(master_polygon, building, province_code, crs) 
   # Bind to raw building ----------------------------------------------------
 
   out <-
-    merge(building[, names(building)[names(building) != "name"]],
+    susbuildr::merge(building[, names(building)[names(building) != "name"]],
           sf::st_drop_geometry(building_centroids[, c("ID", "name")], by = "ID"))
   out_reordered <-
     out[, c("ID", "name", names(out)[!names(out) %in% c("ID", "name")])]

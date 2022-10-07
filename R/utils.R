@@ -122,3 +122,16 @@ rough_rank <- function(x, n) {
   }
 }
 
+#' Merge two tibbles and keep the output a tibble
+#'
+#' @param x <`data.frame`> data frame, or object to be coerced to one.
+#' @param y <`data.frame`> data frame, or object to be coerced to one.
+#' @param ... arguments to be passed to \code{\link[base]{merge}}.
+#'
+#' @return Merged tibbles as a tibble and keep sf class if was present
+#' @export
+merge <- function(x, y, ...) {
+  merged <- tibble::as_tibble(base::merge(x, y, ...))
+  if ("sf" %in% class(x) || "sf" %in% class(y)) merged <- sf::st_as_sf(merged)
+  merged
+}

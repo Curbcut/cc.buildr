@@ -36,6 +36,11 @@ get_census_sus <- function(master_polygon, census_dataset, regions,
     use_cache = TRUE
   )
 
+  # Few corrections
+  census_data <- tibble::as_tibble(census_data)
+  census_data <- sf::st_as_sf(census_data)
+  census_data <- sf::st_cast(census_data, "MULTIPOLYGON")
+
   # Select `var_select` columns
   avail_vars <- var_select[var_select %in% names(census_data)]
   census_data <- census_data[, c("GeoUID", avail_vars)]
@@ -69,4 +74,5 @@ get_census_sus <- function(master_polygon, census_dataset, regions,
 
   # Keep only the polygons part of the master_polygon
   census_data[census_data$ID %in% keep_ids, ]
+
 }

@@ -89,7 +89,7 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
           sf::st_drop_geometry()
 
         # Re-bind geometry
-        df <- merge(df_name_2, df[, c("ID", "geometry")], by = "ID")
+        df <- susbuildr::merge(df_name_2, df[, c("ID", "geometry")], by = "ID")
         df <- sf::st_as_sf(df)
 
         # Reorder column names

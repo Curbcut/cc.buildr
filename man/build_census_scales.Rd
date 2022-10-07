@@ -6,13 +6,12 @@
 \usage{
 build_census_scales(
   master_polygon,
-  census_dataset,
+  census_dataset = susbuildr::current_census,
   regions,
   levels = c("CSD", "CT", "DA"),
   crs,
   fill_CTs_with_CSDs = TRUE,
-  split_CSD,
-  default_name_2_for_CSD = "City"
+  override_name_2 = list(CSD = "City")
 )
 }
 \arguments{
@@ -20,7 +19,7 @@ build_census_scales(
 geometries for which census data must be gathered.}
 
 \item{census_dataset}{<\code{character}> The dataset to query for available
-regions, e.g. \code{"CA16"}.}
+regions, e.g. \code{"CA16"}. Defaults to \code{\link[susbuildr]{current_census}}.}
 
 \item{regions}{<\verb{named list}> A named list of census regions to retrieve.
 Names must be valid census aggregation levels. Preferably a whole province
@@ -36,27 +35,16 @@ Can be \code{"CMA"}, \code{"CD"}, \code{"CT"}, \code{"DA"}, \code{"DB"}, ...}
 \item{fill_CTs_with_CSDs}{<\code{logical}> If the master polygon is bigger than a
 CMA, should what is outside the CMA display the CSDs on the CT scale?}
 
-\item{split_CSD}{<\verb{sf data.frame}> An sf dataframe of subdivisions of one
-CSD. e.g. for the City of Montreal, the subdivisions is a dataframe of boroughs.
-The sf data.frame must have 3 columns: \code{name}, \code{type} and \code{geometry}.
-The \code{name} is the name of the borough/neighbourhood/zone e.g.
-"Le Plateau Mont-Royal", and \code{type} is what should be used as \code{"name_2"},
-e.g. "Borough". The data.frame must fit with CTs boundaries.}
-
-\item{default_name_2_for_CSD}{<\code{character}> The default name_2 for CSDs. Default
-to "City". The display on Sus would then be e.g. \verb{City of Laval}.}
+\item{override_name_2}{<\verb{named list}> Override name_2. Defaults to name_2 for
+CSDs being "City" with \code{list(CSD = "City")}, e.g. the display on Sus
+for CSDs would then be e.g. \verb{City of Laval}. For scales below CSD, the name
+of the CSD in which the zone is gets the CSD name as their name_2. The
+default display for a CT would then be e.g. \verb{Census tract 4620633.00 (Laval)}.}
 }
 \value{
 A list of sf dataframes of census scales filtered by the master polygon,
 with the option of one CSD subdivided.
 }
 \description{
-\code{build_census_scales} retrieves all the fed census levels
-present in the master_polygon. It can split a CSD in multiple smaller zones.
-The \code{split_CSD} fed in the function then sums population and households for
-each of its zones from the census tracts, and the geometry of the zones are
-swaped by an aggregation of census tracts for which centroids fall in each zones,
-so that borders of the split zones fit perfectly with the rest of the CSD.
-Boundaries of both the zones and the overall split_CSD dataframe MUST fit
-with census tract boundaries.
+Build census scales
 }

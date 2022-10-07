@@ -84,7 +84,7 @@ add_variable <- function(variables, var_code, type, var_title,
   }
 
   new_variable <-
-    data.frame(
+    tibble::tibble(
       var_code = as.character(var_code),
       type = as.character(type),
       var_title = as.character(var_title),
@@ -93,14 +93,13 @@ add_variable <- function(variables, var_code, type, var_title,
       theme = as.character(theme),
       private = as.logical(private),
       source = as.character(source),
-      group_name = as.character(group_name))
-
-  new_variable$dates <- list(dates)
-  new_variable$scales <- list(scales)
-  new_variable$breaks_q3 <- list(breaks_q3)
-  new_variable$breaks_q5 <- list(breaks_q5)
-  new_variable$interpolated <- list(interpolated)
-  new_variable$group_diff <- list(group_diff)
+      group_name = as.character(group_name),
+      dates = list(dates),
+      scales = list(scales),
+      breaks_q3 = list(breaks_q3),
+      breaks_q5 = list(breaks_q5),
+      interpolated = list(interpolated),
+      group_diff = list(group_diff))
 
   rbind(variables, new_variable)
 

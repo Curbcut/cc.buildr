@@ -45,7 +45,8 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
     sapply(scales_to_interpolate, \(scales) {
 
       # Get the base scale and clean up columns
-      base <- merge(scales[[base_scale]], data, by = paste0(base_scale, "_ID"))
+      base <-
+        susbuildr::merge(scales[[base_scale]], data, by = paste0(base_scale, "_ID"))
       base <- sf::st_transform(base, crs)
       base$area <- susbuildr::get_area(base$geometry)
       base <- sf::st_set_agr(base, "constant")
@@ -63,7 +64,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
         mapply(\(scale_name, scale_df) {
           # If the scale is already the one containing data, merge and return
           if (scale_name == base_scale) {
-            return(merge(scale_df, data, by = paste0(base_scale, "_ID")))
+            return(susbuildr::merge(scale_df, data, by = paste0(base_scale, "_ID")))
           }
           # If the scale is not a census scale, do nothing
           if (!scale_name %in% existing_census_scales) {
@@ -97,7 +98,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
           }
 
           # Merge to the existing data
-          merge(scale_df, out, by = scale_id)
+          susbuildr::merge(scale_df, out, by = scale_id)
         }, names(scales), scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
       # Interpolate to non-census scales ----------------------------------------
@@ -151,7 +152,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
           }
 
           # Merge to the existing data
-          merge(scale_df, out, by = "ID")
+          susbuildr::merge(scale_df, out, by = "ID")
         }, names(census_interpolated), census_interpolated,
         SIMPLIFY = FALSE, USE.NAMES = TRUE
         )

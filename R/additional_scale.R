@@ -60,7 +60,8 @@ additional_scale <- function(additional_table, DA_table, ID_prefix, name_2,
   additional_table$ID <- paste(ID_prefix, seq_along(additional_table$name),
     sep = "_"
   )
-  additional_table <- merge(additional_table, intersected_table, by = "name")
+  additional_table <-
+    susbuildr::merge(additional_table, intersected_table, by = "name")
   additional_table$name_2 <- name_2
   additional_table <- sf::st_transform(additional_table, 4326)
   additional_table[, c(

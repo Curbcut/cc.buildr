@@ -53,3 +53,9 @@
 #' }
 #' @source <https://www.statcan.gc.ca/en/lode/databases/oda>
 "addresses_db_links"
+
+#' Current census code, used to retrieve from cancensus
+#'
+#' @format ## `current_census`
+#' A character vector of the most up-to-date available census from cancensus.
+"current_census"

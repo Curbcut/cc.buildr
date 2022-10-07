@@ -180,7 +180,8 @@ build_buildings <- function(DA_table, crs, download_MS_buildings = TRUE,
 
   # Join DA information to buildings
   building_DA <- sf::st_drop_geometry(sf::st_join(building_centroid, das))
-  building <- merge(building[, c("ID", "geometry")], building_DA, by = "ID")
+  building <-
+    susbuildr::merge(building[, c("ID", "geometry")], building_DA, by = "ID")
 
 
   # Consolidate and clean output --------------------------------------------
