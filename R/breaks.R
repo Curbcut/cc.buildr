@@ -17,7 +17,7 @@ add_q3 <- function(df, vars, time_regex = "\\d{4}") {
   # Get all q3s arranged in a dataframe
   q3s <-
     sapply(vars, \(var) susbuildr::rough_rank(df[[var]], 3)) |>
-    as.data.frame()
+    tibble::as_tibble()
 
   # Change names to get q3 between the variable name and the timeframe
   names(q3s) <- paste0(gsub(time_regex_end, "", names(q3s)), "_q3",
@@ -27,7 +27,9 @@ add_q3 <- function(df, vars, time_regex = "\\d{4}") {
                          substring(x, loc)
                        }))
 
-  cbind(df, q3s)
+  out <- tibble::as_tibble(cbind(df, q3s))
+  if ("sf" %in% class(df)) out <- sf::st_as_sf(out)
+  out
 
 }
 
@@ -55,7 +57,7 @@ get_breaks_q3 <- function(df, vars) {
 
     ifelse(is.infinite(out), NA_real_, out)
 
-  }) |> as.data.frame()
+  }) |> tibble::as_tibble()
 
 }
 
@@ -81,7 +83,7 @@ add_q5 <- function(df, breaks, time_regex = "\\d{4}") {
     values[length(values)] <- Inf
 
     q5s <- as.numeric(cut(df[[var]], values, include.lowest = TRUE)) |>
-      as.data.frame()
+      tibble::as_tibble()
 
     # Change names to get q3 between the variable name and the timeframe
     names(q5s) <- paste0(gsub(time_regex_end, "", var), "_q5",
@@ -97,7 +99,9 @@ add_q5 <- function(df, breaks, time_regex = "\\d{4}") {
 
   to_bind <- if (length(all_q5s) > 0) do.call(cbind, all_q5s) else all_q5s[[1]]
 
-  cbind(df, to_bind)
+  out <- tibble::as_tibble(cbind(df, to_bind))
+  if ("sf" %in% class(df)) out <- sf::st_as_sf(out)
+  out
 
 }
 
@@ -150,7 +154,7 @@ get_breaks_q5 <- function(df, vars) {
   # susbuildr::
     find_breaks_q5(min_val, max_val)
 
-  }) |> as.data.frame()
+  }) |> tibble::as_tibble()
 
 }
 
@@ -183,13 +187,13 @@ calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
   tables_q3 <- map_over_scales(
     all_scales = out_tables,
     fun = \(scale_df = scale_df, ...) {
-      if (!all(vars %in% names(scale_df))) return(data.frame())
+      if (!all(vars %in% names(scale_df))) return(tibble::tibble())
       get_breaks_q3(scale_df, vars)
     })
   tables_q5 <- map_over_scales(
     all_scales = out_tables,
     fun = \(scale_df = scale_df, ...) {
-      if (!all(vars %in% names(scale_df))) return(data.frame())
+      if (!all(vars %in% names(scale_df))) return(tibble::tibble())
       get_breaks_q5(scale_df, vars)
     })
 
@@ -215,7 +219,7 @@ calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
             if (loc < 0) return(NA)
             substring(var, loc)
           }
-          data.frame(geo = geo,
+          tibble::tibble(geo = geo,
                      scale = scale_name,
                      date = date,
                      rank = seq_len(nrow(scale_df)) - 1,
@@ -243,7 +247,7 @@ calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
             if (loc < 0) return(NA)
             substring(var, loc)
           }
-          data.frame(geo = geo,
+          tibble::tibble(geo = geo,
                      scale = scale_name,
                      date = date,
                      rank = seq_len(nrow(scale_df)) - 1,

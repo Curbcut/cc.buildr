@@ -44,11 +44,11 @@ append_empty_modules_table <- function(scales) {
 add_module <- function(modules, id, title, metadata, dataset_info, geos = NULL) {
 
   new_module <-
-    tibble(id = id,
-           title = title,
-           geos = if (is.null(geos)) list() else list(geos),
-           metadata = metadata,
-           dataset_inf = dataset_info)
+    tibble::tibble(id = id,
+                   title = title,
+                   geos = if (is.null(geos)) list(NULL) else list(geos),
+                   metadata = metadata,
+                   dataset_inf = dataset_info)
 
   rbind(modules, new_module)
 

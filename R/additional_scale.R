@@ -48,7 +48,7 @@ additional_scale <- function(additional_table, DA_table, ID_prefix, name_2,
 
   intersected_table <- lapply(unique(additional_table$name), \(x) {
     z <- intersected_table[intersected_table$name == x, ]
-    data.frame(
+    tibble::tibble(
       name = x,
       population = round(sum(z$pop)),
       households = round(sum(z$hou))

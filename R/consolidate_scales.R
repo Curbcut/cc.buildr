@@ -1,5 +1,10 @@
 #' Filter spatially scales in their parent geometry
 #'
+#' Necessary 1. to spatially filter scales in their parent geometry, 2. to update
+#' x_ID and name_2 for non-census scales, and 3. to update x_ID and name_2
+#' after a census scale has been split, e.g. with boroughs in the City of
+#' Montreal.
+#'
 #' @param all_tables <`named list`> A named list of character. The names are
 #' the \code{geo} e.g. CMA, island, city, ... and the vectors are all the scales
 #' available in these geo e.g. CSD, CT, DA, building, ...
@@ -40,9 +45,17 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
 
   # Filter spatially the scales per their geo -------------------------------
 
+  # Too slow for smaller scales e.g. buildings! Spatially filter up to DAs,
+  # then use DA_ID for the "spatial" filter.
+  DA_up <- lapply(all_tables, \(x) {
+    if ("DA" %in% x) return(x[seq_len(which(x == "DA"))])
+    return(x)
+  })
+
   spatially_filtered <-
     mapply(\(geo, scales) {
       sapply(scales, \(scale) {
+        if (!scale %in% DA_up[[geo]]) return(uniform_IDs[[scale]])
 
         unioned_geo <- sf::st_transform(geos[[geo]], crs)
         df <- sf::st_transform(uniform_IDs[[scale]], crs)
@@ -52,65 +65,76 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
           suppressWarnings(sf::st_centroid(df, of_largest_polygon = TRUE))
         ids_in <- sf::st_filter(df_centroids, unioned_geo)$ID
         df <- df[df$ID %in% ids_in, ]
-
-        sf::st_transform(df, 4326)
-
       }, simplify = FALSE, USE.NAMES = TRUE)
     }, names(all_tables), all_tables, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
+  spatially_filtered <-
+    susbuildr::map_over_scales(
+      all_scales = spatially_filtered,
+      fun = \(geo = geo, scales = scales,
+              scale_name = scale_name, scale_df = scale_df) {
+        if (scale_name %in% DA_up[[geo]]) return(scale_df)
+        scale_df[scale_df$DA_ID %in% scales$DA$DA_ID, ]
+      })
 
-  # Update name_2 and IDs if the top level of the geo isn't census data ------
+
+  # Update name_2 and IDs for all cases (catch-all cases, like split scales) ----
 
   out <-
     susbuildr::map_over_scales(
       all_scales = spatially_filtered,
       fun = \(geo = geo, scales = scales,
               scale_name = scale_name, scale_df = scale_df) {
-        # If the top level of the scales is CSD, do not modify
-        if (all_tables[[geo]][1] == "CSD" ||
-            all_tables[[geo]][1] == scale_name) {
-          return(scale_df)
-        }
+        if (!scale_name %in% DA_up[[geo]]) return(scale_df)
 
-        # If the top level is not CSD, update name_2
         top_level <- sf::st_transform(scales[[1]], crs)
         df <- sf::st_transform(scale_df, crs)
 
-        # Filter spatially with the top level geo to intersect
-        df <- df[, names(df) != "name_2"]
+        # Join name_2 and ID of the top level
+        top_level <- top_level[, c("name_2", paste0(names(scales[1]), "_ID"))]
+        df <- df[, !names(df) %in% names(top_level)]
         df_centroids <-
           suppressWarnings(sf::st_centroid(df, of_largest_polygon = TRUE))
-        top_level <- top_level[, c("name", names(top_level)[
-          grepl("_ID$", names(top_level))
-        ], "geometry")]
-        names(top_level)[1] <- "name_2"
-        df_name_2 <-
-          suppressWarnings(sf::st_intersection(df_centroids, top_level)) |>
-          sf::st_drop_geometry()
+        merged_centroids <- sf::st_join(df_centroids, top_level)
+        out <- merge(sf::st_drop_geometry(merged_centroids),
+                     df[, c("ID", "geometry")], by = "ID")
 
-        # Re-bind geometry
-        df <- susbuildr::merge(df_name_2, df[, c("ID", "geometry")], by = "ID")
-        df <- sf::st_as_sf(df)
+        # Take out _IDs that aren't in the scales (e.g., CSD)
+        all_ids <- names(out)[grepl("_ID$", names(out))]
+        drop_ids <- all_ids[!all_ids %in% paste0(names(scales), "_ID")]
 
-        # Reorder column names
-        names_id <- c("ID", "name", "name_2")
-        all_ids <- names(df)[names(df) %in% paste0(all_tables[[geo]], "_ID")]
-        all_ids <- paste0(all_tables[[geo]], "_ID")[
-          paste0(all_tables[[geo]], "_ID") %in% all_ids
-        ]
-        rest_cols <- names(df)[!names(df) %in% c(names_id, all_ids)]
-        rest_cols <- rest_cols[!grepl("_ID$", rest_cols)]
+        # Return
+        out[, !names(out) %in% drop_ids]
 
-        df[, c(names_id, all_ids, rest_cols)]
+      })
+
+  # + Add DA information to scales under DAs
+  out <-
+    susbuildr::map_over_scales(
+      all_scales = out,
+      fun = \(geo = geo, scales = scales,
+              scale_name = scale_name, scale_df = scale_df) {
+        if (scale_name %in% DA_up[[geo]]) return(scale_df)
+
+        das <- sf::st_drop_geometry(scales$DA)
+        ids <- das[, c("name_2", names(das)[grepl("_ID$", names(das))])]
+        df <- scale_df[, names(scale_df) != "name_2"]
+
+        merge(df, ids, by = "DA_ID")
       })
 
 
-  ##Get the CRS back to WGS 84 ----------------------------------------------
+  ## Get the CRS back to WGS 84 ---------------------------------------------
 
   out <-
     susbuildr::map_over_scales(
       all_scales = out,
       fun = \(scale_df = scale_df, ...) sf::st_transform(scale_df, 4326))
+
+  ## Reorder all columns ----------------------------------------------------
+
+  out <-
+    susbuildr::reorder_columns(all_scales = out)
 
 
   # Return the final output -------------------------------------------------

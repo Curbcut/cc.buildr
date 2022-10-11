@@ -22,7 +22,7 @@ append_scale_to_dictionary <- function(scales_dictionary, scale, sing, plur,
 
   # Add a new row
   scales_dictionary[nrow(scales_dictionary) + 1, ] <-
-    c(scale, sing, plur, slider_title, place_heading, place_name)
+    list(scale, sing, plur, slider_title, place_heading, place_name)
 
   scales_dictionary
 }

@@ -12,7 +12,7 @@
 append_empty_variables_table <- function(scales_consolidated) {
 
   variables <-
-    data.frame(
+    tibble::tibble(
       var_code = character(),
       type = character(),
       var_title = character(),

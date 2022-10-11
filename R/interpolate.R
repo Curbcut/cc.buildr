@@ -28,8 +28,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
                                         existing_census_scales =
                                           c("CSD", "CT", "DA", "DB")) {
 
-  ## Only interpolate for bigger geometries than the base one ----------------
-
+  ## Only interpolate for bigger geometries than the base one
   all_tables <- susbuildr::reconstruct_all_tables(all_scales)
   construct_for <-
     lapply(all_tables, \(scales) scales[seq_len(which(scales == base_scale))])
@@ -39,8 +38,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
     }, all_scales, construct_for, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
 
-  ## Interpolate over all the scales -----------------------------------------
-
+  ## Interpolate over all the scales
   interpolated <-
     sapply(scales_to_interpolate, \(scales) {
 
@@ -58,7 +56,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
       # Get only data column names
       data_col_names <- names(data)[!grepl("ID$", names(data))]
 
-      # Interpolate to other census scales --------------------------------------
+      # Interpolate to other census scales
 
       census_interpolated <-
         mapply(\(scale_name, scale_df) {
@@ -79,6 +77,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
           # argument.
           summarized <-
             lapply(data_col_names, \(col_name) {
+              from <- as.data.frame(from)
               dat <- stats::ave(
                 from, from[[scale_id]],
                 FUN = \(x) stats::weighted.mean(x[[col_name]], x[[weight_by]],
@@ -98,10 +97,10 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
           }
 
           # Merge to the existing data
-          susbuildr::merge(scale_df, out, by = scale_id)
+          susbuildr::merge(scale_df, out, by = scale_id, all.x = TRUE)
         }, names(scales), scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
-      # Interpolate to non-census scales ----------------------------------------
+      # Interpolate to non-census scales
 
       non_census_scales <- names(scales)[!names(scales) %in% existing_census_scales]
       if (length(non_census_scales) == 0) {
@@ -133,6 +132,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
           intersected <- sf::st_drop_geometry(intersected)
           summarized <-
             lapply(data_col_names, \(col_name) {
+              intersected <- as.data.frame(intersected)
               dat <- stats::ave(
                 intersected, intersected$ID,
                 FUN = \(x) stats::weighted.mean(x[[col_name]], x[["n_weight_by"]],
@@ -152,7 +152,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
           }
 
           # Merge to the existing data
-          susbuildr::merge(scale_df, out, by = "ID")
+          susbuildr::merge(scale_df, out, by = "ID", all.x = TRUE)
         }, names(census_interpolated), census_interpolated,
         SIMPLIFY = FALSE, USE.NAMES = TRUE
         )
@@ -161,14 +161,12 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
     }, simplify = FALSE, USE.NAMES = TRUE)
 
 
-  ## Reorder all columns ----------------------------------------------------
-
+  ## Reorder all columns
   interpolated <-
     susbuildr::reorder_columns(all_scales = interpolated)
 
 
-  ## Get the CRS back to WGS 84 ---------------------------------------------
-
+  ## Get the CRS back to WGS 84
   interpolated <-
     susbuildr::map_over_scales(
       all_scales = interpolated,
@@ -176,8 +174,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
     )
 
 
-  ## Reattach non-interpolated scales ---------------------------------------
-
+  ## Reattach non-interpolated scales
   all_scales_reattached <-
     mapply(\(needed_tables, interpolated_tables, all_tables) {
       sapply(needed_tables, \(table_name) {
@@ -189,12 +186,11 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
     }, all_tables, interpolated, all_scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
 
-  ## Scales at which the data is available -----------------------------------
-
+  ## Scales at which the data is available
   avail_scales <-
     map_over_scales(interpolated,
                     fun = \(geo = geo, scale_name = scale_name, ...) {
-                      data.frame(geo = geo,
+                      tibble::tibble(geo = geo,
                                  scale = scale_name)
                     })
   avail_scales <-
@@ -204,8 +200,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
   row.names(avail_scales) <- NULL
 
 
-  ## Create interpolated references as a data.frame --------------------------
-
+  ## Create interpolated references as a data.frame
   interpolated_ref <-
     sapply(construct_for, \(scales) {
       sapply(scales, \(scale) {
@@ -219,7 +214,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
     map_over_scales(interpolated_ref,
                     fun = \(geo = geo, scale_name = scale_name,
                             scale_df = scale_df, ...) {
-                      data.frame(geo = geo,
+                      tibble::tibble(geo = geo,
                                  scale = scale_name,
                                  interpolated_from = scale_df)
                     })
@@ -230,11 +225,73 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
   row.names(interpolated_ref) <- NULL
 
 
-  ## Return ------------------------------------------------------------------
-
+  ## Return
   return(list(
     scales = all_scales_reattached,
     avail_scales = avail_scales,
     interpolated_ref = interpolated_ref
   ))
+
+}
+
+#' Interpolate ADDITIVE variables using area
+#'
+#' @param to <`sf data.frame`> Table for which additive data must be
+#' interpolated
+#' @param DA_table <`sf data.frame`> A \code{DA} sf data.frame from which
+#' population and households will be interpolated.
+#' @param additive_vars <`vector of character`> Columns from `DA_table` from which
+#' data should be interpolated to the `to` data.frame. Must be ADDITIVE variables,
+#' e.g. population and households (default).
+#' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
+#' \code{32618} for Montreal.
+#'
+#' @return Returns the `to` data.frame with the added or modified columns that
+#' have been interpolated from the `DA_table`.
+#' @export
+interpolate_from_area <- function(to, DA_table,
+                                  additive_vars = c("population", "households"),
+                                  crs) {
+
+  # Interpolate DA_table to get population and households
+  das <- DA_table[, additive_vars]
+  das <- sf::st_transform(das, crs)
+  das <- sf::st_set_agr(das, "constant")
+  # Add DA area
+  das$area <- susbuildr::get_area(das$geometry)
+  # Add new table area
+  destination <- sf::st_transform(to, crs)
+  destination <-
+    destination[, names(destination)[!names(destination) %in% additive_vars]]
+  intersected_table <- suppressWarnings(sf::st_intersection(destination, das))
+  intersected_table$new_area <- susbuildr::get_area(intersected_table$geometry)
+
+  # Get proportion of area per zone
+  intersected_table$area_prop <- intersected_table$new_area / intersected_table$area
+  intersected_table <- sf::st_drop_geometry(intersected_table)
+
+  # Interpolate additive variables
+  with_additive_vars <- lapply(additive_vars, \(x) {
+    intersected_table[[x]] <- intersected_table$area_prop * intersected_table[[x]]
+    intersected_table[x]
+  })
+  with_additive_vars <-
+    cbind(intersected_table["ID"], Reduce(cbind, with_additive_vars))
+  interpolated <-
+    lapply(unique(destination$ID), \(ID) {
+      z <- with_additive_vars[with_additive_vars$ID == ID, ]
+      vars <- sapply(additive_vars, \(var) {
+        round(sum(z[[var]], na.rm = TRUE))
+      }, simplify = FALSE, USE.NAMES = TRUE)
+      vars <- Reduce(cbind, vars)
+
+      out <- cbind(tibble::tibble(ID = ID), vars)
+      names(out) <- c("ID", additive_vars)
+      out
+    })
+  interpolated <- Reduce(rbind, interpolated)
+
+  # Return
+  merge(to[, names(to)[!names(to) %in% additive_vars]], interpolated, by = "ID")
+
 }

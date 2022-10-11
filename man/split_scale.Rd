@@ -8,6 +8,7 @@ layer with}
 split_scale(
   destination,
   cutting_layer,
+  DA_table,
   destination_pct_threshold = 0.95,
   buffer_around_cutting_layer = 100,
   sampled_points_voronoi = buffer_around_cutting_layer * 500,
@@ -26,6 +27,9 @@ columns: \code{name}, \code{type} and \code{geometry}.
 The \code{name} is the name of the borough/neighbourhood/zone e.g.
 "Le Plateau Mont-Royal", and \code{type} is what should be used as \code{"name_2"},
 e.g. "Borough".}
+
+\item{DA_table}{<\verb{sf data.frame}> A \code{DA} sf data.frame from which
+population and households will be interpolated.}
 
 \item{destination_pct_threshold}{<\code{numeric}> What is the threshold for which
 an existing feature in the destination data.frame should be removed. Default to

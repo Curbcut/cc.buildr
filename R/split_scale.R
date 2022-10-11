@@ -11,6 +11,8 @@
 #' The \code{name} is the name of the borough/neighbourhood/zone e.g.
 #' "Le Plateau Mont-Royal", and \code{type} is what should be used as \code{"name_2"},
 #' e.g. "Borough".
+#' @param DA_table <`sf data.frame`> A \code{DA} sf data.frame from which
+#' population and households will be interpolated.
 #' @param destination_pct_threshold <`numeric`> What is the threshold for which
 #' an existing feature in the destination data.frame should be removed. Default to
 #' 0.95. If 95% of the area of a destination feature fits in the `cutting_layer`,
@@ -28,6 +30,7 @@
 #' @return An sf dataframes with features subdivided.
 #' @export
 split_scale <- function(destination, cutting_layer,
+                        DA_table,
                         destination_pct_threshold = 0.95,
                         buffer_around_cutting_layer = 100,
                         sampled_points_voronoi = buffer_around_cutting_layer * 500,
@@ -106,14 +109,17 @@ split_scale <- function(destination, cutting_layer,
     all_new_shapes[[x]] <- NA
     sf::st_drop_geometry(all_new_shapes[, x])
   }) |> (\(x) Reduce(cbind, list(all_new_shapes, x)))()
+  # Interpolate population and households for all new shapes
+  all_new_shapes <-
+    interpolate_from_area(
+      to = all_new_shapes,
+      DA_table = DA_table,
+      additive_vars = c("population", "households"),
+      crs = crs)
+  # Bind
   destination_out <- rbind(destination[!destination$ID %in% removed_ids, ],
                            all_new_shapes)
   destination_out <- sf::st_make_valid(destination_out)
-
-  # Finally, we interpolate. And we have to keep track of how we do the
-  # interpolation (population, area, etc)
-
-
 
   # Go back to unprojected
   destination_out <- sf::st_transform(destination_out, 4326)

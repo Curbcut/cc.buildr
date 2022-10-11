@@ -170,31 +170,30 @@ build_buildings <- function(DA_table, crs, download_MS_buildings = TRUE,
   }
 
 
-  # Add DA information to buildings -----------------------------------------
+  # Add DA ID ---------------------------------------------------------------
 
-  # Get centroids
-  building_centroid <- sf::st_centroid(building)
-  # Get DA information for those centroids
-  das <- DA_table[, c("ID", "name_2", "CTUID", "CSDUID", "geometry")]
-  names(das)[1] <- "DAUID"
+  DA_table <- sf::st_transform(DA_table, crs)[, "ID"]
+  names(DA_table)[1] <- "DAUID"
 
-  # Join DA information to buildings
-  building_DA <- sf::st_drop_geometry(sf::st_join(building_centroid, das))
-  building <-
-    susbuildr::merge(building[, c("ID", "geometry")], building_DA, by = "ID")
+  building_centroids <- suppressWarnings(sf::st_centroid(building))
+  da_joined <- sf::st_join(building_centroids, DA_table)
+  da_joined <- sf::st_drop_geometry(da_joined[, c("ID", "DAUID")])
+  building <- merge(building, da_joined, by = "ID")
 
 
   # Consolidate and clean output --------------------------------------------
 
   building$name <- NA_character_
+  building$name_2 <- NA_character_
   building <- building[, c(
-    "ID", "name", "name_2", "CSDUID", "CTUID", "DAUID",
-    "osm_ID", "geometry"
+    "ID", "name", "name_2", "DAUID", "osm_ID", "geometry"
   )]
   building <- sf::st_make_valid(building)
   building <- building[!sf::st_is_empty(building$geometry), ]
   building <- sf::st_transform(building, 4326)
   building <- sf::st_set_agr(building, "constant")
+  building <- tibble::as_tibble(building)
+  building <- sf::st_as_sf(building)
 
   return(building)
 }

@@ -79,13 +79,13 @@ rev_geocode_buildings <- function(master_polygon, building, province_code, crs) 
 
   # Get addresses from provincial government databases ----------------------
 
-  if (province_code %in% c("QC", "BC")) {
+  if (exists(paste0("rev_geocode_", province_code))) {
     for (i in seq_len(nrow(building_centroids))) {
       if (!is.na(building_centroids$name[i])) next
 
       # Inform progress
       message('\r',
-              paste0("Reverse geocoding - ",
+              paste0("Reverse geocoding from province's API - ",
                      i, "/", nrow(building_centroids), " - ",
                      round(i/nrow(building_centroids), digits = 5)*100, "%"),
               appendLF = FALSE)

@@ -55,7 +55,8 @@ create_master_polygon <- function(all_regions, crs = NULL) {
 
   # Get region from Cancensus -----------------------------------------------
 
-  provinces <- cancensus::get_census(current_census, regions = list(C = 01),
+  provinces <- cancensus::get_census(susbuildr::current_census,
+                                     regions = list(C = 01),
                                      level = "PR", geo_format = "sf",
                                      quiet = TRUE)
   master_polygon_centroid <- sf::st_centroid(master_polygon)

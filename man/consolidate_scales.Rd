@@ -26,5 +26,8 @@ A list of the same length as there are in \code{all_tables}, containing
 spatially filtered dataframes with updated name_2 and IDs if needed.
 }
 \description{
-Filter spatially scales in their parent geometry
+Necessary 1. to spatially filter scales in their parent geometry, 2. to update
+x_ID and name_2 for non-census scales, and 3. to update x_ID and name_2
+after a census scale has been split, e.g. with boroughs in the City of
+Montreal.
 }
