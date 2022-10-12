@@ -31,7 +31,10 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
   ## Only interpolate for bigger geometries than the base one
   all_tables <- susbuildr::reconstruct_all_tables(all_scales)
   construct_for <-
-    lapply(all_tables, \(scales) scales[seq_len(which(scales == base_scale))])
+    lapply(all_tables, \(scales)  {
+      if (!base_scale %in% scales) return()
+      scales[seq_len(which(scales == base_scale))]
+    })
   scales_to_interpolate <-
     mapply(\(scales, kept_scales) {
       scales[names(scales) %in% kept_scales]
@@ -41,6 +44,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
   ## Interpolate over all the scales
   interpolated <-
     sapply(scales_to_interpolate, \(scales) {
+      if (length(scales) == 0) return()
 
       # Get the base scale and clean up columns
       base <-

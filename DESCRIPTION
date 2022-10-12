@@ -17,7 +17,8 @@ Imports:
     osmdata,
     geojsonsf,
     jsonlite,
-    tibble
+    tibble,
+    tidyr
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

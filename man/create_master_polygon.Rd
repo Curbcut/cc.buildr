@@ -10,7 +10,8 @@ create_master_polygon(all_regions, crs = NULL)
 \item{all_regions}{<\verb{named list}> A name list of all the geos wanted. The value
 of all level must either be a valid \code{regions} call argument to the
 \code{\link[cancensus]{get_census}} function, e.g. \code{list(CMA = 24462)}
-for Montreal, or either a link to a shapefile, e.g. \code{list("geometry/island.shp"}.}
+for Montreal, a link to a shapefile, e.g. \code{list("geometry/island.shp"},
+or an already sf data.frame.}
 
 \item{crs}{<\code{numeric}> Optional. EPSG coordinate reference system to be
 assigned, e.g. \code{32618} for Montreal. Optional, defaults to the UTM zone

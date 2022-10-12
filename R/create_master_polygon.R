@@ -3,7 +3,8 @@
 #' @param all_regions <`named list`> A name list of all the geos wanted. The value
 #' of all level must either be a valid `regions` call argument to the
 #' \code{\link[cancensus]{get_census}} function, e.g. \code{list(CMA = 24462)}
-#' for Montreal, or either a link to a shapefile, e.g. \code{list("geometry/island.shp"}.
+#' for Montreal, a link to a shapefile, e.g. \code{list("geometry/island.shp"},
+#' or an already sf data.frame.
 #' @param crs <`numeric`> Optional. EPSG coordinate reference system to be
 #' assigned, e.g. \code{32618} for Montreal. Optional, defaults to the UTM zone
 #' retrieved by the centroid of the master_polygon created. If not supplied, it
@@ -22,7 +23,7 @@ create_master_polygon <- function(all_regions, crs = NULL) {
 
   geos <-
     sapply(all_regions, \(x) {
-      z <- if (!is.list(x)) sf::read_sf(x) else {
+      z <- if (is.data.frame(x)) x else if (!is.list(x)) sf::read_sf(x) else {
         cancensus::get_census(susbuildr::current_census,
                               regions = x,
                               # DA for a better spatial coverage
@@ -32,28 +33,30 @@ create_master_polygon <- function(all_regions, crs = NULL) {
       }
       z <- sf::st_union(z)
       z <- sf::st_transform(z, 4326)
-      z <- sf::st_make_valid(z)
       z <- sf::st_cast(z, "MULTIPOLYGON")
+      z <- sf::st_make_valid(z)
       z
     }, simplify = FALSE, USE.NAMES = TRUE)
-
-
-  # Make valid master_polygon -----------------------------------------------
-
-  master_polygon <- Reduce(sf::st_union, geos)
-  master_polygon <- master_polygon[
-    sf::st_geometry_type(master_polygon) == "MULTIPOLYGON"]
-  master_polygon <- sf::st_make_valid(master_polygon)
-
 
   # Get crs -----------------------------------------------------------------
 
   crs <- if (!is.null(crs)) crs else {
-    z <- sf::st_point_on_surface(master_polygon)
+    z <- sf::st_centroid(geos[[1]])
     z <- sf::st_coordinates(z)[1]
     utm_zone <- round((z + 180) / 6)
     as.numeric(paste0("326", utm_zone))
   }
+
+
+  # Make valid master_polygon -----------------------------------------------
+
+  geos_crs <-
+    sapply(geos, sf::st_transform, crs, simplify = FALSE, USE.NAMES = TRUE)
+  master_polygon <- Reduce(sf::st_union, geos_crs)
+  master_polygon <- master_polygon[
+    sf::st_geometry_type(master_polygon) == "MULTIPOLYGON"]
+  master_polygon <- sf::st_make_valid(master_polygon)
+  master_polygon <- sf::st_transform(master_polygon, 4326)
 
 
   # Get region from Cancensus -----------------------------------------------
@@ -62,7 +65,7 @@ create_master_polygon <- function(all_regions, crs = NULL) {
                                      regions = list(C = 01),
                                      level = "PR", geo_format = "sf",
                                      quiet = TRUE)
-  master_polygon_centroid <- sf::st_point_on_surface(master_polygon)
+  master_polygon_centroid <- sf::st_centroid(master_polygon)
   prov_code <- sf::st_intersection(provinces, master_polygon_centroid)$GeoUID
 
 

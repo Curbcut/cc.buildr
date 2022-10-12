@@ -16,18 +16,20 @@
 #' has a higher value than y% of DAs in the Montreal region'.
 #' e.g. \code{c("in the Montreal region", "in the City of Montreal",
 #' "on the island of Montreal")}
+#' @param pickable <`named vector of logical`> Will the user be able to select this
+#' scale as a default all over the platform?
 #'
 #' @return Returns the same vectors fed arranged in a data.frame ordered in
 #' priorty.
 #' @export
-geos_dictionary <- function(all_tables, geo, name, to_compare) {
+geos_dictionary <- function(all_tables, geo, name, to_compare, pickable) {
 
   # Error check
   if (is.null(names(name)))
     stop("`geo`must be a named character vector.")
   if (is.null(names(to_compare)))
     stop("`to_compare`must be a named character vector.")
-  invisible(lapply(c("geo", "name", "to_compare"), \(x) {
+  invisible(lapply(c("geo", "name", "to_compare", "pickable"), \(x) {
     if (length(get(x)) != length(all_tables))
       stop("length of`", x, "` is not the same as the length of `all_tables`")
   }))
@@ -35,11 +37,14 @@ geos_dictionary <- function(all_tables, geo, name, to_compare) {
   geo <- geo[order(match(geo, names(all_tables)))]
   name <- name[order(match(names(name), names(all_tables)))]
   to_compare <- to_compare[order(match(names(to_compare), names(all_tables)))]
+  pickable <- pickable[order(match(names(pickable), names(all_tables)))]
+
 
   tibble::tibble(
     geo = geo,
     priority = seq_len(length(geo)),
     name = name,
-    to_compare = to_compare
+    to_compare = to_compare,
+    pickable = pickable
   )
 }

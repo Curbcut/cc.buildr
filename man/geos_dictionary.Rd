@@ -4,7 +4,7 @@
 \alias{geos_dictionary}
 \title{Build the geos dictionary}
 \usage{
-geos_dictionary(all_tables, geo, name, to_compare)
+geos_dictionary(all_tables, geo, name, to_compare, pickable)
 }
 \arguments{
 \item{all_tables}{<\verb{named list}> Named list of geos and their scales within,
@@ -26,6 +26,9 @@ text, when a particular zone is compared with the whole geography. 'x DA
 has a higher value than y\% of DAs in the Montreal region'.
 e.g. \code{c("in the Montreal region", "in the City of Montreal",
 "on the island of Montreal")}}
+
+\item{pickable}{<\verb{named vector of logical}> Will the user be able to select this
+scale as a default all over the platform?}
 }
 \value{
 Returns the same vectors fed arranged in a data.frame ordered in

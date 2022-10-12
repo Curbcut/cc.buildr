@@ -158,7 +158,7 @@ get_breaks_q5 <- function(df, vars) {
 
 }
 
-#' Calculate all breaks
+#' Calculate all breaks when all_scales is a list of geos and scales
 #'
 #' @param all_scales <`named_list`> A named list of scales. The first level is
 #' the geo, and the second is the scales. They must contain all columns of `vars`
@@ -180,7 +180,7 @@ calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
     all_scales = all_scales,
     fun = \(scale_df = scale_df, ...) {
       if (!all(vars %in% names(scale_df))) return(scale_df)
-      add_q3(scale_df, vars)
+      add_q3(scale_df, vars, time_regex = time_regex)
     })
 
   # Get breaks
@@ -206,24 +206,31 @@ calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
     })
 
   # Arrange the breaks tables
+  # Unique variables
+  time_regex_end_ <- paste0("_", time_regex, "$")
+  unique_vars <- unique(gsub(time_regex_end_, "", vars))
   time_regex_end <- paste0(time_regex, "$")
+
   # q3
   q3_breaks_table <-
-    sapply(vars, \(var) {
+    sapply(unique_vars, \(var) {
       map_over_scales(
         all_scales = tables_q3,
         fun = \(geo = geo, scale_name = scale_name, scale_df = scale_df, ...) {
-          if (nrow(scale_df) == 0) return(scale_df)
-          date <- {
-            loc <- regexpr(time_regex_end, var)
-            if (loc < 0) return(NA)
-            substring(var, loc)
-          }
-          tibble::tibble(geo = geo,
-                     scale = scale_name,
-                     date = date,
-                     rank = seq_len(nrow(scale_df)) - 1,
-                     var = scale_df)
+          var_all_years <- names(scale_df)[grepl(var, names(scale_df))]
+          out <- lapply(var_all_years, \(v) {
+            date <- {
+              loc <- regexpr(time_regex_end, v)
+              if (loc < 0) return(NA)
+              substring(v, loc)
+            }
+            tibble::tibble(geo = geo,
+                           scale = scale_name,
+                           date = date,
+                           rank = seq_len(nrow(scale_df)) - 1,
+                           var = scale_df[[v]])
+          })
+          Reduce(rbind, out)
         })
     }, simplify = FALSE, USE.NAMES = TRUE)
   q3_breaks_table <-
@@ -235,23 +242,27 @@ calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
       do.call(rbind, out)
     }, simplify = FALSE, USE.NAMES = TRUE)
   row.names(q3_breaks_table) <- NULL
+
   # q5
   q5_breaks_table <-
-    sapply(vars, \(var) {
+    sapply(unique_vars, \(var) {
       map_over_scales(
         all_scales = tables_q5,
         fun = \(geo = geo, scale_name = scale_name, scale_df = scale_df, ...) {
-          if (nrow(scale_df) == 0) return(scale_df)
-          date <- {
-            loc <- regexpr(time_regex_end, var)
-            if (loc < 0) return(NA)
-            substring(var, loc)
-          }
-          tibble::tibble(geo = geo,
-                     scale = scale_name,
-                     date = date,
-                     rank = seq_len(nrow(scale_df)) - 1,
-                     var = scale_df)
+          var_all_years <- names(scale_df)[grepl(var, names(scale_df))]
+          out <- lapply(var_all_years, \(v) {
+            date <- {
+              loc <- regexpr(time_regex_end, v)
+              if (loc < 0) return(NA)
+              substring(v, loc)
+            }
+            tibble::tibble(geo = geo,
+                           scale = scale_name,
+                           date = date,
+                           rank = seq_len(nrow(scale_df)) - 1,
+                           var = scale_df[[v]])
+          })
+          Reduce(rbind, out)
         })
     }, simplify = FALSE, USE.NAMES = TRUE)
   q5_breaks_table <-
@@ -277,5 +288,3 @@ calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
               avail_dates = avail_dates))
 
 }
-
-

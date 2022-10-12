@@ -33,35 +33,18 @@ additional_scale <- function(additional_table, DA_table, ID_prefix, name_2,
   das <- DA_table[, c("households", "population")]
   das <- sf::st_transform(das, crs)
   das <- sf::st_set_agr(das, "constant")
-  # Add DA area
-  das$area <- susbuildr::get_area(das$geometry)
-  # Add new table area
-  additional_table <- sf::st_transform(additional_table, crs)
-  intersected_table <- suppressWarnings(sf::st_intersection(additional_table, das))
-  intersected_table$new_area <- susbuildr::get_area(intersected_table$geometry)
 
-  # Get proportion of area per zone, and get population and households
-  intersected_table$area_prop <- intersected_table$new_area / intersected_table$area
-
-  intersected_table$pop <- intersected_table$area_prop * intersected_table$population
-  intersected_table$hou <- intersected_table$area_prop * intersected_table$households
-
-  intersected_table <- lapply(unique(additional_table$name), \(x) {
-    z <- intersected_table[intersected_table$name == x, ]
-    tibble::tibble(
-      name = x,
-      population = round(sum(z$pop)),
-      households = round(sum(z$hou))
-    )
-  })
-  intersected_table <- do.call(rbind, intersected_table)
-
-  # Consolidate and clean output
+  # Add ID to the scale
   additional_table$ID <- paste(ID_prefix, seq_along(additional_table$name),
-    sep = "_"
-  )
+                               sep = "_")
+
+  # Interpolate population and households using DAs
   additional_table <-
-    susbuildr::merge(additional_table, intersected_table, by = "name")
+    interpolate_from_area(to = additional_table, DA_table = DA_table,
+                          additive_vars = c("population", "households"),
+                          crs)
+
+  # Consolidate output
   additional_table$name_2 <- name_2
   additional_table <- sf::st_transform(additional_table, 4326)
   additional_table[, c(

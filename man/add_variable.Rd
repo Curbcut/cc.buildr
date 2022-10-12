@@ -63,10 +63,12 @@ for public download.}
 arranged in a data.frame of two columns: \code{geo} and \code{scale}}
 
 \item{breaks_q3}{<\code{data.frame}> A data.frame with with information regarding
-scales, date, rank, breaks. The lst outputs of \code{\link[susbuildr]{calculate_breaks}}}
+scales, date, rank, breaks. The last outputs of
+\code{\link[susbuildr]{calculate_breaks}}}
 
 \item{breaks_q5}{<\code{data.frame}> A data.frame with with information regarding
-scales, date, rank, breaks. The lst outputs of \code{\link[susbuildr]{calculate_breaks}}}
+scales, date, rank, breaks. The last outputs of
+\code{\link[susbuildr]{calculate_breaks}}}
 
 \item{source}{<\code{character}> The source where the data comes from, e.g.
 "McGill Geo-Social Determinants of Health Research Group"}

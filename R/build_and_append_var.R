@@ -93,10 +93,10 @@ build_and_append_var <- function(data, scales_variables_modules, base_scale,
       explanation = variable_explanation,
       theme = variable_theme,
       private = variable_private,
-      dates = with_breaks$avail_dates[[var]],
+      dates = with_breaks$avail_dates[[unique_var]],
       scales = data_interpolated$avail_scales,
-      breaks_q3 = with_breaks$q3_breaks_table[[var]],
-      breaks_q5 = with_breaks$q5_breaks_table[[var]],
+      breaks_q3 = with_breaks$q3_breaks_table[[unique_var]],
+      breaks_q5 = with_breaks$q5_breaks_table[[unique_var]],
       source = variable_source,
       interpolated = data_interpolated$interpolated_ref)
 

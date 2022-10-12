@@ -62,9 +62,11 @@ append_empty_variables_table <- function(scales_consolidated) {
 #' @param scales <`data.frame`> All the scales at which the data is available
 #' arranged in a data.frame of two columns: \code{geo} and \code{scale}
 #' @param breaks_q3 <`data.frame`> A data.frame with with information regarding
-#' scales, date, rank, breaks. The lst outputs of \code{\link[susbuildr]{calculate_breaks}}
+#' scales, date, rank, breaks. The last outputs of
+#' \code{\link[susbuildr]{calculate_breaks}}
 #' @param breaks_q5 <`data.frame`> A data.frame with with information regarding
-#' scales, date, rank, breaks. The lst outputs of \code{\link[susbuildr]{calculate_breaks}}
+#' scales, date, rank, breaks. The last outputs of
+#' \code{\link[susbuildr]{calculate_breaks}}
 #' @param source <`character`> The source where the data comes from, e.g.
 #' "McGill Geo-Social Determinants of Health Research Group"
 #' @param interpolated <`data.frame`> A data.frame indicating from which scale
