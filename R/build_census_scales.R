@@ -77,9 +77,7 @@ build_census_scales <- function(master_polygon,
       lapply(change_CTUID_for, \(x) {
         x <- sf::st_transform(x, crs)
         cts <- sf::st_transform(census_datasets$CT, crs)
-        x_centroids <- suppressWarnings(
-          sf::st_centroid(x, of_largest_polygon = TRUE)[, "ID"]
-        )
+        x_centroids <- suppressWarnings(sf::st_point_on_surface(x)[, "ID"])
 
         CSDUID_key <-
           sf::st_drop_geometry(sf::st_join(x_centroids, cts[, "ID"]))

@@ -60,11 +60,12 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
         unioned_geo <- sf::st_transform(geos[[geo]], crs)
         df <- sf::st_transform(uniform_IDs[[scale]], crs)
 
-        # Filter spatially with the unioned geo
-        df_centroids <-
-          suppressWarnings(sf::st_centroid(df, of_largest_polygon = TRUE))
-        ids_in <- sf::st_filter(df_centroids, unioned_geo)$ID
-        df <- df[df$ID %in% ids_in, ]
+        # Filter spatially with the unioned geo.
+        df_points_on_surface <- suppressWarnings(sf::st_point_on_surface(df))
+        ids_in <- sf::st_filter(df_points_on_surface, unioned_geo)$ID
+
+        df[df$ID %in% ids_in, ]
+
       }, simplify = FALSE, USE.NAMES = TRUE)
     }, names(all_tables), all_tables, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
@@ -86,16 +87,19 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
       fun = \(geo = geo, scales = scales,
               scale_name = scale_name, scale_df = scale_df) {
         if (!scale_name %in% DA_up[[geo]]) return(scale_df)
+        if (scale_name == names(scales)[1]) return(scale_df)
 
         top_level <- sf::st_transform(scales[[1]], crs)
         df <- sf::st_transform(scale_df, crs)
 
         # Join name_2 and ID of the top level
-        top_level <- top_level[, c("name_2", paste0(names(scales[1]), "_ID"))]
+        top_level <- top_level[, c("name", paste0(names(scales[1]), "_ID"))]
+        names(top_level)[1] <- "name_2"
         df <- df[, !names(df) %in% names(top_level)]
-        df_centroids <-
-          suppressWarnings(sf::st_centroid(df, of_largest_polygon = TRUE))
-        merged_centroids <- sf::st_join(df_centroids, top_level)
+
+        df_points_on_surface <-
+          suppressWarnings(sf::st_point_on_surface(df))
+        merged_centroids <- sf::st_join(df_points_on_surface, top_level)
         out <- merge(sf::st_drop_geometry(merged_centroids),
                      df[, c("ID", "geometry")], by = "ID")
 

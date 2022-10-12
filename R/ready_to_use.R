@@ -79,3 +79,80 @@ ready_to_use_canbics <- function(scales_variables_modules, crs) {
              "the dissemination area level.</p>"))
 }
 
+
+
+
+# read_to_use_vac_rate <- function(scales_variables_modules,
+#                                  pretty_spatial_intersect, crs,
+#                                  fun_rename_zones) {
+#
+#   # Transform and prepare spatial geographies
+#   zones <- cmhc::get_cmhc_geography(level = "ZONE")
+#   zones <- sf::st_transform(zones, crs)
+#   zones <- sf::st_make_valid(zones)
+#   master <- sf::st_transform(pretty_spatial_intersect, crs)
+#   if (length(master) > 1) master <- sf::st_union(master)
+#   master <- sf::st_make_valid(master)
+#
+#   # Filter in using the master, and cut it with its boundaries
+#   zones <- sf::st_intersection(zones, master)[, "ZONE_NAME_EN"]
+#   zones <- sf::st_cast(zones, "MULTIPOLYGON")
+#   names(zones)[1] <- "zone"
+#
+#   # Relevant dimensions
+#   dimensions <-
+#     c("Bedroom Type", "Year of Construction", "Structure Size", "Rent Ranges" )
+#   dimensions_short <-
+#     c("bed", "year", "size", "rent_range")
+#
+#   # Retrieval
+#   cmhc <-
+#     sapply(2010:2021, \(yr) {
+#       over_year <-
+#         mapply(\(x, y) {
+#           # Get data
+#           out <- cmhc::get_cmhc(survey = "Rms",
+#                                 series = "Vacancy Rate",
+#                                 dimension = x,
+#                                 breakdown = "Survey Zones",
+#                                 geo_uid = "24462",
+#                                 year = yr)[, 1:3]
+#           # Rename column and update for real percentage
+#           names(out)[2] <- y
+#           out[3] <- out[3] / 100
+#
+#           # Pivot and rename
+#           out <- tidyr::pivot_wider(out, names_from = y, values_from = Value)
+#           names(out) <- gsub(" |-", "_", tolower(names(out)))
+#           names(out) <- gsub("___", "_", names(out))
+#           names(out) <- gsub("\\+", "plus", names(out))
+#           names(out) <- gsub("_units", "", names(out))
+#           names(out) <- gsub("bedroom", "bed", names(out))
+#           names(out) <- paste("vac_rate", y, names(out), yr, sep = "_")
+#           names(out)[1] <- "zone"
+#
+#           # Rename to fit geography
+#
+#           out$zone <- gsub("Plateau Mont-Royal", "Plateau-Mont-Royal",
+#                            out$zone)
+#           out$zone <-
+#             gsub(paste0("Saint-Lin-Laurentides V|Saint-Lin\u0096Laurentides V|Sai",
+#                         "nt-Lin–Laurentides V"), "Saint-Lin–Laurentides V",
+#                  out$zone)
+#
+#           # Return
+#           out
+#         }, dimensions, dimensions_short, SIMPLIFY = FALSE, USE.NAMES = TRUE)
+#       cmhc <- Reduce(merge, over_year)
+#     }, simplify = FALSE, USE.NAMES = TRUE)
+#
+#   merged <- Reduce(\(x, y) merge(x, y, by = "zone", all = TRUE),
+#                    cmhc, init = zones)
+#
+#   merged <- merged[!sf::st_is_empty(merged$geometry), ]
+#
+#
+#
+#
+#
+# }

@@ -25,11 +25,14 @@ create_master_polygon <- function(all_regions, crs = NULL) {
       z <- if (!is.list(x)) sf::read_sf(x) else {
         cancensus::get_census(susbuildr::current_census,
                               regions = x,
+                              # DA for a better spatial coverage
+                              level = "DA",
                               geo_format = "sf",
                               quiet = TRUE)
       }
+      z <- sf::st_union(z)
       z <- sf::st_transform(z, 4326)
-      z <- sf::st_make_valid(z)$geometry
+      z <- sf::st_make_valid(z)
       z <- sf::st_cast(z, "MULTIPOLYGON")
       z
     }, simplify = FALSE, USE.NAMES = TRUE)
@@ -46,7 +49,7 @@ create_master_polygon <- function(all_regions, crs = NULL) {
   # Get crs -----------------------------------------------------------------
 
   crs <- if (!is.null(crs)) crs else {
-    z <- sf::st_centroid(master_polygon)
+    z <- sf::st_point_on_surface(master_polygon)
     z <- sf::st_coordinates(z)[1]
     utm_zone <- round((z + 180) / 6)
     as.numeric(paste0("326", utm_zone))
@@ -59,7 +62,7 @@ create_master_polygon <- function(all_regions, crs = NULL) {
                                      regions = list(C = 01),
                                      level = "PR", geo_format = "sf",
                                      quiet = TRUE)
-  master_polygon_centroid <- sf::st_centroid(master_polygon)
+  master_polygon_centroid <- sf::st_point_on_surface(master_polygon)
   prov_code <- sf::st_intersection(provinces, master_polygon_centroid)$GeoUID
 
 

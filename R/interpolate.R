@@ -57,12 +57,12 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
       data_col_names <- names(data)[!grepl("ID$", names(data))]
 
       # Interpolate to other census scales
-
       census_interpolated <-
         mapply(\(scale_name, scale_df) {
           # If the scale is already the one containing data, merge and return
           if (scale_name == base_scale) {
-            return(susbuildr::merge(scale_df, data, by = paste0(base_scale, "_ID")))
+            return(susbuildr::merge(scale_df, data, by = paste0(base_scale, "_ID"),
+                                    all.x = TRUE))
           }
           # If the scale is not a census scale, do nothing
           if (!scale_name %in% existing_census_scales) {

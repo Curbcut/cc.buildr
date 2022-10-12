@@ -13,6 +13,7 @@ Imports:
     httr,
     sf,
     cancensus,
+    cmhc,
     osmdata,
     geojsonsf,
     jsonlite,
