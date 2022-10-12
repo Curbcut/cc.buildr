@@ -10,7 +10,7 @@
 #' columns: \code{name}, \code{type} and \code{geometry}.
 #' The \code{name} is the name of the borough/neighbourhood/zone e.g.
 #' "Le Plateau Mont-Royal", and \code{type} is what should be used as \code{"name_2"},
-#' e.g. "Borough".
+#' e.g. "Borough" (for the display name: Borough of Le Plateau Mont-Royal).
 #' @param DA_table <`sf data.frame`> A \code{DA} sf data.frame from which
 #' population and households will be interpolated.
 #' @param destination_pct_threshold <`numeric`> What is the threshold for which
@@ -36,7 +36,11 @@ split_scale <- function(destination, cutting_layer,
                         sampled_points_voronoi = buffer_around_cutting_layer * 500,
                         crs) {
 
-  ### TKTK ADD A VALIDATE CUTTING_LAYER
+  # Error checking
+  if (!all(names(cutting_layer) %in% c("name", "type", "geometry"))) {
+    stop(paste0("The `cutting_layer` must have exactly three columns: `name`,",
+                "`type` and `geometry`. Look at the function documentation."))
+  }
 
   # Transform to correct crs, and trim
   destination <- sf::st_transform(destination, crs)

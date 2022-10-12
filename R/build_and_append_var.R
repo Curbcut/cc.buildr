@@ -26,7 +26,10 @@
 #' @param variable_private <`charater`> See \code{\link[susbuildr]{add_variable}}.
 #' @param variable_source <`charater`> See \code{\link[susbuildr]{add_variable}}.
 #' @param module_id <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
-#' @param module_title <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
+#' @param module_nav_title <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
+#' @param module_title_text_title <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
+#' @param module_title_text_main <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
+#' @param module_title_text_extra <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
 #' @param module_geos <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
 #' @param module_metadata <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
 #' @param module_dataset_info <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
@@ -41,7 +44,10 @@ build_and_append_var <- function(data, scales_variables_modules, base_scale,
                                  variable_type, variable_var_title,
                                  variable_var_short, variable_explanation,
                                  variable_theme, variable_private, variable_source,
-                                 module_id = NULL, module_title = NULL,
+                                 module_id = NULL, module_nav_title = NULL,
+                                 module_title_text_title = NULL,
+                                 module_title_text_main = NULL,
+                                 module_title_text_extra = NULL,
                                  module_geos = NULL, module_metadata = NULL,
                                  module_dataset_info = NULL) {
 
@@ -105,14 +111,20 @@ build_and_append_var <- function(data, scales_variables_modules, base_scale,
 
   modules <-
     if (!is.null(module_id) &&
-        !is.null(module_title) &&
+        !is.null(module_nav_title) &&
         !is.null(module_metadata) &&
-        !is.null(module_dataset_info)) {
+        !is.null(module_dataset_info) &&
+        !is.null(module_title_text_title) &&
+        !is.null(module_title_text_main) &&
+        !is.null(module_title_text_extra)) {
       geos <- if (is.null(module_geos)) NULL else module_geos
       scales_variables_modules$modules |>
         susbuildr::add_module(
           id = module_id,
-          title = module_title,
+          nav_title = module_nav_title,
+          title_text_title = module_title_text_title,
+          title_text_main = module_title_text_main,
+          title_text_extra = module_title_text_extra,
           geos = geos,
           metadata = module_metadata,
           dataset_info = module_dataset_info)

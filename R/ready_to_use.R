@@ -26,7 +26,42 @@ ready_to_use_canale <- function(scales_variables_modules, crs) {
     variable_private = FALSE,
     variable_source = "McGill Geo-Social Determinants of Health Research Group",
     module_id = "canale",
-    module_title = "Active living potential",
+    module_nav_title = "Active living potential",
+    module_title_text_title = "Active living potential: the CanALE index",
+    module_title_text_main = paste0(
+      "The CanALE dataset (developed by Prof. Nancy Ross ",
+      "and her team) captures four key elements related to ",
+      "active living environments: population density, ",
+      "points of interest, street grid, and proximity of transit service."),
+    module_title_text_extra = paste0(
+      "<p>A safe and inviting pedestrian environment is not ",
+      "a given in all neighbourhoods: it is influenced by ",
+      "socio-economic factors. The risks of pedestrian ",
+      "injuries and fatalities are higher in low-income and ",
+      "racialized communities where residents often rely on ",
+      "walking as a daily mode of transport but where the ",
+      "local environment is not necessarily inviting and ",
+      "safe.<p>In addition to evidence pointing towards ",
+      "large discrepancies in the provision of walkable ",
+      "urban space across income and racial lines, concern ",
+      "has been raised with regard to the possible ",
+      "gentrification and displacement impacts of ",
+      "improved pedestrian infrastructure. In other words, ",
+      "who can afford to live in walkable neighbourhoods?",
+      "<br><p>Further resources: <ul><li><a href='https://",
+      "www150.statcan.gc.ca/n1/pub/82-003-x/2019005/",
+      "article/00002-eng.htm'>Thomas Herrmann, William ",
+      "Gleckner, Rania A. Wasfi, Benoît Thierry, Yan ",
+      "Kestens and Nancy A. Ross. 2019. 'A pan-Canadian ",
+      "measure of active living environments using open ",
+      "data. Statistics Canada Health Reports, 82-003-X.",
+      "</a><li>Kevin Manaugh, Linnea Soli, Samuel Kohn, ",
+      "Robin Basalaev-Binder, Ty Tuff, David Wachsmuth. ",
+      "2020. 'Montreal's response to COVID-19: An equity ",
+      "analysis of new active transport infrastructure.' ",
+      "Transportation Research Board working paper. ",
+      "<b>(MSSI research)</b></ul><br><p><i>Module lead ",
+      "authors: David Wachsmuth, Robin Basalaev-Binder</i>"),
     module_metadata = TRUE,
     module_dataset_info =
       paste0("<p><a href = 'https://nancyrossresearchgroup.ca/research/can-ale/'>",
@@ -65,7 +100,10 @@ ready_to_use_canbics <- function(scales_variables_modules, crs) {
     variable_private = FALSE,
     variable_source = "Meghan Winters at Faculty of Health Sciences, Simon Fraser Universitya",
     module_id = "canbics",
-    module_title = "Bikeway comfort and safety",
+    module_nav_title = "Bikeway comfort and safety",
+    module_title_text_title = "Bikeway comfort and safety: the Can-BICS index",
+    module_title_text_main = "TKTK",
+    module_title_text_extra = "TKTK",
     module_metadata = TRUE,
     module_dataset_info =
       paste0("<p><a href = 'https://www.canada.ca/en/public-health/services/reports",
@@ -102,9 +140,9 @@ ready_to_use_vac_rate <- function(scales_variables_modules, crs,
 
   # Relevant dimensions
   dimensions <-
-    c("Bedroom Type", "Year of Construction")#, "Rent Ranges")
+    c("Bedroom Type", "Year of Construction", "Rent Ranges")
   dimensions_short <-
-    c("bed", "year")#, "rent_range")
+    c("bed", "year", "rent_range")
 
   # Retrieval
   cmhc <-
@@ -126,11 +164,15 @@ ready_to_use_vac_rate <- function(scales_variables_modules, crs,
           out <- tidyr::pivot_wider(out,
                                     names_from = tidyr::all_of(y),
                                     values_from = "Value")
+          names(out) <- gsub("Non-Market/Unknown", "non_market", names(out))
           names(out) <- gsub(" |-", "_", tolower(names(out)))
           names(out) <- gsub("___", "_", names(out))
           names(out) <- gsub("\\+", "plus", names(out))
           names(out) <- gsub("_units", "", names(out))
           names(out) <- gsub("bedroom", "bed", names(out))
+          names(out) <- gsub("\\$", "", names(out))
+          names(out) <- gsub("less_than", "less", names(out))
+          names(out) <- gsub(",", "", names(out))
           names(out) <- paste("vac_rate", y, names(out), yr, sep = "_")
           names(out)[1] <- "name"
 
@@ -141,6 +183,7 @@ ready_to_use_vac_rate <- function(scales_variables_modules, crs,
           out
         }, dimensions, dimensions_short, SIMPLIFY = FALSE, USE.NAMES = TRUE)
       cmhc <- Reduce(merge, over_year)
+      tibble::as_tibble(cmhc)
     }, simplify = FALSE, USE.NAMES = TRUE)
 
   merged <-
@@ -188,6 +231,17 @@ ready_to_use_vac_rate <- function(scales_variables_modules, crs,
           if (grepl("2000_or_later$", var)) return(paste(pre, "after 2000"))
           if (grepl("year_total$", var)) return(paste("all housing"))
         }
+        # Rent ranges
+        if (grepl("_rent_range_", var)) {
+          pre <- "housing with a rent"
+          if (grepl("less_750$", var)) return(paste(pre, "below $750"))
+          if (grepl("750_999$", var)) return(paste(pre, "between $750 and $999"))
+          if (grepl("1000_1249$", var)) return(paste(pre, "between $1,000 and $1,249"))
+          if (grepl("1250_1499$", var)) return(paste(pre, "between $1,250 and $1,499"))
+          if (grepl("1500_plus$", var)) return(paste(pre, "higher than $1,500"))
+          if (grepl("non_market$", var)) return(paste("units with an unknown rent"))
+          if (grepl("rent_range_total$", var)) return(paste("all housing"))
+        }
       })(var)
       title <- paste("Vacancy rate in", cat_title)
       explanation <- paste("the percentage of all available",
@@ -205,12 +259,21 @@ ready_to_use_vac_rate <- function(scales_variables_modules, crs,
         }
         # Year of construction
         if (grepl("_year_", var)) {
-          pre <- "housing built"
           if (grepl("before_1960$", var)) return("<1960")
           if (grepl("1960_1979$", var)) return(">1960<1979")
           if (grepl("1980_1999$", var)) return(">1980<1999")
           if (grepl("2000_or_later$", var)) return(">2000")
           if (grepl("year_total$", var)) return("total")
+        }
+        # Rent ranges
+        if (grepl("_rent_range_", var)) {
+          if (grepl("less_750$", var)) return("<$750")
+          if (grepl("750_999$", var)) return(">$750<$999")
+          if (grepl("1000_1249$", var)) return(">$1k<$1.25k")
+          if (grepl("1250_1499$", var)) return(">$1.25k<$1.5k")
+          if (grepl("1500_plus$", var)) return(">$1.5k")
+          if (grepl("non_market$", var)) return("?$")
+          if (grepl("rent_range_total$", var)) return("total")
         }
       })(var)
 
@@ -245,7 +308,10 @@ ready_to_use_vac_rate <- function(scales_variables_modules, crs,
     scales_variables_modules$modules |>
     susbuildr::add_module(
       id = "vac_rate",
-      title = "Vacancy rate",
+      nav_title = "Vacancy rate",
+      title_text_title = "TKTK",
+      title_text_main = "TKTK",
+      title_text_extra = "TKTK",
       geos = "cmhc",
       metadata = TRUE,
       dataset_info = "TKTK")
