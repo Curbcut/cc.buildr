@@ -124,10 +124,6 @@ ready_to_use_canbics <- function(scales_variables_modules, crs) {
 #' third is the modules table.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
-#' @param fun_rename_zones <`function`> Optional  function that takes in a vector of character
-#' and substitutes some strings. CMHC zones' naming might be inconstant over
-#' different year, e.g. `Plateau Mont-Royal` instead of `Plateau-Mont-Royal`.
-#' e.g. \code{function(zones) gsub("Plateau Mont-Royal", "Plateau-Mont-Royal", zones)}.
 #' @param geo_uid <`numeric`> Cancensus CMA code, which can be found using
 #' \code{\link[cancensus]{list_census_regions}}.
 #'
@@ -135,8 +131,7 @@ ready_to_use_canbics <- function(scales_variables_modules, crs) {
 #' `scales_variables_modules` with the CMHC's vacancy rate variables added,
 #' their addition in the variables table and the module table.
 #' @export
-ready_to_use_vac_rate <- function(scales_variables_modules, crs,
-                                 fun_rename_zones = NULL, geo_uid) {
+ready_to_use_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
 
   # Relevant dimensions
   dimensions <-
@@ -176,8 +171,12 @@ ready_to_use_vac_rate <- function(scales_variables_modules, crs,
           names(out) <- paste("vac_rate", y, names(out), yr, sep = "_")
           names(out)[1] <- "name"
 
-          # Rename to fit geography
-          if (!is.null(fun_rename_zones)) out$name <- fun_rename_zones(out$name)
+          # Change the name to the closest string in the CMHC zone scale
+          out <- out[!is.na(out$name), ]
+          out$name <-
+            sapply(out$name,
+                   agrep, x = scales_variables_modules$scales$cmhc$cmhc_zone$name,
+                   value = TRUE, USE.NAMES = FALSE)
 
           # Return
           out
@@ -188,9 +187,9 @@ ready_to_use_vac_rate <- function(scales_variables_modules, crs,
 
   merged <-
     Reduce(\(x, y) merge(x, y, by = "name", all.x = TRUE),
-           cmhc, init =
-             scales_variables_modules$scales$cmhc$cmhc_zone[, "name"])
-  merged <- sf::st_drop_geometry(merged)
+           cmhc,
+           init = sf::st_drop_geometry(
+             scales_variables_modules$scales$cmhc$cmhc_zone)[, "name"])
 
   # Variables
   vars <- names(merged)[!grepl("name|ID|geometry", names(merged))]
@@ -212,6 +211,7 @@ ready_to_use_vac_rate <- function(scales_variables_modules, crs,
   variables <-
     lapply(unique_vars, \(var) {
 
+      # Create title and explanation
       cat_title <- (\(x) {
         # Bedroom types
         if (grepl("_bed_", var)) {
@@ -248,6 +248,7 @@ ready_to_use_vac_rate <- function(scales_variables_modules, crs,
                            gsub("^all ", "", cat_title),
                            "in a rental property that are vacant or unoccupied")
 
+      # Create short title
       cat_short <- (\(x) {
         # Bedroom types
         if (grepl("_bed_", var)) {
@@ -276,8 +277,22 @@ ready_to_use_vac_rate <- function(scales_variables_modules, crs,
           if (grepl("rent_range_total$", var)) return("total")
         }
       })(var)
-
       short <- paste("Vac. rate", cat_short)
+
+      # Create group_name
+      cat_group_name <- (\(x) {
+        # Bedroom types
+        if (grepl("_bed_", var)) return("Bedroom type")
+        # Year of construction
+        if (grepl("_year_", var)) return("Year of construction")
+        # Rent ranges
+        if (grepl("_rent_range_", var)) return("Rent range")
+      })(var)
+      group_name <- paste("Vacancy rate by", tolower(cat_group_name))
+
+      # Create group_diff
+      group_diff <- list(paste("For", cat_title))
+      names(group_diff) <- cat_group_name
 
       out <-
         susbuildr::add_variable(
@@ -296,8 +311,8 @@ ready_to_use_vac_rate <- function(scales_variables_modules, crs,
           source = "Canada Mortgage and Housing Corporation",
           interpolated = tibble::tibble(geo = "cmhc", scale = "zone",
                                         interpolated_from = FALSE),
-          group_name = "Vacancy rate",
-          group_diff = list())
+          group_name = group_name,
+          group_diff = group_diff)
 
       out[out$var_code == var, ]
     }) |> (\(x) Reduce(rbind, x, init = scales_variables_modules$variables))()
