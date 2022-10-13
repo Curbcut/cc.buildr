@@ -68,7 +68,7 @@ build_and_append_var <- function(data, scales_variables_modules, base_scale,
                 "`housing_tenant_2016`, `housing_tenant_2021`, ...)"))
 
 
-  # Interpolate DA canale data to all possible scales -----------------------
+  # Interpolate data to all possible scales ---------------------------------
 
   data_interpolated <-
     susbuildr::interpolate_from_census_geo(
