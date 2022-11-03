@@ -12,7 +12,7 @@
 #' @export
 ready_to_use_canale <- function(scales_variables_modules, crs) {
   build_and_append_var(
-    data = susbuildr::canale_data,
+    data = susdata::canale_data,
     scales_variables_modules = scales_variables_modules,
     base_scale = "DA",
     weight_by = "households",
@@ -86,7 +86,7 @@ ready_to_use_canale <- function(scales_variables_modules, crs) {
 #' @export
 ready_to_use_canbics <- function(scales_variables_modules, crs) {
   build_and_append_var(
-    data = susbuildr::canbics_data,
+    data = susdata::canbics_data,
     scales_variables_modules = scales_variables_modules,
     base_scale = "DA",
     weight_by = "households",

@@ -26,7 +26,7 @@ the subdivisions is a dataframe of boroughs. The sf data.frame must have 3
 columns: \code{name}, \code{type} and \code{geometry}.
 The \code{name} is the name of the borough/neighbourhood/zone e.g.
 "Le Plateau Mont-Royal", and \code{type} is what should be used as \code{"name_2"},
-e.g. "Borough".}
+e.g. "Borough" (for the display name: Borough of Le Plateau Mont-Royal).}
 
 \item{DA_table}{<\verb{sf data.frame}> A \code{DA} sf data.frame from which
 population and households will be interpolated.}

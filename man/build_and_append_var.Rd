@@ -20,7 +20,10 @@ build_and_append_var(
   variable_private,
   variable_source,
   module_id = NULL,
-  module_title = NULL,
+  module_nav_title = NULL,
+  module_title_text_title = NULL,
+  module_title_text_main = NULL,
+  module_title_text_extra = NULL,
   module_geos = NULL,
   module_metadata = NULL,
   module_dataset_info = NULL
@@ -68,7 +71,13 @@ years.}
 
 \item{module_id}{<\code{charater}> Optional. See \code{\link[susbuildr]{add_module}}.}
 
-\item{module_title}{<\code{charater}> Optional. See \code{\link[susbuildr]{add_module}}.}
+\item{module_nav_title}{<\code{charater}> Optional. See \code{\link[susbuildr]{add_module}}.}
+
+\item{module_title_text_title}{<\code{charater}> Optional. See \code{\link[susbuildr]{add_module}}.}
+
+\item{module_title_text_main}{<\code{charater}> Optional. See \code{\link[susbuildr]{add_module}}.}
+
+\item{module_title_text_extra}{<\code{charater}> Optional. See \code{\link[susbuildr]{add_module}}.}
 
 \item{module_geos}{<\code{charater}> Optional. See \code{\link[susbuildr]{add_module}}.}
 

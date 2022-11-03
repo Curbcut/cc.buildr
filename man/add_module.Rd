@@ -4,7 +4,17 @@
 \alias{add_module}
 \title{Add a new module to the modules table}
 \usage{
-add_module(modules, id, title, metadata, dataset_info, geos = NULL)
+add_module(
+  modules,
+  id,
+  nav_title,
+  title_text_title,
+  title_text_main,
+  title_text_extra,
+  metadata,
+  dataset_info,
+  geos = NULL
+)
 }
 \arguments{
 \item{modules}{<\code{data.frame}> The \code{modules} data.frame to which add a
@@ -12,8 +22,19 @@ new row.}
 
 \item{id}{<\code{character}> The module id, e.g. \code{canale}}
 
-\item{title}{<\code{character}> The module title which will be used to navigate
+\item{nav_title}{<\code{character}> The module title which will be used to navigate
 to that module from the navigation bar, e.g. \verb{Active living potential}}
+
+\item{title_text_title}{<\code{character}> This title text title will be used
+once the user is in the module, to describe what they are navigating,
+e.g. \verb{Active living potential: the CanALE index}.
+to that module from the navigation bar, e.g. \verb{Active living potential}}
+
+\item{title_text_main}{<\code{character}> The title text main paragraph is the main
+text used to describe the module, on the left-side panel.}
+
+\item{title_text_extra}{<\code{character}> Further information and resources the user
+can navigate if they press on the 'Learn more' button in the left-side panel.}
 
 \item{metadata}{<\code{logical}> Indicate if metadata is available from this module,
 if there should be further data info when the \verb{Export data} popup is clicked
