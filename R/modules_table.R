@@ -48,7 +48,7 @@ append_empty_modules_table <- function(scales) {
 #' @param dataset_info <`character`> HTML text with further data information
 #' from the module.
 #' @param geos <`character vector`> List of all the geos the module should be
-#' able to showé
+#' able to show.
 #'
 #' @return The same `modules` data.frame fed, with the added row.
 #' @export

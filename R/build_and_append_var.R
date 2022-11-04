@@ -30,7 +30,6 @@
 #' @param module_title_text_title <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
 #' @param module_title_text_main <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
 #' @param module_title_text_extra <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
-#' @param module_geos <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
 #' @param module_metadata <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
 #' @param module_dataset_info <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
 #'
@@ -48,7 +47,7 @@ build_and_append_var <- function(data, scales_variables_modules, base_scale,
                                  module_title_text_title = NULL,
                                  module_title_text_main = NULL,
                                  module_title_text_extra = NULL,
-                                 module_geos = NULL, module_metadata = NULL,
+                                 module_metadata = NULL,
                                  module_dataset_info = NULL) {
 
   # Get list of data variables ----------------------------------------------
@@ -71,7 +70,7 @@ build_and_append_var <- function(data, scales_variables_modules, base_scale,
   # Interpolate data to all possible scales ---------------------------------
 
   data_interpolated <-
-    susbuildr::interpolate_from_census_geo(
+    interpolate_from_census_geo(
       data = data,
       base_scale = base_scale,
       all_scales = scales_variables_modules$scales,
@@ -82,7 +81,7 @@ build_and_append_var <- function(data, scales_variables_modules, base_scale,
   # Calculate breaks --------------------------------------------------------
 
   with_breaks <-
-    susbuildr::calculate_breaks(
+    calculate_breaks(
       all_scales = data_interpolated$scales,
       vars = var)
 
@@ -90,7 +89,7 @@ build_and_append_var <- function(data, scales_variables_modules, base_scale,
   # Variables table ---------------------------------------------------------
 
   variables <-
-    susbuildr::add_variable(
+    add_variable(
       variables = scales_variables_modules$variables,
       var_code = variable_var_code,
       type = variable_type,
@@ -117,15 +116,14 @@ build_and_append_var <- function(data, scales_variables_modules, base_scale,
         !is.null(module_title_text_title) &&
         !is.null(module_title_text_main) &&
         !is.null(module_title_text_extra)) {
-      geos <- if (is.null(module_geos)) NULL else module_geos
       scales_variables_modules$modules |>
-        susbuildr::add_module(
+        add_module(
           id = module_id,
           nav_title = module_nav_title,
           title_text_title = module_title_text_title,
           title_text_main = module_title_text_main,
           title_text_extra = module_title_text_extra,
-          geos = geos,
+          geos = unique(data_interpolated$avail_scales$geo),
           metadata = module_metadata,
           dataset_info = module_dataset_info)
     } else {

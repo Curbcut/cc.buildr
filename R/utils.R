@@ -76,9 +76,11 @@ reorder_columns <- function(all_scales) {
 
       rest <- names(scale_df)[!names(scale_df) %in% c(mandatory_start, all_ids,
                                                       other)]
-      rest <- rest[rest != "geometry"]
+      rest <- rest[!rest %in% c("popw_centroids_coords", "geometry")]
+      last <- names(scale_df)[
+        names(scale_df) %in% c("popw_centroids_coords", "geometry")]
 
-      out <- scale_df[, c(mandatory_start, all_ids, other, rest, "geometry")]
+      out <- scale_df[, c(mandatory_start, all_ids, other, rest, last)]
 
       if (ncol(out) != ncol(scale_df))
         stop(

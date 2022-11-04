@@ -16,8 +16,12 @@ add_q3 <- function(df, vars, time_regex = "\\d{4}") {
 
   # Get all q3s arranged in a dataframe
   q3s <-
-    sapply(vars, \(var) susbuildr::rough_rank(df[[var]], 3)) |>
-    tibble::as_tibble()
+    sapply(vars, \(var) {
+      if (!var %in% names(df)) return()
+      susbuildr::rough_rank(df[[var]], 3)
+    }, simplify = FALSE, USE.NAMES = TRUE)
+  q3s <- q3s[!sapply(q3s, is.null)]
+  q3s <- tibble::as_tibble(q3s)
 
   # Change names to get q3 between the variable name and the timeframe
   names(q3s) <- paste0(gsub(time_regex_end, "", names(q3s)), "_q3",
@@ -44,20 +48,26 @@ add_q3 <- function(df, vars, time_regex = "\\d{4}") {
 #' breaks.
 get_breaks_q3 <- function(df, vars) {
 
-  sapply(vars, \(var) {
+  tb <- sapply(vars, \(var) {
+    if (!var %in% names(df)) return()
     dat <- sf::st_drop_geometry(df)
     dat <- dat[, grepl(var, gsub("_q3", "", names(dat)))]
     names(dat) <- c("v", "q3")
+
+    if (sum(is.na(dat$v)) == nrow(dat)) return(rep(NA_real_, 4))
 
     out <- c(
       min(dat$v, na.rm = TRUE),
       min(dat$v[dat$q3 == 2], na.rm = TRUE),
       min(dat$v[dat$q3 == 3], na.rm = TRUE),
-      max(dat$v, na.rm = TRUE))
+      max(dat$v, na.rm = TRUE)) |> suppressWarnings()
 
     ifelse(is.infinite(out), NA_real_, out)
 
-  }) |> tibble::as_tibble()
+  }, simplify = FALSE, USE.NAMES = TRUE)
+
+  tb <- tb[!sapply(tb, is.null)]
+  tibble::as_tibble(tb)
 
 }
 
@@ -131,30 +141,48 @@ find_breaks_q5 <- function(min_val, max_val) {
 #' be calculated. Must fit with a name in `df`.
 #'
 #' @return A data.frame where each column in a var, and the rows are the q3
-get_breaks_q5 <- function(df, vars) {
+get_breaks_q5 <- function(df, vars, time_regex = "\\d{4}") {
 
-  sapply(vars, \(var) {
+  # Calculate q5 using ALL years
+  time_regex_end <- paste0("_", time_regex, "$")
+  unique_vars <- unique(gsub(time_regex_end, "", vars))
 
-  # Extract the variable in a numeric vector
-  as_vec <- stats::na.omit(df[[var]])
+  q5s <- sapply(unique_vars, \(u_var) {
 
-  # Calculate minimum and maximum
-  cat_min <- min(as_vec)
-  cat_max <- max(as_vec)
+    # Extract the variable in a numeric vector
+    df <- sf::st_drop_geometry(df)
+    df_no_q3 <- df[!grepl("_q3", names(df))]
+    as_vec <- unlist(df_no_q3[grepl(paste0(u_var, "_[0-9]+$"),
+                                    names(df_no_q3))], use.names = FALSE)
+    as_vec <- stats::na.omit(as_vec)
 
-  # Calculate mean and standard deviation with outliers filtered out
-  prep_mean <- as_vec[!as_vec <= stats::quantile(as_vec, .01)]
-  prep_mean <- prep_mean[!prep_mean >= stats::quantile(prep_mean, .99)]
-  var_mean <- mean(prep_mean)
-  standard_d <- stats::sd(prep_mean)
+    # Calculate minimum and maximum
+    cat_min <- min(as_vec)
+    cat_max <- max(as_vec)
 
-  # Create pretty breaks
-  min_val <- max(var_mean - (4 * standard_d), cat_min)
-  max_val <- min(var_mean + (4 * standard_d), cat_max)
-  # susbuildr::
+    # Calculate mean and standard deviation with outliers filtered out
+    prep_mean <- as_vec[!as_vec <= stats::quantile(as_vec, .01)]
+    prep_mean <- prep_mean[!prep_mean >= stats::quantile(prep_mean, .99)]
+    var_mean <- mean(prep_mean)
+    standard_d <- stats::sd(prep_mean)
+
+    # Create pretty breaks
+    min_val <- max(var_mean - (4 * standard_d), cat_min)
+    max_val <- min(var_mean + (4 * standard_d), cat_max)
+
     find_breaks_q5(min_val, max_val)
 
-  }) |> tibble::as_tibble()
+  }, simplify = FALSE, USE.NAMES = TRUE)
+
+  # Make a list with the according q5
+  tb <- sapply(vars, \(var) {
+    if (!var %in% names(df)) return()
+    unlist(q5s[which(gsub(time_regex_end, "", var) == names(q5s))],
+           use.names = FALSE)
+  }, simplify = FALSE, USE.NAMES = TRUE)
+
+  tb <- tb[!sapply(tb, is.null)]
+  tibble::as_tibble(tb)
 
 }
 
@@ -179,7 +207,7 @@ calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
   out_tables <- map_over_scales(
     all_scales = all_scales,
     fun = \(scale_df = scale_df, ...) {
-      if (!all(vars %in% names(scale_df))) return(scale_df)
+      if (all(!vars %in% names(scale_df))) return(scale_df)
       add_q3(scale_df, vars, time_regex = time_regex)
     })
 
@@ -187,21 +215,21 @@ calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
   tables_q3 <- map_over_scales(
     all_scales = out_tables,
     fun = \(scale_df = scale_df, ...) {
-      if (!all(vars %in% names(scale_df))) return(tibble::tibble())
+      if (all(!vars %in% names(scale_df))) return(tibble::tibble())
       get_breaks_q3(scale_df, vars)
     })
   tables_q5 <- map_over_scales(
     all_scales = out_tables,
     fun = \(scale_df = scale_df, ...) {
-      if (!all(vars %in% names(scale_df))) return(tibble::tibble())
-      get_breaks_q5(scale_df, vars)
+      if (all(!vars %in% names(scale_df))) return(tibble::tibble())
+      get_breaks_q5(scale_df, vars, time_regex)
     })
 
   # Append q5s
   out_tables <- map_over_scales(
     all_scales = out_tables,
     fun = \(geo = geo, scale_name = scale_name, scale_df = scale_df, ...) {
-      if (!all(vars %in% names(scale_df))) return(scale_df)
+      if (all(!vars %in% names(scale_df))) return(scale_df)
       add_q5(scale_df, tables_q5[[geo]][[scale_name]], time_regex = time_regex)
     })
 
@@ -251,18 +279,12 @@ calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
         fun = \(geo = geo, scale_name = scale_name, scale_df = scale_df, ...) {
           var_all_years <- names(scale_df)[grepl(var, names(scale_df))]
           out <- lapply(var_all_years, \(v) {
-            date <- {
-              loc <- regexpr(time_regex_end, v)
-              if (loc < 0) return(NA)
-              substring(v, loc)
-            }
             tibble::tibble(geo = geo,
                            scale = scale_name,
-                           date = date,
                            rank = seq_len(nrow(scale_df)) - 1,
                            var = scale_df[[v]])
           })
-          Reduce(rbind, out)
+          unique(Reduce(rbind, out))
         })
     }, simplify = FALSE, USE.NAMES = TRUE)
   q5_breaks_table <-
@@ -277,8 +299,8 @@ calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
 
   # Available dates
   avail_dates <-
-    sapply(q5_breaks_table, \(var_q5_breaks_table) {
-      unique(var_q5_breaks_table$date)
+    sapply(q3_breaks_table, \(var_q3_breaks_table) {
+      unique(var_q3_breaks_table$date)
     },  simplify = FALSE, USE.NAMES = TRUE)
 
   # Return
