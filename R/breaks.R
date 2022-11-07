@@ -139,6 +139,9 @@ find_breaks_q5 <- function(min_val, max_val) {
 #' @param df <`data.frame`> Contains all columns in `vars`.
 #' @param vars <`vector of character`> Contains all variable names from q5s should
 #' be calculated. Must fit with a name in `df`.
+#' @param time_regex <`character`> Regular expression which corresponds to
+#' a timeframe, placed at the end of the `vars` vector. e.g. `\\d{4}` for
+#' years.
 #'
 #' @return A data.frame where each column in a var, and the rows are the q3
 get_breaks_q5 <- function(df, vars, time_regex = "\\d{4}") {
@@ -152,8 +155,9 @@ get_breaks_q5 <- function(df, vars, time_regex = "\\d{4}") {
     # Extract the variable in a numeric vector
     df <- sf::st_drop_geometry(df)
     df_no_q3 <- df[!grepl("_q3", names(df))]
-    as_vec <- unlist(df_no_q3[grepl(paste0(u_var, "_[0-9]+$"),
-                                    names(df_no_q3))], use.names = FALSE)
+    as_vec <- unlist(df_no_q3[grepl(paste0(u_var, c("_[0-9]+$", "$"),
+                                           collapse = "|"),
+                              names(df_no_q3))], use.names = FALSE)
     as_vec <- stats::na.omit(as_vec)
 
     # Calculate minimum and maximum

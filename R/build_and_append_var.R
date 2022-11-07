@@ -37,7 +37,7 @@
 #' `scales_variables_modules` with the new variable added, and possible a new
 #' module.
 #' @export
-build_and_append_var <- function(data, scales_variables_modules, base_scale,
+ba_var <- function(data, scales_variables_modules, base_scale,
                                  weight_by = "households", crs,
                                  time_regex = "\\d{4}", variable_var_code,
                                  variable_type, variable_var_title,

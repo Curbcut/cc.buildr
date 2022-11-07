@@ -3,13 +3,18 @@
 #' @param scales_variables_modules <`names list`> A list of length three.
 #' The first is all the scales, the second is the variables table, and the
 #' third is the modules table.
+#' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
+#' \code{32617} for Toronto.
 #' @param housing_module <`logical`> Should a housing module be added to
 #' the list of modules.
 #'
-#' @return
+#' @return A list of length 3, similar to the one fed to
+#' `scales_variables_modules` with census variable added, their addition
+#' in the variables table and the module table.
 #' @export
-build_and_append_census_data <- function(scales_variables_modules,
-                                         housing_module = TRUE) {
+ba_census_data <- function(scales_variables_modules,
+                           crs,
+                           housing_module = TRUE) {
 
   # Declare all variables from the census -----------------------------------
 
@@ -28,7 +33,8 @@ build_and_append_census_data <- function(scales_variables_modules,
 
   census_dat <- build_census_data(scales_consolidated = scales_consolidated,
                                   census_data = census_data,
-                                  census_data_raw_DA = data_raw$DA)
+                                  census_data_raw_DA = data_raw$DA,
+                                  crs = crs)
 
 
   # Calculate breaks --------------------------------------------------------
@@ -54,7 +60,8 @@ build_and_append_census_data <- function(scales_variables_modules,
           susdata::census_vectors$var_code == u_var],
         explanation = susdata::census_vectors$explanation[
           susdata::census_vectors$var_code == u_var],
-        theme = "Census",
+        theme = susdata::census_vectors$theme[
+          susdata::census_vectors$var_code == u_var],
         private = FALSE,
         dates = with_breaks$avail_dates[[u_var]],
         scales = census_dat$avail_scales,

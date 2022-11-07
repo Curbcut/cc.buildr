@@ -10,8 +10,8 @@
 #' `scales_variables_modules` with the Can-ALE variable added, its addition
 #' in the variables table and the module table.
 #' @export
-ready_to_use_canale <- function(scales_variables_modules, crs) {
-  build_and_append_var(
+ru_canale <- function(scales_variables_modules, crs) {
+  ba_var(
     data = susdata::canale_data,
     scales_variables_modules = scales_variables_modules,
     base_scale = "DA",
@@ -84,8 +84,8 @@ ready_to_use_canale <- function(scales_variables_modules, crs) {
 #' `scales_variables_modules` with the Can-BICS variable added, its addition
 #' in the variables table and the module table.
 #' @export
-ready_to_use_canbics <- function(scales_variables_modules, crs) {
-  build_and_append_var(
+ru_canbics <- function(scales_variables_modules, crs) {
+  ba_var(
     data = susdata::canbics_data,
     scales_variables_modules = scales_variables_modules,
     base_scale = "DA",
@@ -149,7 +149,7 @@ ready_to_use_canbics <- function(scales_variables_modules, crs) {
 #' `scales_variables_modules` with the CMHC's vacancy rate variables added,
 #' their addition in the variables table and the module table.
 #' @export
-ready_to_use_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
+ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
 
   # Relevant dimensions
   dimensions <-

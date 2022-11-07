@@ -5,6 +5,8 @@
 #' \code{\link[susbuildr]{consolidate_scales}}.
 #' @param census_data "TKTK"
 #' @param census_data_raw_DA "TKTK"
+#' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
+#' \code{32617} for Toronto.
 #'
 #' @return Returns a list of length 3. The first is the possible scales for which
 #' census data can be added in scales_consolidated. The second is a
@@ -15,7 +17,7 @@
 #' interpolated argument of add_variable.
 #' @export
 build_census_data <- function(scales_consolidated, census_data,
-                              census_data_raw_DA) {
+                              census_data_raw_DA, crs) {
 
   # Only build census data for scales DA and above
   higher_DA <- lapply(scales_consolidated, \(x) {
@@ -67,7 +69,8 @@ build_census_data <- function(scales_consolidated, census_data,
   # Interpolate using raw DA data
   filled_vals <- susdata::census_custom_boundaries(
     destination = ready,
-    data_raw_DA = census_data_raw_DA)
+    data_raw_DA = census_data_raw_DA,
+    crs = crs)
 
   # Merge all census data to the scales
   census_data_merged <- sapply(higher_DA, \(x) {
@@ -114,7 +117,6 @@ build_census_data <- function(scales_consolidated, census_data,
            simplify = FALSE, USE.NAMES = TRUE) |>
     (\(x) do.call(rbind, x))()
   row.names(avail_scales) <- NULL
-
 
   # Create interpolated references as a data.frame
   interpolated_ref <-

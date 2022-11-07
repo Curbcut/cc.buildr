@@ -44,7 +44,7 @@ if there should be further data info when the \verb{Export data} popup is clicke
 from the module.}
 
 \item{geos}{<\verb{character vector}> List of all the geos the module should be
-able to showé}
+able to show.}
 }
 \value{
 The same \code{modules} data.frame fed, with the added row.
