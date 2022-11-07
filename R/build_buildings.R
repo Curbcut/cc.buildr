@@ -125,7 +125,7 @@ build_buildings <- function(DA_table, crs, download_MS_buildings = TRUE,
   if (download_MS_buildings) {
     if (!MS_province %in% possible_province) {
       stop(paste0("`MS_province` must be one of ", paste0(possible_province,
-                                                          collapse = ", "
+        collapse = ", "
       )))
     }
 

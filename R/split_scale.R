@@ -38,8 +38,10 @@ split_scale <- function(destination, cutting_layer,
 
   # Error checking
   if (!all(names(cutting_layer) %in% c("name", "type", "geometry"))) {
-    stop(paste0("The `cutting_layer` must have exactly three columns: `name`,",
-                "`type` and `geometry`. Look at the function documentation."))
+    stop(paste0(
+      "The `cutting_layer` must have exactly three columns: `name`,",
+      "`type` and `geometry`. Look at the function documentation."
+    ))
   }
 
   # Transform to correct crs, and trim
@@ -60,7 +62,8 @@ split_scale <- function(destination, cutting_layer,
   intersected$dest_new_area <- susbuildr::get_area(intersected$geometry)
   dest_ids_intersected_areas <-
     stats::aggregate(intersected$dest_new_area,
-                     by = list(dest_id = intersected$dest_id), FUN = sum)
+      by = list(dest_id = intersected$dest_id), FUN = sum
+    )
   names(dest_ids_intersected_areas) <- c("dest_id", "stay_area")
   removed_ids <- merge(dest_ids_intersected_areas, dest, by = "dest_id")
   removed_ids$area_prop <-
@@ -78,8 +81,10 @@ split_scale <- function(destination, cutting_layer,
   # Retrieve the missing slivers from the removed destinations, that didn't intersect
   # with the cutting layer.
   missing_slivers <-
-    suppressWarnings(sf::st_difference(destination[destination$ID %in% removed_ids, ],
-                                       sf::st_union(new_shapes)))
+    suppressWarnings(sf::st_difference(
+      destination[destination$ID %in% removed_ids, ],
+      sf::st_union(new_shapes)
+    ))
   missing_slivers <- suppressWarnings(sf::st_cast(missing_slivers, "POLYGON"))
 
   # Attribute these slivers to the correct new shapes
@@ -87,18 +92,24 @@ split_scale <- function(destination, cutting_layer,
   buffer_only <-
     suppressWarnings(sf::st_difference(new_shapes_buffered, sf::st_union(new_shapes)))
   sampled_points <- sf::st_sample(buffer_only,
-                                  size = sampled_points_voronoi,
-                                  type = 'hexagonal')
+    size = sampled_points_voronoi,
+    type = "hexagonal"
+  )
   voronoi <- sf::st_cast(sf::st_voronoi(sf::st_union(sampled_points)))
   voronoi_missing_slivers <-
-    sf::st_as_sf(sf::st_intersection(sf::st_make_valid(voronoi),
-                                     missing_slivers))
+    sf::st_as_sf(sf::st_intersection(
+      sf::st_make_valid(voronoi),
+      missing_slivers
+    ))
   slivers_attributed <- sf::st_join(voronoi_missing_slivers,
-                                    new_shapes,
-                                    join = sf::st_nearest_feature)
+    new_shapes,
+    join = sf::st_nearest_feature
+  )
   all_new_shapes <- lapply(unique(new_shapes$ID), \(x) {
     slivers <- slivers_attributed[slivers_attributed$ID == x, ]
-    if (nrow(slivers) == 0) return(new_shapes[new_shapes$ID == x, ])
+    if (nrow(slivers) == 0) {
+      return(new_shapes[new_shapes$ID == x, ])
+    }
     new_shape <- new_shapes[new_shapes$ID == x, ]
     new_geo <- sf::st_union(sf::st_union(slivers), new_shape)
     new_shape <- sf::st_drop_geometry(new_shape)
@@ -119,10 +130,13 @@ split_scale <- function(destination, cutting_layer,
       to = all_new_shapes,
       DA_table = DA_table,
       additive_vars = c("population", "households"),
-      crs = crs)
+      crs = crs
+    )
   # Bind
-  destination_out <- rbind(destination[!destination$ID %in% removed_ids, ],
-                           all_new_shapes)
+  destination_out <- rbind(
+    destination[!destination$ID %in% removed_ids, ],
+    all_new_shapes
+  )
   destination_out <- sf::st_make_valid(destination_out)
 
   # Go back to unprojected

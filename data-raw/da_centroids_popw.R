@@ -2,10 +2,13 @@
 
 da_centroids_popw <-
   utils::read.csv("data-raw/da_centroids_popw.csv")[
-    , c("DAuid.ADidu", "DArplong.ADlong", "DArplat.Adlat")] |>
+    , c("DAuid.ADidu", "DArplong.ADlong", "DArplat.Adlat")
+  ] |>
   unique() |>
-  sf::st_as_sf(coords = c("DArplong.ADlong", "DArplat.Adlat"),
-           crs = 4326)
+  sf::st_as_sf(
+    coords = c("DArplong.ADlong", "DArplat.Adlat"),
+    crs = 4326
+  )
 
 names(da_centroids_popw) <- c("ID", "geometry")
 

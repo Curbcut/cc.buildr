@@ -32,7 +32,8 @@ ru_canale <- function(scales_variables_modules, crs) {
       "The CanALE dataset (developed by Prof. Nancy Ross ",
       "and her team) captures four key elements related to ",
       "active living environments: population density, ",
-      "points of interest, street grid, and proximity of transit service."),
+      "points of interest, street grid, and proximity of transit service."
+    ),
     module_title_text_extra = paste0(
       "<p>A safe and inviting pedestrian environment is not ",
       "a given in all neighbourhoods: it is influenced by ",
@@ -61,15 +62,19 @@ ru_canale <- function(scales_variables_modules, crs) {
       "analysis of new active transport infrastructure.' ",
       "Transportation Research Board working paper. ",
       "<b>(MSSI research)</b></ul><br><p><i>Module lead ",
-      "authors: David Wachsmuth, Robin Basalaev-Binder</i>"),
+      "authors: David Wachsmuth, Robin Basalaev-Binder</i>"
+    ),
     module_metadata = TRUE,
     module_dataset_info =
-      paste0("<p><a href = 'https://nancyrossresearchgroup.ca/research/can-ale/'>",
-             "The Canadian Active Living Environments (Can-ALE)</a> dataset is ",
-             "a geographic-based set of measures charac",
-             "terizing the active living environments (often referred to as '",
-             "walkability') of Canadian communities. The data is provided at ",
-             "the dissemination area level.</p>"))
+      paste0(
+        "<p><a href = 'https://nancyrossresearchgroup.ca/research/can-ale/'>",
+        "The Canadian Active Living Environments (Can-ALE)</a> dataset is ",
+        "a geographic-based set of measures charac",
+        "terizing the active living environments (often referred to as '",
+        "walkability') of Canadian communities. The data is provided at ",
+        "the dissemination area level.</p>"
+      )
+  )
 }
 
 #' Add a ready to use Can-BICS data and module
@@ -106,7 +111,8 @@ ru_canbics <- function(scales_variables_modules, crs) {
       "Can-BICS, or Canadian Bikeway Comfort and Safety, is a classification ",
       "system for cycling infrastructure in Canada. This system is based on ",
       "three tiers that considers safety and user comfort: high-comfort bikeways, ",
-      "medium-comfort bikeways, and low-comfort bikeways."),
+      "medium-comfort bikeways, and low-comfort bikeways."
+    ),
     module_title_text_extra = paste0(
       "The information seen in this module is based on data from CANUE. ",
       "Can-BICS was developed by Meghan Winters, PhD, Moreno Zanotto, MSc, ",
@@ -121,18 +127,22 @@ ru_canbics <- function(scales_variables_modules, crs) {
       "research-policy-practice/vol-40-no-9-2020/canbics-classification-system-",
       "naming-convention-cycling-infrastructure.html'>At-a-glance – The Canadi",
       "an Bikeway Comfort and Safety (Can-BICS) Classification System: a commo",
-      "n naming convention for cycling infrastructure</a>."),
+      "n naming convention for cycling infrastructure</a>."
+    ),
     module_metadata = TRUE,
     module_dataset_info =
-      paste0("<p><a href = 'https://www.canada.ca/en/public-health/services/reports",
-             "-publications/health-promotion-chronic-disease-prevention-canada-",
-             "research-policy-practice/vol-40-no-9-2020/canbics-classification-",
-             "system-naming-convention-cycling-infrastructure.html'>",
-             "The Canadian Bikeway Comfort and Safety (Can-BICS) Classification System</a> dataset is ",
-             "a geographic-based set of measures charac",
-             "terizing the cycling infrastructure of Canadian communities. ",
-             "The data is provided at ",
-             "the dissemination area level.</p>"))
+      paste0(
+        "<p><a href = 'https://www.canada.ca/en/public-health/services/reports",
+        "-publications/health-promotion-chronic-disease-prevention-canada-",
+        "research-policy-practice/vol-40-no-9-2020/canbics-classification-",
+        "system-naming-convention-cycling-infrastructure.html'>",
+        "The Canadian Bikeway Comfort and Safety (Can-BICS) Classification System</a> dataset is ",
+        "a geographic-based set of measures charac",
+        "terizing the cycling infrastructure of Canadian communities. ",
+        "The data is provided at ",
+        "the dissemination area level.</p>"
+      )
+  )
 }
 
 #' Add a ready to use Vacancy Rate data and module
@@ -163,20 +173,23 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
       over_year <-
         mapply(\(x, y) {
           # Get data
-          out <- cmhc::get_cmhc(survey = "Rms",
-                                series = "Vacancy Rate",
-                                dimension = x,
-                                breakdown = "Survey Zones",
-                                geo_uid = geo_uid,
-                                year = yr)[, 1:3]
+          out <- cmhc::get_cmhc(
+            survey = "Rms",
+            series = "Vacancy Rate",
+            dimension = x,
+            breakdown = "Survey Zones",
+            geo_uid = geo_uid,
+            year = yr
+          )[, 1:3]
           # Rename column and update for real percentage
           names(out)[2] <- y
           out[3] <- out[3] / 100
 
           # Pivot and rename
           out <- tidyr::pivot_wider(out,
-                                    names_from = tidyr::all_of(y),
-                                    values_from = "Value")
+            names_from = tidyr::all_of(y),
+            values_from = "Value"
+          )
           names(out) <- gsub("Non-Market/Unknown", "non_market", names(out))
           names(out) <- gsub(" |-", "_", tolower(names(out)))
           names(out) <- gsub("___", "_", names(out))
@@ -193,8 +206,10 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
           out <- out[!is.na(out$name), ]
           out$name <-
             sapply(out$name,
-                   agrep, x = scales_variables_modules$scales$cmhc$cmhc_zone$name,
-                   value = TRUE, USE.NAMES = FALSE)
+              agrep,
+              x = scales_variables_modules$scales$cmhc$cmhc_zone$name,
+              value = TRUE, USE.NAMES = FALSE
+            )
 
           # Return
           out
@@ -205,9 +220,11 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
 
   merged <-
     Reduce(\(x, y) merge(x, y, by = "name", all.x = TRUE),
-           cmhc,
-           init = sf::st_drop_geometry(
-             scales_variables_modules$scales$cmhc$cmhc_zone)[, "name"])
+      cmhc,
+      init = sf::st_drop_geometry(
+        scales_variables_modules$scales$cmhc$cmhc_zone
+      )[, "name"]
+    )
 
   # Variables
   vars <- names(merged)[!grepl("name|ID|geometry", names(merged))]
@@ -216,14 +233,17 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
   # Append data
   scales_variables_modules$scales$cmhc$cmhc_zone <-
     susbuildr::merge(scales_variables_modules$scales$cmhc$cmhc_zone,
-                     merged, by = "name")
+      merged,
+      by = "name"
+    )
 
   # Calculate breaks
   with_breaks <-
     calculate_breaks(
       all_scales = scales_variables_modules$scales,
       vars = vars,
-      time_regex = "\\d{4}")
+      time_regex = "\\d{4}"
+    )
 
   # Add to the variables table
   variables <-
@@ -233,66 +253,136 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
       cat_title <- (\(x) {
         # Bedroom types
         if (grepl("_bed_", var)) {
-          if (grepl("bachelor$", var)) return("studio apartments")
+          if (grepl("bachelor$", var)) {
+            return("studio apartments")
+          }
           suff <- "units"
-          if (grepl("1_bed$", var)) return(paste("one-bedroom", suff))
-          if (grepl("2_bed$", var)) return(paste("two-bedroom", suff))
-          if (grepl("3_bed_plus$", var)) return(paste("three-bedroom and larger", suff))
-          if (grepl("bed_total$", var)) return(paste("all", suff))
+          if (grepl("1_bed$", var)) {
+            return(paste("one-bedroom", suff))
+          }
+          if (grepl("2_bed$", var)) {
+            return(paste("two-bedroom", suff))
+          }
+          if (grepl("3_bed_plus$", var)) {
+            return(paste("three-bedroom and larger", suff))
+          }
+          if (grepl("bed_total$", var)) {
+            return(paste("all", suff))
+          }
         }
         # Year of construction
         if (grepl("_year_", var)) {
           pre <- "housing built"
-          if (grepl("before_1960$", var)) return(paste(pre, "before 1960"))
-          if (grepl("1960_1979$", var)) return(paste(pre, "between 1960 and 1979"))
-          if (grepl("1980_1999$", var)) return(paste(pre, "between 1980 and 1999"))
-          if (grepl("2000_or_later$", var)) return(paste(pre, "after 2000"))
-          if (grepl("year_total$", var)) return(paste("all housing"))
+          if (grepl("before_1960$", var)) {
+            return(paste(pre, "before 1960"))
+          }
+          if (grepl("1960_1979$", var)) {
+            return(paste(pre, "between 1960 and 1979"))
+          }
+          if (grepl("1980_1999$", var)) {
+            return(paste(pre, "between 1980 and 1999"))
+          }
+          if (grepl("2000_or_later$", var)) {
+            return(paste(pre, "after 2000"))
+          }
+          if (grepl("year_total$", var)) {
+            return(paste("all housing"))
+          }
         }
         # Rent ranges
         if (grepl("_rent_range_", var)) {
           pre <- "housing with a rent"
-          if (grepl("less_750$", var)) return(paste(pre, "below $750"))
-          if (grepl("750_999$", var)) return(paste(pre, "between $750 and $999"))
-          if (grepl("1000_1249$", var)) return(paste(pre, "between $1,000 and $1,249"))
-          if (grepl("1250_1499$", var)) return(paste(pre, "between $1,250 and $1,499"))
-          if (grepl("1500_plus$", var)) return(paste(pre, "higher than $1,500"))
-          if (grepl("non_market$", var)) return(paste("units with an unknown rent"))
-          if (grepl("rent_range_total$", var)) return(paste("all housing"))
+          if (grepl("less_750$", var)) {
+            return(paste(pre, "below $750"))
+          }
+          if (grepl("750_999$", var)) {
+            return(paste(pre, "between $750 and $999"))
+          }
+          if (grepl("1000_1249$", var)) {
+            return(paste(pre, "between $1,000 and $1,249"))
+          }
+          if (grepl("1250_1499$", var)) {
+            return(paste(pre, "between $1,250 and $1,499"))
+          }
+          if (grepl("1500_plus$", var)) {
+            return(paste(pre, "higher than $1,500"))
+          }
+          if (grepl("non_market$", var)) {
+            return(paste("units with an unknown rent"))
+          }
+          if (grepl("rent_range_total$", var)) {
+            return(paste("all housing"))
+          }
         }
       })(var)
       title <- paste("Vacancy rate in", cat_title)
-      explanation <- paste("the percentage of all available",
-                           gsub("^all ", "", cat_title),
-                           "in a rental property that are vacant or unoccupied")
+      explanation <- paste(
+        "the percentage of all available",
+        gsub("^all ", "", cat_title),
+        "in a rental property that are vacant or unoccupied"
+      )
 
       # Create short title
       cat_short <- (\(x) {
         # Bedroom types
         if (grepl("_bed_", var)) {
-          if (grepl("bachelor$", var)) return("studio")
-          if (grepl("1_bed$", var)) return("1bed")
-          if (grepl("2_bed$", var)) return("2bed")
-          if (grepl("3_bed_plus$", var)) return("3+bed")
-          if (grepl("bed_total$", var)) return("total")
+          if (grepl("bachelor$", var)) {
+            return("studio")
+          }
+          if (grepl("1_bed$", var)) {
+            return("1bed")
+          }
+          if (grepl("2_bed$", var)) {
+            return("2bed")
+          }
+          if (grepl("3_bed_plus$", var)) {
+            return("3+bed")
+          }
+          if (grepl("bed_total$", var)) {
+            return("total")
+          }
         }
         # Year of construction
         if (grepl("_year_", var)) {
-          if (grepl("before_1960$", var)) return("<1960")
-          if (grepl("1960_1979$", var)) return(">1960<1979")
-          if (grepl("1980_1999$", var)) return(">1980<1999")
-          if (grepl("2000_or_later$", var)) return(">2000")
-          if (grepl("year_total$", var)) return("total")
+          if (grepl("before_1960$", var)) {
+            return("<1960")
+          }
+          if (grepl("1960_1979$", var)) {
+            return(">1960<1979")
+          }
+          if (grepl("1980_1999$", var)) {
+            return(">1980<1999")
+          }
+          if (grepl("2000_or_later$", var)) {
+            return(">2000")
+          }
+          if (grepl("year_total$", var)) {
+            return("total")
+          }
         }
         # Rent ranges
         if (grepl("_rent_range_", var)) {
-          if (grepl("less_750$", var)) return("<$750")
-          if (grepl("750_999$", var)) return(">$750<$999")
-          if (grepl("1000_1249$", var)) return(">$1k<$1.25k")
-          if (grepl("1250_1499$", var)) return(">$1.25k<$1.5k")
-          if (grepl("1500_plus$", var)) return(">$1.5k")
-          if (grepl("non_market$", var)) return("?$")
-          if (grepl("rent_range_total$", var)) return("total")
+          if (grepl("less_750$", var)) {
+            return("<$750")
+          }
+          if (grepl("750_999$", var)) {
+            return(">$750<$999")
+          }
+          if (grepl("1000_1249$", var)) {
+            return(">$1k<$1.25k")
+          }
+          if (grepl("1250_1499$", var)) {
+            return(">$1.25k<$1.5k")
+          }
+          if (grepl("1500_plus$", var)) {
+            return(">$1.5k")
+          }
+          if (grepl("non_market$", var)) {
+            return("?$")
+          }
+          if (grepl("rent_range_total$", var)) {
+            return("total")
+          }
         }
       })(var)
       short <- paste("Vac. rate", cat_short)
@@ -300,11 +390,17 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
       # Create group_name
       cat_group_name <- (\(x) {
         # Bedroom types
-        if (grepl("_bed_", var)) return("Bedroom type")
+        if (grepl("_bed_", var)) {
+          return("Bedroom type")
+        }
         # Year of construction
-        if (grepl("_year_", var)) return("Year of construction")
+        if (grepl("_year_", var)) {
+          return("Year of construction")
+        }
         # Rent ranges
-        if (grepl("_rent_range_", var)) return("Rent range")
+        if (grepl("_rent_range_", var)) {
+          return("Rent range")
+        }
       })(var)
       group_name <- paste("Vacancy rate by", tolower(cat_group_name))
 
@@ -327,10 +423,13 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
           breaks_q3 = with_breaks$q3_breaks_table[[var]],
           breaks_q5 = with_breaks$q5_breaks_table[[var]],
           source = "Canada Mortgage and Housing Corporation",
-          interpolated = tibble::tibble(geo = "cmhc", scale = "zone",
-                                        interpolated_from = FALSE),
+          interpolated = tibble::tibble(
+            geo = "cmhc", scale = "zone",
+            interpolated_from = FALSE
+          ),
           group_name = group_name,
-          group_diff = group_diff)
+          group_diff = group_diff
+        )
 
       out[out$var_code == var, ]
     }) |> (\(x) Reduce(rbind, x, init = scales_variables_modules$variables))()
@@ -348,21 +447,25 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
         "understanding the housing landscape in a region. Information ",
         "about vacancy rates and its related variables can help define past ",
         "and current trends in the housing market and what is needed to ",
-        "better provide adequate rental housing."),
+        "better provide adequate rental housing."
+      ),
       title_text_extra = paste0(
         "The comparative analysis seen in this module is based on data from ",
         "the CMHC. In selecting different options from the drop-down menus, ",
         "insights can be gained on how vacancy rates vary over time and spatially ",
-        "by type of unit, year of construction, and rent range."),
+        "by type of unit, year of construction, and rent range."
+      ),
       geos = "cmhc",
       metadata = TRUE,
-      dataset_info = "TKTK")
+      dataset_info = "TKTK"
+    )
 
 
   # Return ------------------------------------------------------------------
 
-  return(list(scales = with_breaks$scales,
-              variables = variables,
-              modules = modules))
-
+  return(list(
+    scales = with_breaks$scales,
+    variables = variables,
+    modules = modules
+  ))
 }

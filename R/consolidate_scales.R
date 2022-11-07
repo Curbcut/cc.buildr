@@ -48,14 +48,18 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
   # Too slow for smaller scales e.g. buildings! Spatially filter up to DAs,
   # then use DA_ID for the "spatial" filter.
   DA_up <- lapply(all_tables, \(x) {
-    if ("DA" %in% x) return(x[seq_len(which(x == "DA"))])
+    if ("DA" %in% x) {
+      return(x[seq_len(which(x == "DA"))])
+    }
     return(x)
   })
 
   spatially_filtered <-
     mapply(\(geo, scales) {
       sapply(scales, \(scale) {
-        if (!scale %in% DA_up[[geo]]) return(uniform_IDs[[scale]])
+        if (!scale %in% DA_up[[geo]]) {
+          return(uniform_IDs[[scale]])
+        }
 
         unioned_geo <- sf::st_transform(geos[[geo]], crs)
         df <- sf::st_transform(uniform_IDs[[scale]], crs)
@@ -65,7 +69,6 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
         ids_in <- sf::st_filter(df_points_on_surface, unioned_geo)$ID
 
         df[df$ID %in% ids_in, ]
-
       }, simplify = FALSE, USE.NAMES = TRUE)
     }, names(all_tables), all_tables, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
@@ -73,10 +76,13 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
     susbuildr::map_over_scales(
       all_scales = spatially_filtered,
       fun = \(geo = geo, scales = scales,
-              scale_name = scale_name, scale_df = scale_df) {
-        if (scale_name %in% DA_up[[geo]]) return(scale_df)
+        scale_name = scale_name, scale_df = scale_df) {
+        if (scale_name %in% DA_up[[geo]]) {
+          return(scale_df)
+        }
         scale_df[scale_df$DA_ID %in% scales$DA$DA_ID, ]
-      })
+      }
+    )
 
 
   # Update name_2 and IDs for all cases (catch-all cases, like split scales) ----
@@ -85,9 +91,13 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
     susbuildr::map_over_scales(
       all_scales = spatially_filtered,
       fun = \(geo = geo, scales = scales,
-              scale_name = scale_name, scale_df = scale_df) {
-        if (!scale_name %in% DA_up[[geo]]) return(scale_df)
-        if (scale_name == names(scales)[1]) return(scale_df)
+        scale_name = scale_name, scale_df = scale_df) {
+        if (!scale_name %in% DA_up[[geo]]) {
+          return(scale_df)
+        }
+        if (scale_name == names(scales)[1]) {
+          return(scale_df)
+        }
 
         top_level <- sf::st_transform(scales[[1]], crs)
         df <- sf::st_transform(scale_df, crs)
@@ -101,7 +111,9 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
           suppressWarnings(sf::st_point_on_surface(df))
         merged_centroids <- sf::st_join(df_points_on_surface, top_level)
         out <- merge(sf::st_drop_geometry(merged_centroids),
-                     df[, c("ID", "geometry")], by = "ID")
+          df[, c("ID", "geometry")],
+          by = "ID"
+        )
 
         # Take out _IDs that aren't in the scales (e.g., CSD)
         all_ids <- names(out)[grepl("_ID$", names(out))]
@@ -109,23 +121,26 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
 
         # Return
         out[, !names(out) %in% drop_ids]
-
-      })
+      }
+    )
 
   # + Add DA information to scales under DAs
   out <-
     susbuildr::map_over_scales(
       all_scales = out,
       fun = \(geo = geo, scales = scales,
-              scale_name = scale_name, scale_df = scale_df) {
-        if (scale_name %in% DA_up[[geo]]) return(scale_df)
+        scale_name = scale_name, scale_df = scale_df) {
+        if (scale_name %in% DA_up[[geo]]) {
+          return(scale_df)
+        }
 
         das <- sf::st_drop_geometry(scales$DA)
         ids <- das[, c("name_2", names(das)[grepl("_ID$", names(das))])]
         df <- scale_df[, names(scale_df) != "name_2"]
 
         merge(df, ids, by = "DA_ID")
-      })
+      }
+    )
 
 
   ## Get the CRS back to WGS 84 ---------------------------------------------
@@ -133,7 +148,8 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
   out <-
     susbuildr::map_over_scales(
       all_scales = out,
-      fun = \(scale_df = scale_df, ...) sf::st_transform(scale_df, 4326))
+      fun = \(scale_df = scale_df, ...) sf::st_transform(scale_df, 4326)
+    )
 
   ## Reorder all columns ----------------------------------------------------
 
@@ -144,5 +160,4 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
   # Return the final output -------------------------------------------------
 
   return(out)
-
 }

@@ -23,13 +23,18 @@ create_master_polygon <- function(all_regions, crs = NULL) {
 
   geos <-
     sapply(all_regions, \(x) {
-      z <- if (is.data.frame(x)) x else if (!is.list(x)) sf::read_sf(x) else {
+      z <- if (is.data.frame(x)) {
+        x
+      } else if (!is.list(x)) {
+        sf::read_sf(x)
+      } else {
         cancensus::get_census(susbuildr::current_census,
-                              regions = x,
-                              # DA for a better spatial coverage
-                              level = "DA",
-                              geo_format = "sf",
-                              quiet = TRUE)
+          regions = x,
+          # DA for a better spatial coverage
+          level = "DA",
+          geo_format = "sf",
+          quiet = TRUE
+        )
       }
       z <- sf::st_union(z)
       z <- sf::st_transform(z, 4326)
@@ -40,7 +45,9 @@ create_master_polygon <- function(all_regions, crs = NULL) {
 
   # Get crs -----------------------------------------------------------------
 
-  crs <- if (!is.null(crs)) crs else {
+  crs <- if (!is.null(crs)) {
+    crs
+  } else {
     z <- sf::st_centroid(geos[[1]])
     z <- sf::st_coordinates(z)[1]
     utm_zone <- round((z + 180) / 6)
@@ -54,7 +61,8 @@ create_master_polygon <- function(all_regions, crs = NULL) {
     sapply(geos, sf::st_transform, crs, simplify = FALSE, USE.NAMES = TRUE)
   master_polygon <- Reduce(sf::st_union, geos_crs)
   master_polygon <- master_polygon[
-    sf::st_geometry_type(master_polygon) == "MULTIPOLYGON"]
+    sf::st_geometry_type(master_polygon) == "MULTIPOLYGON"
+  ]
   master_polygon <- sf::st_make_valid(master_polygon)
   master_polygon <- sf::st_transform(master_polygon, 4326)
 
@@ -62,17 +70,20 @@ create_master_polygon <- function(all_regions, crs = NULL) {
   # Get region from Cancensus -----------------------------------------------
 
   provinces <- cancensus::get_census(susbuildr::current_census,
-                                     regions = list(C = 01),
-                                     level = "PR", geo_format = "sf",
-                                     quiet = TRUE)
+    regions = list(C = 01),
+    level = "PR", geo_format = "sf",
+    quiet = TRUE
+  )
   master_polygon_centroid <- sf::st_centroid(master_polygon)
   prov_code <- sf::st_intersection(provinces, master_polygon_centroid)$GeoUID
 
 
   # Return ------------------------------------------------------------------
 
-  return(list(master_polygon = master_polygon,
-              geos = geos,
-              crs = crs,
-              province_cancensus_code = list(PR = prov_code)))
+  return(list(
+    master_polygon = master_polygon,
+    geos = geos,
+    crs = crs,
+    province_cancensus_code = list(PR = prov_code)
+  ))
 }

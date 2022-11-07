@@ -74,5 +74,4 @@ get_census_sus <- function(master_polygon, census_dataset, regions,
 
   # Keep only the polygons part of the master_polygon
   census_data[census_data$ID %in% keep_ids, ]
-
 }

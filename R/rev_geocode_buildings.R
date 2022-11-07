@@ -23,15 +23,18 @@
 #' with the reverse geocoded addresses.
 #' @export
 rev_geocode_buildings <- function(master_polygon, building, province_code, crs) {
-
-  if (!province_code %in% susbuildr::addresses_db_links$province_code)
-    stop(paste0("`province_code` must be an available province_code in ",
-                "`susbuildr::addresses_db_links`."))
+  if (!province_code %in% susbuildr::addresses_db_links$province_code) {
+    stop(paste0(
+      "`province_code` must be an available province_code in ",
+      "`susbuildr::addresses_db_links`."
+    ))
+  }
 
   # Download and load the addresses -----------------------------------------
 
   url <- susbuildr::addresses_db_links$link[
-    susbuildr::addresses_db_links$province_code == province_code]
+    susbuildr::addresses_db_links$province_code == province_code
+  ]
   tmp <- tempfile(pattern = "addresses_db", fileext = ".zip")
   utils::download.file(url, destfile = tmp)
   all_files <- utils::unzip(tmp, list = TRUE)
@@ -43,8 +46,10 @@ rev_geocode_buildings <- function(master_polygon, building, province_code, crs) 
 
   # Addresses as sf, and spatially filtered ---------------------------------
 
-  addresses <- sf::st_as_sf(addresses_raw, coords = c("longitude", "latitude"),
-                            crs = 4326)
+  addresses <- sf::st_as_sf(addresses_raw,
+    coords = c("longitude", "latitude"),
+    crs = 4326
+  )
   addresses <- sf::st_transform(addresses, crs = crs)
 
   master_polygon <- sf::st_transform(master_polygon, crs = crs)
@@ -63,7 +68,9 @@ rev_geocode_buildings <- function(master_polygon, building, province_code, crs) 
   building_centroids$name <-
     # The toTitleCase from tools is pretty slow...
     paste(tools::toTitleCase(tolower(addresses$full_addr[nearest])),
-          addresses$csdname[nearest], sep = ", ")
+      addresses$csdname[nearest],
+      sep = ", "
+    )
 
 
   # Detect values used too many times ---------------------------------------
@@ -74,7 +81,8 @@ rev_geocode_buildings <- function(master_polygon, building, province_code, crs) 
   same_addresses <- same_addresses[same_addresses > 5]
   same_addresses <- names(same_addresses)
   building_centroids[
-    building_centroids$name %in% same_addresses, ]$name <- NA_character_
+    building_centroids$name %in% same_addresses,
+  ]$name <- NA_character_
 
 
   # Get addresses from provincial government databases ----------------------
@@ -84,16 +92,21 @@ rev_geocode_buildings <- function(master_polygon, building, province_code, crs) 
       if (!is.na(building_centroids$name[i])) next
 
       # Inform progress
-      message('\r',
-              paste0("Reverse geocoding from province's API - ",
-                     i, "/", nrow(building_centroids), " - ",
-                     round(i/nrow(building_centroids), digits = 5)*100, "%"),
-              appendLF = FALSE)
+      message("\r",
+        paste0(
+          "Reverse geocoding from province's API - ",
+          i, "/", nrow(building_centroids), " - ",
+          round(i / nrow(building_centroids), digits = 5) * 100, "%"
+        ),
+        appendLF = FALSE
+      )
 
       # Save the result
       building_centroids$name[i] <-
-        do.call(paste0("rev_geocode_", province_code),
-                list(building_centroids$geometry[i]))
+        do.call(
+          paste0("rev_geocode_", province_code),
+          list(building_centroids$geometry[i])
+        )
     }
   }
 
@@ -104,11 +117,14 @@ rev_geocode_buildings <- function(master_polygon, building, province_code, crs) 
     if (!is.na(building_centroids$name[i])) next
 
     # Inform progress
-    message('\r',
-            paste0("Reverse geocoding from OSM - ",
-                   i, "/", nrow(building_centroids), " - ",
-                   round(i/nrow(building_centroids), digits = 5)*100, "%"),
-            appendLF = FALSE)
+    message("\r",
+      paste0(
+        "Reverse geocoding from OSM - ",
+        i, "/", nrow(building_centroids), " - ",
+        round(i / nrow(building_centroids), digits = 5) * 100, "%"
+      ),
+      appendLF = FALSE
+    )
 
     # Save the result
     building_centroids$name[i] <-
@@ -119,8 +135,10 @@ rev_geocode_buildings <- function(master_polygon, building, province_code, crs) 
   # Bind to raw building ----------------------------------------------------
 
   out <-
-    susbuildr::merge(building[, names(building)[names(building) != "name"]],
-          sf::st_drop_geometry(building_centroids[, c("ID", "name")], by = "ID"))
+    susbuildr::merge(
+      building[, names(building)[names(building) != "name"]],
+      sf::st_drop_geometry(building_centroids[, c("ID", "name")], by = "ID")
+    )
   out_reordered <-
     out[, c("ID", "name", names(out)[!names(out) %in% c("ID", "name")])]
 
@@ -128,5 +146,4 @@ rev_geocode_buildings <- function(master_polygon, building, province_code, crs) 
   # Return ------------------------------------------------------------------
 
   return(out_reordered)
-
 }

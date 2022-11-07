@@ -16,11 +16,12 @@ get_cmhc_zones <- function(cancensus_region, crs = NULL) {
   # Get CMA shapefile
   master <- {
     z <- cancensus::get_census(susbuildr::current_census,
-                            regions = cancensus_region,
-                            # DA for a better spatial coverage
-                            level = "DA",
-                            geo_format = "sf",
-                            quiet = TRUE)
+      regions = cancensus_region,
+      # DA for a better spatial coverage
+      level = "DA",
+      geo_format = "sf",
+      quiet = TRUE
+    )
     z <- sf::st_union(z)
     z <- sf::st_transform(z, 4326)
     z <- sf::st_make_valid(z)
@@ -29,7 +30,9 @@ get_cmhc_zones <- function(cancensus_region, crs = NULL) {
   }
 
   # Get crs
-  crs <- if (!is.null(crs)) crs else {
+  crs <- if (!is.null(crs)) {
+    crs
+  } else {
     z <- suppressWarnings(sf::st_centroid(master[[1]]))
     z <- sf::st_coordinates(z)[1]
     utm_zone <- round((z + 180) / 6)

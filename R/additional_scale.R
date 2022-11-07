@@ -36,13 +36,16 @@ additional_scale <- function(additional_table, DA_table, ID_prefix, name_2,
 
   # Add ID to the scale
   additional_table$ID <- paste(ID_prefix, seq_along(additional_table$name),
-                               sep = "_")
+    sep = "_"
+  )
 
   # Interpolate population and households using DAs
   additional_table <-
-    interpolate_from_area(to = additional_table, DA_table = DA_table,
-                          additive_vars = c("population", "households"),
-                          crs)
+    interpolate_from_area(
+      to = additional_table, DA_table = DA_table,
+      additive_vars = c("population", "households"),
+      crs
+    )
 
   # Consolidate output
   additional_table$name_2 <- name_2

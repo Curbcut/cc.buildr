@@ -32,7 +32,9 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
   all_tables <- susbuildr::reconstruct_all_tables(all_scales)
   construct_for <-
     lapply(all_tables, \(scales)  {
-      if (!base_scale %in% scales) return()
+      if (!base_scale %in% scales) {
+        return()
+      }
       scales[seq_len(which(scales == base_scale))]
     })
   scales_to_interpolate <-
@@ -44,7 +46,9 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
   ## Interpolate over all the scales
   interpolated <-
     sapply(scales_to_interpolate, \(scales) {
-      if (length(scales) == 0) return()
+      if (length(scales) == 0) {
+        return()
+      }
 
       # Get the base scale and clean up columns
       base <-
@@ -65,8 +69,10 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
         mapply(\(scale_name, scale_df) {
           # If the scale is already the one containing data, merge and return
           if (scale_name == base_scale) {
-            return(susbuildr::merge(scale_df, data, by = paste0(base_scale, "_ID"),
-                                    all.x = TRUE))
+            return(susbuildr::merge(scale_df, data,
+              by = paste0(base_scale, "_ID"),
+              all.x = TRUE
+            ))
           }
           # If the scale is not a census scale, do nothing
           if (!scale_name %in% existing_census_scales) {
@@ -193,13 +199,17 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
   ## Scales at which the data is available
   avail_scales <-
     map_over_scales(interpolated,
-                    fun = \(geo = geo, scale_name = scale_name, ...) {
-                      tibble::tibble(geo = geo,
-                                 scale = scale_name)
-                    })
+      fun = \(geo = geo, scale_name = scale_name, ...) {
+        tibble::tibble(
+          geo = geo,
+          scale = scale_name
+        )
+      }
+    )
   avail_scales <-
     sapply(avail_scales, \(x) do.call(rbind, x),
-           simplify = FALSE, USE.NAMES = TRUE) |>
+      simplify = FALSE, USE.NAMES = TRUE
+    ) |>
     (\(x) do.call(rbind, x))()
   row.names(avail_scales) <- NULL
 
@@ -216,15 +226,19 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
     }, simplify = FALSE, USE.NAMES = TRUE)
   interpolated_ref <-
     map_over_scales(interpolated_ref,
-                    fun = \(geo = geo, scale_name = scale_name,
-                            scale_df = scale_df, ...) {
-                      tibble::tibble(geo = geo,
-                                 scale = scale_name,
-                                 interpolated_from = scale_df)
-                    })
+      fun = \(geo = geo, scale_name = scale_name,
+        scale_df = scale_df, ...) {
+        tibble::tibble(
+          geo = geo,
+          scale = scale_name,
+          interpolated_from = scale_df
+        )
+      }
+    )
   interpolated_ref <-
     sapply(interpolated_ref, \(x) do.call(rbind, x),
-           simplify = FALSE, USE.NAMES = TRUE) |>
+      simplify = FALSE, USE.NAMES = TRUE
+    ) |>
     (\(x) do.call(rbind, x))()
   row.names(interpolated_ref) <- NULL
 
@@ -235,7 +249,6 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
     avail_scales = avail_scales,
     interpolated_ref = interpolated_ref
   ))
-
 }
 
 #' Interpolate ADDITIVE variables using area
@@ -297,5 +310,4 @@ interpolate_from_area <- function(to, DA_table,
 
   # Return
   merge(to[, names(to)[!names(to) %in% additive_vars]], interpolated, by = "ID")
-
 }

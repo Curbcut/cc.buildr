@@ -11,7 +11,6 @@
 #' @return A list with the second index being an empty variables table.
 #' @export
 append_empty_modules_table <- function(scales) {
-
   modules <-
     tibble::tibble(
       id = character(),
@@ -54,17 +53,17 @@ append_empty_modules_table <- function(scales) {
 #' @export
 add_module <- function(modules, id, nav_title, title_text_title, title_text_main,
                        title_text_extra, metadata, dataset_info, geos = NULL) {
-
   new_module <-
-    tibble::tibble(id = id,
-                   nav_title = nav_title,
-                   title_text_title = title_text_title,
-                   title_text_main = title_text_main,
-                   title_text_extra = title_text_extra,
-                   geos = if (is.null(geos)) list(NULL) else list(geos),
-                   metadata = metadata,
-                   dataset_inf = dataset_info)
+    tibble::tibble(
+      id = id,
+      nav_title = nav_title,
+      title_text_title = title_text_title,
+      title_text_main = title_text_main,
+      title_text_extra = title_text_extra,
+      geos = if (is.null(geos)) list(NULL) else list(geos),
+      metadata = metadata,
+      dataset_inf = dataset_info
+    )
 
   rbind(modules, new_module)
-
 }

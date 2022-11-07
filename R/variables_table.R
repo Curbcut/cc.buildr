@@ -10,7 +10,6 @@
 #' @return A list with the second index being an empty variables table.
 #' @export
 append_empty_variables_table <- function(scales_consolidated) {
-
   variables <-
     tibble::tibble(
       var_code = character(),
@@ -80,7 +79,6 @@ add_variable <- function(variables, var_code, type, var_title,
                          group_name = NA_character_, group_diff = list(),
                          theme, private, dates, scales, breaks_q3,
                          breaks_q5, source, interpolated) {
-
   if (var_code %in% variables$var_code) {
     stop(paste0("`", var_code, "` is a duplicate."))
   }
@@ -101,8 +99,8 @@ add_variable <- function(variables, var_code, type, var_title,
       breaks_q3 = list(breaks_q3),
       breaks_q5 = list(breaks_q5),
       interpolated = list(interpolated),
-      group_diff = list(group_diff))
+      group_diff = list(group_diff)
+    )
 
   rbind(variables, new_variable)
-
 }

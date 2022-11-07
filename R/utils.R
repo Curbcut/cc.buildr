@@ -13,12 +13,14 @@
 #' on all the scales.
 #' @export
 map_over_scales <- function(all_scales, fun) {
-    mapply(\(geo, scales) {
-      mapply(\(scale_name, scale_df) {
-        fun(geo = geo, scales = scales,
-            scale_name = scale_name, scale_df = scale_df)
-      }, names(scales), scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
-    }, names(all_scales), all_scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
+  mapply(\(geo, scales) {
+    mapply(\(scale_name, scale_df) {
+      fun(
+        geo = geo, scales = scales,
+        scale_name = scale_name, scale_df = scale_df
+      )
+    }, names(scales), scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
+  }, names(all_scales), all_scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 }
 
 #' Reconstruct all_tables
@@ -61,8 +63,7 @@ reorder_columns <- function(all_scales) {
   susbuildr::map_over_scales(
     all_scales = all_scales,
     fun = \(geo = geo, scales = scales,
-            scale_name = scale_name, scale_df = scale_df) {
-
+      scale_name = scale_name, scale_df = scale_df) {
       scales_order <- names(scales)
       needed_present_scales <-
         scales_order[seq_len(which(scales_order == scale_name))]
@@ -74,22 +75,29 @@ reorder_columns <- function(all_scales) {
       if ("population" %in% names(scale_df)) other <- c(other, "population")
       if ("households" %in% names(scale_df)) other <- c(other, "households")
 
-      rest <- names(scale_df)[!names(scale_df) %in% c(mandatory_start, all_ids,
-                                                      other)]
+      rest <- names(scale_df)[!names(scale_df) %in% c(
+        mandatory_start, all_ids,
+        other
+      )]
       rest <- rest[!rest %in% c("popw_centroids_coords", "geometry")]
       last <- names(scale_df)[
-        names(scale_df) %in% c("popw_centroids_coords", "geometry")]
+        names(scale_df) %in% c("popw_centroids_coords", "geometry")
+      ]
 
       out <- scale_df[, c(mandatory_start, all_ids, other, rest, last)]
 
-      if (ncol(out) != ncol(scale_df))
+      if (ncol(out) != ncol(scale_df)) {
         stop(
-          paste0("Some columns have been dropped along the way in the use of ",
-                 "x function."))
+          paste0(
+            "Some columns have been dropped along the way in the use of ",
+            "x function."
+          )
+        )
+      }
 
       out
-
-    })
+    }
+  )
 }
 
 #' Reimplemntation of dplyr::ntile in base R
@@ -107,8 +115,7 @@ rough_rank <- function(x, n) {
   len <- length(x) - sum(is.na(x))
   if (len == 0L) {
     rep(NA_integer_, length(x))
-  }
-  else {
+  } else {
     n <- as.integer(floor(n))
     n_larger <- as.integer(len %% n)
     n_smaller <- as.integer(n - n_larger)
@@ -117,9 +124,10 @@ rough_rank <- function(x, n) {
     smaller_size <- as.integer(floor(size))
     larger_threshold <- larger_size * n_larger
     bins <- ifelse(x <= larger_threshold,
-                   (x + (larger_size - 1L)) / larger_size,
-                   (x + (-larger_threshold + smaller_size - 1L)) /
-                     smaller_size + n_larger)
+      (x + (larger_size - 1L)) / larger_size,
+      (x + (-larger_threshold + smaller_size - 1L)) /
+        smaller_size + n_larger
+    )
     as.integer(floor(bins))
   }
 }

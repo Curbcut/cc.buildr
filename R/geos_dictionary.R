@@ -25,13 +25,16 @@
 geos_dictionary <- function(all_tables, geo, name, to_compare, pickable) {
 
   # Error check
-  if (is.null(names(name)))
+  if (is.null(names(name))) {
     stop("`geo`must be a named character vector.")
-  if (is.null(names(to_compare)))
+  }
+  if (is.null(names(to_compare))) {
     stop("`to_compare`must be a named character vector.")
+  }
   invisible(lapply(c("geo", "name", "to_compare", "pickable"), \(x) {
-    if (length(get(x)) != length(all_tables))
+    if (length(get(x)) != length(all_tables)) {
       stop("length of`", x, "` is not the same as the length of `all_tables`")
+    }
   }))
 
   geo <- geo[order(match(geo, names(all_tables)))]

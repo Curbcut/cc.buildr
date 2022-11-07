@@ -38,17 +38,17 @@
 #' module.
 #' @export
 ba_var <- function(data, scales_variables_modules, base_scale,
-                                 weight_by = "households", crs,
-                                 time_regex = "\\d{4}", variable_var_code,
-                                 variable_type, variable_var_title,
-                                 variable_var_short, variable_explanation,
-                                 variable_theme, variable_private, variable_source,
-                                 module_id = NULL, module_nav_title = NULL,
-                                 module_title_text_title = NULL,
-                                 module_title_text_main = NULL,
-                                 module_title_text_extra = NULL,
-                                 module_metadata = NULL,
-                                 module_dataset_info = NULL) {
+                   weight_by = "households", crs,
+                   time_regex = "\\d{4}", variable_var_code,
+                   variable_type, variable_var_title,
+                   variable_var_short, variable_explanation,
+                   variable_theme, variable_private, variable_source,
+                   module_id = NULL, module_nav_title = NULL,
+                   module_title_text_title = NULL,
+                   module_title_text_main = NULL,
+                   module_title_text_extra = NULL,
+                   module_metadata = NULL,
+                   module_dataset_info = NULL) {
 
   # Get list of data variables ----------------------------------------------
 
@@ -59,12 +59,15 @@ ba_var <- function(data, scales_variables_modules, base_scale,
   time_regex_end <- paste0("_", time_regex, "$")
   unique_var <- unique(gsub(time_regex_end, "", var))
 
-  if (length(unique_var) > 1)
-    stop(paste0("This function can only add a single variable. Update the ",
-                "`data` argument to include only an ID column (e.g. `DA_ID`) and ",
-                "single data without timeframe (e.g. `green_space_sqkm`) or ",
-                "multiple timeframes of the same variable (e.g. ",
-                "`housing_tenant_2016`, `housing_tenant_2021`, ...)"))
+  if (length(unique_var) > 1) {
+    stop(paste0(
+      "This function can only add a single variable. Update the ",
+      "`data` argument to include only an ID column (e.g. `DA_ID`) and ",
+      "single data without timeframe (e.g. `green_space_sqkm`) or ",
+      "multiple timeframes of the same variable (e.g. ",
+      "`housing_tenant_2016`, `housing_tenant_2021`, ...)"
+    ))
+  }
 
 
   # Interpolate data to all possible scales ---------------------------------
@@ -75,7 +78,8 @@ ba_var <- function(data, scales_variables_modules, base_scale,
       base_scale = base_scale,
       all_scales = scales_variables_modules$scales,
       weight_by = weight_by,
-      crs = crs)
+      crs = crs
+    )
 
 
   # Calculate breaks --------------------------------------------------------
@@ -83,7 +87,8 @@ ba_var <- function(data, scales_variables_modules, base_scale,
   with_breaks <-
     calculate_breaks(
       all_scales = data_interpolated$scales,
-      vars = var)
+      vars = var
+    )
 
 
   # Variables table ---------------------------------------------------------
@@ -103,19 +108,20 @@ ba_var <- function(data, scales_variables_modules, base_scale,
       breaks_q3 = with_breaks$q3_breaks_table[[unique_var]],
       breaks_q5 = with_breaks$q5_breaks_table[[unique_var]],
       source = variable_source,
-      interpolated = data_interpolated$interpolated_ref)
+      interpolated = data_interpolated$interpolated_ref
+    )
 
 
   # Modules table -----------------------------------------------------------
 
   modules <-
     if (!is.null(module_id) &&
-        !is.null(module_nav_title) &&
-        !is.null(module_metadata) &&
-        !is.null(module_dataset_info) &&
-        !is.null(module_title_text_title) &&
-        !is.null(module_title_text_main) &&
-        !is.null(module_title_text_extra)) {
+      !is.null(module_nav_title) &&
+      !is.null(module_metadata) &&
+      !is.null(module_dataset_info) &&
+      !is.null(module_title_text_title) &&
+      !is.null(module_title_text_main) &&
+      !is.null(module_title_text_extra)) {
       scales_variables_modules$modules |>
         add_module(
           id = module_id,
@@ -125,7 +131,8 @@ ba_var <- function(data, scales_variables_modules, base_scale,
           title_text_extra = module_title_text_extra,
           geos = unique(data_interpolated$avail_scales$geo),
           metadata = module_metadata,
-          dataset_info = module_dataset_info)
+          dataset_info = module_dataset_info
+        )
     } else {
       scales_variables_modules$modules
     }
@@ -133,8 +140,9 @@ ba_var <- function(data, scales_variables_modules, base_scale,
 
   # Return ------------------------------------------------------------------
 
-  return(list(scales = with_breaks$scales,
-              variables = variables,
-              modules = modules))
-
+  return(list(
+    scales = with_breaks$scales,
+    variables = variables,
+    modules = modules
+  ))
 }
