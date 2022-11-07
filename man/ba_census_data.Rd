@@ -17,6 +17,11 @@ third is the modules table.}
 \item{housing_module}{<\code{logical}> Should a housing module be added to
 the list of modules.}
 }
+\value{
+A list of length 3, similar to the one fed to
+\code{scales_variables_modules} with census variable added, their addition
+in the variables table and the module table.
+}
 \description{
 Build and append census data
 }

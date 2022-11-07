@@ -116,7 +116,7 @@ ba_census_data <- function(scales_variables_modules,
             "Housing: The Politics of Crisis</i>. New York and London: Verso ",
             "Books.</ul>"
           ),
-          geos = unique(census_dat$avail_scales$geo),
+          regions = unique(census_dat$avail_scales$geo),
           metadata = TRUE,
           dataset_info = paste0(
             "<p>This module presents <a href = 'https://www.statcan",

@@ -129,7 +129,7 @@ ba_var <- function(data, scales_variables_modules, base_scale,
           title_text_title = module_title_text_title,
           title_text_main = module_title_text_main,
           title_text_extra = module_title_text_extra,
-          geos = unique(data_interpolated$avail_scales$geo),
+          regions = unique(data_interpolated$avail_scales$geo),
           metadata = module_metadata,
           dataset_info = module_dataset_info
         )

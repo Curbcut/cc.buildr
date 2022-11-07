@@ -2,16 +2,16 @@
 % Please edit documentation in R/verify_dictionaries.R
 \name{verify_dictionaries}
 \alias{verify_dictionaries}
-\title{Verify the geos and the scales dictionary}
+\title{Verify the regions and the scales dictionary}
 \usage{
-verify_dictionaries(all_tables, geos_dictionary, scales_dictionary)
+verify_dictionaries(all_tables, regions_dictionary, scales_dictionary)
 }
 \arguments{
 \item{all_tables}{<\verb{named list}> The name of the named list \code{all_tables}
 is used to retrieve the shapefiles in the supplied folder.}
 
-\item{geos_dictionary}{<\code{data.frame}> The geos dictionary built using
-\code{\link[susbuildr]{geos_dictionary}}}
+\item{regions_dictionary}{<\code{data.frame}> The regions dictionary built using
+\code{\link[susbuildr]{regions_dictionary}}}
 
 \item{scales_dictionary}{<\code{data.frame}> The scales dictionary built using
 \code{\link[susbuildr]{build_census_scales}} and

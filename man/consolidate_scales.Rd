@@ -4,7 +4,7 @@
 \alias{consolidate_scales}
 \title{Filter spatially scales in their parent geometry}
 \usage{
-consolidate_scales(all_tables, all_scales, geos, crs)
+consolidate_scales(all_tables, all_scales, regions, crs)
 }
 \arguments{
 \item{all_tables}{<\verb{named list}> A named list of character. The names are
@@ -14,7 +14,7 @@ available in these geo e.g. CSD, CT, DA, building, ...}
 \item{all_scales}{<\verb{named list}> A named list containing all the dataframes
 present in the \code{all_tables} list.}
 
-\item{geos}{<\verb{named list}> A named list of all the unioned geometry
+\item{regions}{<\verb{named list}> A named list of all the unioned geometry
 (the names of \code{all_tables}). The second element of the list returned
 by \code{\link[susbuildr]{create_master_polygon}}.}
 

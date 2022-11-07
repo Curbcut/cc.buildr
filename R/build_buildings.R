@@ -52,7 +52,7 @@ build_buildings <- function(DA_table, crs, download_MS_buildings = TRUE,
 
   # Make a uniform dataframe off the building polygons and multipolygons
   valid_buildings <-
-    lapply(
+    future.apply::future_lapply(
       list(building_osm$osm_polygons, building_osm$osm_multipolygons),
       \(x) {
         suppressWarnings({
@@ -104,7 +104,7 @@ build_buildings <- function(DA_table, crs, download_MS_buildings = TRUE,
   # Buildings that will not be merged
   building_remaining <- building[!building$ID %in% unlist(merged), ]
   # Merge buildings that have self-intersection
-  building_merged <- lapply(merged, \(x) {
+  building_merged <- future.apply::future_lapply(merged, \(x) {
     z <- building[building$ID %in% paste0("building_", x), ]
     geo <- sf::st_union(z)
     z <- z[1, ]

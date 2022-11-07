@@ -17,6 +17,6 @@ Returns the all_scales list that is fed, with the \code{fun} ran
 on all the scales.
 }
 \description{
-As we follow a deep list of scales in geos, we can use this \code{map_over_scales()}
+As we follow a deep list of scales in regions, we can use this \code{map_over_scales()}
 helper function to iterate functions on all the scales.
 }

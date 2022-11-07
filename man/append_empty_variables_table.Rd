@@ -8,7 +8,7 @@ append_empty_variables_table(scales_consolidated)
 }
 \arguments{
 \item{scales_consolidated}{<\verb{named list}> A named list of sf data.frame
-containing all scales listed with their geos. The output of
+containing all scales listed with their regions. The output of
 \code{\link[susbuildr]{consolidate_scales}}.}
 }
 \value{

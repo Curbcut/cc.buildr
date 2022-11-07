@@ -17,9 +17,14 @@ Imports:
     osmdata,
     geojsonsf,
     jsonlite,
+    lwgeom,
     tibble,
     tidyr,
-    susdata
+    susdata,
+    future.apply,
+    progressr
+Suggests:
+    r5r
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

@@ -455,7 +455,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
         "insights can be gained on how vacancy rates vary over time and spatially ",
         "by type of unit, year of construction, and rent range."
       ),
-      geos = "cmhc",
+      regions = "cmhc",
       metadata = TRUE,
       dataset_info = "TKTK"
     )

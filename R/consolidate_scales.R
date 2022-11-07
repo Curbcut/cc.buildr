@@ -10,7 +10,7 @@
 #' available in these geo e.g. CSD, CT, DA, building, ...
 #' @param all_scales <`named list`> A named list containing all the dataframes
 #' present in the \code{all_tables} list.
-#' @param geos <`named list`> A named list of all the unioned geometry
+#' @param regions <`named list`> A named list of all the unioned geometry
 #' (the names of \code{all_tables}). The second element of the list returned
 #' by \code{\link[susbuildr]{create_master_polygon}}.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
@@ -19,12 +19,12 @@
 #' @return A list of the same length as there are in \code{all_tables}, containing
 #' spatially filtered dataframes with updated name_2 and IDs if needed.
 #' @export
-consolidate_scales <- function(all_tables, all_scales, geos, crs) {
+consolidate_scales <- function(all_tables, all_scales, regions, crs) {
 
   # Add own ID to scales, and rename census ---------------------------------
 
   uniform_IDs <-
-    mapply(\(scale_name, scale_df) {
+    future.apply::future_mapply(\(scale_name, scale_df) {
 
       # For all column names that end with `UID`, change it to `_ID`
       if (sum(grepl("UID$", names(scale_df))) > 0) {
@@ -55,13 +55,13 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
   })
 
   spatially_filtered <-
-    mapply(\(geo, scales) {
+    future.apply::future_mapply(\(geo, scales) {
       sapply(scales, \(scale) {
         if (!scale %in% DA_up[[geo]]) {
           return(uniform_IDs[[scale]])
         }
 
-        unioned_geo <- sf::st_transform(geos[[geo]], crs)
+        unioned_geo <- sf::st_transform(regions[[geo]], crs)
         df <- sf::st_transform(uniform_IDs[[scale]], crs)
 
         # Filter spatially with the unioned geo.
@@ -73,7 +73,7 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
     }, names(all_tables), all_tables, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
   spatially_filtered <-
-    susbuildr::map_over_scales(
+    map_over_scales(
       all_scales = spatially_filtered,
       fun = \(geo = geo, scales = scales,
         scale_name = scale_name, scale_df = scale_df) {
@@ -88,7 +88,7 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
   # Update name_2 and IDs for all cases (catch-all cases, like split scales) ----
 
   out <-
-    susbuildr::map_over_scales(
+    map_over_scales(
       all_scales = spatially_filtered,
       fun = \(geo = geo, scales = scales,
         scale_name = scale_name, scale_df = scale_df) {
@@ -126,7 +126,7 @@ consolidate_scales <- function(all_tables, all_scales, geos, crs) {
 
   # + Add DA information to scales under DAs
   out <-
-    susbuildr::map_over_scales(
+    map_over_scales(
       all_scales = out,
       fun = \(geo = geo, scales = scales,
         scale_name = scale_name, scale_df = scale_df) {

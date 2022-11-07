@@ -2,7 +2,7 @@
 % Please edit documentation in R/breaks.R
 \name{calculate_breaks}
 \alias{calculate_breaks}
-\title{Calculate all breaks when all_scales is a list of geos and scales}
+\title{Calculate all breaks when all_scales is a list of regions and scales}
 \usage{
 calculate_breaks(all_scales, vars, time_regex = "\\\\d{4}")
 }
@@ -24,5 +24,5 @@ is the q5 breaks table. The fourth is vectors of characters of all dates at
 which variables are available for.
 }
 \description{
-Calculate all breaks when all_scales is a list of geos and scales
+Calculate all breaks when all_scales is a list of regions and scales
 }

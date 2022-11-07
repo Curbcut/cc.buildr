@@ -13,7 +13,7 @@ add_module(
   title_text_extra,
   metadata,
   dataset_info,
-  geos = NULL
+  regions = NULL
 )
 }
 \arguments{
@@ -43,7 +43,7 @@ if there should be further data info when the \verb{Export data} popup is clicke
 \item{dataset_info}{<\code{character}> HTML text with further data information
 from the module.}
 
-\item{geos}{<\verb{character vector}> List of all the geos the module should be
+\item{regions}{<\verb{character vector}> List of all the regions the module should be
 able to show.}
 }
 \value{

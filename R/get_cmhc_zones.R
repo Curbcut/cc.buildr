@@ -6,7 +6,7 @@
 #' @param crs <`numeric`> Optional. EPSG coordinate reference system to be
 #' assigned, e.g. \code{32618} for Montreal. Optional, defaults to the UTM zone
 #' retrieved by the centroid of the master_polygon created. If not supplied, it
-#' is derived from the centroid of all the geos through a simple mathematical
+#' is derived from the centroid of all the regions through a simple mathematical
 #' approach.
 #'
 #' @return An sf data.frame of two columns: name of the zone and geometry.

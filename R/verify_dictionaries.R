@@ -1,27 +1,27 @@
-#' Verify the geos and the scales dictionary
+#' Verify the regions and the scales dictionary
 #'
 #' The use of `verify_dictionaries()` is to verify any missing entries in both
 #' dictionaries.
 #'
 #' @param all_tables <`named list`> The name of the named list \code{all_tables}
 #' is used to retrieve the shapefiles in the supplied folder.
-#' @param geos_dictionary <`data.frame`> The geos dictionary built using
-#' \code{\link[susbuildr]{geos_dictionary}}
+#' @param regions_dictionary <`data.frame`> The regions dictionary built using
+#' \code{\link[susbuildr]{regions_dictionary}}
 #' @param scales_dictionary <`data.frame`> The scales dictionary built using
 #' \code{\link[susbuildr]{build_census_scales}} and
 #' \code{\link[susbuildr]{additional_scale}}
 #'
 #' @return Returns nothing if the test passes, or errors if it doesn't.
 #' @export
-verify_dictionaries <- function(all_tables, geos_dictionary,
+verify_dictionaries <- function(all_tables, regions_dictionary,
                                 scales_dictionary) {
 
-  # Verify geos first -------------------------------------------------------
+  # Verify regions first -------------------------------------------------------
 
-  geos <- names(all_tables)
-  z <- geos[!geos %in% geos_dictionary$geo]
+  regions <- names(all_tables)
+  z <- regions[!regions %in% regions_dictionary$geo]
   if (length(z) > 0) {
-    stop(paste0("Missing `", geos, "` in the `geos_dictionary`"))
+    stop(paste0("Missing `", regions, "` in the `regions_dictionary`"))
   }
 
   # Verify scales second ----------------------------------------------------

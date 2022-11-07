@@ -200,7 +200,7 @@ get_breaks_q5 <- function(df, vars, time_regex = "\\d{4}") {
   tibble::as_tibble(tb)
 }
 
-#' Calculate all breaks when all_scales is a list of geos and scales
+#' Calculate all breaks when all_scales is a list of regions and scales
 #'
 #' @param all_scales <`named_list`> A named list of scales. The first level is
 #' the geo, and the second is the scales. They must contain all columns of `vars`

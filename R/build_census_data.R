@@ -1,7 +1,7 @@
 #' Build census data at all possible scales
 #'
 #' @param scales_consolidated A named list of sf data.frame
-#' containing all scales listed with their geos. The output of
+#' containing all scales listed with their regions. The output of
 #' \code{\link[susbuildr]{consolidate_scales}}.
 #' @param census_data "TKTK"
 #' @param census_data_raw_DA "TKTK"

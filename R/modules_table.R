@@ -1,12 +1,12 @@
 #' Append an empty modules table to the scales list
 #'
 #' `append_empty_modules_table()` takes the output of
-#' \code{\link[susbuildr]{append_empty_variables_table}} and appends an empty
+#' \code{\link[susbuildr]{consolidate_scales}} and appends an empty
 #' modules table.
 #'
 #' @param scales <`named list`> A named list containings the scales and the
 #' empty variables table. The output of
-#' \code{\link[susbuildr]{append_empty_variables_table}}
+#' \code{\link[susbuildr]{consolidate_scales}}
 #'
 #' @return A list with the second index being an empty variables table.
 #' @export
@@ -20,7 +20,7 @@ append_empty_modules_table <- function(scales) {
       title_text_extra = character(),
       metadata = logical(),
       dataset_info = character(),
-      geos = list()
+      regions = list()
     )
 
   c(scales, list(modules = modules))
@@ -46,13 +46,13 @@ append_empty_modules_table <- function(scales) {
 #' (information regarding if the data has been interpolated, source, etc.).
 #' @param dataset_info <`character`> HTML text with further data information
 #' from the module.
-#' @param geos <`character vector`> List of all the geos the module should be
+#' @param regions <`character vector`> List of all the regions the module should be
 #' able to show.
 #'
 #' @return The same `modules` data.frame fed, with the added row.
 #' @export
 add_module <- function(modules, id, nav_title, title_text_title, title_text_main,
-                       title_text_extra, metadata, dataset_info, geos = NULL) {
+                       title_text_extra, metadata, dataset_info, regions = NULL) {
   new_module <-
     tibble::tibble(
       id = id,
@@ -60,7 +60,7 @@ add_module <- function(modules, id, nav_title, title_text_title, title_text_main
       title_text_title = title_text_title,
       title_text_main = title_text_main,
       title_text_extra = title_text_extra,
-      geos = if (is.null(geos)) list(NULL) else list(geos),
+      regions = if (is.null(regions)) list(NULL) else list(regions),
       metadata = metadata,
       dataset_inf = dataset_info
     )

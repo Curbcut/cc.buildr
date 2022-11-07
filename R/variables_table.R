@@ -4,7 +4,7 @@
 #' places an empty variables table to the scales list.
 #'
 #' @param scales_consolidated <`named list`> A named list of sf data.frame
-#' containing all scales listed with their geos. The output of
+#' containing all scales listed with their regions. The output of
 #' \code{\link[susbuildr]{consolidate_scales}}.
 #'
 #' @return A list with the second index being an empty variables table.

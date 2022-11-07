@@ -11,6 +11,10 @@ get_breaks_q5(df, vars, time_regex = "\\\\d{4}")
 
 \item{vars}{<\verb{vector of character}> Contains all variable names from q5s should
 be calculated. Must fit with a name in \code{df}.}
+
+\item{time_regex}{<\code{character}> Regular expression which corresponds to
+a timeframe, placed at the end of the \code{vars} vector. e.g. \verb{\\\\d\{4\}} for
+years.}
 }
 \value{
 A data.frame where each column in a var, and the rows are the q3

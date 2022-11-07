@@ -8,7 +8,7 @@ build_census_data(scales_consolidated, census_data, census_data_raw_DA, crs)
 }
 \arguments{
 \item{scales_consolidated}{A named list of sf data.frame
-containing all scales listed with their geos. The output of
+containing all scales listed with their regions. The output of
 \code{\link[susbuildr]{consolidate_scales}}.}
 
 \item{census_data}{"TKTK"}

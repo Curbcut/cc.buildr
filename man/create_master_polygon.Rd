@@ -7,7 +7,7 @@
 create_master_polygon(all_regions, crs = NULL)
 }
 \arguments{
-\item{all_regions}{<\verb{named list}> A name list of all the geos wanted. The value
+\item{all_regions}{<\verb{named list}> A name list of all the regions wanted. The value
 of all level must either be a valid \code{regions} call argument to the
 \code{\link[cancensus]{get_census}} function, e.g. \code{list(CMA = 24462)}
 for Montreal, a link to a shapefile, e.g. \code{list("geometry/island.shp"},
@@ -16,12 +16,12 @@ or an already sf data.frame.}
 \item{crs}{<\code{numeric}> Optional. EPSG coordinate reference system to be
 assigned, e.g. \code{32618} for Montreal. Optional, defaults to the UTM zone
 retrieved by the centroid of the master_polygon created. If not supplied, it
-is derived from the centroid of all the geos through a simple mathematical
+is derived from the centroid of all the regions through a simple mathematical
 approach.}
 }
 \value{
 The output is a named list of length 4: The master polygon,
-all the individual geos present in \code{all_regions}, the crs, and the
+all the individual regions present in \code{all_regions}, the crs, and the
 \code{regions} argument to \code{\link[cancensus]{get_census}} of the province
 in which the centroid of the master polygon falls.
 }

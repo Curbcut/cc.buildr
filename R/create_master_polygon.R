@@ -1,6 +1,6 @@
 #' Create master polygon
 #'
-#' @param all_regions <`named list`> A name list of all the geos wanted. The value
+#' @param all_regions <`named list`> A name list of all the regions wanted. The value
 #' of all level must either be a valid `regions` call argument to the
 #' \code{\link[cancensus]{get_census}} function, e.g. \code{list(CMA = 24462)}
 #' for Montreal, a link to a shapefile, e.g. \code{list("geometry/island.shp"},
@@ -8,11 +8,11 @@
 #' @param crs <`numeric`> Optional. EPSG coordinate reference system to be
 #' assigned, e.g. \code{32618} for Montreal. Optional, defaults to the UTM zone
 #' retrieved by the centroid of the master_polygon created. If not supplied, it
-#' is derived from the centroid of all the geos through a simple mathematical
+#' is derived from the centroid of all the regions through a simple mathematical
 #' approach.
 #'
 #' @return The output is a named list of length 4: The master polygon,
-#' all the individual geos present in \code{all_regions}, the crs, and the
+#' all the individual regions present in \code{all_regions}, the crs, and the
 #' `regions` argument to \code{\link[cancensus]{get_census}} of the province
 #' in which the centroid of the master polygon falls.
 #' @export
@@ -21,7 +21,7 @@ create_master_polygon <- function(all_regions, crs = NULL) {
 
   # Download or retrieve the geo sf -----------------------------------------
 
-  geos <-
+  regions <-
     sapply(all_regions, \(x) {
       z <- if (is.data.frame(x)) {
         x
@@ -48,7 +48,7 @@ create_master_polygon <- function(all_regions, crs = NULL) {
   crs <- if (!is.null(crs)) {
     crs
   } else {
-    z <- sf::st_centroid(geos[[1]])
+    z <- sf::st_centroid(regions[[1]])
     z <- sf::st_coordinates(z)[1]
     utm_zone <- round((z + 180) / 6)
     as.numeric(paste0("326", utm_zone))
@@ -57,9 +57,9 @@ create_master_polygon <- function(all_regions, crs = NULL) {
 
   # Make valid master_polygon -----------------------------------------------
 
-  geos_crs <-
-    sapply(geos, sf::st_transform, crs, simplify = FALSE, USE.NAMES = TRUE)
-  master_polygon <- Reduce(sf::st_union, geos_crs)
+  regions_crs <-
+    sapply(regions, sf::st_transform, crs, simplify = FALSE, USE.NAMES = TRUE)
+  master_polygon <- Reduce(sf::st_union, regions_crs)
   master_polygon <- master_polygon[
     sf::st_geometry_type(master_polygon) == "MULTIPOLYGON"
   ]
@@ -82,7 +82,7 @@ create_master_polygon <- function(all_regions, crs = NULL) {
 
   return(list(
     master_polygon = master_polygon,
-    geos = geos,
+    regions = regions,
     crs = crs,
     province_cancensus_code = list(PR = prov_code)
   ))

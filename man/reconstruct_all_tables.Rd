@@ -15,7 +15,7 @@ A list of vectors of characters. The first level of the list is the
 geo, and the second is all the scales available in that particular geo.
 }
 \description{
-As all the data arrange in a named list of geos > scales was created using
+As all the data arrange in a named list of regions > scales was created using
 a list of character vector previously named \code{all_tables}, this function
 allows to recreate the \code{all_tables} list of vectors using the data of
 \code{all_scales}.

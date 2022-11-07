@@ -1,6 +1,6 @@
-#' Build the geos dictionary
+#' Build the regions dictionary
 #'
-#' @param all_tables <`named list`> Named list of geos and their scales within,
+#' @param all_tables <`named list`> Named list of regions and their scales within,
 #' ordered in priority.
 #' @param geo <`vector of character`> A vector of characters used to identify
 #' which large geometry the user is interested in, e.g.
@@ -22,7 +22,7 @@
 #' @return Returns the same vectors fed arranged in a data.frame ordered in
 #' priorty.
 #' @export
-geos_dictionary <- function(all_tables, geo, name, to_compare, pickable) {
+regions_dictionary <- function(all_tables, geo, name, to_compare, pickable) {
 
   # Error check
   if (is.null(names(name))) {
