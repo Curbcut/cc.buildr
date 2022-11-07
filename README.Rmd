@@ -33,13 +33,13 @@ devtools::install_github("MSSI-urban/susbuildr")
 
 susbuildr creates and works from long lists of `tibble`. For faster building, the package frequently uses functions of the `future_*apply` family from the `future.apply` package, for any computationally intensive work. These implementations of the apply family function can be solved using any backend supported by future (parallelization). We therefore recommend defining a future backend at the beginning of the data building script.
 
-```
+``` r
 future::plan(future::multisession())
 ```
 
 Let's also enable the global progression handler to get a progress bar on those more computationally intensive work.
 
-```
+``` r
 progressr::handlers(global = TRUE)
 ```
 
@@ -48,7 +48,7 @@ progressr::handlers(global = TRUE)
 
 We start by declaring all the "regions" for which data can be visualized. Each of the following regions (CMA, island, city, cmhc) and scales (CSD, CT, DA, building and cmhc_zone) is a different mapbox tileset. At this stage, the regions must be in a priority order: If the user defaults to a region that is not available for a certain dataset, the map will instead display the region closest to the top of the list that has the available data.
 
-```
+``` r
 all_tables <-
   list("CMA" = c("CSD", "CT", "DA", "building"),
        "island" = c("CSD", "CT", "DA", "building"),
@@ -58,7 +58,7 @@ all_tables <-
 
 The `master_polygon` is a single spatial feature encompassing all the regions under study. Create a list of where geometries must be found for every region. For any census geometries, codes from `cancensus::list_census_regions()` can be fed: A named list of census regions to retrieve. Links to shapefiles also work. Using `cancensus::list_census_regions()`, retrieve the CMA code of the region (if it is a CMA). This will be useful for the 'Vacancy rate' page. 
 
-```
+``` r
 cancensus_cma_code <- 24462
 all_regions <- list(CMA = list(CMA = cancensus_cma_code),
                     city = list(CSD = 2466023),
@@ -71,7 +71,7 @@ crs <- base_polygons$crs
 
 On one instance of Curbcut, users can move from one region to another within the same study space. A Curbcut Montreal user can analyze a dataset through the lens of the Montreal metropolitan area, or only through the city of Montreal to compare boroughs. The implications are that dynamically created text must be informed by a dictionary of regions to correctly serve the right information using accurate wording. Create the regions dictionary and see `?susbuildr::regions_dictionary` to understand the meaning of each argument.
 
-```
+``` r
 regions_dictionary <-
   regions_dictionary(
     all_tables = all_tables,
@@ -97,7 +97,7 @@ regions_dictionary <-
 
 Using the output of previous retrievals, get a list of census scales. 
 
-```
+``` r
 census_scales <-
   build_census_scales(master_polygon = base_polygons$master_polygon,
                       regions = base_polygons$province_cancensus_code,
@@ -106,7 +106,7 @@ census_scales <-
 
 Optional: In the case of Curbcut Montreal, the City of Montreal can be split using the boroughs, which should replace the City at the CSD scale. `cc.buildr::split_scale` performs this operation.
 
-```
+``` r
 boroughs <- sf::st_read("arrondissements_mtl.shp")
 census_scales$CSD <- split_scale(destination = census_scales$CSD,
                                  cutting_layer = boroughs,
@@ -116,7 +116,7 @@ census_scales$CSD <- split_scale(destination = census_scales$CSD,
 
 Create the scales dictionary for the same reason we need a regions dictionary (correctly serve the right information using accurate wording). In the case a feature has been split, update the according scale in the dictionary.
 
-```
+``` r
 scales_dictionary <- census_scales_dictionary(census_scales)
 scales_dictionary[1, ] <- list(scale = "CSD",
                                sing = "borough/city",
@@ -130,7 +130,7 @@ scales_dictionary[1, ] <- list(scale = "CSD",
 
 Spatial features of buildings are retrieved through a combination of Open Street Map and Microsoft's Canadian Building Footprints dataset. Reverse geocoding is performed by a set of government public APIs and the Open Street Map API. See the documentation to use the functions correctly. We also add a new line to the scale dictionary.
 
-```
+``` r
 building <- build_buildings(DA_table = census_scales$DA,
                              crs = crs,
                              MS_province = "Quebec")
@@ -153,7 +153,7 @@ scales_dictionary <-
 
 If the space under study is a CMA, susbuildr creates a ready to use Vacancy rate module. If this is the case, the regions must be properly created and specified in the scale dictionary.
 
-```
+``` r
 cmhc_zone <- get_cmhc_zones(list(CMA = cancensus_cma_code))
 cmhc_zone <- additional_scale(additional_table = cmhc_zone,
                               DA_table = census_scales$DA,
@@ -174,7 +174,7 @@ scales_dictionary <-
 
 susbuildr lets a builder add any region or scale that is not only census-related through the `susbuildr::additional_scale` function. This is an example of the collaboration with Centraide of Greater Montreal:
 
-```
+``` r
 centraide <- sf::st_read("centraide.shp")
 centraide <- additional_scale(additional_table = centraide,
                               DA_table = census_scales$DA,
@@ -195,7 +195,7 @@ scales_dictionary <-
 
 The way the regions and scales are organized in the following data construction is through a list of depth 2, where the region is the first depth and the scales are the second. The major contribution of `susbuildr::consolidate_scales` is that, for example, the city$DA table is a spatial filter between the city region and the DA table. It also updates the naming and IDs to ensure that all scales in a region can properly talk to each other.
 
-```
+``` r
 all_scales <- c(census_scales,
                 list(building = building),
                 list(centraide = centraide),
@@ -209,7 +209,7 @@ scales_consolidated <- consolidate_scales(all_tables = all_tables,
 
 ## Verify dictionary conformity
 
-```
+``` r
 verify_dictionaries(all_tables = all_tables,
                     regions_dictionary = regions_dictionary,
                     scales_dictionary = scales_dictionary)
@@ -219,7 +219,7 @@ verify_dictionaries(all_tables = all_tables,
 
 Each variable has a unique set of elements that the platform relies on to correctly provide the predefined and precomputed information. This ranges from the title or explanation of the variable to the pre-computed breaks. The same is true for modules. The `module` table contains information about the name of a module, its description, ... We add empty tables that will be filled each time a variable is added.
 
-```
+``` r
 scales_variables_modules <-
   append_empty_variables_table(scales_consolidated = scales_consolidated)
 scales_variables_modules <-
@@ -230,7 +230,7 @@ scales_variables_modules <-
 
 ### Census
 
-```
+``` r
 scales_variables_modules <-
   ba_census_data(scales_variables_modules = scales_variables_modules,
                  crs = crs,
@@ -239,7 +239,7 @@ scales_variables_modules <-
 
 ### Vacancy rate
 
-```
+``` r
 scales_variables_modules <-
   ru_vac_rate(scales_variables_modules = scales_variables_modules,
               crs = crs, geo_uid = cancensus_cma_code)
@@ -247,7 +247,7 @@ scales_variables_modules <-
 
 ### Can-BICS and Can-ALE
 
-```
+``` r
 scales_variables_modules <-
   ru_canale(scales_variables_modules = scales_variables_modules,
             crs = crs)
