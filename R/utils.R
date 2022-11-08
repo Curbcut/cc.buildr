@@ -13,8 +13,10 @@
 #' on all the scales.
 #' @export
 map_over_scales <- function(all_scales, fun) {
+  pb <- progressr::progressor(steps = sum(sapply(all_scales, length)))
   future.apply::future_mapply(\(geo, scales) {
     mapply(\(scale_name, scale_df) {
+      pb()
       fun(
         geo = geo, scales = scales,
         scale_name = scale_name, scale_df = scale_df

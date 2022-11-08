@@ -18,7 +18,7 @@
 #'
 #' @return Returns a data.frame of all buildings in the boundaries of the
 #' \code{"DA_table"}, with \code{"ID"}, \code{"name_2"}, \code{"DAUID"},
-#' \code{"CTUID"}, \code{"CSDUID"}, \code{"osm_ID"} and, \code{"geometry"} columns.
+#' \code{"osm_ID"} and, \code{"geometry"} columns.
 #' @export
 build_buildings <- function(DA_table, crs, download_MS_buildings = TRUE,
                             MS_province) {

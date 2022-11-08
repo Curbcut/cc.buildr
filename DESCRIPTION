@@ -12,6 +12,7 @@ Imports:
     stats,
     httr,
     sf,
+    data.table,
     cancensus,
     cmhc,
     osmdata,

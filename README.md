@@ -92,7 +92,7 @@ to understand the meaning of each argument.
 regions_dictionary <-
   regions_dictionary(
     all_tables = all_tables,
-    geo = c("CMA", "island", "city", "centraide", "cmhc"),
+    geo = c("CMA", "island", "city", "cmhc"),
     name = c(CMA = "Metropolitan Area",
              island = "Island of Montreal",
              city = "City of Montreal",
@@ -104,7 +104,6 @@ regions_dictionary <-
     pickable = c(CMA = TRUE,
                  island = TRUE,
                  city = TRUE,
-                 centraide = TRUE,
                  cmhc = FALSE))
 ```
 
