@@ -51,7 +51,7 @@ get_cmhc_zones <- function(cancensus_region, crs = NULL) {
   zones <- suppressWarnings(sf::st_intersection(zones, master))
   zones <- sf::st_cast(zones, "MULTIPOLYGON")
   # Filter out borders of other zones
-  zones$new_area <- cc.buildr::get_area(zones$Shape)
+  zones$new_area <- get_area(zones$Shape)
   zones$area_prop <- zones$new_area / zones$Shape_Area
   zones <- zones[zones$area_prop > 0.0001, "ZONE_NAME_EN"]
   names(zones)[1] <- "name"

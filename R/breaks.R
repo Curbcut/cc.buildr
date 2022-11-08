@@ -19,7 +19,7 @@ add_q3 <- function(df, vars, time_regex = "\\d{4}") {
       if (!var %in% names(df)) {
         return()
       }
-      cc.buildr::rough_rank(df[[var]], 3)
+      rough_rank(df[[var]], 3)
     }, simplify = FALSE, USE.NAMES = TRUE)
   q3s <- q3s[!sapply(q3s, is.null)]
   q3s <- tibble::as_tibble(q3s)
