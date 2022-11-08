@@ -1,29 +1,29 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# susbuildr
+# cc.buildr
 
 <!-- badges: start -->
 <!-- badges: end -->
 
-The objective of susbuildr is to help at all stages of the development
-of a Curbcut instance. susbuildr is used to build the first set of data
+The objective of cc.buildr is to help at all stages of the development
+of a Curbcut instance. cc.buildr is used to build the first set of data
 shared by all Curbcut instances, but also to help with the processing of
 data for new Curbcut pages.
 
 ## Installation
 
-You can install the development version of susbuildr from
+You can install the development version of cc.buildr from
 [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("MSSI-urban/susbuildr")
+devtools::install_github("MSSI-urban/cc.buildr")
 ```
 
 ## Usage
 
-susbuildr creates and works from long lists of `tibble`. For faster
+cc.buildr creates and works from long lists of `tibble`. For faster
 building, the package frequently uses functions of the `future_*apply`
 family from the `future.apply` package, for any computationally
 intensive work. These implementations of the apply family function can
@@ -85,7 +85,7 @@ dataset through the lens of the Montreal metropolitan area, or only
 through the city of Montreal to compare boroughs. The implications are
 that dynamically created text must be informed by a dictionary of
 regions to correctly serve the right information using accurate wording.
-Create the regions dictionary and see `?susbuildr::regions_dictionary`
+Create the regions dictionary and see `?cc.buildr::regions_dictionary`
 to understand the meaning of each argument.
 
 ``` r
@@ -176,7 +176,7 @@ scales_dictionary <-
 
 ### CMHC scale
 
-If the space under study is a CMA, susbuildr creates a ready to use
+If the space under study is a CMA, cc.buildr creates a ready to use
 Vacancy rate module. If this is the case, the regions must be properly
 created and specified in the scale dictionary.
 
@@ -199,8 +199,8 @@ scales_dictionary <-
 
 ### Additional scale
 
-susbuildr lets a builder add any region or scale that is not only
-census-related through the `susbuildr::additional_scale` function. This
+cc.buildr lets a builder add any region or scale that is not only
+census-related through the `cc.buildr::additional_scale` function. This
 is an example of the collaboration with Centraide of Greater Montreal:
 
 ``` r
@@ -225,7 +225,7 @@ scales_dictionary <-
 The way the regions and scales are organized in the following data
 construction is through a list of depth 2, where the region is the first
 depth and the scales are the second. The major contribution of
-`susbuildr::consolidate_scales` is that, for example, the city\$DA table
+`cc.buildr::consolidate_scales` is that, for example, the city\$DA table
 is a spatial filter between the city region and the DA table. It also
 updates the naming and IDs to ensure that all scales in a region can
 properly talk to each other.
