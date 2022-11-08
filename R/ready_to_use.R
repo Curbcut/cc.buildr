@@ -232,7 +232,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
 
   # Append data
   scales_variables_modules$scales$cmhc$cmhc_zone <-
-    susbuildr::merge(scales_variables_modules$scales$cmhc$cmhc_zone,
+    merge(scales_variables_modules$scales$cmhc$cmhc_zone,
       merged,
       by = "name"
     )
@@ -409,7 +409,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
       names(group_diff) <- cat_group_name
 
       out <-
-        susbuildr::add_variable(
+        add_variable(
           variables = scales_variables_modules$variables,
           var_code = var,
           type = "pct",
@@ -438,7 +438,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
   # Create a module
   modules <-
     scales_variables_modules$modules |>
-    susbuildr::add_module(
+    add_module(
       id = "vac_rate",
       nav_title = "Vacancy rate",
       title_text_title = "Vacancy rate",

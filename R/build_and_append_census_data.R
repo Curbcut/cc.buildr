@@ -53,7 +53,7 @@ ba_census_data <- function(scales_variables_modules,
 
   variables <-
     lapply(unique_var, \(u_var) {
-      out <- susbuildr::add_variable(
+      out <- cc.buildr::add_variable(
         variables = scales_variables_modules$variables,
         var_code = u_var,
         type = susdata::census_vectors$type[
@@ -90,7 +90,7 @@ ba_census_data <- function(scales_variables_modules,
   modules <-
     if (housing_module) {
       scales_variables_modules$modules |>
-        susbuildr::add_module(
+        cc.buildr::add_module(
           id = "housing",
           nav_title = "Housing system",
           title_text_title = "The housing system",

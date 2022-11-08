@@ -29,7 +29,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
                                           c("CSD", "CT", "DA", "DB")) {
 
   ## Only interpolate for bigger geometries than the base one
-  all_tables <- susbuildr::reconstruct_all_tables(all_scales)
+  all_tables <- reconstruct_all_tables(all_scales)
   construct_for <-
     lapply(all_tables, \(scales)  {
       if (!base_scale %in% scales) {
@@ -52,9 +52,9 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
 
       # Get the base scale and clean up columns
       base <-
-        susbuildr::merge(scales[[base_scale]], data, by = paste0(base_scale, "_ID"))
+        merge(scales[[base_scale]], data, by = paste0(base_scale, "_ID"))
       base <- sf::st_transform(base, crs)
-      base$area <- susbuildr::get_area(base$geometry)
+      base$area <- get_area(base$geometry)
       base <- sf::st_set_agr(base, "constant")
       ids <- names(base)[grepl("_ID$", names(base))]
       other_cols <- names(base)[names(base) %in% c(weight_by, names(data))]
@@ -69,7 +69,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
         mapply(\(scale_name, scale_df) {
           # If the scale is already the one containing data, merge and return
           if (scale_name == base_scale) {
-            return(susbuildr::merge(scale_df, data,
+            return(merge(scale_df, data,
               by = paste0(base_scale, "_ID"),
               all.x = TRUE
             ))
@@ -107,7 +107,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
           }
 
           # Merge to the existing data
-          susbuildr::merge(scale_df, out, by = scale_id, all.x = TRUE)
+          merge(scale_df, out, by = scale_id, all.x = TRUE)
         }, names(scales), scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
       # Interpolate to non-census scales
@@ -162,7 +162,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
           }
 
           # Merge to the existing data
-          susbuildr::merge(scale_df, out, by = "ID", all.x = TRUE)
+          merge(scale_df, out, by = "ID", all.x = TRUE)
         }, names(census_interpolated), census_interpolated,
         SIMPLIFY = FALSE, USE.NAMES = TRUE
         )
@@ -173,12 +173,12 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
 
   ## Reorder all columns
   interpolated <-
-    susbuildr::reorder_columns(all_scales = interpolated)
+    reorder_columns(all_scales = interpolated)
 
 
   ## Get the CRS back to WGS 84
   interpolated <-
-    susbuildr::map_over_scales(
+    map_over_scales(
       all_scales = interpolated,
       fun = \(scale_df = scale_df, ...) sf::st_transform(scale_df, 4326)
     )
@@ -275,13 +275,13 @@ interpolate_from_area <- function(to, DA_table,
   das <- sf::st_transform(das, crs)
   das <- sf::st_set_agr(das, "constant")
   # Add DA area
-  das$area <- susbuildr::get_area(das$geometry)
+  das$area <- get_area(das$geometry)
   # Add new table area
   destination <- sf::st_transform(to, crs)
   destination <-
     destination[, names(destination)[!names(destination) %in% additive_vars]]
   intersected_table <- suppressWarnings(sf::st_intersection(destination, das))
-  intersected_table$new_area <- susbuildr::get_area(intersected_table$geometry)
+  intersected_table$new_area <- get_area(intersected_table$geometry)
 
   # Get proportion of area per zone
   intersected_table$area_prop <- intersected_table$new_area / intersected_table$area

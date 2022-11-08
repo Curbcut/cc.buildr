@@ -146,7 +146,7 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs) {
   ## Get the CRS back to WGS 84 ---------------------------------------------
 
   out <-
-    susbuildr::map_over_scales(
+    cc.buildr::map_over_scales(
       all_scales = out,
       fun = \(scale_df = scale_df, ...) sf::st_transform(scale_df, 4326)
     )
@@ -154,7 +154,7 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs) {
   ## Reorder all columns ----------------------------------------------------
 
   out <-
-    susbuildr::reorder_columns(all_scales = out)
+    cc.buildr::reorder_columns(all_scales = out)
 
 
   # Return the final output -------------------------------------------------

@@ -24,17 +24,17 @@
 #' with the reverse geocoded addresses.
 #' @export
 rev_geocode_sf <- function(master_polygon, sf_df, province_code, crs) {
-  if (!province_code %in% susbuildr::addresses_db_links$province_code) {
+  if (!province_code %in% cc.buildr::addresses_db_links$province_code) {
     stop(paste0(
       "`province_code` must be an available province_code in ",
-      "`susbuildr::addresses_db_links`."
+      "`cc.buildr::addresses_db_links`."
     ))
   }
 
   # Download and load the addresses -----------------------------------------
 
-  url <- susbuildr::addresses_db_links$link[
-    susbuildr::addresses_db_links$province_code == province_code
+  url <- addresses_db_links$link[
+    addresses_db_links$province_code == province_code
   ]
   tmp <- tempfile(pattern = "addresses_db", fileext = ".zip")
   utils::download.file(url, destfile = tmp)
@@ -136,7 +136,7 @@ rev_geocode_sf <- function(master_polygon, sf_df, province_code, crs) {
   # Bind to raw sf df -------------------------------------------------------
 
   out <-
-    susbuildr::merge(
+    merge(
       sf_df[, names(sf_df)[names(sf_df) != "name"]],
       sf::st_drop_geometry(sf_df_centroids[, c("ID", "name")], by = "ID")
     )
