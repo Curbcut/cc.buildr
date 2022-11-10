@@ -1,7 +1,7 @@
 #' Add a scale to the scales dictionary
 #'
 #' @param scales_dictionary <`data.frame`> An already built scales dictionary
-#' data.frame, most probably built using \code{\link[susbuildr]{census_scales_dictionary}}.
+#' data.frame, most probably built using \code{\link[cc.buildr]{census_scales_dictionary}}.
 #' @param scale <`character`> The scale code name, e.g. \code{"CSD"}.
 #' @param sing <`character`> The scale name in singular, e.g. \code{"city"}.
 #' @param plur <`character`> The scale name in plurial, e.g. \code{"cities"}.

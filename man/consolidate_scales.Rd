@@ -16,7 +16,7 @@ present in the \code{all_tables} list.}
 
 \item{regions}{<\verb{named list}> A named list of all the unioned geometry
 (the names of \code{all_tables}). The second element of the list returned
-by \code{\link[susbuildr]{create_master_polygon}}.}
+by \code{\link[cc.buildr]{create_master_polygon}}.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32618} for Montreal.}

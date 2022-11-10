@@ -11,11 +11,11 @@ verify_dictionaries(all_tables, regions_dictionary, scales_dictionary)
 is used to retrieve the shapefiles in the supplied folder.}
 
 \item{regions_dictionary}{<\code{data.frame}> The regions dictionary built using
-\code{\link[susbuildr]{regions_dictionary}}}
+\code{\link[cc.buildr]{regions_dictionary}}}
 
 \item{scales_dictionary}{<\code{data.frame}> The scales dictionary built using
-\code{\link[susbuildr]{build_census_scales}} and
-\code{\link[susbuildr]{additional_scale}}}
+\code{\link[cc.buildr]{build_census_scales}} and
+\code{\link[cc.buildr]{additional_scale}}}
 }
 \value{
 Returns nothing if the test passes, or errors if it doesn't.

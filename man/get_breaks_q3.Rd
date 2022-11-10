@@ -8,7 +8,7 @@ get_breaks_q3(df, vars)
 }
 \arguments{
 \item{df}{<\code{data.frame}> Contains all columns in \code{vars} as well as their
-q3s. The result of \code{\link[susbuildr]{add_q3}}.}
+q3s. The result of \code{\link[cc.buildr]{add_q3}}.}
 
 \item{vars}{<\verb{vector of character}> Contains all variable names from which
 to add q3s. Must fit with a name in \code{df}.}

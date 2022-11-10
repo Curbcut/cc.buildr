@@ -9,7 +9,7 @@ append_empty_variables_table(scales_consolidated)
 \arguments{
 \item{scales_consolidated}{<\verb{named list}> A named list of sf data.frame
 containing all scales listed with their regions. The output of
-\code{\link[susbuildr]{consolidate_scales}}.}
+\code{\link[cc.buildr]{consolidate_scales}}.}
 }
 \value{
 A list with the second index being an empty variables table.

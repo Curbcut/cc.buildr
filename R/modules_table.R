@@ -1,12 +1,12 @@
 #' Append an empty modules table to the scales list
 #'
 #' `append_empty_modules_table()` takes the output of
-#' \code{\link[susbuildr]{consolidate_scales}} and appends an empty
+#' \code{\link[cc.buildr]{consolidate_scales}} and appends an empty
 #' modules table.
 #'
 #' @param scales <`named list`> A named list containings the scales and the
 #' empty variables table. The output of
-#' \code{\link[susbuildr]{consolidate_scales}}
+#' \code{\link[cc.buildr]{consolidate_scales}}
 #'
 #' @return A list with the second index being an empty variables table.
 #' @export

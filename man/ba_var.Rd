@@ -39,11 +39,11 @@ third is the modules table.}
 
 \item{base_scale}{<\code{character}> The denominator for which data should be
 interpolated. Defaults to \code{households}. The other option is \code{population}.
-Directly fed to \code{\link[susbuildr]{interpolate_from_census_geo}}}
+Directly fed to \code{\link[cc.buildr]{interpolate_from_census_geo}}}
 
 \item{weight_by}{<\code{character}> The denominator for which data should be
 interpolated. Defaults to \code{households}. The other option is \code{population}.
-Directly fed to \code{\link[susbuildr]{interpolate_from_census_geo}}}
+Directly fed to \code{\link[cc.buildr]{interpolate_from_census_geo}}}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32618} for Montreal.}
@@ -52,35 +52,35 @@ Directly fed to \code{\link[susbuildr]{interpolate_from_census_geo}}}
 a timeframe, placed at the end of the \code{vars} vector. e.g. \verb{\\\\d\{4\}} for
 years.}
 
-\item{variable_var_code}{<\code{charater}> See \code{\link[susbuildr]{add_variable}}.}
+\item{variable_var_code}{<\code{charater}> See \code{\link[cc.buildr]{add_variable}}.}
 
-\item{variable_type}{<\code{charater}> See \code{\link[susbuildr]{add_variable}}.}
+\item{variable_type}{<\code{charater}> See \code{\link[cc.buildr]{add_variable}}.}
 
-\item{variable_var_title}{<\code{charater}> See \code{\link[susbuildr]{add_variable}}.}
+\item{variable_var_title}{<\code{charater}> See \code{\link[cc.buildr]{add_variable}}.}
 
-\item{variable_var_short}{<\code{charater}> See \code{\link[susbuildr]{add_variable}}.}
+\item{variable_var_short}{<\code{charater}> See \code{\link[cc.buildr]{add_variable}}.}
 
-\item{variable_explanation}{<\code{charater}> See \code{\link[susbuildr]{add_variable}}.}
+\item{variable_explanation}{<\code{charater}> See \code{\link[cc.buildr]{add_variable}}.}
 
-\item{variable_theme}{<\code{charater}> See \code{\link[susbuildr]{add_variable}}.}
+\item{variable_theme}{<\code{charater}> See \code{\link[cc.buildr]{add_variable}}.}
 
-\item{variable_private}{<\code{charater}> See \code{\link[susbuildr]{add_variable}}.}
+\item{variable_private}{<\code{charater}> See \code{\link[cc.buildr]{add_variable}}.}
 
-\item{variable_source}{<\code{charater}> See \code{\link[susbuildr]{add_variable}}.}
+\item{variable_source}{<\code{charater}> See \code{\link[cc.buildr]{add_variable}}.}
 
-\item{module_id}{<\code{charater}> Optional. See \code{\link[susbuildr]{add_module}}.}
+\item{module_id}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 
-\item{module_nav_title}{<\code{charater}> Optional. See \code{\link[susbuildr]{add_module}}.}
+\item{module_nav_title}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 
-\item{module_title_text_title}{<\code{charater}> Optional. See \code{\link[susbuildr]{add_module}}.}
+\item{module_title_text_title}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 
-\item{module_title_text_main}{<\code{charater}> Optional. See \code{\link[susbuildr]{add_module}}.}
+\item{module_title_text_main}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 
-\item{module_title_text_extra}{<\code{charater}> Optional. See \code{\link[susbuildr]{add_module}}.}
+\item{module_title_text_extra}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 
-\item{module_metadata}{<\code{charater}> Optional. See \code{\link[susbuildr]{add_module}}.}
+\item{module_metadata}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 
-\item{module_dataset_info}{<\code{charater}> Optional. See \code{\link[susbuildr]{add_module}}.}
+\item{module_dataset_info}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 }
 \value{
 A list of length 3, similar to the one fed to

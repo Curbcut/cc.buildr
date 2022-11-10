@@ -2,7 +2,7 @@
 #'
 #' This geocoding works in three steps. The province database of addresses is
 #' first downloaded from the National Open Database of Addresses, with URLs to
-#' download the zip files available in \code{\link[susbuildr]{addresses_db_links}}.
+#' download the zip files available in \code{\link[cc.buildr]{addresses_db_links}}.
 #' For the missing addresses, we use the province's reverse geolocating service
 #' (at the moment only available for QC and BC). Third, we reverse geocode using
 #' the OSM service. The reverse geocoding is done using the centroid of every

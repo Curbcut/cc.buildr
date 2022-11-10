@@ -3,6 +3,13 @@
 #' @param scales_variables_modules <`names list`> A list of length three.
 #' The first is all the scales, the second is the variables table, and the
 #' third is the modules table.
+#' @param region_DA_IDs <`named list`> <`character vector`> All the current census'
+#' DA IDs present in the region. Only those will be extracted from the database
+#' to do interpolation.
+#' @param census_vectors <`character vector`> Data variables that should be added
+#' to the scales. By default, all: \code{\link[cc.data]{census_vectors}}. Look
+#' at the \code{\link[cc.data]{census_vectors_table}} to view all
+#' variables explained.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
 #' @param housing_module <`logical`> Should a housing module be added to
@@ -13,31 +20,29 @@
 #' in the variables table and the module table.
 #' @export
 ba_census_data <- function(scales_variables_modules,
+                           region_DA_IDs,
+                           census_vectors = cc.data::census_vectors,
                            crs,
                            housing_module = TRUE) {
 
   # Declare all variables from the census -----------------------------------
 
   vars <-
-    sapply(susdata::census_vectors$var_code,
-      \(x) paste(x, susdata::census_years, sep = "_"),
+    sapply(census_vectors,
+      \(x) paste(x, cc.data::census_years, sep = "_"),
       simplify = FALSE, USE.NAMES = FALSE
     ) |> unlist()
 
-  unique_var <- susdata::census_vectors$var_code
+  unique_var <- census_vectors
 
 
   # Build census data for all possible scales -------------------------------
 
-  # TKTK THIS FOLLOWING DATA MUST BE RETRIEVED THROUGH AN AWS BUCKET OR SMTH
-  qs::qload("census.qsm")
-
   census_dat <- build_census_data(
     scales_consolidated = scales_consolidated,
-    census_data = census_data,
-    census_data_raw_DA = data_raw$DA,
-    crs = crs
-  )
+    region_DA_IDs = region_DA_IDs,
+    census_vectors = census_vectors,
+    crs = crs)
 
 
   # Calculate breaks --------------------------------------------------------
@@ -56,20 +61,20 @@ ba_census_data <- function(scales_variables_modules,
       out <- add_variable(
         variables = scales_variables_modules$variables,
         var_code = u_var,
-        type = susdata::census_vectors$type[
-          susdata::census_vectors$var_code == u_var
+        type = cc.data::census_vectors$type[
+          cc.data::census_vectors$var_code == u_var
         ],
-        var_title = susdata::census_vectors$var_title[
-          susdata::census_vectors$var_code == u_var
+        var_title = cc.data::census_vectors$var_title[
+          cc.data::census_vectors$var_code == u_var
         ],
-        var_short = susdata::census_vectors$var_short[
-          susdata::census_vectors$var_code == u_var
+        var_short = cc.data::census_vectors$var_short[
+          cc.data::census_vectors$var_code == u_var
         ],
-        explanation = susdata::census_vectors$explanation[
-          susdata::census_vectors$var_code == u_var
+        explanation = cc.data::census_vectors$explanation[
+          cc.data::census_vectors$var_code == u_var
         ],
-        theme = susdata::census_vectors$theme[
-          susdata::census_vectors$var_code == u_var
+        theme = cc.data::census_vectors$theme[
+          cc.data::census_vectors$var_code == u_var
         ],
         private = FALSE,
         dates = with_breaks$avail_dates[[u_var]],

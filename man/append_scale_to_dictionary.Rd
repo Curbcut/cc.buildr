@@ -16,7 +16,7 @@ append_scale_to_dictionary(
 }
 \arguments{
 \item{scales_dictionary}{<\code{data.frame}> An already built scales dictionary
-data.frame, most probably built using \code{\link[susbuildr]{census_scales_dictionary}}.}
+data.frame, most probably built using \code{\link[cc.buildr]{census_scales_dictionary}}.}
 
 \item{scale}{<\code{character}> The scale code name, e.g. \code{"CSD"}.}
 

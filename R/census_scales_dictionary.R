@@ -1,7 +1,7 @@
 #' Build census scales dictionary
 #'
 #' @param census_scales <`list`> A named list containing census scales built
-#' with the \code{\link[susbuildr]{build_census_scales}} function.
+#' with the \code{\link[cc.buildr]{build_census_scales}} function.
 #'
 #' @return A data.frame used as dictionary for texts on the platform.
 #' @export

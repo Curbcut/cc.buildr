@@ -3,7 +3,7 @@
 #' @param master_polygon <`sfc_MULTIPOLYGON`>. Unioned multipolygon of all the
 #' geometries for which census data must be gathered.
 #' @param census_dataset <`character`> The dataset to query for available
-#' regions, e.g. \code{"CA16"}. Defaults to \code{\link[susbuildr]{current_census}}.
+#' regions, e.g. \code{"CA16"}. Defaults to \code{\link[cc.buildr]{current_census}}.
 #' @param regions <`named list`> A named list of census regions to retrieve.
 #' Names must be valid census aggregation levels. Preferably a whole province
 #' to make sure all geometries present in the <`master_polygon`> is added.

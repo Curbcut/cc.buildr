@@ -6,10 +6,10 @@
 #' @param all_tables <`named list`> The name of the named list \code{all_tables}
 #' is used to retrieve the shapefiles in the supplied folder.
 #' @param regions_dictionary <`data.frame`> The regions dictionary built using
-#' \code{\link[susbuildr]{regions_dictionary}}
+#' \code{\link[cc.buildr]{regions_dictionary}}
 #' @param scales_dictionary <`data.frame`> The scales dictionary built using
-#' \code{\link[susbuildr]{build_census_scales}} and
-#' \code{\link[susbuildr]{additional_scale}}
+#' \code{\link[cc.buildr]{build_census_scales}} and
+#' \code{\link[cc.buildr]{additional_scale}}
 #'
 #' @return Returns nothing if the test passes, or errors if it doesn't.
 #' @export

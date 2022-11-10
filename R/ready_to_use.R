@@ -12,7 +12,7 @@
 #' @export
 ru_canale <- function(scales_variables_modules, crs) {
   ba_var(
-    data = susdata::canale_data,
+    data = cc.data::canale_data,
     scales_variables_modules = scales_variables_modules,
     base_scale = "DA",
     weight_by = "households",
@@ -91,7 +91,7 @@ ru_canale <- function(scales_variables_modules, crs) {
 #' @export
 ru_canbics <- function(scales_variables_modules, crs) {
   ba_var(
-    data = susdata::canbics_data,
+    data = cc.data::canbics_data,
     scales_variables_modules = scales_variables_modules,
     base_scale = "DA",
     weight_by = "households",

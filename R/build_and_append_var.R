@@ -8,30 +8,30 @@
 #' third is the modules table.
 #' @param base_scale <`character`> The denominator for which data should be
 #' interpolated. Defaults to `households`. The other option is `population`.
-#' Directly fed to \code{\link[susbuildr]{interpolate_from_census_geo}}
+#' Directly fed to \code{\link[cc.buildr]{interpolate_from_census_geo}}
 #' @param weight_by <`character`> The denominator for which data should be
 #' interpolated. Defaults to `households`. The other option is `population`.
-#' Directly fed to \code{\link[susbuildr]{interpolate_from_census_geo}}
+#' Directly fed to \code{\link[cc.buildr]{interpolate_from_census_geo}}
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32618} for Montreal.
 #' @param time_regex <`character`> Regular expression which corresponds to
 #' a timeframe, placed at the end of the `vars` vector. e.g. `\\d{4}` for
 #' years.
-#' @param variable_var_code <`charater`> See \code{\link[susbuildr]{add_variable}}.
-#' @param variable_type <`charater`> See \code{\link[susbuildr]{add_variable}}.
-#' @param variable_var_title <`charater`> See \code{\link[susbuildr]{add_variable}}.
-#' @param variable_var_short <`charater`> See \code{\link[susbuildr]{add_variable}}.
-#' @param variable_explanation <`charater`> See \code{\link[susbuildr]{add_variable}}.
-#' @param variable_theme <`charater`> See \code{\link[susbuildr]{add_variable}}.
-#' @param variable_private <`charater`> See \code{\link[susbuildr]{add_variable}}.
-#' @param variable_source <`charater`> See \code{\link[susbuildr]{add_variable}}.
-#' @param module_id <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
-#' @param module_nav_title <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
-#' @param module_title_text_title <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
-#' @param module_title_text_main <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
-#' @param module_title_text_extra <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
-#' @param module_metadata <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
-#' @param module_dataset_info <`charater`> Optional. See \code{\link[susbuildr]{add_module}}.
+#' @param variable_var_code <`charater`> See \code{\link[cc.buildr]{add_variable}}.
+#' @param variable_type <`charater`> See \code{\link[cc.buildr]{add_variable}}.
+#' @param variable_var_title <`charater`> See \code{\link[cc.buildr]{add_variable}}.
+#' @param variable_var_short <`charater`> See \code{\link[cc.buildr]{add_variable}}.
+#' @param variable_explanation <`charater`> See \code{\link[cc.buildr]{add_variable}}.
+#' @param variable_theme <`charater`> See \code{\link[cc.buildr]{add_variable}}.
+#' @param variable_private <`charater`> See \code{\link[cc.buildr]{add_variable}}.
+#' @param variable_source <`charater`> See \code{\link[cc.buildr]{add_variable}}.
+#' @param module_id <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
+#' @param module_nav_title <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
+#' @param module_title_text_title <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
+#' @param module_title_text_main <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
+#' @param module_title_text_extra <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
+#' @param module_metadata <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
+#' @param module_dataset_info <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with the new variable added, and possible a new

@@ -9,13 +9,13 @@ append_empty_modules_table(scales)
 \arguments{
 \item{scales}{<\verb{named list}> A named list containings the scales and the
 empty variables table. The output of
-\code{\link[susbuildr]{consolidate_scales}}}
+\code{\link[cc.buildr]{consolidate_scales}}}
 }
 \value{
 A list with the second index being an empty variables table.
 }
 \description{
 \code{append_empty_modules_table()} takes the output of
-\code{\link[susbuildr]{consolidate_scales}} and appends an empty
+\code{\link[cc.buildr]{consolidate_scales}} and appends an empty
 modules table.
 }

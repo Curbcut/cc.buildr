@@ -44,7 +44,7 @@ add_q3 <- function(df, vars, time_regex = "\\d{4}") {
 #' Get q3 break values
 #'
 #' @param df <`data.frame`> Contains all columns in `vars` as well as their
-#' q3s. The result of \code{\link[susbuildr]{add_q3}}.
+#' q3s. The result of \code{\link[cc.buildr]{add_q3}}.
 #' @param vars <`vector of character`> Contains all variable names from which
 #' to add q3s. Must fit with a name in `df`.
 #'
@@ -84,7 +84,7 @@ get_breaks_q3 <- function(df, vars) {
 #'
 #' @param df <`data.frame`> Contains all columns in `vars`.
 #' @param breaks <`data.frame`> A data.frame containing all the q5 breaks. The
-#' output of \code{\link[susbuildr]{get_breaks_q5}}.
+#' output of \code{\link[cc.buildr]{get_breaks_q5}}.
 #' @param time_regex <`character`> Regular expression which corresponds to
 #' a timeframe, placed at the end of the `vars` vector. e.g. `\\d{4}` for
 #' years.

@@ -4,12 +4,27 @@
 \alias{ba_census_data}
 \title{Build and append census data}
 \usage{
-ba_census_data(scales_variables_modules, crs, housing_module = TRUE)
+ba_census_data(
+  scales_variables_modules,
+  region_DA_IDs,
+  census_vectors = cc.data::census_vectors,
+  crs,
+  housing_module = TRUE
+)
 }
 \arguments{
 \item{scales_variables_modules}{<\verb{names list}> A list of length three.
 The first is all the scales, the second is the variables table, and the
 third is the modules table.}
+
+\item{region_DA_IDs}{<\verb{named list}> <\verb{character vector}> All the current census'
+DA IDs present in the region. Only those will be extracted from the database
+to do interpolation.}
+
+\item{census_vectors}{<\verb{character vector}> Data variables that should be added
+to the scales. By default, all: \code{\link[cc.data]{census_vectors}}. Look
+at the \code{\link[cc.data]{census_vectors_table}} to view all
+variables explained.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}

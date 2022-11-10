@@ -47,11 +47,11 @@ split_scale <- function(destination, cutting_layer,
   # Transform to correct crs, and trim
   destination <- sf::st_transform(destination, crs)
   dest <- destination
-  dest$dest_original_area <- susbuildr::get_area(destination$geometry)
+  dest$dest_original_area <- cc.buildr::get_area(destination$geometry)
   dest <- dest[, c("ID", "dest_original_area", "geometry")]
   names(dest) <- c("dest_id", "dest_original_area", "geometry")
   cut <- sf::st_transform(cutting_layer, crs)
-  cut$cut_original_area <- susbuildr::get_area(cut$geometry)
+  cut$cut_original_area <- cc.buildr::get_area(cut$geometry)
   cut$cut_id <- seq_len(nrow(cut))
   cut <- cut[, c("name", "type", "cut_id", "cut_original_area", "geometry")]
 
@@ -59,7 +59,7 @@ split_scale <- function(destination, cutting_layer,
   intersected <- suppressWarnings(sf::st_intersection(dest, cut))
 
   # Identify the destination polygons that are getting removed
-  intersected$dest_new_area <- susbuildr::get_area(intersected$geometry)
+  intersected$dest_new_area <- cc.buildr::get_area(intersected$geometry)
   dest_ids_intersected_areas <-
     stats::aggregate(intersected$dest_new_area,
       by = list(dest_id = intersected$dest_id), FUN = sum

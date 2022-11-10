@@ -18,10 +18,10 @@
 #' `all_scales`, with the columns from `data` interpolated in. The second is
 #' a data.frame of scales reference, to know for which scales the data is
 #' available. It can directly be fed to the \code{scales}
-#' argument of \code{\link[susbuildr]{add_variable}}.The third
+#' argument of \code{\link[cc.buildr]{add_variable}}.The third
 #' is a data.frame of interpolation reference, to know for which scales the data
 #' has been interpolated. It can directly be fed to the \code{interpolated}
-#' argument of \code{\link[susbuildr]{add_variable}}.
+#' argument of \code{\link[cc.buildr]{add_variable}}.
 #' @export
 interpolate_from_census_geo <- function(data, base_scale, all_scales,
                                         weight_by = "households", crs,

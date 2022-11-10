@@ -2,9 +2,14 @@
 #'
 #' @param scales_consolidated A named list of sf data.frame
 #' containing all scales listed with their regions. The output of
-#' \code{\link[susbuildr]{consolidate_scales}}.
-#' @param census_data "TKTK"
-#' @param census_data_raw_DA "TKTK"
+#' \code{\link[cc.buildr]{consolidate_scales}}.
+#' @param region_DA_IDs <`named list`> <`character vector`> All the current census'
+#' DA IDs present in the region. Only those will be extracted from the database
+#' to do interpolation.
+#' @param census_vectors <`character vector`> Data variables that should be added
+#' to the scales. By default, all: \code{\link[cc.data]{census_vectors}}. Look
+#' at the \code{\link[cc.data]{census_vectors_table}} to view all
+#' variables explained.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
 #'
@@ -16,38 +21,42 @@
 #' scales the data has been interpolated. It can directly be fed to the
 #' interpolated argument of add_variable.
 #' @export
-build_census_data <- function(scales_consolidated, census_data,
-                              census_data_raw_DA, crs) {
+build_census_data <- function(scales_consolidated, region_DA_IDs,
+                              census_vectors, crs) {
 
-  # Only build census data for scales DA and above
+
+  # Filter out scales smaller than DAs --------------------------------------
+
   higher_DA <- lapply(scales_consolidated, \(x) {
     if (!"DA" %in% names(x)) {
       return(x)
     }
     x[seq_len(which("DA" == names(x)))]
   })
-
   # Only keep the ID column
   higher_DA <-
     map_over_scales(
       all_scales = higher_DA,
-      \(scale_df = scale_df, ...) scale_df[c("ID", "geometry")]
+      fun = \(scale_df = scale_df, ...) scale_df["ID"]
     )
 
-  # Get zones for which data is missng (interpolation will be needed)
+
+  # Filter in only zones that are not in the census -------------------------
+
   missing <-
     sapply(higher_DA, \(x) {
       mapply(\(df, scale) {
+        # Special cases for CT, where sometimes CSDs might fill in gaps
         if (scale == "CT") {
-          csd_data <- census_data$CSD
-          csd_data$ID <- paste0("CSD_", csd_data$ID)
+          csd_data <- cc.data::census_all_ids[["CSD"]]
+          csd_data <- paste0("CSD_", csd_data)
         }
 
         all_possible_ids <-
           if (scale == "CT") {
-            c(census_data[[scale]]$ID, csd_data$ID)
+            c(cc.data::census_all_ids[[scale]], csd_data)
           } else {
-            census_data[[scale]]$ID
+            cc.data::census_all_ids[[scale]]
           }
 
         missing_ids <- df$ID[!df$ID %in% all_possible_ids]
@@ -55,7 +64,9 @@ build_census_data <- function(scales_consolidated, census_data,
       }, x, names(x), SIMPLIFY = FALSE, USE.NAMES = TRUE)
     }, simplify = FALSE, USE.NAMES = TRUE)
 
-  # Regroup all missing zones per scales to interpolate only once
+
+  # Regroup all missing zones per scales to interpolate only once -----------
+
   all_scales <- unique(unlist(sapply(scales_consolidated, names)))
   ready <-
     sapply(all_scales, \(scale) {
@@ -70,18 +81,50 @@ build_census_data <- function(scales_consolidated, census_data,
     }, simplify = FALSE, USE.NAMES = TRUE)
   ready <- ready[!sapply(ready, is.null)]
 
-  # Interpolate using raw DA data
-  filled_vals <- susdata::census_custom_boundaries(
+
+  # Interpolate -------------------------------------------------------------
+
+  filled_vals <- cc.data::census_custom_boundaries(
     destination = ready,
-    data_raw_DA = census_data_raw_DA,
+    DA_IDs = region_DA_IDs,
+    census_vectors = census_vectors,
     crs = crs
   )
 
-  # Merge all census data to the scales
+
+  # Merge processed census data with interpolated data ----------------------
+
+  pb <- progressr::progressor(steps = sum(sapply(higher_DA, length)))
+
   census_data_merged <- sapply(higher_DA, \(x) {
     mapply(\(df, scale) {
-      all_data <- if (scale %in% names(census_data)) {
-        rbind(census_data[[scale]], sf::st_drop_geometry(filled_vals[[scale]]))
+
+      # Get the census data for that scale
+      ids <- if (scale == "CT") {
+        ids <- df$ID[!df$ID %in% filled_vals[[scale]]$ID]
+        ids[!grepl("CSD_", ids)]
+      } else {
+        df$ID[!df$ID %in% filled_vals[[scale]]$ID]
+      }
+
+      if (length(ids) > 0) {
+        conn <- cc.data::db_connect()
+        census_data <- tryCatch(cc.data::db_read_data(
+          conn, table = paste0("processed_", scale),
+          columns = census_vectors,
+          IDs = ids),
+          error = function(e) {
+            cc.data::db_disconnect(conn)
+            stop(e)
+          })
+        cc.data::db_disconnect(conn)
+      } else {
+        census_data <- tibble::tibble()
+      }
+
+      # Bind all the data
+      all_data <- if (scale %in% cc.data::census_scales) {
+        rbind(census_data, sf::st_drop_geometry(filled_vals[[scale]]))
       } else {
         sf::st_drop_geometry(filled_vals[[scale]])
       }
@@ -89,18 +132,40 @@ build_census_data <- function(scales_consolidated, census_data,
       out_df <- merge(df, all_data, by = "ID", all.x = TRUE)
 
       if (scale == "CT") {
-        csd_data <- census_data$CSD
-        csd_data$ID <- paste0("CSD_", csd_data$ID)
-        ct_csds <- out_df[out_df$ID %in% csd_data$ID, "ID"]
-        ct_csds <- merge(ct_csds, csd_data, by = "ID", all.x = TRUE)
-        out_df <- rbind(out_df[!out_df$ID %in% ct_csds$ID, ], ct_csds)
+        csd_ids <- df$ID[!df$ID %in% filled_vals[[scale]]$ID]
+        csd_ids <- csd_ids[grepl("CSD_", csd_ids)]
+        csd_ids <- gsub("CSD_", "", csd_ids)
+
+        if (length(csd_ids) > 0) {
+          conn <- cc.data::db_connect()
+          csd_data <- tryCatch(cc.data::db_read_data(
+            conn, table = paste0("processed_", "CSD"),
+            columns = census_vectors,
+            IDs = csd_ids),
+            error = function(e) {
+              cc.data::db_disconnect(conn)
+              stop(e)
+            })
+          cc.data::db_disconnect(conn)
+
+          ct_csds <- out_df[!out_df$ID %in% paste0("CSD_", csd_ids), ]
+          csd_data$ID <- paste0("CSD_", csd_data$ID)
+          csd_data <- merge(csd_data, out_df[, "ID"], by = "ID")
+
+          out_df <- rbind(ct_csds, csd_data)
+        } else out_df
+
       }
+
+      pb()
 
       out_df
     }, x, names(x), SIMPLIFY = FALSE, USE.NAMES = TRUE)
   }, simplify = FALSE, USE.NAMES = TRUE)
 
-  # Merge the the raw scale that has been fed and reorder columns
+
+  # Merge to scales_consolidated --------------------------------------------
+
   final_scales <-
     map_over_scales(
       all_scales = scales_consolidated,
@@ -117,24 +182,28 @@ build_census_data <- function(scales_consolidated, census_data,
     )
   final_scales <- reorder_columns(final_scales)
 
-  # Scales at which the data is available
+
+  # Keep track of scales for which census data is available ------------------
+
   avail_scales <-
     map_over_scales(census_data_merged,
-      fun = \(geo = geo, scale_name = scale_name, ...) {
-        tibble::tibble(
-          geo = geo,
-          scale = scale_name
-        )
-      }
+                    fun = \(geo = geo, scale_name = scale_name, ...) {
+                      tibble::tibble(
+                        geo = geo,
+                        scale = scale_name
+                      )
+                    }
     )
   avail_scales <-
     sapply(avail_scales, \(x) do.call(rbind, x),
-      simplify = FALSE, USE.NAMES = TRUE
+           simplify = FALSE, USE.NAMES = TRUE
     ) |>
     (\(x) do.call(rbind, x))()
   row.names(avail_scales) <- NULL
 
-  # Create interpolated references as a data.frame
+
+  # Create interpolated references as a data.frame --------------------------
+
   interpolated_ref <-
     sapply(sapply(higher_DA, names), \(scales) {
       sapply(scales, \(scale) {
@@ -146,23 +215,25 @@ build_census_data <- function(scales_consolidated, census_data,
     }, simplify = FALSE, USE.NAMES = TRUE)
   interpolated_ref <-
     map_over_scales(interpolated_ref,
-      fun = \(geo = geo, scale_name = scale_name,
-        scale_df = scale_df, ...) {
-        tibble::tibble(
-          geo = geo,
-          scale = scale_name,
-          interpolated_from = scale_df
-        )
-      }
+                    fun = \(geo = geo, scale_name = scale_name,
+                            scale_df = scale_df, ...) {
+                      tibble::tibble(
+                        geo = geo,
+                        scale = scale_name,
+                        interpolated_from = scale_df
+                      )
+                    }
     )
   interpolated_ref <-
     sapply(interpolated_ref, \(x) do.call(rbind, x),
-      simplify = FALSE, USE.NAMES = TRUE
+           simplify = FALSE, USE.NAMES = TRUE
     ) |>
     (\(x) do.call(rbind, x))()
   row.names(interpolated_ref) <- NULL
 
-  # Return census data
+
+  # Return data with available scales and interpolated reference ------------
+
   return(list(
     scales = final_scales,
     avail_scales = avail_scales,

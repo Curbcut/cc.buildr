@@ -14,7 +14,8 @@
 #' @export
 map_over_scales <- function(all_scales, fun) {
   pb <- progressr::progressor(steps = sum(sapply(all_scales, length)))
-  future.apply::future_mapply(\(geo, scales) {
+  ## TKTK WHY DOESN'T WORK WITH FUTURE.APPLY ?
+  mapply(\(geo, scales) {
     mapply(\(scale_name, scale_df) {
       pb()
       fun(
@@ -22,8 +23,7 @@ map_over_scales <- function(all_scales, fun) {
         scale_name = scale_name, scale_df = scale_df
       )
     }, names(scales), scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
-  }, names(all_scales), all_scales, SIMPLIFY = FALSE, USE.NAMES = TRUE,
-  future.seed = NULL)
+  }, names(all_scales), all_scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 }
 
 #' Reconstruct all_tables
@@ -63,7 +63,7 @@ get_area <- function(geometry, ...) {
 #' @return Returns the same list that is fed, with columns re-ordered.
 #' @export
 reorder_columns <- function(all_scales) {
-  susbuildr::map_over_scales(
+  cc.buildr::map_over_scales(
     all_scales = all_scales,
     fun = \(geo = geo, scales = scales,
       scale_name = scale_name, scale_df = scale_df) {

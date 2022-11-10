@@ -6,7 +6,7 @@
 \usage{
 build_census_scales(
   master_polygon,
-  census_dataset = susbuildr::current_census,
+  census_dataset = cc.buildr::current_census,
   regions,
   levels = c("CSD", "CT", "DA"),
   crs,
@@ -19,7 +19,7 @@ build_census_scales(
 geometries for which census data must be gathered.}
 
 \item{census_dataset}{<\code{character}> The dataset to query for available
-regions, e.g. \code{"CA16"}. Defaults to \code{\link[susbuildr]{current_census}}.}
+regions, e.g. \code{"CA16"}. Defaults to \code{\link[cc.buildr]{current_census}}.}
 
 \item{regions}{<\verb{named list}> A named list of census regions to retrieve.
 Names must be valid census aggregation levels. Preferably a whole province

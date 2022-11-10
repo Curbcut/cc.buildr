@@ -26,7 +26,7 @@ should be download. One of: \code{"Alberta"}, \code{"BritishColumbia"},
 \value{
 Returns a data.frame of all buildings in the boundaries of the
 \code{"DA_table"}, with \code{"ID"}, \code{"name_2"}, \code{"DAUID"},
-\code{"CTUID"}, \code{"CSDUID"}, \code{"osm_ID"} and, \code{"geometry"} columns.
+\code{"osm_ID"} and, \code{"geometry"} columns.
 }
 \description{
 \code{build_buildings()} uses a DA table to download building data from

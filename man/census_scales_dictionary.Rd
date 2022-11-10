@@ -8,7 +8,7 @@ census_scales_dictionary(census_scales)
 }
 \arguments{
 \item{census_scales}{<\code{list}> A named list containing census scales built
-with the \code{\link[susbuildr]{build_census_scales}} function.}
+with the \code{\link[cc.buildr]{build_census_scales}} function.}
 }
 \value{
 A data.frame used as dictionary for texts on the platform.

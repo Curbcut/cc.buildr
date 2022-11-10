@@ -21,7 +21,7 @@ Imports:
     lwgeom,
     tibble,
     tidyr,
-    susdata,
+    cc.data,
     future.apply,
     progressr
 Suggests:
