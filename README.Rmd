@@ -13,25 +13,25 @@ knitr::opts_chunk$set(
 )
 ```
 
-# susbuildr
-
+# cc.buildr
+ 
 <!-- badges: start -->
 <!-- badges: end -->
 
-The objective of susbuildr is to help at all stages of the development of a Curbcut instance. susbuildr is used to build the first set of data shared by all Curbcut instances, but also to help with the processing of data for new Curbcut pages.
+The objective of cc.buildr is to help at all stages of the development of a Curbcut instance. cc.buildr is used to build the first set of data shared by all Curbcut instances, but also to help with the processing of data for new Curbcut pages.
 
 ## Installation
 
-You can install the development version of susbuildr from [GitHub](https://github.com/) with:
+You can install the development version of cc.buildr from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("MSSI-urban/susbuildr")
+devtools::install_github("MSSI-urban/cc.buildr")
 ```
 
 ## Usage
 
-susbuildr creates and works from long lists of `tibble`. For faster building, the package frequently uses functions of the `future_*apply` family from the `future.apply` package, for any computationally intensive work. These implementations of the apply family function can be solved using any backend supported by future (parallelization). We therefore recommend defining a future backend at the beginning of the data building script.
+cc.buildr creates and works from long lists of `tibble`. For faster building, the package frequently uses functions of the `future_*apply` family from the `future.apply` package, for any computationally intensive work. These implementations of the apply family function can be solved using any backend supported by future (parallelization). We therefore recommend defining a future backend at the beginning of the data building script.
 
 ``` r
 future::plan(future::multisession())
@@ -69,7 +69,7 @@ base_polygons <- create_master_polygon(all_regions = all_regions)
 crs <- base_polygons$crs
 ```
 
-On one instance of Curbcut, users can move from one region to another within the same study space. A Curbcut Montreal user can analyze a dataset through the lens of the Montreal metropolitan area, or only through the city of Montreal to compare boroughs. The implications are that dynamically created text must be informed by a dictionary of regions to correctly serve the right information using accurate wording. Create the regions dictionary and see `?susbuildr::regions_dictionary` to understand the meaning of each argument.
+On one instance of Curbcut, users can move from one region to another within the same study space. A Curbcut Montreal user can analyze a dataset through the lens of the Montreal metropolitan area, or only through the city of Montreal to compare boroughs. The implications are that dynamically created text must be informed by a dictionary of regions to correctly serve the right information using accurate wording. Create the regions dictionary and see `?cc.buildr::regions_dictionary` to understand the meaning of each argument.
 
 ``` r
 regions_dictionary <-
@@ -150,7 +150,7 @@ scales_dictionary <-
 
 ### CMHC scale
 
-If the space under study is a CMA, susbuildr creates a ready to use Vacancy rate module. If this is the case, the regions must be properly created and specified in the scale dictionary.
+If the space under study is a CMA, cc.buildr creates a ready to use Vacancy rate module. If this is the case, the regions must be properly created and specified in the scale dictionary.
 
 ``` r
 cmhc_zone <- get_cmhc_zones(list(CMA = cancensus_cma_code))
@@ -171,7 +171,7 @@ scales_dictionary <-
 
 ### Additional scale
 
-susbuildr lets a builder add any region or scale that is not only census-related through the `susbuildr::additional_scale` function. This is an example of the collaboration with Centraide of Greater Montreal:
+cc.buildr lets a builder add any region or scale that is not only census-related through the `cc.buildr::additional_scale` function. This is an example of the collaboration with Centraide of Greater Montreal:
 
 ``` r
 centraide <- sf::st_read("centraide.shp")
@@ -192,7 +192,7 @@ scales_dictionary <-
 
 ## Consolidate scales
 
-The way the regions and scales are organized in the following data construction is through a list of depth 2, where the region is the first depth and the scales are the second. The major contribution of `susbuildr::consolidate_scales` is that, for example, the city$DA table is a spatial filter between the city region and the DA table. It also updates the naming and IDs to ensure that all scales in a region can properly talk to each other.
+The way the regions and scales are organized in the following data construction is through a list of depth 2, where the region is the first depth and the scales are the second. The major contribution of `cc.buildr::consolidate_scales` is that, for example, the city$DA table is a spatial filter between the city region and the DA table. It also updates the naming and IDs to ensure that all scales in a region can properly talk to each other.
 
 ``` r
 all_scales <- c(census_scales,
@@ -232,6 +232,8 @@ scales_variables_modules <-
 ``` r
 scales_variables_modules <-
   ba_census_data(scales_variables_modules = scales_variables_modules,
+                 region_DA_IDs = census_scales$DA$ID,
+                 census_vectors = cc.data::census_vectors,
                  crs = crs,
                  housing_module = TRUE)
 ```

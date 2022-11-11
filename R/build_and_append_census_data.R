@@ -61,20 +61,20 @@ ba_census_data <- function(scales_variables_modules,
       out <- add_variable(
         variables = scales_variables_modules$variables,
         var_code = u_var,
-        type = cc.data::census_vectors$type[
-          cc.data::census_vectors$var_code == u_var
+        type = cc.data::census_vectors_table$type[
+          cc.data::census_vectors_table$var_code == u_var
         ],
-        var_title = cc.data::census_vectors$var_title[
-          cc.data::census_vectors$var_code == u_var
+        var_title = cc.data::census_vectors_table$var_title[
+          cc.data::census_vectors_table$var_code == u_var
         ],
-        var_short = cc.data::census_vectors$var_short[
-          cc.data::census_vectors$var_code == u_var
+        var_short = cc.data::census_vectors_table$var_short[
+          cc.data::census_vectors_table$var_code == u_var
         ],
-        explanation = cc.data::census_vectors$explanation[
-          cc.data::census_vectors$var_code == u_var
+        explanation = cc.data::census_vectors_table$explanation[
+          cc.data::census_vectors_table$var_code == u_var
         ],
-        theme = cc.data::census_vectors$theme[
-          cc.data::census_vectors$var_code == u_var
+        theme = cc.data::census_vectors_table$theme[
+          cc.data::census_vectors_table$var_code == u_var
         ],
         private = FALSE,
         dates = with_breaks$avail_dates[[u_var]],

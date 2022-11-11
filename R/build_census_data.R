@@ -108,16 +108,11 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
       }
 
       if (length(ids) > 0) {
-        conn <- cc.data::db_connect()
-        census_data <- tryCatch(cc.data::db_read_data(
-          conn, table = paste0("processed_", scale),
-          columns = census_vectors,
-          IDs = ids),
-          error = function(e) {
-            cc.data::db_disconnect(conn)
-            stop(e)
-          })
-        cc.data::db_disconnect(conn)
+        census_data <- cc.data::db_read_data(
+          table = paste0("processed_", scale),
+          columns = sapply(cc.data::census_years,
+                           \(x) paste(census_vectors, x, sep = "_")),
+          IDs = ids)
       } else {
         census_data <- tibble::tibble()
       }
@@ -137,16 +132,11 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
         csd_ids <- gsub("CSD_", "", csd_ids)
 
         if (length(csd_ids) > 0) {
-          conn <- cc.data::db_connect()
-          csd_data <- tryCatch(cc.data::db_read_data(
-            conn, table = paste0("processed_", "CSD"),
-            columns = census_vectors,
-            IDs = csd_ids),
-            error = function(e) {
-              cc.data::db_disconnect(conn)
-              stop(e)
-            })
-          cc.data::db_disconnect(conn)
+          csd_data <- cc.data::db_read_data(
+            table = paste0("processed_", "CSD"),
+            columns = sapply(cc.data::census_years,
+                             \(x) paste(census_vectors, x, sep = "_")),
+            IDs = csd_ids)
 
           ct_csds <- out_df[!out_df$ID %in% paste0("CSD_", csd_ids), ]
           csd_data$ID <- paste0("CSD_", csd_data$ID)
@@ -159,7 +149,7 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
 
       pb()
 
-      out_df
+      return(out_df)
     }, x, names(x), SIMPLIFY = FALSE, USE.NAMES = TRUE)
   }, simplify = FALSE, USE.NAMES = TRUE)
 

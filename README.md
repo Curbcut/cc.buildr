@@ -273,6 +273,8 @@ scales_variables_modules <-
 ``` r
 scales_variables_modules <-
   ba_census_data(scales_variables_modules = scales_variables_modules,
+                 region_DA_IDs = census_scales$DA$ID,
+                 census_vectors = cc.data::census_vectors,
                  crs = crs,
                  housing_module = TRUE)
 ```
