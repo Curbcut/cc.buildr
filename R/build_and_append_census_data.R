@@ -39,7 +39,7 @@ ba_census_data <- function(scales_variables_modules,
   # Build census data for all possible scales -------------------------------
 
   census_dat <- build_census_data(
-    scales_consolidated = scales_consolidated,
+    scales_consolidated = scales_variables_modules$scales,
     region_DA_IDs = region_DA_IDs,
     census_vectors = census_vectors,
     crs = crs)

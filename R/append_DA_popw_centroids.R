@@ -9,7 +9,7 @@
 #' containing the population-weighted centroids for each DA.
 #' @export
 append_DA_popw_centroids <- function(DA_table, name = "popw_centroids_coords") {
-  centroids <- da_centroids_popw
+  centroids <- cc.buildr::da_centroids_popw
   centroids[[name]] <- lapply(centroids$geometry, sf::st_coordinates)
   centroids <- sf::st_drop_geometry(centroids)
 

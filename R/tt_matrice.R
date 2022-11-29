@@ -50,7 +50,7 @@ tt_create_routing <- function(master_polygon, routing_folder) {
   # Download CSV of GTFS links from here https://database.mobilitydata.org/
   temp <- tempfile()
   utils::download.file("https://bit.ly/catalogs-csv", temp, quiet = TRUE)
-  zip_links <- tibble::as_tibble(read.csv(temp))
+  zip_links <- tibble::as_tibble(utils::read.csv(temp))
   # Download all zips
   zips <- zip_links[
     zip_links$location.country_code == "CA" &
@@ -104,17 +104,17 @@ tt_create_routing <- function(master_polygon, routing_folder) {
   #
   #   unzip(zipfile = x, exdir = folder)
   #
-  #   routes <- tibble::as_tibble(read.csv(paste0(folder, "/routes.txt")))
+  #   routes <- tibble::as_tibble(utils::read.csv(paste0(folder, "/routes.txt")))
   #   take_out_routes_id <- routes$route_id[routes$route_type > 1500]
   #
-  #   trips <- tibble::as_tibble(read.csv(paste0(folder, "/trips.txt")))
+  #   trips <- tibble::as_tibble(utils::read.csv(paste0(folder, "/trips.txt")))
   #   take_out_trips_id <- trips$trip_id[trips$route_id %in% take_out_routes_id]
   #
   #   all_files <- list.files(folder, full.names = TRUE)
   #
   #   lapply(all_files, \(y) {
   #     tryCatch({
-  #       file <- read.csv(y)
+  #       file <- utils::read.csv(y)
   #       if ("route_id" %in% names(file)) {
   #         file <- file[!file$route_id %in% take_out_routes_id, ]
   #         utils::write.csv(x = file, file = y, quote = FALSE, row.names = FALSE)
@@ -149,7 +149,7 @@ tt_create_routing <- function(master_polygon, routing_folder) {
     file = osmconvert))
 
   # Which OSM pbf to download
-  prov <- provinces_pbf[
+  prov <- cc.buildr::provinces_pbf[
       sf::st_intersects(cc.buildr::provinces_pbf, master_polygon,
                         sparse = FALSE), ]
 

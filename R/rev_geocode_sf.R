@@ -39,8 +39,8 @@ rev_geocode_sf <- function(master_polygon, sf_df, province_code, crs) {
 
   # Download and load the addresses -----------------------------------------
 
-  url <- addresses_db_links$link[
-    addresses_db_links$province_code == province_code
+  url <- cc.buildr::addresses_db_links$link[
+    cc.buildr::addresses_db_links$province_code == province_code
   ]
   tmp <- tempfile(pattern = "addresses_db", fileext = ".zip")
   utils::download.file(url, destfile = tmp)
