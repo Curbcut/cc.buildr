@@ -21,7 +21,7 @@
 #'
 #' @return An sf dataframe of a census scale filtered by the master polygon.
 #' @export
-get_census_sus <- function(master_polygon, census_dataset, regions,
+get_census_cc <- function(master_polygon, census_dataset, regions,
                            level, var_select = c(
                              "CTUID" = "CT_UID",
                              "CSDUID" = "CSD_UID",

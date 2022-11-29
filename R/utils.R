@@ -14,14 +14,19 @@
 #' @export
 map_over_scales <- function(all_scales, fun) {
   pb <- progressr::progressor(steps = sum(sapply(all_scales, length)))
-  ## TKTK WHY DOESN'T WORK WITH FUTURE.APPLY ?
+  # SO slow in parallel ? Just lets on waiting!
   mapply(\(geo, scales) {
     mapply(\(scale_name, scale_df) {
-      pb()
-      fun(
+      # # Make sure the `sf` S3 method is exported for subsetting in parallel
+      # if (!missing(scale_df) && "sf" %in% class(scale_df))
+      #   scale_df <- sf::st_as_sf(scale_df)
+
+      out <- fun(
         geo = geo, scales = scales,
         scale_name = scale_name, scale_df = scale_df
       )
+      pb()
+      out
     }, names(scales), scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
   }, names(all_scales), all_scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 }

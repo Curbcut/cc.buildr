@@ -2,10 +2,10 @@ Package: cc.buildr
 Title: Builder Package for Curbcut
 Version: 0.0.0.9000
 Authors@R: 
-    c(person("Curbcut-MSSI", email = "contact@susmontreal.ca", role = "aut"),
+    c(person("Curbcut-MSSI", email = "contact@curbcut.ca", role = "aut"),
     person("Maxime", "Bélanger De Blois", email = "maxime.belangerdeblois@mcgill.ca", role = "cre"),
     person("David", "Wachsmuth", email = "david.wachsmuth@mcgill.ca", role  = "ctb"))
-Description: Functions to create data necessary for a new instance of Sus, or to rebuild the data necessary for an already existing instance.
+Description: Functions to create data necessary for a new instance of Curbcut, or to rebuild the data necessary for an already existing instance.
 Imports:
     utils,
     tools,
@@ -25,7 +25,9 @@ Imports:
     future.apply,
     progressr
 Suggests:
-    r5r
+    r5r,
+    osmextract,
+    aws.s3
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

@@ -42,6 +42,11 @@ on those more computationally intensive work.
 progressr::handlers(global = TRUE)
 ```
 
+##### Access to the national Curbcut database
+
+To obtain access to the Curbcut pre-processed national datasets, contact
+Max at <maxime.belangerdeblois@mcgill.ca>.
+
 ## The base of a study region and its dictionaries
 
 We start by declaring all the “regions” for which data can be
@@ -149,20 +154,16 @@ scales_dictionary[1, ] <- list(scale = "CSD",
 
 ### Building scale
 
-Spatial features of buildings are retrieved through a combination of
-Open Street Map and Microsoft’s Canadian Building Footprints dataset.
-Reverse geocoding is performed by a set of government public APIs and
-the Open Street Map API. See the documentation to use the functions
-correctly. We also add a new line to the scale dictionary.
+Spatial features of buildings are built through a combination of Open
+Street Map and Microsoft’s Canadian Building Footprints dataset. Reverse
+geocoding is performed by a set of government public APIs and the Open
+Street Map API. Buildings nationally have been previously built and
+reverse geocoded through the `cc.data` package. We use the dissemination
+area IDs to retrieve all the buildings specific to a study area.
 
 ``` r
-building <- build_buildings(DA_table = census_scales$DA,
-                             crs = crs,
-                             MS_province = "Quebec")
-building <- rev_geocode_buildings(master_polygon = base_polygons$master_polygon,
-                       building = building,
-                       province_code = "QC",
-                       crs = crs)
+buildings <- cc.data::db_read_long_table(table = "buildings",
+                                         DA_ID = census_scales$DA$ID)
 
 scales_dictionary <-
   append_scale_to_dictionary(scales_dictionary,

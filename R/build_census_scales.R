@@ -15,7 +15,7 @@
 #' @param fill_CTs_with_CSDs <`logical`> If the master polygon is bigger than a
 #' CMA, should what is outside the CMA display the CSDs on the CT scale?
 #' @param override_name_2 <`named list`> Override name_2. Defaults to name_2 for
-#' CSDs being "City" with \code{list(CSD = "City")}, e.g. the display on Sus
+#' CSDs being "City" with \code{list(CSD = "City")}, e.g. the display on Curbcut
 #' for CSDs would then be e.g. `City of Laval`. For scales below CSD, the name
 #' of the CSD in which the zone is gets the CSD name as their name_2. The
 #' default display for a CT would then be e.g. `Census tract 4620633.00 (Laval)`.
@@ -30,10 +30,10 @@ build_census_scales <- function(master_polygon,
                                 fill_CTs_with_CSDs = TRUE,
                                 override_name_2 = list(CSD = "City")) {
 
-  # Get census data with the help of cc.buildr::get_census_sus()
+  # Get census data with the help of cc.buildr::get_census_cc()
   census_datasets <-
     sapply(levels, \(x) {
-      get_census_sus(
+      get_census_cc(
         master_polygon = master_polygon,
         census_dataset = census_dataset,
         regions = regions,

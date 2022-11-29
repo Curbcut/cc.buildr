@@ -36,7 +36,7 @@ Can be \code{"CMA"}, \code{"CD"}, \code{"CT"}, \code{"DA"}, \code{"DB"}, ...}
 CMA, should what is outside the CMA display the CSDs on the CT scale?}
 
 \item{override_name_2}{<\verb{named list}> Override name_2. Defaults to name_2 for
-CSDs being "City" with \code{list(CSD = "City")}, e.g. the display on Sus
+CSDs being "City" with \code{list(CSD = "City")}, e.g. the display on Curbcut
 for CSDs would then be e.g. \verb{City of Laval}. For scales below CSD, the name
 of the CSD in which the zone is gets the CSD name as their name_2. The
 default display for a CT would then be e.g. \verb{Census tract 4620633.00 (Laval)}.}

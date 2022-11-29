@@ -51,7 +51,7 @@ ru_canale <- function(scales_variables_modules, crs) {
       "who can afford to live in walkable neighbourhoods?",
       "<br><p>Further resources: <ul><li><a href='https://",
       "www150.statcan.gc.ca/n1/pub/82-003-x/2019005/",
-      "article/00002-eng.htm'>Thomas Herrmann, William ",
+      "article/00002-eng.htm' target = '_blank'>Thomas Herrmann, William ",
       "Gleckner, Rania A. Wasfi, Benoît Thierry, Yan ",
       "Kestens and Nancy A. Ross. 2019. 'A pan-Canadian ",
       "measure of active living environments using open ",
@@ -67,7 +67,8 @@ ru_canale <- function(scales_variables_modules, crs) {
     module_metadata = TRUE,
     module_dataset_info =
       paste0(
-        "<p><a href = 'https://nancyrossresearchgroup.ca/research/can-ale/'>",
+        "<p><a target = '_blank' href = 'https://nancyrossresearchgroup.ca/",
+        "research/can-ale/'>",
         "The Canadian Active Living Environments (Can-ALE)</a> dataset is ",
         "a geographic-based set of measures charac",
         "terizing the active living environments (often referred to as '",
@@ -103,7 +104,7 @@ ru_canbics <- function(scales_variables_modules, crs) {
     variable_explanation = "the bikeway comfort and safety classification system",
     variable_theme = "Transport",
     variable_private = FALSE,
-    variable_source = "Meghan Winters at Faculty of Health Sciences, Simon Fraser Universitya",
+    variable_source = "Meghan Winters at Faculty of Health Sciences, Simon Fraser University",
     module_id = "canbics",
     module_nav_title = "Bikeway comfort and safety",
     module_title_text_title = "Bikeway comfort and safety: the Can-BICS index",
@@ -122,7 +123,7 @@ ru_canbics <- function(scales_variables_modules, crs) {
       "infrastructure as classified by Can-BICS can help to highlight the ",
       "availability and infrastructure types across the region and ",
       "support efforts in improving bikeways. <p>For more information about ",
-      "Can-BICS visit: <a href='https://www.canada.ca/en/public-health/services/",
+      "Can-BICS visit: <a target = '_blank' href='https://www.canada.ca/en/public-health/services/",
       "reports-publications/health-promotion-chronic-disease-prevention-canada-",
       "research-policy-practice/vol-40-no-9-2020/canbics-classification-system-",
       "naming-convention-cycling-infrastructure.html'>At-a-glance – The Canadi",
@@ -132,15 +133,14 @@ ru_canbics <- function(scales_variables_modules, crs) {
     module_metadata = TRUE,
     module_dataset_info =
       paste0(
-        "<p><a href = 'https://www.canada.ca/en/public-health/services/reports",
+        "<p><a target = '_blank' href = 'https://www.canada.ca/en/public-health/services/reports",
         "-publications/health-promotion-chronic-disease-prevention-canada-",
         "research-policy-practice/vol-40-no-9-2020/canbics-classification-",
         "system-naming-convention-cycling-infrastructure.html'>",
         "The Canadian Bikeway Comfort and Safety (Can-BICS) Classification System</a> dataset is ",
         "a geographic-based set of measures charac",
         "terizing the cycling infrastructure of Canadian communities. ",
-        "The data is provided at ",
-        "the dissemination area level.</p>"
+        "The data is provided at the dissemination area level.</p>"
       )
   )
 }

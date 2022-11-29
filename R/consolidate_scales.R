@@ -36,11 +36,13 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs) {
       scale_df[[paste0(scale_name, "_ID")]] <- scale_df$ID
 
       # Reorder columns
+      if (!"name_2" %in% names(scale_df)) scale_df$name_2 <- NA
       names_ids <-
         c("ID", "name", "name_2", names(scale_df)[grepl("_ID$", names(scale_df))])
       rest_cols <- names(scale_df)[!names(scale_df) %in% names_ids]
-      scale_df[, c(names_ids, rest_cols)]
-    }, names(all_scales), all_scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
+      sf::st_as_sf(scale_df)[, c(names_ids, rest_cols)]
+    }, names(all_scales), all_scales, SIMPLIFY = FALSE, USE.NAMES = TRUE,
+    future.seed = TRUE)
 
 
   # Filter spatially the scales per their geo -------------------------------
@@ -70,7 +72,8 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs) {
 
         df[df$ID %in% ids_in, ]
       }, simplify = FALSE, USE.NAMES = TRUE)
-    }, names(all_tables), all_tables, SIMPLIFY = FALSE, USE.NAMES = TRUE)
+    }, names(all_tables), all_tables, SIMPLIFY = FALSE, USE.NAMES = TRUE,
+    future.seed = TRUE)
 
   spatially_filtered <-
     map_over_scales(
