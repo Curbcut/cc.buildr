@@ -28,3 +28,16 @@
 #'   \item{geometry}{MULTIPOLYGON of the province}
 #' }
 "provinces_pbf"
+
+#' Provinces links to the National Open Database of Addresses
+#'
+#' @format ## `addresses_db_links`
+#' A data frame of 3 columns and the same number of rows as there are .zip of
+#' addresses available
+#' \describe{
+#'   \item{province_code}{The two character code of the Province}
+#'   \item{province}{The province name}
+#'   \item{link}{The download link to get the province's databse of addresses}
+#' }
+#' @source <https://www.statcan.gc.ca/en/lode/databases/oda>
+"addresses_db_links"

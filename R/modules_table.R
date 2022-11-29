@@ -31,6 +31,8 @@ append_empty_modules_table <- function(scales) {
 #' @param modules <`data.frame`> The \code{modules} data.frame to which add a
 #' new row.
 #' @param id <`character`> The module id, e.g. `canale`
+#' @param theme <`character`> The theme in which the module should be, e.g.
+#' `Housing`, `Urban life`, `Transport`, ...
 #' @param nav_title <`character`> The module title which will be used to navigate
 #' to that module from the navigation bar, e.g. `Active living potential`
 #' @param title_text_title <`character`> This title text title will be used
@@ -51,11 +53,12 @@ append_empty_modules_table <- function(scales) {
 #'
 #' @return The same `modules` data.frame fed, with the added row.
 #' @export
-add_module <- function(modules, id, nav_title, title_text_title, title_text_main,
+add_module <- function(modules, id, theme, nav_title, title_text_title, title_text_main,
                        title_text_extra, metadata, dataset_info, regions = NULL) {
   new_module <-
     tibble::tibble(
       id = id,
+      theme,
       nav_title = nav_title,
       title_text_title = title_text_title,
       title_text_main = title_text_main,

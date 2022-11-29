@@ -97,6 +97,7 @@ ba_census_data <- function(scales_variables_modules,
       scales_variables_modules$modules |>
         add_module(
           id = "housing",
+          theme = "Housing",
           nav_title = "Housing system",
           title_text_title = "The housing system",
           title_text_main = paste0(

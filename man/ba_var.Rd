@@ -20,6 +20,7 @@ ba_var(
   variable_private,
   variable_source,
   module_id = NULL,
+  module_theme = NULL,
   module_nav_title = NULL,
   module_title_text_title = NULL,
   module_title_text_main = NULL,
@@ -69,6 +70,8 @@ years.}
 \item{variable_source}{<\code{charater}> See \code{\link[cc.buildr]{add_variable}}.}
 
 \item{module_id}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
+
+\item{module_theme}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 
 \item{module_nav_title}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 

@@ -26,6 +26,7 @@
 #' @param variable_private <`charater`> See \code{\link[cc.buildr]{add_variable}}.
 #' @param variable_source <`charater`> See \code{\link[cc.buildr]{add_variable}}.
 #' @param module_id <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
+#' @param module_theme <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
 #' @param module_nav_title <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
 #' @param module_title_text_title <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
 #' @param module_title_text_main <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
@@ -43,7 +44,9 @@ ba_var <- function(data, scales_variables_modules, base_scale,
                    variable_type, variable_var_title,
                    variable_var_short, variable_explanation,
                    variable_theme, variable_private, variable_source,
-                   module_id = NULL, module_nav_title = NULL,
+                   module_id = NULL,
+                   module_theme = NULL,
+                   module_nav_title = NULL,
                    module_title_text_title = NULL,
                    module_title_text_main = NULL,
                    module_title_text_extra = NULL,
@@ -116,7 +119,8 @@ ba_var <- function(data, scales_variables_modules, base_scale,
 
   modules <-
     if (!is.null(module_id) &&
-      !is.null(module_nav_title) &&
+        !is.null(module_nav_title) &&
+        !is.null(module_theme) &&
       !is.null(module_metadata) &&
       !is.null(module_dataset_info) &&
       !is.null(module_title_text_title) &&
@@ -125,6 +129,7 @@ ba_var <- function(data, scales_variables_modules, base_scale,
       scales_variables_modules$modules |>
         add_module(
           id = module_id,
+          theme = module_theme,
           nav_title = module_nav_title,
           title_text_title = module_title_text_title,
           title_text_main = module_title_text_main,

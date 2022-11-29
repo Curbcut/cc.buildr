@@ -26,6 +26,7 @@ ru_canale <- function(scales_variables_modules, crs) {
     variable_private = FALSE,
     variable_source = "McGill Geo-Social Determinants of Health Research Group",
     module_id = "canale",
+    module_theme = "Urban life",
     module_nav_title = "Active living potential",
     module_title_text_title = "Active living potential: the CanALE index",
     module_title_text_main = paste0(
@@ -106,6 +107,7 @@ ru_canbics <- function(scales_variables_modules, crs) {
     variable_private = FALSE,
     variable_source = "Meghan Winters at Faculty of Health Sciences, Simon Fraser University",
     module_id = "canbics",
+    module_theme = "Transport",
     module_nav_title = "Bikeway comfort and safety",
     module_title_text_title = "Bikeway comfort and safety: the Can-BICS index",
     module_title_text_main = paste0(
@@ -440,6 +442,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
     scales_variables_modules$modules |>
     add_module(
       id = "vac_rate",
+      theme = "Housing",
       nav_title = "Vacancy rate",
       title_text_title = "Vacancy rate",
       title_text_main = paste0(
