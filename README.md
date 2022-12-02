@@ -51,7 +51,7 @@ Max at <maxime.belangerdeblois@mcgill.ca>.
 
 We start by declaring all the “regions” for which data can be
 visualized. Each of the following regions (CMA, island, city, cmhc) and
-scales (CSD, CT, DA, building and cmhc_zone) is a different mapbox
+scales (CSD, CT, DA, building and cmhczone) is a different mapbox
 tileset. At this stage, the regions must be in a priority order: If the
 user defaults to a region that is not available for a certain dataset,
 the map will instead display the region closest to the top of the list
@@ -62,7 +62,7 @@ all_tables <-
   list("CMA" = c("CSD", "CT", "DA", "building"),
        "island" = c("CSD", "CT", "DA", "building"),
        "city" = c("CSD", "CT", "DA", "building"),
-       "cmhc" = c("cmhc_zone"))
+       "cmhc" = c("cmhczone"))
 ```
 
 The `master_polygon` is a single spatial feature encompassing all the
@@ -182,15 +182,15 @@ Vacancy rate module. If this is the case, the regions must be properly
 created and specified in the scale dictionary.
 
 ``` r
-cmhc_zone <- get_cmhc_zones(list(CMA = cancensus_cma_code))
-cmhc_zone <- additional_scale(additional_table = cmhc_zone,
+cmhczone <- get_cmhc_zones(list(CMA = cancensus_cma_code))
+cmhczone <- additional_scale(additional_table = cmhczone,
                               DA_table = census_scales$DA,
                               ID_prefix = "cmhc",
                               name_2 = "CMHC zone",
                               crs = crs)
 scales_dictionary <-
   append_scale_to_dictionary(scales_dictionary,
-                             scale = "cmhc_zone",
+                             scale = "cmhczone",
                              sing = "CMHC zone",
                              plur = "CMHC zones",
                              slider_title = "CMHC zone",
@@ -235,7 +235,7 @@ properly talk to each other.
 all_scales <- c(census_scales,
                 list(building = building),
                 list(centraide = centraide),
-                list(cmhc_zone = cmhc_zone))
+                list(cmhczone = cmhczone))
 
 scales_consolidated <- consolidate_scales(all_tables = all_tables,
                                           all_scales = all_scales,

@@ -11,7 +11,7 @@ build_census_data(scales_consolidated, region_DA_IDs, census_vectors, crs)
 containing all scales listed with their regions. The output of
 \code{\link[cc.buildr]{consolidate_scales}}.}
 
-\item{region_DA_IDs}{<\verb{named list}> <\verb{character vector}> All the current census'
+\item{region_DA_IDs}{<\verb{character vector}> All the current census'
 DA IDs present in the region. Only those will be extracted from the database
 to do interpolation.}
 

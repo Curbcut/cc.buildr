@@ -3,7 +3,7 @@
 #' @param scales_consolidated A named list of sf data.frame
 #' containing all scales listed with their regions. The output of
 #' \code{\link[cc.buildr]{consolidate_scales}}.
-#' @param region_DA_IDs <`named list`> <`character vector`> All the current census'
+#' @param region_DA_IDs <`character vector`> All the current census'
 #' DA IDs present in the region. Only those will be extracted from the database
 #' to do interpolation.
 #' @param census_vectors <`character vector`> Data variables that should be added
@@ -96,7 +96,7 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
 
   pb <- progressr::progressor(steps = sum(sapply(higher_DA, length)))
 
-  census_data_merged <- sapply(higher_DA, \(x) {
+  census_data_merged <- future.apply::future_sapply(higher_DA, \(x) {
     mapply(\(df, scale) {
 
       # Get the census data for that scale
@@ -107,19 +107,20 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
         df$ID[!df$ID %in% filled_vals[[scale]]$ID]
       }
 
-      if (length(ids) > 0) {
+      if (length(ids) > 0 && scale %in% cc.data::census_scales) {
         census_data <- cc.data::db_read_data(
           table = paste0("processed_", scale),
           columns = sapply(cc.data::census_years,
                            \(x) paste(census_vectors, x, sep = "_")),
-          IDs = ids)
+          IDs = ids,
+          crs = crs)
       } else {
         census_data <- tibble::tibble()
       }
 
       # Bind all the data
       all_data <- if (scale %in% cc.data::census_scales) {
-        rbind(census_data, sf::st_drop_geometry(filled_vals[[scale]]))
+        sf::st_drop_geometry(rbind(census_data, filled_vals[[scale]]))
       } else {
         sf::st_drop_geometry(filled_vals[[scale]])
       }
@@ -136,7 +137,9 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
             table = paste0("processed_", "CSD"),
             columns = sapply(cc.data::census_years,
                              \(x) paste(census_vectors, x, sep = "_")),
-            IDs = csd_ids)
+            IDs = csd_ids,
+            crs = crs) |>
+            sf::st_drop_geometry()
 
           ct_csds <- out_df[!out_df$ID %in% paste0("CSD_", csd_ids), ]
           csd_data$ID <- paste0("CSD_", csd_data$ID)
@@ -151,7 +154,7 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
 
       return(out_df)
     }, x, names(x), SIMPLIFY = FALSE, USE.NAMES = TRUE)
-  }, simplify = FALSE, USE.NAMES = TRUE)
+  }, simplify = FALSE, USE.NAMES = TRUE, future.seed = NULL)
 
 
   # Merge to scales_consolidated --------------------------------------------

@@ -7,7 +7,10 @@
 #'
 #' @param all_scales <`named list`> A named list of scales. The first level is
 #' the geo, and the second is the scales.
-#' @param fun <`function`> A function to run on all scales.
+#' @param fun <`function`> A function to run on all scales. Possible arguments
+#' are `geo` (names of regions), `scales` (scales data.frame), 3
+#' `scale_name` (names of scales inside a region), `scale_df` (data.frame, single
+#' scale)
 #'
 #' @return Returns the all_scales list that is fed, with the `fun` ran
 #' on all the scales.

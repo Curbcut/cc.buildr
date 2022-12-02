@@ -17,7 +17,7 @@ ba_census_data(
 The first is all the scales, the second is the variables table, and the
 third is the modules table.}
 
-\item{region_DA_IDs}{<\verb{named list}> <\verb{character vector}> All the current census'
+\item{region_DA_IDs}{<\verb{character vector}> All the current census'
 DA IDs present in the region. Only those will be extracted from the database
 to do interpolation.}
 

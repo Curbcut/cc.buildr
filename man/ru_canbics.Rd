@@ -4,12 +4,16 @@
 \alias{ru_canbics}
 \title{Add a ready to use Can-BICS data and module}
 \usage{
-ru_canbics(scales_variables_modules, crs)
+ru_canbics(scales_variables_modules, region_DA_IDs, crs)
 }
 \arguments{
 \item{scales_variables_modules}{<\verb{names list}> A list of length three.
 The first is all the scales, the second is the variables table, and the
 third is the modules table.}
+
+\item{region_DA_IDs}{<\verb{character vector}> All the current census'
+DA IDs present in the region. Only those will be extracted from the database
+to do interpolation.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}

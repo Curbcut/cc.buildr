@@ -18,12 +18,16 @@ Imports:
     osmdata,
     geojsonsf,
     jsonlite,
-    lwgeom,
     tibble,
     tidyr,
     cc.data,
     future.apply,
-    progressr
+    progressr,
+    stringr,
+    qs,
+    DBI,
+    RSQLite,
+    rlang
 Suggests:
     r5r,
     osmextract,

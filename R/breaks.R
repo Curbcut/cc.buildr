@@ -97,8 +97,13 @@ add_q5 <- function(df, breaks, time_regex = "\\d{4}") {
     values[1] <- -Inf
     values[length(values)] <- Inf
 
-    q5s <- as.numeric(cut(df[[var]], values, include.lowest = TRUE)) |>
-      tibble::as_tibble()
+    q5s <- if (length(df[[var]][!is.na(df[[var]])]) == 0) {
+      rep(NA, nrow(df))
+    } else {
+      as.numeric(cut(df[[var]], values, include.lowest = TRUE))
+    }
+
+    q5s <- tibble::as_tibble(q5s)
 
     # Change names to get q3 between the variable name and the timeframe
     names(q5s) <- paste0(

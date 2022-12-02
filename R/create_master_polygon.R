@@ -37,7 +37,7 @@ create_master_polygon <- function(all_regions, crs = NULL) {
         )
       }
       z <- sf::st_union(z)
-      z <- z[sf::st_is(z, "MULTIPOLYGON")]
+      z <- z[sf::st_is(z, "MULTIPOLYGON") | sf::st_is(z, "POLYGON")]
       z <- sf::st_transform(z, 4326)
       z <- sf::st_cast(z, "MULTIPOLYGON")
       z <- sf::st_make_valid(z)

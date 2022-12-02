@@ -3,7 +3,7 @@
 #' @param scales_variables_modules <`names list`> A list of length three.
 #' The first is all the scales, the second is the variables table, and the
 #' third is the modules table.
-#' @param region_DA_IDs <`named list`> <`character vector`> All the current census'
+#' @param region_DA_IDs <`character vector`> All the current census'
 #' DA IDs present in the region. Only those will be extracted from the database
 #' to do interpolation.
 #' @param census_vectors <`character vector`> Data variables that should be added

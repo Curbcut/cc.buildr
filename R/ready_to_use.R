@@ -3,6 +3,9 @@
 #' @param scales_variables_modules <`names list`> A list of length three.
 #' The first is all the scales, the second is the variables table, and the
 #' third is the modules table.
+#' @param region_DA_IDs <`character vector`> All the current census'
+#' DA IDs present in the region. Only those will be extracted from the database
+#' to do interpolation.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
 #'
@@ -10,9 +13,10 @@
 #' `scales_variables_modules` with the Can-ALE variable added, its addition
 #' in the variables table and the module table.
 #' @export
-ru_canale <- function(scales_variables_modules, crs) {
+ru_canale <- function(scales_variables_modules, region_DA_IDs, crs) {
   ba_var(
-    data = cc.data::canale_data,
+    data = cc.data::db_read_data("canale", column_to_select = "DA_ID",
+                                 IDs = region_DA_IDs, crs = crs),
     scales_variables_modules = scales_variables_modules,
     base_scale = "DA",
     weight_by = "households",
@@ -84,6 +88,9 @@ ru_canale <- function(scales_variables_modules, crs) {
 #' @param scales_variables_modules <`names list`> A list of length three.
 #' The first is all the scales, the second is the variables table, and the
 #' third is the modules table.
+#' @param region_DA_IDs <`character vector`> All the current census'
+#' DA IDs present in the region. Only those will be extracted from the database
+#' to do interpolation.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
 #'
@@ -91,9 +98,10 @@ ru_canale <- function(scales_variables_modules, crs) {
 #' `scales_variables_modules` with the Can-BICS variable added, its addition
 #' in the variables table and the module table.
 #' @export
-ru_canbics <- function(scales_variables_modules, crs) {
+ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
   ba_var(
-    data = cc.data::canbics_data,
+    data = cc.data::db_read_data("canbics", column_to_select = "DA_ID",
+                                 IDs = region_DA_IDs, crs = crs),
     scales_variables_modules = scales_variables_modules,
     base_scale = "DA",
     weight_by = "households",
@@ -209,7 +217,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
           out$name <-
             sapply(out$name,
               agrep,
-              x = scales_variables_modules$scales$cmhc$cmhc_zone$name,
+              x = scales_variables_modules$scales$cmhc$cmhczone$name,
               value = TRUE, USE.NAMES = FALSE
             )
 
@@ -224,7 +232,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
     Reduce(\(x, y) merge(x, y, by = "name", all.x = TRUE),
       cmhc,
       init = sf::st_drop_geometry(
-        scales_variables_modules$scales$cmhc$cmhc_zone
+        scales_variables_modules$scales$cmhc$cmhczone
       )[, "name"]
     )
 
@@ -233,8 +241,8 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
   unique_vars <- unique(gsub("_\\d{4}$", "", vars))
 
   # Append data
-  scales_variables_modules$scales$cmhc$cmhc_zone <-
-    merge(scales_variables_modules$scales$cmhc$cmhc_zone,
+  scales_variables_modules$scales$cmhc$cmhczone <-
+    merge(scales_variables_modules$scales$cmhc$cmhczone,
       merged,
       by = "name"
     )
@@ -258,7 +266,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
           if (grepl("bachelor$", var)) {
             return("studio apartments")
           }
-          suff <- "units"
+          suff <- "housing units"
           if (grepl("1_bed$", var)) {
             return(paste("one-bedroom", suff))
           }
@@ -274,7 +282,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
         }
         # Year of construction
         if (grepl("_year_", var)) {
-          pre <- "housing built"
+          pre <- "housing units built"
           if (grepl("before_1960$", var)) {
             return(paste(pre, "before 1960"))
           }
@@ -288,12 +296,12 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
             return(paste(pre, "after 2000"))
           }
           if (grepl("year_total$", var)) {
-            return(paste("all housing"))
+            return(paste("all housing units"))
           }
         }
         # Rent ranges
         if (grepl("_rent_range_", var)) {
-          pre <- "housing with a rent"
+          pre <- "housing units with a rent"
           if (grepl("less_750$", var)) {
             return(paste(pre, "below $750"))
           }
@@ -310,10 +318,10 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
             return(paste(pre, "higher than $1,500"))
           }
           if (grepl("non_market$", var)) {
-            return(paste("units with an unknown rent"))
+            return(paste("housing units with an unknown rent"))
           }
           if (grepl("rent_range_total$", var)) {
-            return(paste("all housing"))
+            return(paste("all housing units"))
           }
         }
       })(var)
@@ -465,6 +473,8 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
 
 
   # Return ------------------------------------------------------------------
+
+  with_breaks$scales <- cc.buildr::reorder_columns(with_breaks$scales)
 
   return(list(
     scales = with_breaks$scales,

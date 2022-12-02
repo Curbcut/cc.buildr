@@ -10,7 +10,10 @@ map_over_scales(all_scales, fun)
 \item{all_scales}{<\verb{named list}> A named list of scales. The first level is
 the geo, and the second is the scales.}
 
-\item{fun}{<\code{function}> A function to run on all scales.}
+\item{fun}{<\code{function}> A function to run on all scales. Possible arguments
+are \code{geo} (names of regions), \code{scales} (scales data.frame), 3
+\code{scale_name} (names of scales inside a region), \code{scale_df} (data.frame, single
+scale)}
 }
 \value{
 Returns the all_scales list that is fed, with the \code{fun} ran
