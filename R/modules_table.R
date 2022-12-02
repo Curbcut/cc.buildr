@@ -65,7 +65,7 @@ add_module <- function(modules, id, theme, nav_title, title_text_title, title_te
       title_text_extra = title_text_extra,
       regions = if (is.null(regions)) list(NULL) else list(regions),
       metadata = metadata,
-      dataset_inf = dataset_info
+      dataset_info = dataset_info
     )
 
   rbind(modules, new_module)

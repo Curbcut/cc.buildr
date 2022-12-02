@@ -134,7 +134,6 @@ save_all_scales_sqlite <- function(data_folder = "data/", all_scales, variables,
 
 
   # For all scales, list the tables that will be saved
-  pb <- progressr::progressor(steps = sum(sapply(all_scales_no_geo, length)))
   sql_table_list <-
     map_over_scales(
       all_scales = all_scales_no_geo,
@@ -160,13 +159,11 @@ save_all_scales_sqlite <- function(data_folder = "data/", all_scales, variables,
           })
         var_combinations <- Reduce(c, var_combinations)
 
-        pb()
         lapply(var_combinations, \(x) scale_df[, c("ID", x)])
 
       })
 
   # Save the scales in the database
-  pb <- progressr::progressor(steps = sum(sapply(all_scales_no_geo, length)))
   map_over_scales(
     all_scales = all_scales_no_geo,
     fun = \(geo = geo, scales = scales, scale_name = scale_name,
@@ -184,11 +181,9 @@ save_all_scales_sqlite <- function(data_folder = "data/", all_scales, variables,
              geo_scale_table_list, names(geo_scale_table_list))
       DBI::dbDisconnect(db)
 
-      pb()
     })
 
   # Add centroid
-  pb <- progressr::progressor(steps = sum(sapply(all_scales_no_geo, length)))
   map_over_scales(
     all_scales = all_scales_no_geo,
     fun = \(geo = geo, scales = scales, scale_name = scale_name,
@@ -211,8 +206,6 @@ save_all_scales_sqlite <- function(data_folder = "data/", all_scales, variables,
       db <- DBI::dbConnect(RSQLite::SQLite(), sqlite_path)
       DBI::dbWriteTable(db, "centroid", df, overwrite = TRUE)
       DBI::dbDisconnect(db)
-
-      pb()
     })
 
   # Keep strings of all available tables in each db
