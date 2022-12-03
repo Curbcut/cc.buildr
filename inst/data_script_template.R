@@ -8,13 +8,6 @@ build_and_append__name_ <- function(scales_variables_modules, crs) {
   data <- read.csv("dev/data/_name_/_name_.csv")
 
 
-  # Get list of data variables ----------------------------------------------
-
-  # Build a character vector of all data variables that will be added to all
-  # scales.
-  vars <- c("_name_") # names(data)[!grepl("ID$", names(data))]
-
-
   # Interpolate data to all possible scales ---------------------------------
 
   # In the case where the dataset is already aggregated to a census scale,
@@ -27,6 +20,13 @@ build_and_append__name_ <- function(scales_variables_modules, crs) {
       weight_by = "households",
       crs = crs
     )
+
+
+  # Get list of data variables ----------------------------------------------
+
+  # Build a character vector of all data variables that will be added to all
+  # scales.
+  vars <- c("_name_") # names(data)[!grepl("ID$", names(data))]
 
 
   # Calculate breaks --------------------------------------------------------

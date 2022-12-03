@@ -45,7 +45,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
 
   ## Interpolate over all the scales
   interpolated <-
-    sapply(scales_to_interpolate, \(scales) {
+    future.apply::future_sapply(scales_to_interpolate, \(scales) {
       if (length(scales) == 0) {
         return()
       }
@@ -85,6 +85,8 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
 
           # Group by scale_id, and calculate a weighted.mean using the weight_by
           # argument.
+          # TKTK Review if I can send just column values in the lapply instead of
+          # retrieving the whole dataframe each time
           summarized <-
             lapply(data_col_names, \(col_name) {
               from <- as.data.frame(from)
@@ -101,7 +103,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
 
           # Merge all data out of the weighted averages
           out <- if (length(summarized) > 1) {
-            do.call(merge, summarized)
+            Reduce(merge, summarized)
           } else {
             summarized[[1]]
           }
@@ -168,7 +170,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
         )
 
       all_scales_interpolated
-    }, simplify = FALSE, USE.NAMES = TRUE)
+    }, simplify = FALSE, USE.NAMES = TRUE, future.seed = NULL)
 
 
   ## Reorder all columns
