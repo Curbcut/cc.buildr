@@ -17,6 +17,8 @@
 #' @param time_regex <`character`> Regular expression which corresponds to
 #' a timeframe, placed at the end of the `vars` vector. e.g. `\\d{4}` for
 #' years.
+#' @param additive_vars <`charater`> See \code{\link[cc.buildr]{interpolate_from_census_geo}}.
+#' @param average_vars <`charater`> See \code{\link[cc.buildr]{interpolate_from_census_geo}}.
 #' @param variable_var_code <`charater`> See \code{\link[cc.buildr]{add_variable}}.
 #' @param variable_type <`charater`> See \code{\link[cc.buildr]{add_variable}}.
 #' @param variable_var_title <`charater`> See \code{\link[cc.buildr]{add_variable}}.
@@ -40,6 +42,7 @@
 #' @export
 ba_var <- function(data, scales_variables_modules, base_scale,
                    weight_by = "households", crs,
+                   additive_vars = c(), average_vars = c(),
                    time_regex = "\\d{4}", variable_var_code,
                    variable_type, variable_var_title,
                    variable_var_short, variable_explanation,
@@ -81,7 +84,9 @@ ba_var <- function(data, scales_variables_modules, base_scale,
       base_scale = base_scale,
       all_scales = scales_variables_modules$scales,
       weight_by = weight_by,
-      crs = crs
+      crs = crs,
+      additive_vars = c(),
+      average_vars = c()
     )
 
 

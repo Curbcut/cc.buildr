@@ -1,18 +1,25 @@
-#' Interpolate from a census geometry to all scales above
+#' Interpolate variables from a census geometry to all scales above
 #'
 #' @param data <`data.frame`> Containing any number of column with data,
 #'  and an ID that corresponds to the base scale, e.g. \code{"DA_ID"}.
 #' @param base_scale <`character`> The census scale at which the data is arranged.
 #' @param all_scales <`named list`> A named list of scales. The first level is
 #' the geo, and the second is the scales.
-#' @param weight_by <`character`> The denominator for which data should be
-#' interpolated. Defaults to `households`. The other option is `population`.
+#' @param weight_by <`character`> The denominator for which average variables should
+#' be interpolated. Defaults to `households`. The other option is `population`.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32618} for Montreal.
 #' @param existing_census_scales <`character vector`> Which are the census scales
 #' existing in the project. To detect for which scales data needs to be intersected.
 #' (The boundaries of the census geometries fit into each other, but this is not
 #' the case for the other geometries, hence the need to identify them).
+#' @param average_vars <`character vector`> Corresponds to the column names
+#' of the variables that are to be interpolated as an average, like a percentage,
+#' a median, an index, etc. weighted by the `weight_by` argument.
+#' @param additive_vars <`character vector`> Corresponds to the column names of
+#' the variables that are 'count' variables. In the case of this function, the output
+#' value of a CSD would be the sum of the values of the DAs or CTs that are present
+#' inside the CSD.
 #'
 #' @return Returns a list of length 3. The first is the same list that is fed in
 #' `all_scales`, with the columns from `data` interpolated in. The second is
@@ -26,7 +33,9 @@
 interpolate_from_census_geo <- function(data, base_scale, all_scales,
                                         weight_by = "households", crs,
                                         existing_census_scales =
-                                          c("CSD", "CT", "DA", "DB")) {
+                                          c("CSD", "CT", "DA", "DB"),
+                                        average_vars = c(),
+                                        additive_vars = c()) {
 
   ## Only interpolate for bigger geometries than the base one
   all_tables <- reconstruct_all_tables(all_scales)
@@ -41,7 +50,8 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
     mapply(\(scales, kept_scales) {
       scales[names(scales) %in% kept_scales]
     }, all_scales, construct_for, SIMPLIFY = FALSE, USE.NAMES = TRUE)
-
+  scales_to_interpolate <-
+    scales_to_interpolate[sapply(scales_to_interpolate, \(x) length(x) > 0)]
 
   ## Interpolate over all the scales
   interpolated <-
@@ -87,8 +97,9 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
           # argument.
           # TKTK Review if I can send just column values in the lapply instead of
           # retrieving the whole dataframe each time
-          summarized <-
-            lapply(data_col_names, \(col_name) {
+          data_col_names_avg <- data_col_names[data_col_names %in% average_vars]
+          summarized_avg <-
+            lapply(data_col_names_avg, \(col_name) {
               from <- as.data.frame(from)
               dat <- stats::ave(
                 from, from[[scale_id]],
@@ -100,6 +111,22 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
               # Get unique values per zone
               unique(dat)
             })
+
+          # Group by scale_id and calculate a count
+          data_col_names_add <- data_col_names[data_col_names %in% additive_vars]
+          summarized_add <-
+            lapply(data_col_names_add, \(col_name) {
+              from <- as.data.frame(from)
+              dat <- stats::ave(
+                from, from[[scale_id]],
+                FUN = \(x) sum(x[[col_name]], na.rm = TRUE)
+              )[col_name]
+              dat[[scale_id]] <- from[[scale_id]]
+              # Get unique values per zone
+              unique(dat)
+            })
+
+          summarized <- c(summarized_avg, summarized_add)
 
           # Merge all data out of the weighted averages
           out <- if (length(summarized) > 1) {
@@ -142,13 +169,14 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
 
           # Group by ID, and calculate a weighted.mean using the weight_by argument.
           intersected <- sf::st_drop_geometry(intersected)
-          summarized <-
-            lapply(data_col_names, \(col_name) {
+          data_col_names_avg <- data_col_names[data_col_names %in% average_vars]
+          summarized_avg <-
+            lapply(data_col_names_avg, \(col_name) {
               intersected <- as.data.frame(intersected)
               dat <- stats::ave(
                 intersected, intersected$ID,
                 FUN = \(x) stats::weighted.mean(x[[col_name]], x[["n_weight_by"]],
-                  na.rm = TRUE
+                                                na.rm = TRUE
                 )
               )[col_name]
               dat$ID <- intersected$ID
@@ -156,9 +184,25 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
               unique(dat)
             })
 
+          data_col_names_add <- data_col_names[data_col_names %in% additive_vars]
+          summarized_add <-
+            lapply(data_col_names_add, \(col_name) {
+              intersected <- as.data.frame(intersected)
+              intersected[[col_name]] <-
+                intersected[[col_name]] * intersected$area_prop
+              dat <- stats::ave(
+                intersected[c("ID", col_name)], intersected$ID,
+                FUN = \(x) sum(x[[col_name]], na.rm = TRUE))[col_name]
+              dat$ID <- intersected$ID
+              # Get unique values per zone
+              unique(dat)
+            })
+
+          summarized <- c(summarized_avg, summarized_add)
+
           # Merge all data out of the weighted averages
           out <- if (length(summarized) > 1) {
-            do.call(merge, summarized)
+            Reduce(merge, summarized)
           } else {
             summarized[[1]]
           }

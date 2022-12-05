@@ -10,6 +10,8 @@ ba_var(
   base_scale,
   weight_by = "households",
   crs,
+  additive_vars = c(),
+  average_vars = c(),
   time_regex = "\\\\d{4}",
   variable_var_code,
   variable_type,
@@ -48,6 +50,10 @@ Directly fed to \code{\link[cc.buildr]{interpolate_from_census_geo}}}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32618} for Montreal.}
+
+\item{additive_vars}{<\code{charater}> See \code{\link[cc.buildr]{interpolate_from_census_geo}}.}
+
+\item{average_vars}{<\code{charater}> See \code{\link[cc.buildr]{interpolate_from_census_geo}}.}
 
 \item{time_regex}{<\code{character}> Regular expression which corresponds to
 a timeframe, placed at the end of the \code{vars} vector. e.g. \verb{\\\\d\{4\}} for

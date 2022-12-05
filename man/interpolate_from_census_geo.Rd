@@ -2,7 +2,7 @@
 % Please edit documentation in R/interpolate.R
 \name{interpolate_from_census_geo}
 \alias{interpolate_from_census_geo}
-\title{Interpolate from a census geometry to all scales above}
+\title{Interpolate variables from a census geometry to all scales above}
 \usage{
 interpolate_from_census_geo(
   data,
@@ -10,7 +10,9 @@ interpolate_from_census_geo(
   all_scales,
   weight_by = "households",
   crs,
-  existing_census_scales = c("CSD", "CT", "DA", "DB")
+  existing_census_scales = c("CSD", "CT", "DA", "DB"),
+  average_vars = c(),
+  additive_vars = c()
 )
 }
 \arguments{
@@ -22,8 +24,8 @@ and an ID that corresponds to the base scale, e.g. \code{"DA_ID"}.}
 \item{all_scales}{<\verb{named list}> A named list of scales. The first level is
 the geo, and the second is the scales.}
 
-\item{weight_by}{<\code{character}> The denominator for which data should be
-interpolated. Defaults to \code{households}. The other option is \code{population}.}
+\item{weight_by}{<\code{character}> The denominator for which average variables should
+be interpolated. Defaults to \code{households}. The other option is \code{population}.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32618} for Montreal.}
@@ -32,6 +34,15 @@ interpolated. Defaults to \code{households}. The other option is \code{populatio
 existing in the project. To detect for which scales data needs to be intersected.
 (The boundaries of the census geometries fit into each other, but this is not
 the case for the other geometries, hence the need to identify them).}
+
+\item{average_vars}{<\verb{character vector}> Corresponds to the column names
+of the variables that are to be interpolated as an average, like a percentage,
+a median, an index, etc. weighted by the \code{weight_by} argument.}
+
+\item{additive_vars}{<\verb{character vector}> Corresponds to the column names of
+the variables that are 'count' variables. In the case of this function, the output
+value of a CSD would be the sum of the values of the DAs or CTs that are present
+inside the CSD.}
 }
 \value{
 Returns a list of length 3. The first is the same list that is fed in
@@ -44,5 +55,5 @@ has been interpolated. It can directly be fed to the \code{interpolated}
 argument of \code{\link[cc.buildr]{add_variable}}.
 }
 \description{
-Interpolate from a census geometry to all scales above
+Interpolate variables from a census geometry to all scales above
 }
