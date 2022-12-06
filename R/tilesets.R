@@ -1,0 +1,577 @@
+#' List all tile sources in a Mapbox account
+#'
+#' @param username <`character`> Mapbox account username.
+#' @param access_token <`character`> Private access token to the Mapbox account.
+#'
+#' @return A data.frame listing all the tile sources in the account.
+#' @export
+tileset_list_tile_sources <- function(username, access_token) {
+
+  res <- httr::GET(paste0("https://api.mapbox.com/tilesets/v1/sources/",
+                          username),
+                   query = list(access_token = access_token, limit = 500))
+  resDF <- jsonlite::fromJSON(httr::content(res, as = "text"))
+  while (isTRUE(grepl("next", res$headers$link))) {
+    res <- httr::GET(stringr::str_extract(res$headers$link, "(?<=\\<).*(?=>)"),
+                     query = list(access_token = access_token, limit = 500))
+    resDF <- rbind(resDF, jsonlite::fromJSON(httr::content(res, as = "text")))
+  }
+
+  resDF <- tibble::as_tibble(resDF)
+  resDF$id <- gsub(paste0("mapbox://tileset-source/", username, "/"), "",
+                   resDF$id)
+  resDF$size <- resDF$size / 1024 ^ 2
+
+  resDF
+}
+
+
+#' Upload a tilesource to a Mapbox account
+#'
+#' @param df <`sf data.frame`> The `sf` data.frame that must be uploaded to
+#' mapbox. CRS must be 4326.
+#' @param id <`character`> The ID of the new tile source. For a scale, usually
+#' follows a prefix (mtl), the region (CMA), and the scale (CSD), e.g `mtl_CMA_CSD`.
+#' @param username <`character`> Mapbox account username.
+#' @param access_token <`character`> Private access token to the Mapbox account.
+#'
+#' @return Returns nothing if succeeds.
+#' @export
+tileset_upload_tile_source <- function(df, id, username, access_token) {
+
+  if (sf::st_crs(df)$input != "EPSG:4326") stop("`df` must have the 4326 crs.")
+
+  # Initialize tempfile
+  tmp1 <- tempfile(fileext = ".json")
+  tmp2 <- tempfile(fileext = ".geojson")
+
+  # Write Geojson to tempfile
+  out <- utils::capture.output(utils::capture.output(
+    geojsonio::geojson_write(df, file = tmp2), type = "message"))
+
+  suppressWarnings(readtext::readtext(tmp2)) |>
+    paste0(collapse = " ") |>
+    geojson::featurecollection() |>
+    geojson::ndgeo_write(tmp1)
+
+  # Construct system call
+  out <- paste0('curl -X POST "https://api.mapbox.com/tilesets/v1/sources/',
+                username, '/', id, '?access_token=', access_token,
+                '" -F file=@', tmp1,
+                ' --header "Content-Type: multipart/form-data"')
+
+  system(out)
+
+}
+
+
+#' Delete tileset source
+#'
+#' @param id <`character`> ID of the tileset source that needs to be deleted.
+#' @param username <`character`> Mapbox account username.
+#' @param access_token <`character`> Private access token to the Mapbox account.
+#'
+#' @return A success message if succeeds.
+#' @export
+tileset_delete_tileset_source <- function(id, username, access_token) {
+
+  out <- httr::DELETE(paste0("https://api.mapbox.com/tilesets/v1/sources/",
+                             username, "/", id),
+                      query = list(access_token = access_token))
+
+  if (rlang::is_empty(httr::content(out))) return("Success")
+  return(httr::content(out))}
+
+
+#' List all tilesets in a Mapbox account
+#'
+#' @param username <`character`> Mapbox account username.
+#' @param access_token <`character`> Private access token to the Mapbox account.
+#'
+#' @return A data.frame listing all the tilesets.
+#' @export
+tileset_list_tilesets <- function(username, access_token) {
+
+  res <- httr::GET(paste0("https://api.mapbox.com/tilesets/v1/",
+                          username),
+                   query = list(access_token = access_token, limit = 500))
+  resDF <- jsonlite::fromJSON(httr::content(res, as = "text"))
+  resDF <- resDF[, c("id", "filesize", "status")]
+
+  while (isTRUE(grepl("next", res$headers$link))) {
+    res <- httr::GET(stringr::str_extract(res$headers$link, "(?<=\\<).*(?=>)"),
+                     query = list(access_token = access_token, limit = 500))
+    res <- jsonlite::fromJSON(httr::content(res, as = "text"))
+    res <- res[, c("id", "filesize", "status")]
+    resDF <- rbind(resDF, res)
+  }
+
+  resDF <- tibble::as_tibble(resDF)
+  resDF$id <- gsub(paste0(username, "\\."), "", resDF$id)
+  resDF$size <- resDF$filesize / 1024 ^ 2
+
+  resDF
+
+}
+
+
+#' Create a tileset
+#'
+#' @param tileset <`character`> Name of the tileset that will be created
+#' @param recipe <`character`> Tileset recipe previously created with
+#' \code{\link[cc.buildr]{tileset_create_recipe}}
+#' @param username <`character`> Mapbox account username.
+#' @param access_token <`character`> Private access token to the Mapbox account.
+#'
+#' @return A success message if succeeds.
+#' @export
+tileset_create_tileset <- function(tileset, recipe, username, access_token) {
+
+  # More complex httr::RETRY
+  out <- httr::POST(
+    url = paste0("https://api.mapbox.com/tilesets/v1/",
+                 username, ".", tileset),
+    query = list(access_token = access_token),
+    body = recipe,
+    httr::content_type("application/json")
+  )
+
+  if (rlang::is_empty(httr::content(out))) return("Success")
+  return(httr::content(out))
+
+}
+
+
+#' Delete a tileset
+#'
+#' @param id <`character`> ID of the tileset that needs to be deleted.
+#' @param username <`character`> Mapbox account username.
+#' @param access_token <`character`> Private access token to the Mapbox account.
+#'
+#' @return Returns nothing if succeeds.
+#' @export
+tileset_delete_tileset <- function(id, username = "sus-mcgill",
+                                   access_token = access_token) {
+
+  out <- httr::DELETE(paste0("https://api.mapbox.com/tilesets/v1/", username,
+                             ".", id), query = list(access_token = access_token))
+
+  return(httr::content(out))
+}
+
+
+#' Publish a previously created tileset
+#'
+#' @param tileset <`character`> Name of the previously created tileset (with
+#' \code{\link[cc.buildr]{tileset_create_tileset}}) which will be published.
+#' @param username <`character`> Mapbox account username.
+#' @param access_token <`character`> Private access token to the Mapbox account.
+#'
+#' @return A success message if succeeds.
+#' @export
+tileset_publish_tileset <- function(tileset, username, access_token) {
+
+  out <- httr::RETRY("POST",
+                     url = paste0("https://api.mapbox.com/tilesets/v1/",
+                                  username, ".", tileset,
+                                  "/publish"),
+                     query = list(access_token = access_token),
+                     times = 5,
+                     pause_min = 30
+  )
+
+
+  if (rlang::is_empty(httr::content(out))) return("Success")
+  return(httr::content(out))
+}
+
+
+#' Create a recipe (character)
+#'
+#' Create a recipe from scratch. Almost every argument takes a named vector as
+#' for example the auto-zoom must present multiple features at different zoom levels.
+#' So the `minzoom` must be a named vector, the name corresponding to one entry
+#' in the `layer_names`. For more information on every argument, visit
+#' https://docs.mapbox.com/mapbox-tiling-service/reference/
+#'
+#' @param layer_names <`named character vector`> All the layers that should be
+#' part of the tileset. All the other arguments are named accordignly to what
+#' is present in `layer_names`.
+#' @param source <`named character vector`> The tileset source of every layer.
+#' @param minzoom <`named numeric vector`> The minimum zoom levels at which
+#' the features in the tileset should be visible.
+#' @param maxzoom <`named numeric vector`> The maximum zoom levels at which
+#' the features in the tileset should be visible.
+#' @param layer_size <`named numeric vector`> Sets the maximum allowed size
+#' (in KiB) of the tile layer
+#' @param simp_zoom <`named numeric vector`> At which zoom should the simplification
+#' starts taking place.
+#' @param simp_value <`named numeric vector`> The simplification value. The normal
+#' default simplification value is 4. The `simp_value` will take place for zoom
+#' levels higher than the `simp_zoom`.
+#' @param fallback_simp_zoom <`named numeric vector`> The simplification value for
+#' every zoom level below the `simp_zoom`
+#' @param bbox <`numeric vector`> Bounding box of the source, used for testing.  It
+#' must contain an array of four numbers in this order: the minimum longitude,
+#' minimum latitude, maximum longitude, and maximum latitude.
+#' @param recipe_name <`character`> The ID of the new tile source. For a scale, usually
+#' follows a prefix (mtl), the region (CMA), and the scale (CSD), e.g `mtl_CMA_CSD`.
+#'
+#' @return A JSON document containing configuration options that tell Mapbox Tiling
+#' Service (MTS) how to turn tileset source data into vector tiles.
+#' @export
+tileset_create_recipe <- function(layer_names, source, minzoom, maxzoom,
+                          layer_size = NULL, simp_zoom = NULL, simp_value = NULL,
+                          fallback_simp_zoom = 4, bbox = NULL, recipe_name) {
+  out <- list()
+  out$recipe$version <- 1
+  out$name <- recipe_name
+  layers <- list()
+
+  out$recipe$layers <-
+    if (length(layer_names) > 1) {
+      z <- lapply(layer_names, function(layer) {
+        layers[[layer]]$source <- source[[layer]]
+        layers[[layer]]$minzoom <- minzoom[[layer]]
+        layers[[layer]]$maxzoom <- maxzoom[[layer]]
+        if (!is.null(layer_size[[layer]]) && !is.na(layer_size[[layer]]))
+          layers[[layer]]$tiles$layer_size <- layer_size[[layer]]
+        if (!is.null(simp_zoom[[layer]]) &&
+            !is.na(simp_zoom[[layer]])) {
+          layers[[layer]]$features$simplification[[1]] <- "case"
+          layers[[layer]]$features$simplification[[2]] <-
+            list("==", "zoom", simp_zoom[[layer]])
+          layers[[layer]]$features$simplification[[3]] <-
+            if (!is.null(simp_value[[layer]]) &&
+                !is.na(simp_value[[layer]])) simp_value[[layer]] else 1
+          layers[[layer]]$features$simplification[[4]] <-
+            fallback_simp_zoom[[layer]]
+        }
+        if (!is.null(bbox)) layers[[layer]]$tiles$bbox <- bbox
+        layers
+      })
+      Reduce(c, z)
+    } else {
+      layers[[layer_names]]$source <- source
+      layers[[layer_names]]$minzoom <- minzoom
+      layers[[layer_names]]$maxzoom <- maxzoom
+      if (!is.null(layer_size) && !is.na(layer_size))
+        layers[[layer_names]]$tiles$layer_size <- layer_size
+      if (!is.null(simp_zoom) && !is.na(simp_zoom)) {
+        layers[[layer_names]]$features$simplification[[1]] <- "case"
+        layers[[layer_names]]$features$simplification[[2]] <-
+          list("==", "zoom", simp_zoom)
+        layers[[layer_names]]$features$simplification[[3]] <-
+          if (!is.null(simp_value) && !is.na(simp_value)) simp_value else 1
+        layers[[layer_names]]$features$simplification[[4]] <-
+          fallback_simp_zoom
+      }
+      if (!is.null(bbox)) layers[[layer_names]]$tiles$bbox <- bbox
+      layers
+    }
+
+  out <- jsonlite::toJSON(out, pretty = TRUE, auto_unbox = TRUE)
+
+  out <-
+    gsub(paste0('\"simplification\": \\[\n            ',
+                '\"case\",\n            \\[\n         ',
+                '     \"==\",\n              \"zoom\",'),
+         paste0('\"simplification\": \\[\n            \"case\",\n  ',
+                '          \\[\n              \"==\",\n            ',
+                '  [ \"zoom\" ],'), paste0(out)) |>
+    jsonlite::prettify()
+
+  out
+
+}
+
+
+#' Do it all tileset function
+#'
+#' Constructs the combinations with the default auto-zoom, creates the tile
+#' sources, the recipes, the creation and publishing of tilesets.
+#'
+#' @param all_scales <`named list`> A named list of sf data.frame
+#' containing all scales listed with their regions, normally
+#' `scales_variables_modules$scales`.
+#' @param prefix <`character`> Prefix attached to every tile source and
+#' created and published tileset. Should correspond to the Curbcut city, e.g. `mtl`.
+#' @param username <`character`> Mapbox account username.
+#' @param access_token <`character`> Private access token to the Mapbox account.
+#'
+#' @return Returns nothing if succeeds. Tilesets are created and published and
+#' ready to be used.
+#' @export
+tileset_upload_all <- function(all_scales, prefix, username, access_token) {
+
+  tn <- function(geo, scale_name) paste(prefix, geo, scale_name, sep = "_")
+
+  # All combinations
+  all_tables <- reconstruct_all_tables(all_scales)
+  combinations <-
+    mapply(\(scales, geo) {
+      out <- sapply(scales, c, simplify = FALSE, USE.NAMES = TRUE)
+      if (length(scales) > 1) {
+        z <- list(auto_zoom = scales)
+        return(c(out, z))
+      }
+      return(out)
+    }, all_tables, names(all_tables))
+
+
+  # Arrange the data
+  all_scales <- map_over_scales(all_scales = all_scales,
+                                fun = \(scale_df = scale_df, ...) {
+                                  scale_df[, grepl("ID$", names(scale_df))]
+                                })
+
+
+  # Reset
+  map_over_scales(all_scales = combinations,
+                  fun = \(geo = geo, scale_name = scale_name, ...) {
+                    tileset_delete_tileset_source(id = tn(geo, scale_name),
+                                                  username = username,
+                                                  access_token = access_token)
+                  })
+
+  map_over_scales(all_scales = combinations,
+                  fun = \(geo = geo, scale_name = scale_name, ...) {
+                    tileset_delete_tileset(id = tn(geo, scale_name),
+                                           username = username,
+                                           access_token = access_token)
+                  })
+
+
+  # Building source
+  tileset_create_building_tileset <-
+    function(name, building_to_process, username) {
+      iter_size <- ceiling(nrow(building_to_process) / 100)
+
+      building_to_process_list <-
+        lapply(1:100, \(x) {
+          building_to_process[(((x - 1) * iter_size + 1):(x * iter_size)), ] |>
+            geojsonsf::sf_geojson() |>
+            paste0(collapse = " ") |>
+            geojson::featurecollection()
+        })
+
+      # Iteratively post files to tile source
+      tmp <- tempfile(fileext = ".json")
+      tmp_list <- lapply(1:10, \(x) tempfile(fileext = ".json"))
+
+      lapply(1:10, function(x) {
+
+        to_process <- building_to_process_list[((x - 1) * 10 + 1):(x * 10)]
+        mapply(geojson::ndgeo_write, to_process, tmp_list)
+
+        # Concatenate geoJSONs
+        if (Sys.info()[["sysname"]] == "Windows") {
+          out <- paste0("type ", paste(tmp_list, collapse = " "), " > ", tmp)
+          shell(out)
+        } else {
+          out <- paste0("cat ", paste(tmp_list, collapse = " "), " > ", tmp)
+          system(out)
+        }
+
+        # Upload to MTS
+        out <- paste0('curl -X POST "https://api.mapbox.com/tilesets/v1/sources/',
+                      username, '/', name, '?access_token=', access_token,
+                      '" -F file=@', tmp,
+                      ' --header "Content-Type: multipart/form-data"')
+        system(out)
+
+      })
+    }
+
+
+  # Tileset sources
+  mapply(function(scales, geo) {
+    lapply(scales, function(scale) {
+      if (length(scale) != 1) return()
+
+      geo_scale <- tn(geo, scale)
+
+      if (scale == "building") {
+        building_to_process <- all_scales[[geo]][[scale]]
+        building_to_process <- building_to_process[, c("ID", "DA_ID")]
+        names(building_to_process) <- c("ID", "ID_color", "geometry")
+        building_to_process <- sf::st_transform(building_to_process, 4326)
+
+        tileset_create_building_tileset(name = geo_scale,
+                                        building_to_process = building_to_process,
+                                        username = username)
+      } else {
+        df <- all_scales[[geo]][[scale]]
+        df[c("ID")]
+        df$ID_color <- df$ID
+        df <- sf::st_transform(df, 4326)
+        df <- sf::st_set_agr(df, "constant")
+
+        tileset_upload_tile_source(df, id = geo_scale,
+                                   username = username,
+                                   access_token = access_token)
+      }
+    })
+  }, combinations, names(combinations))
+
+
+  # Tileset recipes
+  first_level_recipe_fun <- function(name, scales) {
+    tileset_create_recipe(
+      layer_names = name,
+      source = paste0("mapbox://tileset-source/", username, "/", name),
+      minzoom = 3,
+      maxzoom = 11,
+      simp_zoom = 11,
+      layer_size = 2500,
+      recipe_name = name)
+  }
+
+  CT_recipe_fun <- function(name, scales) {
+    tileset_create_recipe(
+      layer_names = name,
+      source = paste0("mapbox://tileset-source/", username, "/", name),
+      minzoom = 3,
+      maxzoom = 12,
+      simp_zoom = 12,
+      layer_size = 2500,
+      recipe_name = name)
+  }
+
+  DA_recipe_fun <- function(name, scales) {
+    tileset_create_recipe(
+      layer_names = name,
+      source = paste0("mapbox://tileset-source/", username, "/", name),
+      minzoom = 3,
+      maxzoom = 13,
+      simp_zoom = 13,
+      layer_size = 2500,
+      recipe_name = name)
+  }
+
+  DB_recipe_fun <- function(name, scales) {
+    tileset_create_recipe(
+      layer_names = name,
+      source = paste0("mapbox://tileset-source/", username, "/", name),
+      minzoom = 3,
+      maxzoom = 14,
+      simp_zoom = 14,
+      layer_size = 2500,
+      recipe_name = name)
+  }
+
+  grid_recipe_fun <- function(name, scales) {
+    tileset_create_recipe(
+      layer_names = name,
+      source = paste0("mapbox://tileset-source/", username, "/", name),
+      minzoom = 3,
+      maxzoom = 13,
+      simp_zoom = 13,
+      layer_size = 2500,
+      recipe_name = name)
+  }
+
+  building_recipe_fun <- function(name, scales) {
+    tileset_create_recipe(
+      layer_names = name,
+      source = paste0("mapbox://tileset-source/", username, "/", name),
+      minzoom = 3,
+      maxzoom = 16,
+      layer_size = 2500,
+      recipe_name = name)
+  }
+
+  auto_zoom_recipe_fun <- function(name, scales) {
+    sources <- stats::setNames(paste0("mapbox://tileset-source/", username, "/",
+                                      scales),
+                               scales)
+    minzooms <-
+      sapply(scales, \(x) {
+        if (grepl("_CT$", x)) return(11)
+        if (grepl("_DA$", x)) return(13)
+        if (grepl("_building$", x)) return(16)
+        # For first level
+        return(2)
+      }, simplify = FALSE, USE.NAMES = TRUE)
+
+    maxzooms <-
+      sapply(scales, \(x) {
+        if (grepl("_CT$", x)) return(12)
+        if (grepl("_DA$", x)) return(15)
+        if (grepl("_building$", x)) return(16)
+        # For first level
+        return(10)
+      }, simplify = FALSE, USE.NAMES = TRUE)
+
+
+    layer_sizes <-
+      stats::setNames(rep(NA, length(scales)), scales)
+
+    tileset_create_recipe(
+      layer_names = scales,
+      source = sources,
+      minzoom = minzooms,
+      maxzoom = maxzooms,
+      layer_size = layer_sizes,
+      recipe_name = name)
+  }
+
+  all_recipes <-
+  mapply(\(scales, geo) {
+    mapply(function(scale, level) {
+
+      scale_fun <- if (level == 1) "first_level" else scale
+      function_name <- paste0(scale_fun, "_recipe_fun")
+      if (length(scale) != 1) function_name <- "auto_zoom_recipe_fun"
+
+      scale_name <- names(combinations[[geo]][level])
+
+      do.call(function_name, list(name = tn(geo, scale_name),
+                                  scales = tn(geo, scale)))
+    }, scales, seq_along(scales))
+  }, combinations, names(combinations))
+
+
+  # Create tilesets
+  created <-
+    mapply(\(recipes, geo) {
+      mapply(function(recipe, level) {
+        tileset_create_tileset(tn(geo, names(recipes)[level]), recipe = recipe,
+                               username = username, access_token = access_token)
+      }, recipes, seq_along(recipes))
+    }, all_recipes, names(all_recipes))
+
+  lapply(created, \(x) {
+    lapply(x, \(y) {
+      if (!stringr::str_detect(y, "^Success"))
+        stop(paste0("One or more tileset hasn't succesfully been created.\n\n",
+                    created))
+    })})
+
+
+  # Publish tilesets
+  published <-
+    mapply(\(recipes, geo) {
+      mapply(function(recipe, level) {
+        tileset_publish_tileset(tn(geo, names(recipes)[level]),
+                                username = username, access_token = access_token)
+      }, recipes, seq_along(recipes))
+    }, all_recipes, names(all_recipes))
+
+  lapply(published, \(x) {
+    z <- as.data.frame(x)[1,]
+    row.names(z) <- NULL
+    if (is.data.frame(z)) {
+      lapply(seq_len(ncol(z)), \(y) {
+        if (!stringr::str_detect(z[[y]]$message, "^Processing"))
+          stop(paste0("One or more tileset hasn't succesfully published.\n\n",
+                      published))
+      })
+    } else {
+      if (!stringr::str_detect(x[[1]], "^Processing"))
+        stop(paste0("One or more tileset hasn't succesfully published.\n\n",
+                    published))
+    }
+  })
+
+}
