@@ -8,6 +8,15 @@ build_and_append__name_ <- function(scales_variables_modules, crs) {
   data <- read.csv("dev/data/_name_/_name_.csv")
 
 
+  # Get list of data variables ----------------------------------------------
+
+  # Build a character vector of all data variables that will be added to all
+  # scales. Average and additive vars are for interpolation. A count variable
+  # like number of households is additive. The percentage of tenants is average.
+  average_vars <- c("_name_") # names(data)[!grepl("ID$", names(data))]
+  additive_vars <- c("_name_")
+  vars <- c(average_vars, additive_vars)
+
   # Interpolate data to all possible scales ---------------------------------
 
   # In the case where the dataset is already aggregated to a census scale,
@@ -18,15 +27,10 @@ build_and_append__name_ <- function(scales_variables_modules, crs) {
       base_scale = "DA",
       all_scales = scales_variables_modules$scales,
       weight_by = "households",
+      average_vars = average_vars,
+      additive_vars = additive_vars,
       crs = crs
     )
-
-
-  # Get list of data variables ----------------------------------------------
-
-  # Build a character vector of all data variables that will be added to all
-  # scales.
-  vars <- c("_name_") # names(data)[!grepl("ID$", names(data))]
 
 
   # Calculate breaks --------------------------------------------------------
@@ -90,7 +94,7 @@ build_and_append__name_ <- function(scales_variables_modules, crs) {
   return(list(
     scales = with_breaks$scales,
     variables = variables,
-    modules = if (exists(modules)) modules else scales_variables_modules$modules
+    modules = if (exists("modules")) modules else scales_variables_modules$modules
   ))
 
 }

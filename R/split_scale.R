@@ -128,7 +128,7 @@ split_scale <- function(destination, cutting_layer,
   all_new_shapes <-
     interpolate_from_area(
       to = all_new_shapes,
-      DA_table = DA_table,
+      from = DA_table,
       additive_vars = c("population", "households"),
       crs = crs
     )

@@ -2,33 +2,42 @@
 % Please edit documentation in R/interpolate.R
 \name{interpolate_from_area}
 \alias{interpolate_from_area}
-\title{Interpolate ADDITIVE variables using area}
+\title{Interpolate variables using area}
 \usage{
 interpolate_from_area(
   to,
-  DA_table,
-  additive_vars = c("population", "households"),
+  from,
+  average_vars = c(),
+  additive_vars = c(),
+  round_additive = TRUE,
   crs
 )
 }
 \arguments{
-\item{to}{<\verb{sf data.frame}> Table for which additive data must be
-interpolated}
+\item{to}{<\verb{sf data.frame}> Table for which data must be interpolated}
 
-\item{DA_table}{<\verb{sf data.frame}> A \code{DA} sf data.frame from which
-population and households will be interpolated.}
+\item{from}{<\verb{sf data.frame}> A \code{DA} sf data.frame from which
+variables will be interpolated.}
 
-\item{additive_vars}{<\verb{vector of character}> Columns from \code{DA_table} from which
-data should be interpolated to the \code{to} data.frame. Must be ADDITIVE variables,
-e.g. population and households (default).}
+\item{average_vars}{<\verb{character vector}> Corresponds to the column names
+of the variables that are to be interpolated as an average, like a percentage,
+a median, an index, etc. weighted by the \code{weight_by} argument.}
+
+\item{additive_vars}{<\verb{character vector}> Corresponds to the column names of
+the variables that are 'count' variables. In the case of this function, the output
+value of a CSD would be the sum of the values of the DAs or CTs that are present
+inside the CSD.}
+
+\item{round_additive}{<\code{logical}> If addive variables should be rounded,
+e.g. the population or cound of households.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32618} for Montreal.}
 }
 \value{
 Returns the \code{to} data.frame with the added or modified columns that
-have been interpolated from the \code{DA_table}.
+have been interpolated from the \code{from}.
 }
 \description{
-Interpolate ADDITIVE variables using area
+Interpolate variables using area
 }

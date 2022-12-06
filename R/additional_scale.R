@@ -42,7 +42,8 @@ additional_scale <- function(additional_table, DA_table, ID_prefix, name_2,
   # Interpolate population and households using DAs
   additional_table <-
     interpolate_from_area(
-      to = additional_table, DA_table = DA_table,
+      to = additional_table,
+      from = DA_table,
       additive_vars = c("population", "households"),
       crs
     )

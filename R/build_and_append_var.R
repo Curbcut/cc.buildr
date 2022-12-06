@@ -85,8 +85,8 @@ ba_var <- function(data, scales_variables_modules, base_scale,
       all_scales = scales_variables_modules$scales,
       weight_by = weight_by,
       crs = crs,
-      additive_vars = c(),
-      average_vars = c()
+      additive_vars = additive_vars,
+      average_vars = average_vars
     )
 
 
