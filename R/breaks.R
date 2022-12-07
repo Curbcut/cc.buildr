@@ -213,7 +213,7 @@ get_breaks_q5 <- function(df, vars, time_regex = "\\d{4}") {
 #' to add q3s. Must fit with a name in `df`.
 #' @param time_regex <`character`> Regular expression which corresponds to
 #' a timeframe, placed at the end of the `vars` vector. e.g. `\\d{4}` for
-#' years. If the variable does not have a timeframe, enter an empty string (`""`)
+#' years. If the variable does not have a timeframe, enter an empty string (`""`).
 #'
 #' @return Returns a list of length 4. The first is the same data.frame as df
 #' with q3 and q5 columns appended. The second is the q3 breaks table, and the third
@@ -288,7 +288,7 @@ calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
             tibble::tibble(
               geo = geo,
               scale = scale_name,
-              date = date,
+              date = if (date == "") NA else date,
               rank = seq_len(nrow(scale_df)) - 1,
               var = scale_df[[v]]
             )

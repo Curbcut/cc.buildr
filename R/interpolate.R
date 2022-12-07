@@ -101,6 +101,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
           data_col_names_avg <- lapply(data_col_names_avg, \(col_name) {
             as.data.frame(from)[c(ids, weight_by, col_name)]
           })
+          pb <- progressr::progressor(steps = length(data_col_names_avg))
           summarized_avg <-
             lapply(data_col_names_avg, \(col_df) {
               dat <- stats::ave(
@@ -112,6 +113,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
               )[ncol(col_df)]
               dat[[scale_id]] <- col_df[[scale_id]]
               # Get unique values per zone
+              pb()
               unique(dat)
             })
 
@@ -120,6 +122,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
           data_col_names_add <- lapply(data_col_names_add, \(col_name) {
             as.data.frame(from)[c(ids, col_name)]
           })
+          pb <- progressr::progressor(steps = length(data_col_names_add))
           summarized_add <-
             lapply(data_col_names_add, \(col_df) {
               dat <- stats::ave(
@@ -128,6 +131,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
               )[ncol(col_df)]
               dat[[scale_id]] <- col_df[[scale_id]]
               # Get unique values per zone
+              pb()
               unique(dat)
             })
 
@@ -178,6 +182,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
           data_col_names_avg <- lapply(data_col_names_avg, \(col_name) {
             as.data.frame(intersected)[c("ID", "n_weight_by", col_name)]
           })
+          pb <- progressr::progressor(steps = length(data_col_names_avg))
           summarized_avg <-
             lapply(data_col_names_avg, \(col_df) {
               dat <- stats::ave(
@@ -188,6 +193,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
               )[ncol(col_df)]
               dat$ID <- col_df$ID
               # Get unique values per zone
+              pb()
               unique(dat)
             })
 
@@ -195,6 +201,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
           data_col_names_add <- lapply(data_col_names_add, \(col_name) {
             as.data.frame(intersected)[c("ID", "area_prop", col_name)]
           })
+          pb <- progressr::progressor(steps = length(data_col_names_add))
           summarized_add <-
             lapply(data_col_names_add, \(col_df) {
               col_df[[ncol(col_df)]] <- col_df[[ncol(col_df)]] * col_df$area_prop
@@ -203,6 +210,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
                 FUN = \(x) sum(x[[ncol(col_df)]], na.rm = TRUE))[ncol(col_df)]
               dat$ID <- col_df$ID
               # Get unique values per zone
+              pb()
               unique(dat)
             })
 
@@ -353,6 +361,7 @@ interpolate_from_area <- function(to, from,
   data_col_names_avg <- lapply(data_col_names_avg, \(col_name) {
     as.data.frame(intersected_table)[c("ID", weight_by, col_name)]
   })
+  pb <- progressr::progressor(steps = length(data_col_names_avg))
   summarized_avg <-
     lapply(data_col_names_avg, \(col_df) {
       dat <- stats::ave(
@@ -364,6 +373,7 @@ interpolate_from_area <- function(to, from,
       )[ncol(col_df)]
       dat$ID <- col_df$ID
       # Get unique values per zone
+      pb()
       unique(dat)
     })
 
@@ -373,6 +383,7 @@ interpolate_from_area <- function(to, from,
   data_col_names_add <- lapply(data_col_names_add, \(col_name) {
     as.data.frame(intersected_table)[c("ID", weight_by, col_name)]
   })
+  pb <- progressr::progressor(steps = length(data_col_names_add))
   summarized_add <-
     lapply(data_col_names_add, \(col_df) {
       dat <- stats::ave(
@@ -381,6 +392,7 @@ interpolate_from_area <- function(to, from,
       )[ncol(col_df)]
       dat$ID <- col_df$ID
       # Get unique values per zone
+      pb()
       unique(dat)
     })
 
@@ -442,6 +454,8 @@ interpolate_custom_geo <- function(data, all_scales, crs,
     all_scales = all_scales,
     fun = \(geo = geo, scales = scales,
             scale_df = scale_df, scale_name = scale_name) {
+      data <- sf::st_transform(data, crs)
+      scale_df <- sf::st_transform(scale_df, crs)
       if (mean(get_area(data), na.rm = TRUE) <
           mean(get_area(scale_df), na.rm = TRUE)) {
         scale_name

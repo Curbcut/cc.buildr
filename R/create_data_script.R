@@ -11,7 +11,7 @@ create_data_script <- function(name, pages_folder = "dev/pages/") {
   new_file <- paste0("dev/pages/", name, ".R")
 
   # If file exists, just open it
-  if (file.exists(new_file)) utils::file.edit(new_file, editor = "internal")
+  if (file.exists(new_file)) utils::file.edit(new_file)
 
   # Create file
   new_file <- paste0("dev/pages/", name, ".R")
@@ -33,6 +33,6 @@ create_data_script <- function(name, pages_folder = "dev/pages/") {
                  "to the `dev/build.R` workflow"))
 
   close.connection(new_file_connection)
-  utils::file.edit(new_file, editor = "internal")
+  utils::file.edit(new_file)
 
 }

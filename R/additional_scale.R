@@ -45,7 +45,7 @@ additional_scale <- function(additional_table, DA_table, ID_prefix, name_2,
       to = additional_table,
       from = DA_table,
       additive_vars = c("population", "households"),
-      crs
+      crs = crs
     )
 
   # Consolidate output
