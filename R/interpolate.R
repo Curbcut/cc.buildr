@@ -13,6 +13,8 @@
 #' existing in the project. To detect for which scales data needs to be intersected.
 #' (The boundaries of the census geometries fit into each other, but this is not
 #' the case for the other geometries, hence the need to identify them).
+#' @param only_regions <`character vector`> All the regions for which data should
+#' be interpolated and appended. Defults to all the regions in `all_scales`.
 #' @param average_vars <`character vector`> Corresponds to the column names
 #' of the variables that are to be interpolated as an average, like a percentage,
 #' a median, an index, etc. weighted by the `weight_by` argument.
@@ -34,11 +36,19 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
                                         weight_by = "households", crs,
                                         existing_census_scales =
                                           c("CSD", "CT", "DA", "DB"),
+                                        only_regions = names(all_scales),
                                         average_vars = c(),
                                         additive_vars = c()) {
 
+  ## Catch errors
+  if (!paste0(base_scale, "_ID") %in% names(data)) {
+    stop(paste0("Census scale must be clear in the column name of the ",
+                "identifier, e.g. `DA_ID`."))
+  }
+
   ## Only interpolate for bigger geometries than the base one
   all_tables <- reconstruct_all_tables(all_scales)
+  all_tables <- all_tables[names(all_tables) %in% only_regions]
   construct_for <-
     lapply(all_tables, \(scales)  {
       if (!base_scale %in% scales) {
@@ -46,10 +56,13 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
       }
       scales[seq_len(which(scales == base_scale))]
     })
+  scales_to_interpolate <- mapply(\(geo, scales) {
+    all_scales[[geo]][names(all_scales[[geo]]) %in% scales]
+  }, names(construct_for), construct_for, SIMPLIFY = FALSE)
   scales_to_interpolate <-
     mapply(\(scales, kept_scales) {
       scales[names(scales) %in% kept_scales]
-    }, all_scales, construct_for, SIMPLIFY = FALSE, USE.NAMES = TRUE)
+    }, scales_to_interpolate, construct_for, SIMPLIFY = FALSE, USE.NAMES = TRUE)
   scales_to_interpolate <-
     scales_to_interpolate[sapply(scales_to_interpolate, \(x) length(x) > 0)]
 
@@ -426,6 +439,8 @@ interpolate_from_area <- function(to, from,
 #' the geo, and the second is the scales.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32618} for Montreal.
+#' @param only_regions <`character vector`> All the regions for which data should
+#' be interpolated and appended. Defults to all the regions in `all_scales`.
 #' @param average_vars <`character vector`> Corresponds to the column names
 #' of the variables that are to be interpolated as an average, like a percentage,
 #' a median, an index, etc. weighted by the `weight_by` argument.
@@ -444,12 +459,14 @@ interpolate_from_area <- function(to, from,
 #' argument of \code{\link[cc.buildr]{add_variable}}.
 #' @export
 interpolate_custom_geo <- function(data, all_scales, crs,
+                                   only_regions = names(all_scales),
                                    average_vars = c(),
                                    additive_vars = c(),
                                    name_interpolate_from) {
 
   ## Only interpolate for geometries bigger than the data one
   all_tables <- reconstruct_all_tables(all_scales)
+  all_tables <- all_tables[names(all_tables) %in% only_regions]
   construct_for <- map_over_scales(
     all_scales = all_scales,
     fun = \(geo = geo, scales = scales,
@@ -462,10 +479,13 @@ interpolate_custom_geo <- function(data, all_scales, crs,
       } else return()
     })
   construct_for <- lapply(construct_for, \(x) unlist(x, use.names = FALSE))
+  scales_to_interpolate <- mapply(\(geo, scales) {
+    all_scales[[geo]][names(all_scales[[geo]]) %in% scales]
+  }, names(construct_for), construct_for, SIMPLIFY = FALSE)
   scales_to_interpolate <-
     mapply(\(scales, kept_scales) {
       scales[names(scales) %in% kept_scales]
-    }, all_scales, construct_for, SIMPLIFY = FALSE, USE.NAMES = TRUE)
+    }, scales_to_interpolate, construct_for, SIMPLIFY = FALSE, USE.NAMES = TRUE)
   scales_to_interpolate <-
     scales_to_interpolate[sapply(scales_to_interpolate, \(x) length(x) > 0)]
 

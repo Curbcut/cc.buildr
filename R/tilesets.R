@@ -289,7 +289,9 @@ tileset_create_recipe <- function(layer_names, source, minzoom, maxzoom,
 #' Do it all tileset function
 #'
 #' Constructs the combinations with the default auto-zoom, creates the tile
-#' sources, the recipes, the creation and publishing of tilesets.
+#' sources, the recipes, the creation and publishing of tilesets. For the auto-zoom
+#' that will get attached for each region, only the first scale along with `CT`,
+#' `DA` and `building` will be part of the default region auto-zoom.
 #'
 #' @param all_scales <`named list`> A named list of sf data.frame
 #' containing all scales listed with their regions, normally
@@ -312,6 +314,8 @@ tileset_upload_all <- function(all_scales, prefix, username, access_token) {
     mapply(\(scales, geo) {
       out <- sapply(scales, c, simplify = FALSE, USE.NAMES = TRUE)
       if (length(scales) > 1) {
+        scales <- scales[
+          c(1, which(scales %in% c("CT", "DA", "building", "street")))]
         z <- list(auto_zoom = scales)
         return(c(out, z))
       }
@@ -516,20 +520,21 @@ tileset_upload_all <- function(all_scales, prefix, username, access_token) {
       recipe_name = name)
   }
 
+
   all_recipes <-
-  mapply(\(scales, geo) {
-    mapply(function(scale, level) {
+    mapply(\(scales, geo) {
+      mapply(function(scale, level) {
 
-      scale_fun <- if (level == 1) "first_level" else scale
-      function_name <- paste0(scale_fun, "_recipe_fun")
-      if (length(scale) != 1) function_name <- "auto_zoom_recipe_fun"
+        scale_fun <- if (level == 1) "first_level" else scale
+        function_name <- paste0(scale_fun, "_recipe_fun")
+        if (length(scale) != 1) function_name <- "auto_zoom_recipe_fun"
 
-      scale_name <- names(combinations[[geo]][level])
+        scale_name <- names(combinations[[geo]][level])
 
-      do.call(function_name, list(name = tn(geo, scale_name),
-                                  scales = tn(geo, scale)))
-    }, scales, seq_along(scales))
-  }, combinations, names(combinations))
+        do.call(function_name, list(name = tn(geo, scale_name),
+                                    scales = tn(geo, scale)))
+      }, scales, seq_along(scales), SIMPLIFY = FALSE)
+    }, combinations, names(combinations), SIMPLIFY = FALSE)
 
 
   # Create tilesets
@@ -558,20 +563,10 @@ tileset_upload_all <- function(all_scales, prefix, username, access_token) {
       }, recipes, seq_along(recipes))
     }, all_recipes, names(all_recipes))
 
-  lapply(published, \(x) {
-    z <- as.data.frame(x)[1,]
-    row.names(z) <- NULL
-    if (is.data.frame(z)) {
-      lapply(seq_len(ncol(z)), \(y) {
-        if (!stringr::str_detect(z[[y]]$message, "^Processing"))
-          stop(paste0("One or more tileset hasn't succesfully published.\n\n",
-                      published))
-      })
-    } else {
-      if (!stringr::str_detect(x[[1]], "^Processing"))
-        stop(paste0("One or more tileset hasn't succesfully published.\n\n",
-                    published))
-    }
+  lapply(published[1,], \(x) {
+    if (!stringr::str_detect(x, "^Processing"))
+      stop(paste0("One or more tileset hasn't succesfully published.\n\n",
+                  created))
   })
 
 }
@@ -609,8 +604,8 @@ tileset_upload_custom_auto_zoom <- function(smaller_limit_scale,
 
   # All combinations
   all_tables <- reconstruct_all_tables(all_scales)
-  all_tables <- all_tables[sapply(all_tables, \(x) smaller_limit %in% x)]
-  all_tables <- lapply(all_tables, \(x) x[1:which(x == smaller_limit)])
+  all_tables <- all_tables[sapply(all_tables, \(x) smaller_limit_scale %in% x)]
+  all_tables <- lapply(all_tables, \(x) x[1:which(x == smaller_limit_scale)])
 
   combinations <-
     mapply(\(scales, geo) {
@@ -750,8 +745,8 @@ tileset_upload_custom_auto_zoom <- function(smaller_limit_scale,
 
         do.call(function_name, list(name = tn(geo, scale_name),
                                     scales = tn(geo, scale)))
-      }, scales, seq_along(scales))
-    }, combinations, names(combinations))
+      }, scales, seq_along(scales), SIMPLIFY = FALSE)
+    }, combinations, names(combinations), SIMPLIFY = FALSE)
 
 
   # Create tilesets
@@ -780,20 +775,10 @@ tileset_upload_custom_auto_zoom <- function(smaller_limit_scale,
       }, recipes, seq_along(recipes))
     }, all_recipes, names(all_recipes))
 
-  lapply(published, \(x) {
-    z <- as.data.frame(x)[1,]
-    row.names(z) <- NULL
-    if (is.data.frame(z)) {
-      lapply(seq_len(ncol(z)), \(y) {
-        if (!stringr::str_detect(z[[y]]$message, "^Processing"))
-          stop(paste0("One or more tileset hasn't succesfully published.\n\n",
-                      published))
-      })
-    } else {
-      if (!stringr::str_detect(x[[1]], "^Processing"))
-        stop(paste0("One or more tileset hasn't succesfully published.\n\n",
-                    published))
-    }
+  lapply(published[1,], \(x) {
+    if (!stringr::str_detect(x, "^Processing"))
+      stop(paste0("One or more tileset hasn't succesfully published.\n\n",
+                  created))
   })
 
 }

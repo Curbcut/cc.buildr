@@ -24,5 +24,7 @@ ready to be used.
 }
 \description{
 Constructs the combinations with the default auto-zoom, creates the tile
-sources, the recipes, the creation and publishing of tilesets.
+sources, the recipes, the creation and publishing of tilesets. For the auto-zoom
+that will get attached for each region, only the first scale along with \code{CT},
+\code{DA} and \code{building} will be part of the default region auto-zoom.
 }

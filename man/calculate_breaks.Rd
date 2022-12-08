@@ -15,7 +15,7 @@ to add q3s. Must fit with a name in \code{df}.}
 
 \item{time_regex}{<\code{character}> Regular expression which corresponds to
 a timeframe, placed at the end of the \code{vars} vector. e.g. \verb{\\\\d\{4\}} for
-years. If the variable does not have a timeframe, enter an empty string (\code{""})}
+years. If the variable does not have a timeframe, enter an empty string (\code{""}).}
 }
 \value{
 Returns a list of length 4. The first is the same data.frame as df

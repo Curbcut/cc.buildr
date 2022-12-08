@@ -11,6 +11,7 @@ interpolate_from_census_geo(
   weight_by = "households",
   crs,
   existing_census_scales = c("CSD", "CT", "DA", "DB"),
+  only_regions = names(all_scales),
   average_vars = c(),
   additive_vars = c()
 )
@@ -34,6 +35,9 @@ be interpolated. Defaults to \code{households}. The other option is \code{popula
 existing in the project. To detect for which scales data needs to be intersected.
 (The boundaries of the census geometries fit into each other, but this is not
 the case for the other geometries, hence the need to identify them).}
+
+\item{only_regions}{<\verb{character vector}> All the regions for which data should
+be interpolated and appended. Defults to all the regions in \code{all_scales}.}
 
 \item{average_vars}{<\verb{character vector}> Corresponds to the column names
 of the variables that are to be interpolated as an average, like a percentage,
