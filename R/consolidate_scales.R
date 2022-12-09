@@ -6,7 +6,7 @@
 #' Montreal.
 #'
 #' @param all_tables <`named list`> A named list of character. The names are
-#' the \code{geo} e.g. CMA, island, city, ... and the vectors are all the scales
+#' the \code{region} e.g. CMA, island, city, ... and the vectors are all the scales
 #' available in these geo e.g. CSD, CT, DA, building, ...
 #' @param all_scales <`named list`> A named list containing all the dataframes
 #' present in the \code{all_tables} list.

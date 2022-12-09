@@ -8,7 +8,7 @@ consolidate_scales(all_tables, all_scales, regions, crs)
 }
 \arguments{
 \item{all_tables}{<\verb{named list}> A named list of character. The names are
-the \code{geo} e.g. CMA, island, city, ... and the vectors are all the scales
+the \code{region} e.g. CMA, island, city, ... and the vectors are all the scales
 available in these geo e.g. CSD, CT, DA, building, ...}
 
 \item{all_scales}{<\verb{named list}> A named list containing all the dataframes

@@ -2,7 +2,7 @@
 % Please edit documentation in R/tilesets.R
 \name{tileset_upload_custom_auto_zoom}
 \alias{tileset_upload_custom_auto_zoom}
-\title{Upload a custom auto_zoom}
+\title{TKTK NOT EXPORT, NEEDS REWORK Upload a custom auto_zoom}
 \usage{
 tileset_upload_custom_auto_zoom(
   smaller_limit_scale,

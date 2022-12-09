@@ -7,7 +7,7 @@
 add_module(
   modules,
   id,
-  theme,
+  theme = "",
   nav_title,
   title_text_title,
   title_text_main,
@@ -24,7 +24,8 @@ new row.}
 \item{id}{<\code{character}> The module id, e.g. \code{canale}}
 
 \item{theme}{<\code{character}> The theme in which the module should be, e.g.
-\code{Housing}, \verb{Urban life}, \code{Transport}, ...}
+\code{Housing}, \verb{Urban life}, \code{Transport}, ... If the module is not to be displayed,
+keep the default empty string \code{""}. The module will be hidden.}
 
 \item{nav_title}{<\code{character}> The module title which will be used to navigate
 to that module from the navigation bar, e.g. \verb{Active living potential}}
