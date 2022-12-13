@@ -6,15 +6,15 @@
 #'
 #' @return Opens a build and append data script.
 #' @export
-create_data_script <- function(name, pages_folder = "dev/pages/") {
+create_data_script <- function(name, pages_folder = "dev/data_import/") {
 
-  new_file <- paste0("dev/pages/", name, ".R")
+  new_file <- paste0("dev/data_import/", name, ".R")
 
   # If file exists, just open it
-  if (file.exists(new_file)) utils::file.edit(new_file)
+  if (file.exists(new_file)) file.show(new_file)
 
   # Create file
-  new_file <- paste0("dev/pages/", name, ".R")
+  new_file <- paste0("dev/data_import/", name, ".R")
   file.create(new_file)
   new_file_connection <- file(new_file)
 
@@ -33,6 +33,6 @@ create_data_script <- function(name, pages_folder = "dev/pages/") {
                  "to the `dev/build.R` workflow"))
 
   close.connection(new_file_connection)
-  utils::file.edit(new_file)
+  file.show(new_file)
 
 }

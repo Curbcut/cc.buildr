@@ -322,19 +322,17 @@ tileset_upload_all <- function(all_scales, map_zoom_levels,
                                 })
 
   # Reset
-  map_over_scales(all_scales = all_tables,
-                  fun = \(geo = geo, scale_name = scale_name, ...) {
-                    tileset_delete_tileset_source(id = tn(geo, scale_name),
-                                                  username = username,
-                                                  access_token = access_token)
-                  })
+  mapply(\(geo, scales) {
+    sapply(scales, \(scale) {
+      tileset_delete_tileset_source(id = tn(geo, scale),
+                                    username = username,
+                                    access_token = access_token)
 
-  map_over_scales(all_scales = all_tables,
-                  fun = \(geo = geo, scale_name = scale_name, ...) {
-                    tileset_delete_tileset(id = tn(geo, scale_name),
-                                           username = username,
-                                           access_token = access_token)
-                  })
+      tileset_delete_tileset(id = tn(geo, scale),
+                             username = username,
+                             access_token = access_token)
+    })
+  }, names(all_tables), all_tables, SIMPLIFY = FALSE)
 
 
   # Building source
@@ -410,8 +408,10 @@ tileset_upload_all <- function(all_scales, map_zoom_levels,
 
 
   # Create recipe, create tileset and publish
-  maxzooms <- tibble(scale = c("first_level", "CT", "DA", "DB", "building"),
-                     maxzoom = c(11, 12, 13, 14, 16))
+  maxzooms <-
+    tibble::tibble(scale = c("first_level", "CT", "DA", "DB", "building"),
+                   maxzoom = c(11, 12, 13, 14, 16))
+
   all_recipes <-
     mapply(\(scales, geo) {
       mapply(function(scale, level) {
@@ -444,6 +444,7 @@ tileset_upload_all <- function(all_scales, map_zoom_levels,
     mapply(\(geo, zoom_levels) {
       mapply(\(mzl_name, mzl) {
         suffix <- gsub(paste0(".*_", geo), "", mzl_name)
+        suffix <- if (grepl("_", suffix)) suffix else ""
         name <- tn(geo, scale_name = paste0("auto_zoom", suffix))
         scale_names <- tn(geo, names(mzl))
 
@@ -472,18 +473,24 @@ tileset_upload_all <- function(all_scales, map_zoom_levels,
             layer_size = layer_sizes,
             recipe_name = name)
 
+        # Reset
+        tileset_delete_tileset_source(id = name,
+                                      username = username,
+                                      access_token = access_token)
+        tileset_delete_tileset(id = name,
+                               username = username,
+                               access_token = access_token)
+        # New tileset
         tileset_create_tileset(name,
                                recipe = recipe,
                                username = username,
                                access_token = access_token)
-
         tileset_publish_tileset(name,
                                 username = username,
                                 access_token = access_token)
 
       }, names(zoom_levels), zoom_levels, SIMPLIFY = FALSE)
     }, names(map_zoom_levels), map_zoom_levels, SIMPLIFY = FALSE)
-
 
   return(invisible(NULL))
 

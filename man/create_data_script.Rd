@@ -4,7 +4,7 @@
 \alias{create_data_script}
 \title{Create or edit a build and append data script}
 \usage{
-create_data_script(name, pages_folder = "dev/pages/")
+create_data_script(name, pages_folder = "dev/data_import/")
 }
 \arguments{
 \item{name}{<\code{character}> Name of the data script to be created, e.g. \code{canale}.}

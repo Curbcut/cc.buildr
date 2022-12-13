@@ -34,7 +34,8 @@ Imports:
 Suggests:
     r5r,
     osmextract,
-    aws.s3
+    aws.s3,
+    styler
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

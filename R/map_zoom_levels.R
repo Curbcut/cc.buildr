@@ -35,13 +35,13 @@ map_zoom_levels_create_all <- function(all_tables, first_scale_zoom = 0,
   zoom_levels <- sapply(all_tables, \(scales) {
     scales <- scales[scales %in% c(scales[[1]], "CT", "DA", building_or_street)]
     sapply(scales, \(scale) {
-      setNames(auto_zoom_levels(scale, first = scales[[1]]), scale)
+      stats::setNames(auto_zoom_levels(scale, first = scales[[1]]), scale)
     }, simplify = TRUE, USE.NAMES = FALSE)
   }, simplify = FALSE)
 
   zoom_levels <- lapply(zoom_levels, list)
   zoom_levels <- mapply(\(z, n) {
-    setNames(z, paste0("map_zoom_levels_", n))
+    stats::setNames(z, paste0("map_zoom_levels_", n))
   }, zoom_levels, names(zoom_levels), SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
   return(zoom_levels)
@@ -91,9 +91,12 @@ map_zoom_levels_create_custom <- function(map_zoom_levels, all_tables, region,
 #' @export
 map_zoom_levels_save <- function(data_folder = "data/", map_zoom_levels) {
   for (z_l in names(map_zoom_levels)) {
-    assign(z_l, map_zoom_levels[[z_l]])
+    deep <- map_zoom_levels[[z_l]]
+    for (i in seq_len(length(deep))) {
+      assign(names(deep)[[i]], deep[[i]])
+    }
   }
-
-  do.call(qs::qsavem, c(lapply(names(map_zoom_levels), rlang::sym),
+  do.call(qs::qsavem, c(lapply(unlist(sapply(map_zoom_levels, names)), rlang::sym) |>
+                          unname(),
                         file = paste0(data_folder, "map_zoom_levels.qsm")))
 }
