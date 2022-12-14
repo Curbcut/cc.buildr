@@ -57,6 +57,8 @@ split_scale <- function(destination, cutting_layer,
 
   # Intersect
   intersected <- suppressWarnings(sf::st_intersection(dest, cut))
+  intersected <-
+    intersected[sf::st_geometry_type(intersected) %in% c("POLYGON", "MULTIPOLYGON"), ]
 
   # Identify the destination polygons that are getting removed
   intersected$dest_new_area <- cc.buildr::get_area(intersected$geometry)

@@ -22,6 +22,14 @@
 #' @export
 build_buildings <- function(DA_table, crs, download_MS_buildings = TRUE,
                             MS_province) {
+
+  if (!requireNamespace("osmdata", quietly = TRUE)) {
+    stop(
+      "Package \"osmdata\" must be installed to use this function.",
+      call. = FALSE
+    )
+  }
+
   possible_province <-
     c(
       "Alberta", "BritishColumbia", "Manitoba", "NewBrunswick",

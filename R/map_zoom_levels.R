@@ -14,7 +14,7 @@
 #' attributed to the dissemination ares.
 #' @param building_zoom <`numeric`>¨On auto zoom, the zoom that should be
 #' attributed to the buildings.
-#' @param building_zoom <`character`>¨Which is the default smaller scale?
+#' @param building_or_street <`character`>¨Which is the default smaller scale?
 #' `building` or `street`.
 #'
 #' @return Returns a named list of all basic map zoom levels.

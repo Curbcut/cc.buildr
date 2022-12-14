@@ -4,7 +4,12 @@
 \alias{ru_vac_rate}
 \title{Add a ready to use Vacancy Rate data and module}
 \usage{
-ru_vac_rate(scales_variables_modules, crs, geo_uid)
+ru_vac_rate(
+  scales_variables_modules,
+  crs,
+  geo_uid,
+  approximate_name_match = TRUE
+)
 }
 \arguments{
 \item{scales_variables_modules}{<\verb{names list}> A list of length three.
@@ -16,6 +21,13 @@ third is the modules table.}
 
 \item{geo_uid}{<\code{numeric}> Cancensus CMA code, which can be found using
 \code{\link[cancensus]{list_census_regions}}.}
+
+\item{approximate_name_match}{<\code{logical}> CMHC zone naming can be different
+year to year (A single typo, or other). Should the function search for
+approximate matches to the name of the \code{cmhczone} table in
+\code{scales_variables_modules}? Useful for Montreal where names are more or less
+unique and so an approximate match can be beneficial. less for Toronto where
+the name \code{York} is used in many different names.}
 }
 \value{
 A list of length 3, similar to the one fed to

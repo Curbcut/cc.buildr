@@ -4,11 +4,7 @@
 \alias{tileset_delete_tileset}
 \title{Delete a tileset}
 \usage{
-tileset_delete_tileset(
-  id,
-  username = "sus-mcgill",
-  access_token = access_token
-)
+tileset_delete_tileset(id, username, access_token)
 }
 \arguments{
 \item{id}{<\code{character}> ID of the tileset that needs to be deleted.}

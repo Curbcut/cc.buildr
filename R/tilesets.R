@@ -150,8 +150,7 @@ tileset_create_tileset <- function(tileset, recipe, username, access_token) {
 #'
 #' @return Returns nothing if succeeds.
 #' @export
-tileset_delete_tileset <- function(id, username = "sus-mcgill",
-                                   access_token = access_token) {
+tileset_delete_tileset <- function(id, username, access_token) {
 
   out <- httr::DELETE(paste0("https://api.mapbox.com/tilesets/v1/", username,
                              ".", id), query = list(access_token = access_token))
@@ -707,5 +706,249 @@ tileset_upload_custom_auto_zoom <- function(smaller_limit_scale,
   # })
   #
   # return(invisible(NULL))
+
+}
+
+#' Create CSD labels tileset
+#'
+#' @param CSD_table <`sf data.frame`> The data.frame containing the most filled
+#' set of CSDs. Their labels will be the `name` column, and the `population`
+#' column will be used to weight which label to display first.
+#' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
+#' \code{32617} for Toronto.
+#' @param prefix <`character`> Prefix attached to every tile source and
+#' created and published tileset. Should correspond to the Curbcut city, e.g. `mtl`.
+#' @param username <`character`> Mapbox account username.
+#' @param access_token <`character`> Private access token to the Mapbox account.
+#'
+#' @return Returns nothing if succeeds. Tilesets are created and published and
+#' ready to be used.
+#' @export
+tileset_labels <- function(CSD_table, crs, prefix, username, access_token) {
+
+  ## Error catch
+  if (all((!c("name", "population", "geometry") %in% names(CSD_table))))
+    stop("One of `name`, `population` or `geometry` column is missing.")
+
+  name <- paste(prefix, "CSD_label", sep = "_")
+
+  # Calculate centroid using a projection
+  CSD_table <- sf::st_transform(CSD_table, crs)
+
+  CSD_table <- CSD_table[c("name", "population", "geometry")]
+  CSD_table$name <- stringi::stri_trans_general(CSD_table$name, id = "Latin-ASCII")
+  CSD_table <- sf::st_set_agr(CSD_table, "constant")
+  CSD_table <- sf::st_centroid(CSD_table)
+
+  CSD_table <- sf::st_transform(CSD_table, 4326)
+  tileset_upload_tile_source(df = CSD_table, id = name,
+                             username = username,
+                             access_token = access_token)
+
+  recipe_label <- paste0('
+{
+  "recipe": {
+    "version": 1,
+    "layers": {
+      "label": {
+        "source": "mapbox://tileset-source/', username, '/', name, '",
+        "minzoom": 8,
+        "maxzoom": 14,
+        "tiles": {
+          "limit": [
+            [ "highest_where_in_distance", true, 4, "population" ]
+          ]
+        }
+      }
+    }
+  },
+  "name": "', name, '"
+}
+')
+
+  # Create and publish tileset
+
+  tileset_create_tileset(name, recipe_label,
+                         username = username,
+                         access_token = access_token)
+  tileset_publish_tileset(name,
+                          username = username,
+                          access_token = access_token)
+
+}
+
+
+
+
+
+#' Create and publish street and park tilesets
+#'
+#' @param master_polygon <`sf data.frame`> Unioned multipolygon of all the
+#' geometries for which data has been gathered.
+#' @param street <`sf data.frame`> All the streets in the zone under study.
+#' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
+#' \code{32617} for Toronto.
+#' @param prefix <`character`> Prefix attached to every tile source and
+#' created and published tileset. Should correspond to the Curbcut city, e.g. `mtl`.
+#' @param username <`character`> Mapbox account username.
+#' @param access_token <`character`> Private access token to the Mapbox account.
+#'
+#' @return Returns nothing if succeeds. Tilesets are created and published and
+#' ready to be used.
+#' @export
+tileset_streets <- function(master_polygon, street, crs, prefix, username,
+                            access_token) {
+
+  if (!requireNamespace("osmdata", quietly = TRUE)) {
+    stop(
+      "Package \"osmdata\" must be installed to use this function.",
+      call. = FALSE
+    )
+  }
+
+  # Union using a projection
+  street <- sf::st_transform(street, crs)
+
+  # Subset the street in groups
+  street_1 <- sf::st_union(street[street$rank %in% c(1,2,3), ])
+  street_2 <- sf::st_union(street[street$rank == 4, ])
+  street_3 <- sf::st_union(street[street$rank == 5, ])
+
+  # Back to 4326
+  street_1 <- sf::st_transform(street_1)
+  street_2 <- sf::st_transform(street_2)
+  street_3 <- sf::st_transform(street_3)
+
+  # Upload tile_source
+  tileset_upload_tile_source(street_1, paste0(prefix, "_street_1"),
+                             username = username,
+                             access_token = access_token)
+  tileset_upload_tile_source(street_2, paste0(prefix, "_street_2"),
+                             username = username,
+                             access_token = access_token)
+  tileset_upload_tile_source(street_3, paste0(prefix, "_street_3"),
+                             username = username,
+                             access_token = access_token)
+
+
+  # Load and process park data
+  bb <- sf::st_bbox(street)
+
+  park <-
+    osmdata::opq(bb) |>
+    osmdata::add_osm_feature(key = "leisure") |>
+    osmdata::osmdata_sf()
+  park <- sf::st_cast(park$osm_polygons, "POLYGON")
+
+  park <- sf::st_transform(park, crs)
+  master_polygon <- sf::st_transform(master_polygon, crs)
+  park <- sf::st_filter(park, master_polygon)
+
+  park <- sf::st_transform(park, 4326)
+  park <- sf::st_set_agr(park, "constant")
+  park <- park[park$leisure != "nature_reserve" & !is.na(park$leisure), "name"]
+
+  tileset_upload_tile_source(df = park,
+                             id = paste0(prefix, "_park"),
+                             username = username,
+                             access_token = access_token)
+
+
+  # Create recipes
+
+  # Street 1
+  recipe_street_1 <- paste0('
+{
+  "recipe": {
+    "version": 1,
+    "layers": {
+      "street": {
+        "source": "mapbox://tileset-source/', username, '/', prefix, '_street_1",
+        "minzoom": 12,
+        "maxzoom": 16,
+        "features": {
+          "simplification": [ "case",
+            [ "==", [ "zoom" ], 16 ], 1, 4
+          ]
+        }
+      }
+    }
+  },
+  "name": "', prefix, '_street_1"
+}
+')
+
+  # Street 2
+  recipe_street_2 <- paste0('
+{
+  "recipe": {
+    "version": 1,
+    "layers": {
+      "street": {
+        "source": "mapbox://tileset-source/', username, '/', prefix, '_street_2",
+        "minzoom": 13,
+        "maxzoom": 16,
+        "features": {
+          "simplification": [ "case",
+            [ "==", [ "zoom" ], 16 ], 1, 4
+          ]
+        }
+      }
+    }
+  },
+  "name": "', prefix, '_street_2"
+}
+')
+
+  # Street 3
+  recipe_street_3 <- paste0('
+{
+  "recipe": {
+    "version": 1,
+    "layers": {
+      "street": {
+        "source": "mapbox://tileset-source/', username, '/', prefix, '_street_3",
+        "minzoom": 14,
+        "maxzoom": 16,
+        "features": {
+          "simplification": [ "case",
+            [ "==", [ "zoom" ], 16 ], 1, 4
+          ]
+        }
+      },
+      "park": {
+        "source": "mapbox://tileset-source/', username, '/', prefix, '_park",
+        "minzoom": 14,
+        "maxzoom": 16
+      }
+    }
+  },
+  "name": "', prefix, '_street_3"
+}
+')
+
+
+  # Publish tileset
+
+  tileset_create_tileset(paste0(prefix, "_street_1"), recipe_street_1,
+                         username = username,
+                         access_token = access_token)
+  tileset_publish_tileset(paste0(prefix, "_street_1"),
+                          username = username,
+                          access_token = access_token)
+
+  tileset_create_tileset(paste0(prefix, "_street_2"), recipe_street_2,
+                         username = username,
+                         access_token = access_token)
+  tileset_publish_tileset(paste0(prefix, "_street_2"),
+                          username = username,
+                          access_token = access_token)
+
+  tileset_create_tileset(paste0(prefix, "_street_3"), recipe_street_3,
+                         username = username,
+                         access_token = access_token)
+  tileset_publish_tileset(paste0(prefix, "_street_3"),
+                          username = username,
+                          access_token = access_token)
 
 }

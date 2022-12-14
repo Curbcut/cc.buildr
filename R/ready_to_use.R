@@ -166,12 +166,19 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
 #' \code{32617} for Toronto.
 #' @param geo_uid <`numeric`> Cancensus CMA code, which can be found using
 #' \code{\link[cancensus]{list_census_regions}}.
+#' @param approximate_name_match <`logical`> CMHC zone naming can be different
+#' year to year (A single typo, or other). Should the function search for
+#' approximate matches to the name of the `cmhczone` table in
+#' `scales_variables_modules`? Useful for Montreal where names are more or less
+#' unique and so an approximate match can be beneficial. less for Toronto where
+#' the name `York` is used in many different names.
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with the CMHC's vacancy rate variables added,
 #' their addition in the variables table and the module table.
 #' @export
-ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
+ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
+                        approximate_name_match = TRUE) {
 
   # Relevant dimensions
   dimensions <-
@@ -216,13 +223,17 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid) {
 
           # Change the name to the closest string in the CMHC zone scale
           out <- out[!is.na(out$name), ]
-          out$name <-
-            sapply(out$name,
-              agrep,
-              x = scales_variables_modules$scales$cmhc$cmhczone$name,
-              value = TRUE, USE.NAMES = FALSE
-            )
-
+          if (approximate_name_match) {
+            out$name <-
+              sapply(out$name,
+                     agrep,
+                     x = scales_variables_modules$scales$cmhc$cmhczone$name,
+                     value = TRUE, USE.NAMES = FALSE
+              )
+            if (!all(sapply(out$name, length) == 1))
+              stop(paste0("Approximate name matching matched more than one ",
+                          "name. Consider using `approximate_name_match = FALSE`"))
+          }
           # Return
           out
         }, dimensions, dimensions_short, SIMPLIFY = FALSE, USE.NAMES = TRUE)
