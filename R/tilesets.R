@@ -815,9 +815,9 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
   street_3 <- sf::st_union(street[street$rank == 5, ])
 
   # Back to 4326
-  street_1 <- sf::st_transform(street_1)
-  street_2 <- sf::st_transform(street_2)
-  street_3 <- sf::st_transform(street_3)
+  street_1 <- sf::st_transform(street_1, 4326)
+  street_2 <- sf::st_transform(street_2, 4326)
+  street_3 <- sf::st_transform(street_3, 4326)
 
   # Upload tile_source
   tileset_upload_tile_source(street_1, paste0(prefix, "_street_1"),
@@ -832,10 +832,10 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
 
 
   # Load and process park data
-  bb <- sf::st_bbox(street)
+  bb <- sf::st_bbox(sf::st_transform(street, 4326))
 
   park <-
-    osmdata::opq(bb) |>
+    osmdata::opq(bb, timeout = 200) |>
     osmdata::add_osm_feature(key = "leisure") |>
     osmdata::osmdata_sf()
   park <- sf::st_cast(park$osm_polygons, "POLYGON")
@@ -855,7 +855,6 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
 
 
   # Create recipes
-
   # Street 1
   recipe_street_1 <- paste0('
 {
@@ -930,24 +929,27 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
 
   # Publish tileset
 
-  tileset_create_tileset(paste0(prefix, "_street_1"), recipe_street_1,
+  tileset_create_tileset(tileset = paste0(prefix, "_street_1"),
+                         recipe = recipe_street_1,
                          username = username,
                          access_token = access_token)
-  tileset_publish_tileset(paste0(prefix, "_street_1"),
+  tileset_publish_tileset(tileset = paste0(prefix, "_street_1"),
                           username = username,
                           access_token = access_token)
 
-  tileset_create_tileset(paste0(prefix, "_street_2"), recipe_street_2,
+  tileset_create_tileset(tileset = paste0(prefix, "_street_2"),
+                         recipe = recipe_street_2,
                          username = username,
                          access_token = access_token)
-  tileset_publish_tileset(paste0(prefix, "_street_2"),
+  tileset_publish_tileset(tileset = paste0(prefix, "_street_2"),
                           username = username,
                           access_token = access_token)
 
-  tileset_create_tileset(paste0(prefix, "_street_3"), recipe_street_3,
+  tileset_create_tileset(tileset = paste0(prefix, "_street_3"),
+                         recipe = recipe_street_3,
                          username = username,
                          access_token = access_token)
-  tileset_publish_tileset(paste0(prefix, "_street_3"),
+  tileset_publish_tileset(tileset = paste0(prefix, "_street_3"),
                           username = username,
                           access_token = access_token)
 
