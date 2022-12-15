@@ -22,14 +22,14 @@
 #' @return An sf dataframe of a census scale filtered by the master polygon.
 #' @export
 get_census_cc <- function(master_polygon, census_dataset, regions,
-                           level, var_select = c(
-                             "CTUID" = "CT_UID",
-                             "CSDUID" = "CSD_UID",
-                             "name" = "name",
-                             "population" = "Population",
-                             "households" = "Households"
-                           ),
-                           crs, format = TRUE) {
+                          level, var_select = c(
+                            "CTUID" = "CT_UID",
+                            "CSDUID" = "CSD_UID",
+                            "name" = "name",
+                            "population" = "Population",
+                            "households" = "Households"
+                          ),
+                          crs, format = TRUE) {
   census_data <- cancensus::get_census(
     dataset = census_dataset, regions = regions,
     level = level, geo_format = "sf", quiet = TRUE,

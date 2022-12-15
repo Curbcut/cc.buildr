@@ -35,7 +35,6 @@ split_scale <- function(destination, cutting_layer,
                         buffer_around_cutting_layer = 100,
                         sampled_points_voronoi = buffer_around_cutting_layer * 500,
                         crs) {
-
   # Error checking
   if (!all(names(cutting_layer) %in% c("name", "type", "geometry"))) {
     stop(paste0(

@@ -10,7 +10,6 @@
 #' data.frame in the fed `all_scales` are saved in the created `.sqlite`.
 #' @export
 save_buildings_sqlite <- function(path = "data/building.sqlite", all_scales) {
-
   # Save all buildings in the same database
   building_path <- "data/building.sqlite"
   if (file.exists(building_path)) unlink(building_path)
@@ -20,34 +19,42 @@ save_buildings_sqlite <- function(path = "data/building.sqlite", all_scales) {
   map_over_scales(
     all_scales = all_scales,
     fun = \(geo = geo, scales = scales, scale_name = scale_name,
-            scale_df = scale_df) {
-
-      if (scale_name != "building") return()
+      scale_df = scale_df) {
+      if (scale_name != "building") {
+        return()
+      }
       geo_scale <- paste0(geo, "_building")
       df <- sf::st_drop_geometry(scale_df)[, c("ID", "name", "name_2", "DA_ID")]
 
-      if (geo_scale %in% DBI::dbListTables(building_sql))
+      if (geo_scale %in% DBI::dbListTables(building_sql)) {
         DBI::dbRemoveTable(building_sql, geo_scale)
+      }
 
       DBI::dbWriteTable(building_sql, "pre_pk_building", df)
-      DBI::dbExecute(building_sql, paste0("CREATE TABLE ", geo_scale,
-                                          " (ID VARCHAR, ",
-                                          "name VARCHAR, ",
-                                          "name_2 VARCHAR, ",
-                                          "DA_ID VARCHAR,
-                     CONSTRAINT building_pk PRIMARY KEY (ID))"))
+      DBI::dbExecute(building_sql, paste0(
+        "CREATE TABLE ", geo_scale,
+        " (ID VARCHAR, ",
+        "name VARCHAR, ",
+        "name_2 VARCHAR, ",
+        "DA_ID VARCHAR,
+                     CONSTRAINT building_pk PRIMARY KEY (ID))"
+      ))
 
-      DBI::dbExecute(building_sql,
-                     paste0("INSERT INTO ", geo_scale,
-                            " SELECT * FROM pre_pk_building"))
+      DBI::dbExecute(
+        building_sql,
+        paste0(
+          "INSERT INTO ", geo_scale,
+          " SELECT * FROM pre_pk_building"
+        )
+      )
       DBI::dbExecute(building_sql, "DROP TABLE pre_pk_building")
-    })
+    }
+  )
 
   DBI::dbDisconnect(building_sql)
 
   # Return nothing
   return(invisible(NULL))
-
 }
 
 #' Save all streets dataset in a SQLite
@@ -62,7 +69,6 @@ save_buildings_sqlite <- function(path = "data/building.sqlite", all_scales) {
 #' data.frame in the fed `all_scales` are saved in the created `.sqlite`.
 #' @export
 save_streets_sqlite <- function(path = "data/streets.sqlite", all_scales) {
-
   # Save all buildings in the same database
   streets_path <- "data/streets.sqlite"
   if (file.exists(streets_path)) unlink(streets_path)
@@ -72,34 +78,42 @@ save_streets_sqlite <- function(path = "data/streets.sqlite", all_scales) {
   map_over_scales(
     all_scales = all_scales,
     fun = \(geo = geo, scales = scales, scale_name = scale_name,
-            scale_df = scale_df) {
-
-      if (scale_name != "streets") return()
+      scale_df = scale_df) {
+      if (scale_name != "streets") {
+        return()
+      }
       geo_scale <- paste0(geo, "_streets")
       df <- sf::st_drop_geometry(scale_df)[, c("ID", "name", "name_2", "DA_ID")]
 
-      if (geo_scale %in% DBI::dbListTables(streets_sql))
+      if (geo_scale %in% DBI::dbListTables(streets_sql)) {
         DBI::dbRemoveTable(streets_sql, geo_scale)
+      }
 
       DBI::dbWriteTable(streets_sql, "pre_pk_streets", df)
-      DBI::dbExecute(streets_sql, paste0("CREATE TABLE ", geo_scale,
-                                          " (ID VARCHAR, ",
-                                          "name VARCHAR, ",
-                                          "name_2 VARCHAR, ",
-                                          "DA_ID VARCHAR,
-                     CONSTRAINT streets_pk PRIMARY KEY (ID))"))
+      DBI::dbExecute(streets_sql, paste0(
+        "CREATE TABLE ", geo_scale,
+        " (ID VARCHAR, ",
+        "name VARCHAR, ",
+        "name_2 VARCHAR, ",
+        "DA_ID VARCHAR,
+                     CONSTRAINT streets_pk PRIMARY KEY (ID))"
+      ))
 
-      DBI::dbExecute(streets_sql,
-                     paste0("INSERT INTO ", geo_scale,
-                            " SELECT * FROM pre_pk_streets"))
+      DBI::dbExecute(
+        streets_sql,
+        paste0(
+          "INSERT INTO ", geo_scale,
+          " SELECT * FROM pre_pk_streets"
+        )
+      )
       DBI::dbExecute(streets_sql, "DROP TABLE pre_pk_streets")
-    })
+    }
+  )
 
   DBI::dbDisconnect(streets_sql)
 
   # Return nothing
   return(invisible(NULL))
-
 }
 
 #' Save every scales in their own SQLite database
@@ -120,16 +134,18 @@ save_streets_sqlite <- function(path = "data/streets.sqlite", all_scales) {
 #' @export
 save_all_scales_sqlite <- function(data_folder = "data/", all_scales, variables,
                                    scales_to_drop = c("building", "street")) {
-
   # Drop geometry of other scales
   all_scales_no_geo <-
     map_over_scales(
       all_scales = all_scales,
       fun = \(geo = geo, scales = scales, scale_name = scale_name,
-              scale_df = scale_df) {
-        if (scale_name %in% scales_to_drop) return()
+        scale_df = scale_df) {
+        if (scale_name %in% scales_to_drop) {
+          return()
+        }
         sf::st_drop_geometry(scale_df)
-      })
+      }
+    )
   all_scales_no_geo <- lapply(all_scales_no_geo, \(x) x[!sapply(x, is.null)])
 
 
@@ -138,8 +154,7 @@ save_all_scales_sqlite <- function(data_folder = "data/", all_scales, variables,
     map_over_scales(
       all_scales = all_scales_no_geo,
       fun = \(geo = geo, scales = scales, scale_name = scale_name,
-              scale_df = scale_df) {
-
+        scale_df = scale_df) {
         var_combinations <-
           lapply(variables$var_code, \(y) {
             vars <- names(scale_df)[grepl(y, names(scale_df))]
@@ -147,12 +162,16 @@ save_all_scales_sqlite <- function(data_folder = "data/", all_scales, variables,
 
             sapply(vars, \(x) {
               time_format <- "\\d{4}$"
-              q3 <- paste0(gsub(time_format, "", x),
-                           if (grepl(time_format, x)) "q3_" else "_q3",
-                           stats::na.omit(stringr::str_extract(x, time_format)))
-              q5 <- paste0(gsub(time_format, "", x),
-                           if (grepl(time_format, x)) "q5_" else "_q5",
-                           stats::na.omit(stringr::str_extract(x, time_format)))
+              q3 <- paste0(
+                gsub(time_format, "", x),
+                if (grepl(time_format, x)) "q3_" else "_q3",
+                stats::na.omit(stringr::str_extract(x, time_format))
+              )
+              q5 <- paste0(
+                gsub(time_format, "", x),
+                if (grepl(time_format, x)) "q5_" else "_q5",
+                stats::na.omit(stringr::str_extract(x, time_format))
+              )
 
               c(x, q3, q5)
             }, simplify = FALSE, USE.NAMES = TRUE)
@@ -160,15 +179,14 @@ save_all_scales_sqlite <- function(data_folder = "data/", all_scales, variables,
         var_combinations <- Reduce(c, var_combinations)
 
         lapply(var_combinations, \(x) scale_df[, c("ID", x)])
-
-      })
+      }
+    )
 
   # Save the scales in the database
   map_over_scales(
     all_scales = all_scales_no_geo,
     fun = \(geo = geo, scales = scales, scale_name = scale_name,
-            scale_df = scale_df) {
-
+      scale_df = scale_df) {
       geo_scale <- paste(geo, scale_name, sep = "_")
 
       geo_scale_table_list <- sql_table_list[[geo]][[scale_name]]
@@ -176,19 +194,20 @@ save_all_scales_sqlite <- function(data_folder = "data/", all_scales, variables,
       sqlite_path <- paste0(data_folder, geo_scale, ".sqlite")
 
       db <- DBI::dbConnect(RSQLite::SQLite(), sqlite_path)
-      mapply(\(df, y)
-             DBI::dbWriteTable(db, y, df, overwrite = TRUE),
-             geo_scale_table_list, names(geo_scale_table_list))
+      mapply(
+        \(df, y)
+        DBI::dbWriteTable(db, y, df, overwrite = TRUE),
+        geo_scale_table_list, names(geo_scale_table_list)
+      )
       DBI::dbDisconnect(db)
-
-    })
+    }
+  )
 
   # Add centroid
   map_over_scales(
     all_scales = all_scales_no_geo,
     fun = \(geo = geo, scales = scales, scale_name = scale_name,
-            scale_df = scale_df) {
-
+      scale_df = scale_df) {
       geo_scale <- paste(geo, scale_name, sep = "_")
       with_geo <- all_scales[[geo]][[scale_name]][, "ID"]
 
@@ -206,15 +225,17 @@ save_all_scales_sqlite <- function(data_folder = "data/", all_scales, variables,
       db <- DBI::dbConnect(RSQLite::SQLite(), sqlite_path)
       DBI::dbWriteTable(db, "centroid", df, overwrite = TRUE)
       DBI::dbDisconnect(db)
-    })
+    }
+  )
 
   # Keep strings of all available tables in each db
   tables_in_sql <- map_over_scales(
     all_scales = sql_table_list,
     fun = \(geo = geo, scales = scales, scale_name = scale_name,
-            scale_df = scale_df) {
+      scale_df = scale_df) {
       names(scale_df)
-    })
+    }
+  )
   tables_in_sql <- unlist(tables_in_sql, recursive = FALSE)
   names(tables_in_sql) <- gsub("\\.", "_", names(tables_in_sql))
   qs::qsave(tables_in_sql, file = paste0(data_folder, "tables_in_sql.qs"))
@@ -238,11 +259,11 @@ save_all_scales_sqlite <- function(data_folder = "data/", all_scales, variables,
 #' @export
 save_short_tables_qs <- function(data_folder = "data/", all_scales,
                                  scales_to_drop = c("building", "street")) {
-
   mapply(\(scls, geo) {
-
     scls <- mapply(\(x, y) {
-      if (y %in% scales_to_drop) return()
+      if (y %in% scales_to_drop) {
+        return()
+      }
       d <- sf::st_drop_geometry(x)
       d[, 1:which(names(d) == "households")]
     }, scls, names(scls), SIMPLIFY = FALSE)
@@ -254,8 +275,8 @@ save_short_tables_qs <- function(data_folder = "data/", all_scales,
     }
 
     do.call(qs::qsavem, c(lapply(names(scls), rlang::sym),
-                      file = paste0(data_folder, geo, ".qsm")))
-
+      file = paste0(data_folder, geo, ".qsm")
+    ))
   }, all_scales, names(all_scales))
 
   return(invisible(NULL))
@@ -277,23 +298,24 @@ save_short_tables_qs <- function(data_folder = "data/", all_scales,
 #' @export
 save_geometry_export <- function(data_folder = "data/", all_scales,
                                  scales_to_drop = c("buildings", "streets")) {
-
-  if (!file.exists(paste0(data_folder, "geometry_export/")))
+  if (!file.exists(paste0(data_folder, "geometry_export/"))) {
     dir.create(paste0(data_folder, "geometry_export/"))
+  }
 
   map_over_scales(
     all_scales = all_scales,
     fun = \(geo = geo, scales = scales, scale_name = scale_name,
-            scale_df = scale_df) {
-      if (scale_name %in% scales_to_drop) return()
+      scale_df = scale_df) {
+      if (scale_name %in% scales_to_drop) {
+        return()
+      }
 
       geo_scale <- paste(geo, scale_name, sep = "_")
       out <- scale_df[, "ID"]
       file_link <- paste0(data_folder, "geometry_export/", geo_scale, ".qs")
       qs::qsave(out, file = file_link)
-    })
+    }
+  )
 
   return(invisible(NULL))
-
 }
-

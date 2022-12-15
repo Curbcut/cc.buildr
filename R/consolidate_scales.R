@@ -20,59 +20,64 @@
 #' spatially filtered dataframes with updated name_2 and IDs if needed.
 #' @export
 consolidate_scales <- function(all_tables, all_scales, regions, crs) {
-
   ## Add own ID to scales, and rename census ---------------------------------
 
   uniform_IDs <-
-    future.apply::future_mapply(\(scale_name, scale_df) {
+    future.apply::future_mapply(
+      \(scale_name, scale_df) {
+        # For all column names that end with `UID`, change it to `_ID`
+        if (sum(grepl("UID$", names(scale_df))) > 0) {
+          names(scale_df)[grepl("UID$", names(scale_df))] <-
+            gsub("UID", "_ID", names(scale_df)[grepl("UID$", names(scale_df))])
+        }
 
-      # For all column names that end with `UID`, change it to `_ID`
-      if (sum(grepl("UID$", names(scale_df))) > 0) {
-        names(scale_df)[grepl("UID$", names(scale_df))] <-
-          gsub("UID", "_ID", names(scale_df)[grepl("UID$", names(scale_df))])
-      }
+        # Add own ID to scale
+        scale_df[[paste0(scale_name, "_ID")]] <- scale_df$ID
 
-      # Add own ID to scale
-      scale_df[[paste0(scale_name, "_ID")]] <- scale_df$ID
-
-      # Reorder columns
-      if (!"name_2" %in% names(scale_df)) scale_df$name_2 <- NA
-      names_ids <-
-        c("ID", "name", "name_2", names(scale_df)[grepl("_ID$", names(scale_df))])
-      rest_cols <- names(scale_df)[!names(scale_df) %in% names_ids]
-      sf::st_as_sf(scale_df)[, c(names_ids, rest_cols)]
-    }, names(all_scales), all_scales, SIMPLIFY = FALSE, USE.NAMES = TRUE,
-    future.seed = TRUE)
+        # Reorder columns
+        if (!"name_2" %in% names(scale_df)) scale_df$name_2 <- NA
+        names_ids <-
+          c("ID", "name", "name_2", names(scale_df)[grepl("_ID$", names(scale_df))])
+        rest_cols <- names(scale_df)[!names(scale_df) %in% names_ids]
+        sf::st_as_sf(scale_df)[, c(names_ids, rest_cols)]
+      }, names(all_scales), all_scales,
+      SIMPLIFY = FALSE, USE.NAMES = TRUE,
+      future.seed = TRUE
+    )
 
 
   ## Filter spatially the scales per their geo -------------------------------
 
   spatially_filtered <-
-    future.apply::future_mapply(\(geo, scales) {
-      sapply(scales, \(scale) {
-        if (scale %in% c("street", "building")) {
-          return(uniform_IDs[[scale]])
-        }
+    future.apply::future_mapply(
+      \(geo, scales) {
+        sapply(scales, \(scale) {
+          if (scale %in% c("street", "building")) {
+            return(uniform_IDs[[scale]])
+          }
 
-        unioned_geo <- sf::st_transform(regions[[geo]], crs)
-        df <- sf::st_transform(uniform_IDs[[scale]], crs)
+          unioned_geo <- sf::st_transform(regions[[geo]], crs)
+          df <- sf::st_transform(uniform_IDs[[scale]], crs)
 
-        # Filter spatially with the unioned geo.
-        df_points_on_surface <- suppressWarnings(sf::st_point_on_surface(df))
-        ids_in <- sf::st_filter(df_points_on_surface, unioned_geo)$ID
+          # Filter spatially with the unioned geo.
+          df_points_on_surface <- suppressWarnings(sf::st_point_on_surface(df))
+          ids_in <- sf::st_filter(df_points_on_surface, unioned_geo)$ID
 
-        df[df$ID %in% ids_in, ]
-      }, simplify = FALSE, USE.NAMES = TRUE)
-    }, names(all_tables), all_tables, SIMPLIFY = FALSE, USE.NAMES = TRUE,
-    future.seed = TRUE)
+          df[df$ID %in% ids_in, ]
+        }, simplify = FALSE, USE.NAMES = TRUE)
+      }, names(all_tables), all_tables,
+      SIMPLIFY = FALSE, USE.NAMES = TRUE,
+      future.seed = TRUE
+    )
 
   spatially_filtered <-
     map_over_scales(
       all_scales = spatially_filtered,
       fun = \(geo = geo, scales = scales,
         scale_name = scale_name, scale_df = scale_df) {
-        if (scale_name %in% c("street", "building"))
+        if (scale_name %in% c("street", "building")) {
           return(scale_df[scale_df$DA_ID %in% scales$DA$DA_ID, ])
+        }
 
         return(scale_df)
       }
@@ -85,12 +90,14 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs) {
     map_over_scales(
       all_scales = spatially_filtered,
       fun = \(geo = geo, scales = scales,
-              scale_name = scale_name, scale_df = scale_df) {
+        scale_name = scale_name, scale_df = scale_df) {
         if (scale_name %in% c("street", "building")) {
           # If street or building is missing an ID:
           above_levels <- names(scales)[2:(which(names(scales) == scale_name) - 1)]
           other_ids <- lapply(above_levels, \(above_lvl) {
-            if (paste0(above_lvl, "_ID") %in% names(scale_df)) return()
+            if (paste0(above_lvl, "_ID") %in% names(scale_df)) {
+              return()
+            }
 
             above_lvl_df <- scales[[above_lvl]]
             above_lvl_df <- above_lvl_df[paste0(above_lvl, "_ID")]
@@ -103,7 +110,7 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs) {
 
             sf::st_drop_geometry(merged_centroids[c("ID", paste0(above_lvl, "_ID"))])
           })
-          merge_ <-  function(x, y) merge(x, y, by = "ID")
+          merge_ <- function(x, y) merge(x, y, by = "ID")
           out <- Reduce(merge_, other_ids[!sapply(other_ids, is.null)], init = scale_df)
 
           return(out)
@@ -132,7 +139,9 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs) {
         # taken care of)
         above_levels <- names(scales)[2:(which(names(scales) == scale_name) - 1)]
         other_ids <- lapply(above_levels, \(above_lvl) {
-          if (paste0(above_lvl, "_ID") %in% names(out)) return()
+          if (paste0(above_lvl, "_ID") %in% names(out)) {
+            return()
+          }
 
           above_lvl_df <- scales[[above_lvl]]
           above_lvl_df <- above_lvl_df[paste0(above_lvl, "_ID")]
@@ -144,7 +153,7 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs) {
 
           sf::st_drop_geometry(merged_centroids[c("ID", paste0(above_lvl, "_ID"))])
         })
-        merge_ <-  function(x, y) merge(x, y, by = "ID")
+        merge_ <- function(x, y) merge(x, y, by = "ID")
         out <- Reduce(merge_, other_ids[!sapply(other_ids, is.null)], init = out)
 
         # Take out _IDs that aren't in the scales (e.g., CSD)
@@ -162,8 +171,9 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs) {
       all_scales = out,
       fun = \(geo = geo, scales = scales,
         scale_name = scale_name, scale_df = scale_df) {
-        if (!scale_name %in% c("street", "building"))
+        if (!scale_name %in% c("street", "building")) {
           return(scale_df)
+        }
 
         scale_above_building <-
           names(scales)[which(names(scales) == scale_name) - 1]
@@ -171,7 +181,8 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs) {
         das <- sf::st_drop_geometry(scales[[scale_above_building]])
         ids <- das[, c("name_2", names(das)[grepl("_ID$", names(das))])]
         df <- scale_df[, !names(scale_df) %in% names(ids)[
-          names(ids) != paste0(scale_above_building, "_ID")]]
+          names(ids) != paste0(scale_above_building, "_ID")
+        ]]
 
         merge(df, ids, by = paste0(scale_above_building, "_ID"))
       }

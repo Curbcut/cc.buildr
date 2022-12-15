@@ -27,7 +27,10 @@ attributed to the census tracts.}
 \item{DA_zoom}{<\code{numeric}>¨On auto zoom, the zoom that should be
 attributed to the dissemination ares.}
 
-\item{building_zoom}{<\code{character}>¨Which is the default smaller scale?
+\item{building_zoom}{<\code{numeric}>¨On auto zoom, the zoom that should be
+attributed to the buildings.}
+
+\item{building_or_street}{<\code{character}>¨Which is the default smaller scale?
 \code{building} or \code{street}.}
 }
 \value{

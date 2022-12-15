@@ -23,12 +23,19 @@ map_zoom_levels_create_all <- function(all_tables, first_scale_zoom = 0,
                                        CT_zoom = 10.5, DA_zoom = 12.5,
                                        building_zoom = 15.5,
                                        building_or_street = "building") {
-
   auto_zoom_levels <- function(x, first) {
-    if (x == "CT") return(CT_zoom)
-    if (x == "DA") return(DA_zoom)
-    if (x %in% building_or_street) return(building_zoom)
-    if (x == first) return(first_scale_zoom)
+    if (x == "CT") {
+      return(CT_zoom)
+    }
+    if (x == "DA") {
+      return(DA_zoom)
+    }
+    if (x %in% building_or_street) {
+      return(building_zoom)
+    }
+    if (x == first) {
+      return(first_scale_zoom)
+    }
     stop(paste0("`", x, "` is an unrecognized scale."))
   }
 
@@ -67,9 +74,9 @@ map_zoom_levels_create_all <- function(all_tables, first_scale_zoom = 0,
 #' @export
 map_zoom_levels_create_custom <- function(map_zoom_levels, all_tables, region,
                                           suffix, content) {
-
-  if (!region %in% names(all_tables))
+  if (!region %in% names(all_tables)) {
     stop("`region` is not in the list of regions from `all_tables`.")
+  }
 
   new_zoom_level <- list(new_name = content)
   names(new_zoom_level) <- paste("map_zoom_levels", region, suffix, sep = "_")
@@ -96,7 +103,9 @@ map_zoom_levels_save <- function(data_folder = "data/", map_zoom_levels) {
       assign(names(deep)[[i]], deep[[i]])
     }
   }
-  do.call(qs::qsavem, c(lapply(unlist(sapply(map_zoom_levels, names)), rlang::sym) |>
-                          unname(),
-                        file = paste0(data_folder, "map_zoom_levels.qsm")))
+  do.call(qs::qsavem, c(
+    lapply(unlist(sapply(map_zoom_levels, names)), rlang::sym) |>
+      unname(),
+    file = paste0(data_folder, "map_zoom_levels.qsm")
+  ))
 }

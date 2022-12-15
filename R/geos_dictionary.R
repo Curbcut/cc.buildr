@@ -23,7 +23,6 @@
 #' priorty.
 #' @export
 regions_dictionary <- function(all_tables, geo, name, to_compare, pickable) {
-
   # Error check
   if (is.null(names(name))) {
     stop("`geo`must be a named character vector.")

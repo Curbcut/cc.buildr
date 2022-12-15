@@ -156,13 +156,11 @@ find_breaks_q5 <- function(min_val, max_val) {
 #'
 #' @return A data.frame where each column in a var, and the rows are the q3
 get_breaks_q5 <- function(df, vars, time_regex = "\\d{4}") {
-
   # Calculate q5 using ALL years
   time_regex_end <- paste0("_", time_regex, "$")
   unique_vars <- unique(gsub(time_regex_end, "", vars))
 
   q5s <- sapply(unique_vars, \(u_var) {
-
     # Extract the variable in a numeric vector
     df <- sf::st_drop_geometry(df)
     df_no_q3 <- df[!grepl("_q3", names(df))]
@@ -221,7 +219,6 @@ get_breaks_q5 <- function(df, vars, time_regex = "\\d{4}") {
 #' which variables are available for.
 #' @export
 calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
-
   # Append q3s
   out_tables <- map_over_scales(
     all_scales = all_scales,

@@ -15,8 +15,10 @@
 #' @export
 ru_canale <- function(scales_variables_modules, region_DA_IDs, crs) {
   ba_var(
-    data = cc.data::db_read_data("canale", column_to_select = "DA_ID",
-                                 IDs = region_DA_IDs, crs = crs),
+    data = cc.data::db_read_data("canale",
+      column_to_select = "DA_ID",
+      IDs = region_DA_IDs, crs = crs
+    ),
     scales_variables_modules = scales_variables_modules,
     base_scale = "DA",
     weight_by = "households",
@@ -101,8 +103,10 @@ ru_canale <- function(scales_variables_modules, region_DA_IDs, crs) {
 #' @export
 ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
   ba_var(
-    data = cc.data::db_read_data("canbics", column_to_select = "DA_ID",
-                                 IDs = region_DA_IDs, crs = crs),
+    data = cc.data::db_read_data("canbics",
+      column_to_select = "DA_ID",
+      IDs = region_DA_IDs, crs = crs
+    ),
     scales_variables_modules = scales_variables_modules,
     base_scale = "DA",
     weight_by = "households",
@@ -179,7 +183,6 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
 #' @export
 ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
                         approximate_name_match = TRUE) {
-
   # Relevant dimensions
   dimensions <-
     c("Bedroom Type", "Year of Construction", "Rent Ranges")
@@ -226,13 +229,16 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
           if (approximate_name_match) {
             out$name <-
               sapply(out$name,
-                     agrep,
-                     x = scales_variables_modules$scales$cmhc$cmhczone$name,
-                     value = TRUE, USE.NAMES = FALSE
+                agrep,
+                x = scales_variables_modules$scales$cmhc$cmhczone$name,
+                value = TRUE, USE.NAMES = FALSE
               )
-            if (!all(sapply(out$name, length) == 1))
-              stop(paste0("Approximate name matching matched more than one ",
-                          "name. Consider using `approximate_name_match = FALSE`"))
+            if (!all(sapply(out$name, length) == 1)) {
+              stop(paste0(
+                "Approximate name matching matched more than one ",
+                "name. Consider using `approximate_name_match = FALSE`"
+              ))
+            }
           }
           # Return
           out
@@ -271,7 +277,6 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
   # Add to the variables table
   variables <-
     lapply(unique_vars, \(var) {
-
       # Create title and explanation
       cat_title <- (\(x) {
         # Bedroom types

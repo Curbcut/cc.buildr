@@ -10,8 +10,6 @@
 #' multimodal transport network used for routing in R5) using `r5r`.
 #' @export
 tt_create_routing <- function(master_polygon, routing_folder) {
-
-
   # Check -------------------------------------------------------------------
 
   if (!requireNamespace("r5r", quietly = TRUE)) {
@@ -35,11 +33,14 @@ tt_create_routing <- function(master_polygon, routing_folder) {
     )
   }
 
-  if (is.null(getOption("java.parameters")))
-    stop("Set a maximum memory to Java, as much as you can spare with: ",
-         "`options(java.parameters = '-Xmx16G')` and change 16 for as many ",
-         "gb you can use of your RAM. If not enough, the funciton will break ",
-         "with a Java 'heap space' error.")
+  if (is.null(getOption("java.parameters"))) {
+    stop(
+      "Set a maximum memory to Java, as much as you can spare with: ",
+      "`options(java.parameters = '-Xmx16G')` and change 16 for as many ",
+      "gb you can use of your RAM. If not enough, the funciton will break ",
+      "with a Java 'heap space' error."
+    )
+  }
 
   if (!file.exists(routing_folder)) dir.create(routing_folder)
   if (!grepl("/$", routing_folder)) routing_folder <- paste0(routing_folder, "/")
@@ -55,17 +56,23 @@ tt_create_routing <- function(master_polygon, routing_folder) {
   zips <- zip_links[
     zip_links$location.country_code == "CA" &
       zip_links$data_type == "gtfs" &
-      !zip_links$status %in% c("inactive", "deprecated"), ]
+      !zip_links$status %in% c("inactive", "deprecated"),
+  ]
 
   # Get polygons
   zips <- sapply(seq_len(nrow(zips)), \(x) {
-    if (is.na(zips$location.bounding_box.maximum_longitude[x]))
+    if (is.na(zips$location.bounding_box.maximum_longitude[x])) {
       return(sf::st_polygon())
+    }
 
-    lon <- c(zips$location.bounding_box.minimum_longitude[x],
-             zips$location.bounding_box.maximum_longitude[x])
-    lat <- c(zips$location.bounding_box.minimum_latitude[x],
-             zips$location.bounding_box.maximum_latitude[x])
+    lon <- c(
+      zips$location.bounding_box.minimum_longitude[x],
+      zips$location.bounding_box.maximum_longitude[x]
+    )
+    lat <- c(
+      zips$location.bounding_box.minimum_latitude[x],
+      zips$location.bounding_box.maximum_latitude[x]
+    )
 
     dat <- data.frame(lon, lat)
 
@@ -73,7 +80,7 @@ tt_create_routing <- function(master_polygon, routing_folder) {
       sf::st_bbox() |>
       sf::st_as_sfc()
 
-    out <- zips[x,]
+    out <- zips[x, ]
     out$geometry <- geo
     out
   }, simplify = FALSE)
@@ -88,8 +95,10 @@ tt_create_routing <- function(master_polygon, routing_folder) {
     prov <- tolower(zips$provider[x])
     prov <- gsub("[^a-z.]", "", prov)
     utils::download.file(zips$urls.latest[x],
-                         paste0(routing_folder, prov, ".zip"), mode = "wb",
-                         quiet = TRUE)
+      paste0(routing_folder, prov, ".zip"),
+      mode = "wb",
+      quiet = TRUE
+    )
   }, USE.NAMES = FALSE, future.seed = NULL) |> invisible()
 
   # # Drop all TAXIS
@@ -146,12 +155,15 @@ tt_create_routing <- function(master_polygon, routing_folder) {
     secret = Sys.getenv("CURBCUT_BUCKET_ACCESS_KEY"),
     object = "osmconvert.exe",
     bucket = "curbcut.utils",
-    file = osmconvert))
+    file = osmconvert
+  ))
 
   # Which OSM pbf to download
   prov <- cc.buildr::provinces_pbf[
-      sf::st_intersects(cc.buildr::provinces_pbf, master_polygon,
-                        sparse = FALSE), ]
+    sf::st_intersects(cc.buildr::provinces_pbf, master_polygon,
+      sparse = FALSE
+    ),
+  ]
 
   prov_name <- tolower(prov$name)
   prov_name <- gsub("[^a-z.]", "", prov_name)
@@ -162,17 +174,21 @@ tt_create_routing <- function(master_polygon, routing_folder) {
     file_url = prov$link,
     download_directory = dirtemp,
     quiet = TRUE,
-    max_file_size = Inf)
+    max_file_size = Inf
+  )
 
   mp_buffer <- sf::st_buffer(master_polygon, 50000)
-  invisible(shell(paste0(
-    osmconvert, " ",
-    osm_link,
-    " -b=",
-    paste0(sf::st_bbox(mp_buffer), collapse = ","),
-    "--complete-ways",# --complete-multipolygons",# --complete-boundaries",
-    " -o=", paste0(getwd(), "/", routing_folder, "clipped.osm.pbf")),
-    intern = TRUE))
+  invisible(shell(
+    paste0(
+      osmconvert, " ",
+      osm_link,
+      " -b=",
+      paste0(sf::st_bbox(mp_buffer), collapse = ","),
+      "--complete-ways", # --complete-multipolygons",# --complete-boundaries",
+      " -o=", paste0(getwd(), "/", routing_folder, "clipped.osm.pbf")
+    ),
+    intern = TRUE
+  ))
 
 
   # Build network -----------------------------------------------------------
@@ -183,7 +199,6 @@ tt_create_routing <- function(master_polygon, routing_folder) {
   # Return the routing folder to then send it in a bucket -------------------
 
   return(routing_folder)
-
 }
 
 #' Get dissemination block centroids
@@ -209,8 +224,6 @@ tt_create_routing <- function(master_polygon, routing_folder) {
 tt_get_db <- function(master_polygon, region, street,
                       census_dataset = cc.buildr::current_census,
                       routing_folder, crs) {
-
-
   # Get the street from the OSM retrieval -----------------------------------
 
   if (!grepl("/$", routing_folder)) routing_folder <- paste0(routing_folder, "/")
@@ -242,7 +255,6 @@ tt_get_db <- function(master_polygon, region, street,
   pb <- progressr::progressor(steps = length(street_DB))
   DB_street_centroid <-
     future.apply::future_lapply(street_DB, \(strts) {
-
       bbox_centroid <-
         sf::st_bbox(strts) |>
         sf::st_as_sfc() |>
@@ -255,9 +267,10 @@ tt_get_db <- function(master_polygon, region, street,
 
       pb()
 
-      tibble::tibble(DB_ID = strts$DB_ID[1],
-                     geometry = geom)
-
+      tibble::tibble(
+        DB_ID = strts$DB_ID[1],
+        geometry = geom
+      )
     }, future.seed = NULL)
 
   DB_street_centroid <- data.table::rbindlist(DB_street_centroid)
@@ -280,7 +293,6 @@ tt_get_db <- function(master_polygon, region, street,
   pb <- progressr::progressor(steps = length(osm_streets))
   osm_streets_centroid <-
     future.apply::future_lapply(osm_streets, \(strts) {
-
       bbox_centroid <-
         sf::st_bbox(strts) |>
         sf::st_as_sfc() |>
@@ -293,9 +305,10 @@ tt_get_db <- function(master_polygon, region, street,
 
       pb()
 
-      tibble::tibble(DB_ID = strts$DB_ID[1],
-                     geometry = geom)
-
+      tibble::tibble(
+        DB_ID = strts$DB_ID[1],
+        geometry = geom
+      )
     }, future.seed = NULL)
 
   osm_streets_centroid <- data.table::rbindlist(osm_streets_centroid)
@@ -305,5 +318,4 @@ tt_get_db <- function(master_polygon, region, street,
   # Return ------------------------------------------------------------------
 
   return(rbind(DB_street_centroid, osm_streets_centroid))
-
 }

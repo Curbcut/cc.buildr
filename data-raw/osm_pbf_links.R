@@ -1,9 +1,10 @@
 ## OPENSTREETMAP PBF DOWNLOAD LINKS ############################################
 
 provinces_pbf <- cancensus::get_census(cc.buildr::current_census,
-                                   regions = list(C = 01),
-                                   level = "PR",
-                                   geo_format = "sf")
+  regions = list(C = 01),
+  level = "PR",
+  geo_format = "sf"
+)
 
 provinces_pbf <- provinces_pbf[, "name"]
 

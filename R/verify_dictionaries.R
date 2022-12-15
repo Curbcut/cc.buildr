@@ -15,7 +15,6 @@
 #' @export
 verify_dictionaries <- function(all_tables, regions_dictionary,
                                 scales_dictionary) {
-
   # Verify regions first -------------------------------------------------------
 
   regions <- names(all_tables)

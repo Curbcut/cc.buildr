@@ -23,8 +23,6 @@
 #' @export
 build_census_data <- function(scales_consolidated, region_DA_IDs,
                               census_vectors, crs) {
-
-
   # Filter out scales smaller than DAs --------------------------------------
 
   higher_DA <- lapply(scales_consolidated, \(x) {
@@ -98,7 +96,6 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
 
   census_data_merged <- future.apply::future_sapply(higher_DA, \(x) {
     mapply(\(df, scale) {
-
       # Get the census data for that scale
       ids <- if (scale == "CT") {
         ids <- df$ID[!df$ID %in% filled_vals[[scale]]$ID]
@@ -110,10 +107,13 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
       if (length(ids) > 0 && scale %in% cc.data::census_scales) {
         census_data <- cc.data::db_read_data(
           table = paste0("processed_", scale),
-          columns = sapply(cc.data::census_years,
-                           \(x) paste(census_vectors, x, sep = "_")),
+          columns = sapply(
+            cc.data::census_years,
+            \(x) paste(census_vectors, x, sep = "_")
+          ),
           IDs = ids,
-          crs = crs)
+          crs = crs
+        )
       } else {
         census_data <- tibble::tibble()
       }
@@ -135,10 +135,13 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
         if (length(csd_ids) > 0) {
           csd_data <- cc.data::db_read_data(
             table = paste0("processed_", "CSD"),
-            columns = sapply(cc.data::census_years,
-                             \(x) paste(census_vectors, x, sep = "_")),
+            columns = sapply(
+              cc.data::census_years,
+              \(x) paste(census_vectors, x, sep = "_")
+            ),
             IDs = csd_ids,
-            crs = crs) |>
+            crs = crs
+          ) |>
             sf::st_drop_geometry()
 
           ct_csds <- out_df[!out_df$ID %in% paste0("CSD_", csd_ids), ]
@@ -146,8 +149,9 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
           csd_data <- merge(csd_data, out_df[, "ID"], by = "ID")
 
           out_df <- rbind(ct_csds, csd_data)
-        } else out_df
-
+        } else {
+          out_df
+        }
       }
 
       pb()
@@ -180,16 +184,16 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
 
   avail_scales <-
     map_over_scales(census_data_merged,
-                    fun = \(geo = geo, scale_name = scale_name, ...) {
-                      tibble::tibble(
-                        geo = geo,
-                        scale = scale_name
-                      )
-                    }
+      fun = \(geo = geo, scale_name = scale_name, ...) {
+        tibble::tibble(
+          geo = geo,
+          scale = scale_name
+        )
+      }
     )
   avail_scales <-
     sapply(avail_scales, \(x) do.call(rbind, x),
-           simplify = FALSE, USE.NAMES = TRUE
+      simplify = FALSE, USE.NAMES = TRUE
     ) |>
     (\(x) do.call(rbind, x))()
   row.names(avail_scales) <- NULL
@@ -208,18 +212,18 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
     }, simplify = FALSE, USE.NAMES = TRUE)
   interpolated_ref <-
     map_over_scales(interpolated_ref,
-                    fun = \(geo = geo, scale_name = scale_name,
-                            scale_df = scale_df, ...) {
-                      tibble::tibble(
-                        geo = geo,
-                        scale = scale_name,
-                        interpolated_from = scale_df
-                      )
-                    }
+      fun = \(geo = geo, scale_name = scale_name,
+        scale_df = scale_df, ...) {
+        tibble::tibble(
+          geo = geo,
+          scale = scale_name,
+          interpolated_from = scale_df
+        )
+      }
     )
   interpolated_ref <-
     sapply(interpolated_ref, \(x) do.call(rbind, x),
-           simplify = FALSE, USE.NAMES = TRUE
+      simplify = FALSE, USE.NAMES = TRUE
     ) |>
     (\(x) do.call(rbind, x))()
   row.names(interpolated_ref) <- NULL

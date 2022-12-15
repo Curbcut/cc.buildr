@@ -12,7 +12,6 @@
 #' @return An sf data.frame of two columns: name of the zone and geometry.
 #' @export
 get_cmhc_zones <- function(cancensus_region, crs = NULL) {
-
   # Get CMA shapefile
   master <- {
     z <- cancensus::get_census(cc.buildr::current_census,

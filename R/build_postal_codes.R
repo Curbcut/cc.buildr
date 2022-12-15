@@ -7,6 +7,8 @@
 #' @return Returns all the postal codes in the region along with their centroid.
 #' @export
 build_postal_codes <- function(region_DA_IDs) {
-  cc.data::db_read_data(table = "postal_codes", column_to_select = "DA_ID",
-                        IDs = region_DA_IDs, crs = 4326)
+  cc.data::db_read_data(
+    table = "postal_codes", column_to_select = "DA_ID",
+    IDs = region_DA_IDs, crs = 4326
+  )
 }

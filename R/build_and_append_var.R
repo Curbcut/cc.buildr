@@ -55,7 +55,6 @@ ba_var <- function(data, scales_variables_modules, base_scale,
                    module_title_text_extra = NULL,
                    module_metadata = NULL,
                    module_dataset_info = NULL) {
-
   # Get list of data variables ----------------------------------------------
 
   var <-
@@ -124,8 +123,8 @@ ba_var <- function(data, scales_variables_modules, base_scale,
 
   modules <-
     if (!is.null(module_id) &&
-        !is.null(module_nav_title) &&
-        !is.null(module_theme) &&
+      !is.null(module_nav_title) &&
+      !is.null(module_theme) &&
       !is.null(module_metadata) &&
       !is.null(module_dataset_info) &&
       !is.null(module_title_text_title) &&

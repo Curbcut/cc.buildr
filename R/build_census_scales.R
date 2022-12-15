@@ -29,7 +29,6 @@ build_census_scales <- function(master_polygon,
                                 levels = c("CSD", "CT", "DA"), crs,
                                 fill_CTs_with_CSDs = TRUE,
                                 override_name_2 = list(CSD = "City")) {
-
   # Get census data with the help of cc.buildr::get_census_cc()
   census_datasets <-
     sapply(levels, \(x) {

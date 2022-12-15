@@ -24,7 +24,6 @@ ba_census_data <- function(scales_variables_modules,
                            census_vectors = cc.data::census_vectors,
                            crs,
                            housing_module = TRUE) {
-
   # Declare all variables from the census -----------------------------------
 
   vars <-
@@ -42,7 +41,8 @@ ba_census_data <- function(scales_variables_modules,
     scales_consolidated = scales_variables_modules$scales,
     region_DA_IDs = region_DA_IDs,
     census_vectors = census_vectors,
-    crs = crs)
+    crs = crs
+  )
 
 
   # Calculate breaks --------------------------------------------------------
