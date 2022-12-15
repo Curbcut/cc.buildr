@@ -72,6 +72,59 @@ tileset_upload_tile_source <- function(df, id, username, access_token) {
   system(out)
 }
 
+#' Upload a large tilesource to a Mapbox account
+#'
+#' Uploads a large tile source to Mapbox Tiling Service (MTS) in 10 iterations.
+#'
+#' @param df <`sf data.frame`> The `sf` data.frame that must be uploaded to
+#' mapbox. CRS must be 4326.
+#' @param id <`character`> The ID of the new tile source. For a scale, usually
+#' follows a prefix (mtl), the region (CMA), and the scale (CSD), e.g `mtl_CMA_building`.
+#' @param username <`character`> Mapbox account username.
+#' @param access_token <`character`> Private access token to the Mapbox account.
+#'
+#' @return Returns nothing when succesfull.
+#' @export
+tileset_upload_tile_source_large <-
+  function(df, id, username, access_token) {
+    iter_size <- ceiling(nrow(df) / 100)
+
+    to_process_list <-
+      lapply(1:100, \(x) {
+        df[(((x - 1) * iter_size + 1):(x * iter_size)), ] |>
+          geojsonsf::sf_geojson() |>
+          paste0(collapse = " ") |>
+          geojson::featurecollection()
+      })
+
+    # Iteratively post files to tile source
+    tmp <- tempfile(fileext = ".json")
+    tmp_list <- lapply(1:10, \(x) tempfile(fileext = ".json"))
+
+    lapply(1:10, function(x) {
+      to_process <- to_process_list[((x - 1) * 10 + 1):(x * 10)]
+      mapply(geojson::ndgeo_write, to_process, tmp_list)
+
+      # Concatenate geoJSONs
+      if (Sys.info()[["sysname"]] == "Windows") {
+        out <- paste0("type ", paste(tmp_list, collapse = " "), " > ", tmp)
+        shell(out)
+      } else {
+        out <- paste0("cat ", paste(tmp_list, collapse = " "), " > ", tmp)
+        system(out)
+      }
+
+      # Upload to MTS
+      out <- paste0(
+        'curl -X POST "https://api.mapbox.com/tilesets/v1/sources/',
+        username, "/", id, "?access_token=", access_token,
+        '" -F file=@', tmp,
+        ' --header "Content-Type: multipart/form-data"'
+      )
+      system(out)
+    })
+  }
+
 
 #' Delete tileset source
 #'
@@ -372,49 +425,6 @@ tileset_upload_all <- function(all_scales, map_zoom_levels,
     })
   }, names(all_tables), all_tables, SIMPLIFY = FALSE)
 
-
-  # Building source
-  tileset_create_building_tileset <-
-    function(name, building_to_process, username) {
-      iter_size <- ceiling(nrow(building_to_process) / 100)
-
-      building_to_process_list <-
-        lapply(1:100, \(x) {
-          building_to_process[(((x - 1) * iter_size + 1):(x * iter_size)), ] |>
-            geojsonsf::sf_geojson() |>
-            paste0(collapse = " ") |>
-            geojson::featurecollection()
-        })
-
-      # Iteratively post files to tile source
-      tmp <- tempfile(fileext = ".json")
-      tmp_list <- lapply(1:10, \(x) tempfile(fileext = ".json"))
-
-      lapply(1:10, function(x) {
-        to_process <- building_to_process_list[((x - 1) * 10 + 1):(x * 10)]
-        mapply(geojson::ndgeo_write, to_process, tmp_list)
-
-        # Concatenate geoJSONs
-        if (Sys.info()[["sysname"]] == "Windows") {
-          out <- paste0("type ", paste(tmp_list, collapse = " "), " > ", tmp)
-          shell(out)
-        } else {
-          out <- paste0("cat ", paste(tmp_list, collapse = " "), " > ", tmp)
-          system(out)
-        }
-
-        # Upload to MTS
-        out <- paste0(
-          'curl -X POST "https://api.mapbox.com/tilesets/v1/sources/',
-          username, "/", name, "?access_token=", access_token,
-          '" -F file=@', tmp,
-          ' --header "Content-Type: multipart/form-data"'
-        )
-        system(out)
-      })
-    }
-
-
   # Tileset sources
   mapply(function(scales, geo) {
     lapply(scales, function(scale) {
@@ -426,10 +436,11 @@ tileset_upload_all <- function(all_scales, map_zoom_levels,
         names(building_to_process) <- c("ID", "ID_color", "geometry")
         building_to_process <- sf::st_transform(building_to_process, 4326)
 
-        tileset_create_building_tileset(
-          name = geo_scale,
-          building_to_process = building_to_process,
-          username = username
+        tileset_upload_tile_source_large(
+          id = geo_scale,
+          df = building_to_process,
+          username = username,
+          access_token = access_token
         )
       } else {
         df <- all_scales[[geo]][[scale]]
@@ -869,13 +880,10 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
     )
   }
 
-  # Union using a projection
-  street <- sf::st_transform(street, crs)
-
   # Subset the street in groups
-  street_1 <- sf::st_union(street[street$rank %in% c(1, 2, 3), ])
-  street_2 <- sf::st_union(street[street$rank == 4, ])
-  street_3 <- sf::st_union(street[street$rank == 5, ])
+  street_1 <- street[street$rank %in% c(1, 2, 3), "ID"]
+  street_2 <- street[street$rank == 4, "ID"]
+  street_3 <- street[street$rank == 5, "ID"]
 
   # Back to 4326
   street_1 <- sf::st_transform(street_1, 4326)
@@ -883,17 +891,20 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
   street_3 <- sf::st_transform(street_3, 4326)
 
   # Upload tile_source
-  tileset_upload_tile_source(street_1, paste0(prefix, "_street_1"),
-    username = username,
-    access_token = access_token
+  tileset_upload_tile_source_large(df = street_1,
+                                   idf = paste0(prefix, "_street_1"),
+                                   username = username,
+                                   access_token = access_token
   )
-  tileset_upload_tile_source(street_2, paste0(prefix, "_street_2"),
-    username = username,
-    access_token = access_token
+  tileset_upload_tile_source_large(df = street_2,
+                                   idf = paste0(prefix, "_street_2"),
+                                   username = username,
+                                   access_token = access_token
   )
-  tileset_upload_tile_source(street_3, paste0(prefix, "_street_3"),
-    username = username,
-    access_token = access_token
+  tileset_upload_tile_source_large(df = street_3,
+                                   idf = paste0(prefix, "_street_3"),
+                                   username = username,
+                                   access_token = access_token
   )
 
 

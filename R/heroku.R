@@ -9,7 +9,7 @@
 #'
 #' @return Opens a terminal and disconnect from the current R session.
 #' @export
-deploy_cc <- function(app_name) {
+heroku_deploy <- function(app_name) {
   if (Sys.info()["sysname"] != "Windows") {
     stop("As of now, this function is only adapted for Windows.")
   }
@@ -54,7 +54,7 @@ deploy_cc <- function(app_name) {
 #'
 #' @return Opens a terminal asking to login, then restarts the dyno.
 #' @export
-restart_dyno <- function(app_name, dyno) {
+heroku_restart_dyno <- function(app_name, dyno) {
   cmds <- c(
     "heroku login",
     paste0("heroku restart ", dyno, " -a ", app_name)
