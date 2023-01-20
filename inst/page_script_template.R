@@ -116,7 +116,8 @@
       var_list = make_dropdown(multi_year = FALSE,
                                only_vars = `__var_right__`,
                                only = NULL,
-                               exclude = NULL, compare = TRUE),
+                               exclude = NULL,
+                               compare = TRUE),
       time = time)
 
     # Sidebar

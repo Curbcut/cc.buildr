@@ -12,7 +12,6 @@ Imports:
     stats,
     httr,
     sf,
-    data.table,
     cancensus,
     cmhc,
     geojsonsf,
@@ -32,8 +31,6 @@ Imports:
     rlang,
     stringi
 Suggests:
-    r5r,
-    osmextract,
     aws.s3,
     styler,
     osmdata

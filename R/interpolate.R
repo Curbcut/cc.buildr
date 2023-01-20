@@ -163,7 +163,6 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
         }, names(scales), scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
       # Interpolate to non-census scales
-
       non_census_scales <- names(scales)[!names(scales) %in% existing_census_scales]
       if (length(non_census_scales) == 0) {
         return(census_interpolated)
@@ -176,71 +175,13 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
             if (!scale_name %in% non_census_scales) {
               return(scale_df)
             }
-
-            # Preparation
-            scale_df <- sf::st_transform(scale_df, crs)
-            scale_df <- sf::st_set_agr(scale_df, "constant")
-            trim_df <- scale_df[, names(scale_df)[names(scale_df) != weight_by]]
-            trim_base <- base[, c(data_col_names, weight_by, "area")]
-
-            # Intersect and calculate area proportion
-            intersected <- sf::st_intersection(trim_df, trim_base)
-            intersected$area_prop <-
-              get_area(intersected$geometry) / intersected$area
-
-            # Proportion of 'weight_by' in the base scale
-            intersected$n_weight_by <- intersected[[weight_by]] * intersected$area_prop
-
-            # Group by ID, and calculate a weighted.mean using the weight_by argument.
-            intersected <- sf::st_drop_geometry(intersected)
-            data_col_names_avg <- data_col_names[data_col_names %in% average_vars]
-            data_col_names_avg <- lapply(data_col_names_avg, \(col_name) {
-              as.data.frame(intersected)[c("ID", "n_weight_by", col_name)]
-            })
-            pb <- progressr::progressor(steps = length(data_col_names_avg))
-            summarized_avg <-
-              lapply(data_col_names_avg, \(col_df) {
-                dat <- stats::ave(
-                  col_df, col_df$ID,
-                  FUN = \(x) stats::weighted.mean(x[[ncol(col_df)]], x[["n_weight_by"]],
-                    na.rm = TRUE
-                  )
-                )[ncol(col_df)]
-                dat$ID <- col_df$ID
-                # Get unique values per zone
-                pb()
-                unique(dat)
-              })
-
-            data_col_names_add <- data_col_names[data_col_names %in% additive_vars]
-            data_col_names_add <- lapply(data_col_names_add, \(col_name) {
-              as.data.frame(intersected)[c("ID", "area_prop", col_name)]
-            })
-            pb <- progressr::progressor(steps = length(data_col_names_add))
-            summarized_add <-
-              lapply(data_col_names_add, \(col_df) {
-                col_df[[ncol(col_df)]] <- col_df[[ncol(col_df)]] * col_df$area_prop
-                dat <- stats::ave(
-                  col_df, col_df$ID,
-                  FUN = \(x) sum(x[[ncol(col_df)]], na.rm = TRUE)
-                )[ncol(col_df)]
-                dat$ID <- col_df$ID
-                # Get unique values per zone
-                pb()
-                unique(dat)
-              })
-
-            summarized <- c(summarized_avg, summarized_add)
-
-            # Merge all data out of the weighted averages
-            out <- if (length(summarized) > 1) {
-              Reduce(merge, summarized)
-            } else {
-              summarized[[1]]
-            }
-
-            # Merge to the existing data
-            merge(scale_df, out, by = "ID", all.x = TRUE)
+            interpolate_from_area(
+              to = scale_df,
+              from = base,
+              average_vars = average_vars,
+              additive_vars = additive_vars,
+              crs = crs
+            )
           }, names(census_interpolated), census_interpolated,
           SIMPLIFY = FALSE, USE.NAMES = TRUE
         )
@@ -472,11 +413,13 @@ interpolate_custom_geo <- function(data, all_scales, crs,
                                    average_vars = c(),
                                    additive_vars = c(),
                                    name_interpolate_from) {
+
   ## Only interpolate for geometries bigger than the data one
   all_tables <- reconstruct_all_tables(all_scales)
   all_tables <- all_tables[names(all_tables) %in% only_regions]
+  construct_for <- all_scales[names(all_scales) %in% only_regions]
   construct_for <- map_over_scales(
-    all_scales = all_scales,
+    all_scales = construct_for,
     fun = \(geo = geo, scales = scales,
       scale_df = scale_df, scale_name = scale_name) {
       data <- sf::st_transform(data, crs)

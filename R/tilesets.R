@@ -891,18 +891,18 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
   street_3 <- sf::st_transform(street_3, 4326)
 
   # Upload tile_source
-  tileset_upload_tile_source_large(df = street_1,
-                                   idf = paste0(prefix, "_street_1"),
-                                   username = username,
-                                   access_token = access_token
+  tileset_upload_tile_source(df = street_1,
+                             id = paste0(prefix, "_street_1"),
+                             username = username,
+                             access_token = access_token
   )
-  tileset_upload_tile_source_large(df = street_2,
-                                   idf = paste0(prefix, "_street_2"),
-                                   username = username,
-                                   access_token = access_token
+  tileset_upload_tile_source(df = street_2,
+                             id = paste0(prefix, "_street_2"),
+                             username = username,
+                             access_token = access_token
   )
   tileset_upload_tile_source_large(df = street_3,
-                                   idf = paste0(prefix, "_street_3"),
+                                   id = paste0(prefix, "_street_3"),
                                    username = username,
                                    access_token = access_token
   )

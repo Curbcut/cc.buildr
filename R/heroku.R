@@ -34,7 +34,7 @@ heroku_deploy <- function(app_name) {
     paste0("heroku container:release web -a ", app_name)
   )
 
-  tmp <- tempfile(fileext = "ps1")
+  tmp <- tempfile(fileext = ".ps1")
 
   paste0(cmds, collapse = "\n") |>
     writeLines(tmp)
@@ -60,7 +60,7 @@ heroku_restart_dyno <- function(app_name, dyno) {
     paste0("heroku restart ", dyno, " -a ", app_name)
   )
 
-  tmp <- tempfile(fileext = "ps1")
+  tmp <- tempfile(fileext = ".ps1")
 
   paste0(cmds, collapse = "\n") |>
     writeLines(tmp)
