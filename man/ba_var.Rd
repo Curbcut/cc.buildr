@@ -36,7 +36,7 @@ ba_var(
 (different years possible), and an ID that corresponds to the base scale,
 e.g. \code{"DA_ID"}.}
 
-\item{scales_variables_modules}{<\verb{names list}> A list of length three.
+\item{scales_variables_modules}{<\verb{named list}> A list of length three.
 The first is all the scales, the second is the variables table, and the
 third is the modules table.}
 

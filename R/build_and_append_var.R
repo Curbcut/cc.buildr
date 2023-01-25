@@ -3,7 +3,7 @@
 #' @param data <`data.frame`> Containing any number of column of THE SAME data
 #' (different years possible), and an ID that corresponds to the base scale,
 #' e.g. \code{"DA_ID"}.
-#' @param scales_variables_modules <`names list`> A list of length three.
+#' @param scales_variables_modules <`named list`> A list of length three.
 #' The first is all the scales, the second is the variables table, and the
 #' third is the modules table.
 #' @param base_scale <`character`> The denominator for which data should be
