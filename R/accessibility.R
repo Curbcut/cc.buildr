@@ -40,6 +40,8 @@ ba_accessibility_points <- function(scales_variables_modules,
   dict <- cc.data::accessibility_point_dict
   dict$var_code <- gsub("_\\d{4}$", "", dict$var_code)
   vars <- dict$var_code[dict$theme %in% themes]
+  # Add year
+  vars <- paste0(vars, "_2021")
 
   point_per_DA <- cc.data::db_read_data(table = "accessibility_point_DA",
                                         columns = vars,
@@ -53,6 +55,7 @@ ba_accessibility_points <- function(scales_variables_modules,
   ttm_data <- accessibility_add_intervals(point_per_DA = point_per_DA,
                                           traveltimes = traveltimes,
                                           time_intervals = time_intervals)
+  # ttm_data <- qs::qread("test_build_mtl/ttm_data.qs")
 
 
   # Interpolate -------------------------------------------------------------
@@ -97,7 +100,7 @@ ba_accessibility_points <- function(scales_variables_modules,
     d_entry$industry <- gsub("Retail Establishment", "Retail Establishments", d_entry$industry)
 
     theme <-
-      # if (d_entry$theme == "arenas") "arenas" else
+      if (d_entry$theme == "arenas") "arenas" else
         if (d_entry$theme == "cinemas") "cinemas" else
           if (d_entry$theme == "communitycentres") "community centres" else
             if (d_entry$theme == "education") "educational facilities" else
@@ -149,8 +152,8 @@ ba_accessibility_points <- function(scales_variables_modules,
                                                         if (grepl("healthcare_total", var)) "Healthcare" else
                                                           if (grepl("retail_total", var)) "Retail"
 
-    var_title <- stringr::str_to_sentence(paste0(subtheme, " accessible by ", mode))
-    var_short <- subtheme
+    var_title <- stringr::str_to_sentence(paste0(d_entry$industry, " accessible by ", mode))
+    var_short <- stringr::str_to_sentence(subtheme)
     explanation <- paste0("the average count of ", tolower(d_entry$industry),
                           " accessible in ", time," minutes by ", mode)
 
@@ -160,6 +163,21 @@ ba_accessibility_points <- function(scales_variables_modules,
                        "Transportation time" = time)
 
     # Additional group_diff
+    val <-
+      if (grepl("_total$", d_entry$var_code)) "Total" else unname(d_entry$industry)
+
+    if (d_entry$theme == "fooddistribution") {
+      group_diff <- c(group_diff, list("Industry" = val))
+    }
+    if (d_entry$theme == "education") {
+      group_diff <- c(group_diff, list("Educational establishment category" = val))
+    }
+    if (d_entry$theme == "retail") {
+      group_diff <- c(group_diff, list("Retail category" = val))
+    }
+    if (d_entry$theme == "healthcare") {
+      group_diff <- c(group_diff, list("Health care facility" = val))
+    }
 
     add_variable(
       variables = scales_variables_modules$variables,
@@ -169,7 +187,7 @@ ba_accessibility_points <- function(scales_variables_modules,
       var_short = var_short,
       explanation = explanation,
       group_name = group_name,
-      group_diff = list("tktk"),
+      group_diff = group_diff,
       theme = "Transport",
       private = FALSE,
       dates = with_breaks$avail_dates[[var]],
@@ -183,7 +201,7 @@ ba_accessibility_points <- function(scales_variables_modules,
 
   })
 
-  variables <- rbind(scales_variables_modules$variables, new_variables)
+  variables <- rbind(scales_variables_modules$variables, Reduce(rbind, new_variables))
 
 
   # Modules table -----------------------------------------------------------

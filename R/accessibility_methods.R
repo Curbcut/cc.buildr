@@ -187,8 +187,9 @@ accessibility_add_intervals <- function(point_per_DA,
         # amount of reachable amenities
         out <- sapply(time_intervals, \(interval) {
 
-          df <- merge(traveltimes[[mode]][[ID]], point_per_DA)
+          df <- traveltimes[[mode]][[ID]]
           df <- df[df$duration <= interval, ]
+          df <- merge(df, point_per_DA)
           colsumed <- colSums(df[3:ncol(df)])
 
           names(colsumed) <- paste("access", mode, interval, names(colsumed),

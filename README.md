@@ -298,3 +298,16 @@ scales_variables_modules <-
   ru_canbics(scales_variables_modules = scales_variables_modules,
              crs = crs)
 ```
+
+### Accessibility
+
+``` r
+traveltimes <-
+  accessibility_get_travel_times(region_DA_IDs = census_scales$DA$ID)
+
+scales_variables_modules <- 
+  ba_accessibility_points(scales_variables_modules = scales_variables_modules,
+                          region_DA_IDs = census_scales$DA$ID,
+                          traveltimes = traveltimes,
+                          crs = crs)
+```
