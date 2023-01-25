@@ -159,7 +159,7 @@ ba_accessibility_points <- function(scales_variables_modules,
 
 
     group_name <- paste("Access to", theme)
-    group_diff <- list("Mode of transport" = mode,
+    group_diff <- list("Mode of transport" = stringr::str_to_sentence(mode),
                        "Transportation time" = time)
 
     # Additional group_diff

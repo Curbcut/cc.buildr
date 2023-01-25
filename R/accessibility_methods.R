@@ -90,7 +90,7 @@ accessibility_point_per_DA <- function(point_data, DA_table, crs) {
 #' @return Returns a named list. Each mode is an element, and inside each
 #' DA has its own dataframe with time to get to each other DA.
 #' @export
-accessibility_get_travel_times <- function(modes = c("foot", "bike", "car",
+accessibility_get_travel_times <- function(modes = c("foot", "bicycle", "car",
                                                      "transit"),
                                            region_DA_IDs) {
   # Get travel times --------------------------------------------------------
