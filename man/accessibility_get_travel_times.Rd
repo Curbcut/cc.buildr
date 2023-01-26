@@ -5,7 +5,7 @@
 \title{Get travel time dataframes}
 \usage{
 accessibility_get_travel_times(
-  modes = c("foot", "bike", "car", "transit"),
+  modes = c("foot", "bicycle", "car", "transit"),
   region_DA_IDs
 )
 }

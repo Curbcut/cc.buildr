@@ -10,6 +10,7 @@
 #' years.
 #'
 #' @return Returns the same data.frame as df with q3 columns appended.
+#' @export
 add_q3 <- function(df, vars, time_regex = "\\d{4}") {
   time_regex_end <- paste0("_", time_regex, "$")
 
@@ -50,6 +51,7 @@ add_q3 <- function(df, vars, time_regex = "\\d{4}") {
 #'
 #' @return A data.frame where each column in a var, and the rows are the q3
 #' breaks.
+#' @export
 get_breaks_q3 <- function(df, vars) {
   tb <- sapply(vars, \(var) {
     if (!var %in% names(df)) {
@@ -90,6 +92,7 @@ get_breaks_q3 <- function(df, vars) {
 #' years.
 #'
 #' @return Returns the same data.frame as df with q5 columns appended.
+#' @export
 add_q5 <- function(df, breaks, time_regex = "\\d{4}") {
   time_regex_end <- paste0("_", time_regex, "$")
 
@@ -133,6 +136,7 @@ add_q5 <- function(df, breaks, time_regex = "\\d{4}") {
 #' @param max_val <`numeric`>
 #'
 #' @return Returns a numeric vector with pretty q5 break values.
+#' @export
 find_breaks_q5 <- function(min_val, max_val) {
   breaks <- unlist(lapply(-3:7, \(x) (10^x) * c(1, 1.5, 2, 2.5, 3, 4, 5, 6)))
 
@@ -155,6 +159,7 @@ find_breaks_q5 <- function(min_val, max_val) {
 #' years.
 #'
 #' @return A data.frame where each column in a var, and the rows are the q3
+#' @export
 get_breaks_q5 <- function(df, vars, time_regex = "\\d{4}") {
   # Calculate q5 using ALL years
   time_regex_end <- paste0("_", time_regex, "$")
@@ -219,6 +224,14 @@ get_breaks_q5 <- function(df, vars, time_regex = "\\d{4}") {
 #' which variables are available for.
 #' @export
 calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
+
+  if (time_regex != "") {
+    if (sum(sapply(vars, \(var) grepl(time_regex, var))) == 0)
+      stop(paste0("The time regular expression `", time_regex, "` isn't found in",
+                  " the variables name. Add the time, or set the `time_regex` ",
+                  "argument to an empty string."))
+  }
+
   # Append q3s
   out_tables <- map_over_scales(
     all_scales = all_scales,
