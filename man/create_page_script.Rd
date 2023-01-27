@@ -4,11 +4,16 @@
 \alias{create_page_script}
 \title{Create page script}
 \usage{
-create_page_script(source_file, R_folder = "R/", overwrite = FALSE)
+create_page_script(
+  source_file,
+  R_folder = "R/",
+  overwrite = FALSE,
+  auto_left_vars = FALSE
+)
 }
 \arguments{
-\item{source_file}{<\code{character}> File where all inputs are like module id,
-var_left, var_right, time, etc.}
+\item{source_file}{<\code{character}> File where all inputs are like module \code{id},
+\code{var_left}, \code{var_right}, \code{time}, etc.}
 
 \item{R_folder}{<\code{character}> Location where the new page script will be created.
 Defaults to \code{"R/"}}
@@ -16,6 +21,10 @@ Defaults to \code{"R/"}}
 \item{overwrite}{<\code{logical}> If a file already exists, should it be overriden.
 Defaults to \code{FALSE}. The file name will be made using the \code{id} object from
 the \code{source_file}. \code{R/m_id.R}.}
+
+\item{auto_left_vars}{<\code{logical}> Should the \code{auto_vars_UI} and
+\code{auto_vars_server} module be used to dynamically create dropdowns for the
+left variables.}
 }
 \value{
 Opens the new page script created.

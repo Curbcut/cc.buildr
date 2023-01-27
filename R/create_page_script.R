@@ -1,22 +1,27 @@
 #' Create page script
 #'
-#' @param source_file <`character`> File where all inputs are like module id,
-#' var_left, var_right, time, etc.
+#' @param source_file <`character`> File where all inputs are like module `id`,
+#' `var_left`, `var_right`, `time`, etc.
 #' @param R_folder <`character`> Location where the new page script will be created.
 #' Defaults to `"R/"`
 #' @param overwrite <`logical`> If a file already exists, should it be overriden.
 #' Defaults to `FALSE`. The file name will be made using the `id` object from
 #' the `source_file`. `R/m_id.R`.
+#' @param auto_left_vars <`logical`> Should the `auto_vars_UI` and
+#' `auto_vars_server` module be used to dynamically create dropdowns for the
+#' left variables.
 #'
 #' @return Opens the new page script created.
 #' @export
-create_page_script <- function(source_file, R_folder = "R/", overwrite = FALSE) {
+create_page_script <- function(source_file, R_folder = "R/", overwrite = FALSE,
+                               auto_left_vars = FALSE) {
   # Create some visual binding for global variable, to silence warnings
   # of devtools::check().
   id <- NULL
   var_left <- NULL
   var_right <- NULL
   time <- NULL
+  group_name_label <- NULL
 
 
   # Source the file containing all the variables
@@ -80,23 +85,51 @@ create_page_script <- function(source_file, R_folder = "R/", overwrite = FALSE) 
   if (length(var_left) == 1) {
     template <- gsub("`__var_left__`", write_as_vector(var_left), template)
   } else {
-    vl_ui <- readLines(system.file("modules/var_left_ui.R",
-      package = "cc.buildr"
-    ))
-    vl_ui <- gsub("`__var_left__`", write_as_vector(var_left), vl_ui)
-    uis <- c(uis, vl_ui)
+    if (!auto_left_vars) {
+      vl_ui <- readLines(system.file("modules/var_left_ui.R",
+                                     package = "cc.buildr"
+      ))
+      vl_ui <- gsub("`__var_left__`", write_as_vector(var_left), vl_ui)
+      uis <- c(uis, vl_ui)
 
-    vl_serv <- readLines(system.file("modules/var_left_server.R",
-      package = "cc.buildr"
-    ))
-    vl_serv <- gsub("`__var_left__`", write_as_vector(var_left), vl_serv)
-    template <- gsub(
-      paste0(
-        "var_left <- reactive\\(paste\\(`__var_left__`, ",
-        'time\\(\\), sep = "_"\\)\\)'
-      ),
-      paste0(vl_serv, collapse = "\n"), template
-    )
+      vl_serv <- readLines(system.file("modules/var_left_server.R",
+                                       package = "cc.buildr"
+      ))
+      vl_serv <- gsub("`__var_left__`", write_as_vector(var_left), vl_serv)
+      template <- gsub(
+        paste0(
+          "var_left <- reactive\\(paste\\(`__var_left__`, ",
+          'time\\(\\), sep = "_"\\)\\)'
+        ),
+        paste0(vl_serv, collapse = "\n"), template
+      )
+    } else {
+      if (is.null("group_name_label"))
+        stop(paste0("Add a `group_name_label` to name the main left variable ",
+                    "dropdown."))
+      au_vl_ui <- readLines(system.file("modules/auto_var_left_ui.R",
+                                        package = "cc.buildr"
+      ))
+      au_vl_ui <- gsub("`__var_left__`", write_as_vector(var_left), au_vl_ui)
+      au_vl_ui <- gsub("`__group_name_label__`", write_as_vector(group_name_label),
+                    au_vl_ui)
+      uis <- c(uis, au_vl_ui)
+
+      au_vl_serv <- readLines(system.file("modules/auto_var_left_server.R",
+                                       package = "cc.buildr"
+      ))
+      au_vl_serv <- gsub("`__var_left__`", write_as_vector(var_left), au_vl_serv)
+      template <- gsub("# Time", "", template)
+      template <- gsub("time <- reactive\\(`__time__`\\)", "", template)
+      template <- gsub("# Left variable", "", template)
+      template <- gsub(
+        paste0(
+          "var_left <- reactive\\(paste\\(`__var_left__`, ",
+          'time\\(\\), sep = "_"\\)\\)'
+        ),
+        paste0(au_vl_serv, collapse = "\n"), template
+      )
+    }
   }
 
   # var_right

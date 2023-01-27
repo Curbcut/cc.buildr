@@ -194,7 +194,7 @@ ba_accessibility_points <- function(scales_variables_modules,
       scales = data_interpolated$avail_scales,
       breaks_q3 = with_breaks$q3_breaks_table[[var]],
       breaks_q5 = with_breaks$q5_breaks_table[[var]],
-      source = "DMTI Spatial",
+      source = d_entry$source,
       interpolated = data_interpolated$interpolated_ref
     ) |>
       (\(x) x[nrow(x), ])()
