@@ -24,14 +24,15 @@
 #' @export
 ba_accessibility_points <- function(scales_variables_modules,
                                     region_DA_IDs,
-                                    themes = cc.data::accessibility_themes,
+                                    themes = cc.data::list_accessibility_themes(),
                                     traveltimes,
                                     time_intervals = which(1:60 %% 5 == 0),
                                     crs) {
-
   if (max(time_intervals) > 60) {
-    stop(paste0("The maximum time interval available in the travel time ",
-                "matrices is 60 minutes"))
+    stop(paste0(
+      "The maximum time interval available in the travel time ",
+      "matrices is 60 minutes"
+    ))
   }
 
   # Get the data from the MySQL server --------------------------------------
@@ -43,18 +44,22 @@ ba_accessibility_points <- function(scales_variables_modules,
   # Add year
   vars <- paste0(vars, "_2021")
 
-  point_per_DA <- cc.data::db_read_data(table = "accessibility_point_DA",
-                                        columns = vars,
-                                        column_to_select = "DA_ID",
-                                        IDs = region_DA_IDs,
-                                        crs = crs)
+  point_per_DA <- cc.data::db_read_data(
+    table = "accessibility_point_DA",
+    columns = vars,
+    column_to_select = "DA_ID",
+    IDs = region_DA_IDs,
+    crs = crs
+  )
 
 
   # Arrange all the point data in final variables ---------------------------
 
-  ttm_data <- accessibility_add_intervals(point_per_DA = point_per_DA,
-                                          traveltimes = traveltimes,
-                                          time_intervals = time_intervals)
+  ttm_data <- accessibility_add_intervals(
+    point_per_DA = point_per_DA,
+    traveltimes = traveltimes,
+    time_intervals = time_intervals
+  )
   # ttm_data <- qs::qread("test_build_mtl/ttm_data.qs")
 
 
@@ -88,7 +93,6 @@ ba_accessibility_points <- function(scales_variables_modules,
   vars <- unique(gsub("_\\d{4}$", "", average_vars))
 
   new_variables <- lapply(vars, \(var) {
-
     #### TKTK EXTERIOR SWIMMING POOLS (replace arenas)
 
     d_entry <- dict[sapply(dict$var_code, grepl, var, USE.NAMES = FALSE), ]
@@ -100,67 +104,33 @@ ba_accessibility_points <- function(scales_variables_modules,
     d_entry$industry <- gsub("Retail Establishment", "Retail Establishments", d_entry$industry)
 
     theme <-
-      if (d_entry$theme == "arenas") "arenas" else
-        if (d_entry$theme == "cinemas") "cinemas" else
-          if (d_entry$theme == "communitycentres") "community centres" else
-            if (d_entry$theme == "education") "educational facilities" else
-              if (d_entry$theme == "firestations") "fire stations" else
-                if (d_entry$theme == "fooddistribution") "food distributors" else
-                  if (d_entry$theme == "policeservices") "police services" else
-                    if (d_entry$theme == "religiousbuildings") "religious buildings" else
-                      if (d_entry$theme == "retail") "retail establishments" else
-                        if (d_entry$theme == "wifihotspots") "wifi hotspots" else
-                          if (d_entry$theme == "healthcare") "healthcare services"
+      if (d_entry$theme == "arenas") "arenas" else if (d_entry$theme == "cinemas") "cinemas" else if (d_entry$theme == "communitycentres") "community centres" else if (d_entry$theme == "education") "educational facilities" else if (d_entry$theme == "firestations") "fire stations" else if (d_entry$theme == "fooddistribution") "food distributors" else if (d_entry$theme == "policeservices") "police services" else if (d_entry$theme == "religiousbuildings") "religious buildings" else if (d_entry$theme == "retail") "retail establishments" else if (d_entry$theme == "wifihotspots") "wifi hotspots" else if (d_entry$theme == "healthcare") "healthcare services"
 
     gsub("_", "", dict$var_code |> stringr::str_extract("_.*$"))
 
     subtheme <- d_entry$industry
 
     mode <-
-      if (grepl("_car_", var)) "car" else
-        if (grepl("_foot_", var)) "walking" else
-          if (grepl("_bicycle_", var)) "bicycle" else
-            if (grepl("_transit_", var)) "public transit"
+      if (grepl("_car_", var)) "car" else if (grepl("_foot_", var)) "walking" else if (grepl("_bicycle_", var)) "bicycle" else if (grepl("_transit_", var)) "public transit"
 
     time <- gsub("_", "", stringr::str_extract(var, "_\\d*_"))
 
     subtheme <-
-      if (grepl("amusement", var)) "Arenas" else
-        if (grepl("motion", var)) "Cinemas" else
-          if (grepl("individual", var)) "Community" else
-            if (grepl("elementary", var)) "Schools" else
-              if (grepl("colleges", var)) "Universities" else
-                if (grepl("education_other", var)) "Other schools" else
-                  if (grepl("fire", var)) "Fire stations" else
-                    if (grepl("retail", var)) "Retail" else
-                      if (grepl("grocery", var)) "Groceries" else
-                        if (grepl("fruit", var)) "Fruits & Veg." else
-                          if (grepl("meat", var)) "Meat & Fish" else
-                            if (grepl("miscellaneous", var)) "Misc. food" else
-                              if (grepl("dairy", var)) "Dairy" else
-                                if (grepl("police", var)) "Police" else
-                                  if (grepl("religious", var)) "Religious" else
-                                      if (grepl("department", var)) "Department" else
-                                        if (grepl("hardware", var)) "Hardware" else
-                                          if (grepl("public", var)) "Wi-Fi" else
-                                            if (grepl("doctors", var)) "Doctors" else
-                                              if (grepl("nursing", var)) "Nursing" else
-                                                if (grepl("hospitals", var)) "Hospitals" else
-                                                  if (grepl("healthcare_other", var)) "Other" else
-                                                    if (grepl("education_total", var)) "Education" else
-                                                      if (grepl("fooddistribution_total", var)) "Food" else
-                                                        if (grepl("healthcare_total", var)) "Healthcare" else
-                                                          if (grepl("retail_total", var)) "Retail"
+      if (grepl("amusement", var)) "Arenas" else if (grepl("motion", var)) "Cinemas" else if (grepl("individual", var)) "Community" else if (grepl("elementary", var)) "Schools" else if (grepl("colleges", var)) "Universities" else if (grepl("education_other", var)) "Other schools" else if (grepl("fire", var)) "Fire stations" else if (grepl("retail", var)) "Retail" else if (grepl("grocery", var)) "Groceries" else if (grepl("fruit", var)) "Fruits & Veg." else if (grepl("meat", var)) "Meat & Fish" else if (grepl("miscellaneous", var)) "Misc. food" else if (grepl("dairy", var)) "Dairy" else if (grepl("police", var)) "Police" else if (grepl("religious", var)) "Religious" else if (grepl("department", var)) "Department" else if (grepl("hardware", var)) "Hardware" else if (grepl("public", var)) "Wi-Fi" else if (grepl("doctors", var)) "Doctors" else if (grepl("nursing", var)) "Nursing" else if (grepl("hospitals", var)) "Hospitals" else if (grepl("healthcare_other", var)) "Other" else if (grepl("education_total", var)) "Education" else if (grepl("fooddistribution_total", var)) "Food" else if (grepl("healthcare_total", var)) "Healthcare" else if (grepl("retail_total", var)) "Retail"
 
     var_title <- stringr::str_to_sentence(paste0(d_entry$industry, " accessible by ", mode))
     var_short <- stringr::str_to_sentence(subtheme)
-    explanation <- paste0("the average count of ", tolower(d_entry$industry),
-                          " accessible in ", time," minutes by ", mode)
+    explanation <- paste0(
+      "the average count of ", tolower(d_entry$industry),
+      " accessible in ", time, " minutes by ", mode
+    )
 
 
     group_name <- paste("Access to", theme)
-    group_diff <- list("Mode of transport" = stringr::str_to_sentence(mode),
-                       "Transportation time" = time)
+    group_diff <- list(
+      "Mode of transport" = stringr::str_to_sentence(mode),
+      "Transportation time" = time
+    )
 
     # Additional group_diff
     val <-
@@ -198,7 +168,6 @@ ba_accessibility_points <- function(scales_variables_modules,
       interpolated = data_interpolated$interpolated_ref
     ) |>
       (\(x) x[nrow(x), ])()
-
   })
 
   variables <- rbind(scales_variables_modules$variables, Reduce(rbind, new_variables))
@@ -207,37 +176,43 @@ ba_accessibility_points <- function(scales_variables_modules,
   # Modules table -----------------------------------------------------------
 
   modules <-
-      scales_variables_modules$modules |>
-        add_module(
-          id = "access",
-          theme = "Transport",
-          nav_title = "Access to amenities",
-          title_text_title = "Access to amenities",
-          title_text_main =
-            paste0("Being able to access amenities and services in our nearby ",
-                   "urban environment can greatly impact our daily ",
-                   "experiences and quality of life. The time and mode of ",
-                   "transportation needed to reach these amenities plays a ",
-                   "large role in this. In this module, explore information ",
-                   "about access to schools, food distributors, health care ",
-                   "facilities, and more by walk, bike, transit, or car."),
-          title_text_extra =
-            paste0("In selecting different options from the drop-down menus, ",
-                   "insights can be gained about access to different types of ",
-                   "amenities by a certain mode of transportation within a ",
-                   "given amount of time. Using the panel on the right, you ",
-                   "can compare these options to socio-demographic variables. ",
-                   "Understanding access to amenities by mode of ",
-                   "transportation gives a glimpse into how different areas ",
-                   "are serviced and what that might imply for residents."),
-          regions = unique(data_interpolated$avail_scales$geo),
-          metadata = TRUE,
-          dataset_info =
-            paste0("The travel time matrices in this module were calculated ",
-                   "using a combination of methods, with the underlying data ",
-                   "coming from an Open Street Map (OSM) network file and ",
-                   "General Transit Feed Specification (GTFS) files.")
+    scales_variables_modules$modules |>
+    add_module(
+      id = "access",
+      theme = "Transport",
+      nav_title = "Access to amenities",
+      title_text_title = "Access to amenities",
+      title_text_main =
+        paste0(
+          "Being able to access amenities and services in our nearby ",
+          "urban environment can greatly impact our daily ",
+          "experiences and quality of life. The time and mode of ",
+          "transportation needed to reach these amenities plays a ",
+          "large role in this. In this module, explore information ",
+          "about access to schools, food distributors, health care ",
+          "facilities, and more by walk, bike, transit, or car."
+        ),
+      title_text_extra =
+        paste0(
+          "In selecting different options from the drop-down menus, ",
+          "insights can be gained about access to different types of ",
+          "amenities by a certain mode of transportation within a ",
+          "given amount of time. Using the panel on the right, you ",
+          "can compare these options to socio-demographic variables. ",
+          "Understanding access to amenities by mode of ",
+          "transportation gives a glimpse into how different areas ",
+          "are serviced and what that might imply for residents."
+        ),
+      regions = unique(data_interpolated$avail_scales$geo),
+      metadata = TRUE,
+      dataset_info =
+        paste0(
+          "The travel time matrices in this module were calculated ",
+          "using a combination of methods, with the underlying data ",
+          "coming from an Open Street Map (OSM) network file and ",
+          "General Transit Feed Specification (GTFS) files."
         )
+    )
 
 
   # Return ------------------------------------------------------------------
@@ -247,5 +222,4 @@ ba_accessibility_points <- function(scales_variables_modules,
     variables = variables,
     modules = modules
   ))
-
 }

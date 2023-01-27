@@ -224,12 +224,14 @@ get_breaks_q5 <- function(df, vars, time_regex = "\\d{4}") {
 #' which variables are available for.
 #' @export
 calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
-
   if (time_regex != "") {
-    if (sum(sapply(vars, \(var) grepl(time_regex, var))) == 0)
-      stop(paste0("The time regular expression `", time_regex, "` isn't found in",
-                  " the variables name. Add the time, or set the `time_regex` ",
-                  "argument to an empty string."))
+    if (sum(sapply(vars, \(var) grepl(time_regex, var))) == 0) {
+      stop(paste0(
+        "The time regular expression `", time_regex, "` isn't found in",
+        " the variables name. Add the time, or set the `time_regex` ",
+        "argument to an empty string."
+      ))
+    }
   }
 
   # Append q3s

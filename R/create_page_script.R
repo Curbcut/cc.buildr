@@ -87,13 +87,13 @@ create_page_script <- function(source_file, R_folder = "R/", overwrite = FALSE,
   } else {
     if (!auto_left_vars) {
       vl_ui <- readLines(system.file("modules/var_left_ui.R",
-                                     package = "cc.buildr"
+        package = "cc.buildr"
       ))
       vl_ui <- gsub("`__var_left__`", write_as_vector(var_left), vl_ui)
       uis <- c(uis, vl_ui)
 
       vl_serv <- readLines(system.file("modules/var_left_server.R",
-                                       package = "cc.buildr"
+        package = "cc.buildr"
       ))
       vl_serv <- gsub("`__var_left__`", write_as_vector(var_left), vl_serv)
       template <- gsub(
@@ -104,19 +104,24 @@ create_page_script <- function(source_file, R_folder = "R/", overwrite = FALSE,
         paste0(vl_serv, collapse = "\n"), template
       )
     } else {
-      if (is.null("group_name_label"))
-        stop(paste0("Add a `group_name_label` to name the main left variable ",
-                    "dropdown."))
+      if (is.null("group_name_label")) {
+        stop(paste0(
+          "Add a `group_name_label` to name the main left variable ",
+          "dropdown."
+        ))
+      }
       au_vl_ui <- readLines(system.file("modules/auto_var_left_ui.R",
-                                        package = "cc.buildr"
+        package = "cc.buildr"
       ))
       au_vl_ui <- gsub("`__var_left__`", write_as_vector(var_left), au_vl_ui)
-      au_vl_ui <- gsub("`__group_name_label__`", write_as_vector(group_name_label),
-                    au_vl_ui)
+      au_vl_ui <- gsub(
+        "`__group_name_label__`", write_as_vector(group_name_label),
+        au_vl_ui
+      )
       uis <- c(uis, au_vl_ui)
 
       au_vl_serv <- readLines(system.file("modules/auto_var_left_server.R",
-                                       package = "cc.buildr"
+        package = "cc.buildr"
       ))
       au_vl_serv <- gsub("`__var_left__`", write_as_vector(var_left), au_vl_serv)
       template <- gsub("# Time", "", template)

@@ -31,9 +31,9 @@ Imports:
     rlang,
     stringi
 Suggests:
-    aws.s3,
     styler,
-    osmdata
+    osmdata,
+    magick
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

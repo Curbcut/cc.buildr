@@ -18,8 +18,6 @@
 #' `point_data` list.
 #' @export
 accessibility_point_per_DA <- function(point_data, DA_table, crs) {
-
-
   # Prepare data ------------------------------------------------------------
 
   point_data <- lapply(point_data, sf::st_transform, crs)
@@ -45,7 +43,6 @@ accessibility_point_per_DA <- function(point_data, DA_table, crs) {
     pb <- progressr::progressor(steps = length(point_data))
     point_DA <-
       future.apply::future_lapply(point_data, \(x) {
-
         df <- as.data.frame(table(x$DA_ID))
         colnames(df) <- c("DA_ID", "count")
 
@@ -70,14 +67,15 @@ accessibility_point_per_DA <- function(point_data, DA_table, crs) {
 
   # Populate all the DA table
   out_df <- merge(sf::st_drop_geometry(DA_table),
-                  point_DA, all = TRUE)
+    point_DA,
+    all = TRUE
+  )
   out_df[is.na(out_df)] <- 0
 
 
   # Return ------------------------------------------------------------------
 
   return(out_df)
-
 }
 
 #' Get travel time dataframes
@@ -90,8 +88,10 @@ accessibility_point_per_DA <- function(point_data, DA_table, crs) {
 #' @return Returns a named list. Each mode is an element, and inside each
 #' DA has its own dataframe with time to get to each other DA.
 #' @export
-accessibility_get_travel_times <- function(modes = c("foot", "bicycle", "car",
-                                                     "transit"),
+accessibility_get_travel_times <- function(modes = c(
+                                             "foot", "bicycle", "car",
+                                             "transit"
+                                           ),
                                            region_DA_IDs) {
   # Get travel times --------------------------------------------------------
 
@@ -114,7 +114,7 @@ accessibility_get_travel_times <- function(modes = c("foot", "bicycle", "car",
         out <- cc.data::db_read_all_table(paste("ttm", mode, ID, sep = "_"))
         names(out)[2] <- "duration"
         # Convert seconds to minutes
-        out[[2]] <- out[[2]]/60
+        out[[2]] <- out[[2]] / 60
         pb()
 
         return(out)
@@ -123,24 +123,24 @@ accessibility_get_travel_times <- function(modes = c("foot", "bicycle", "car",
   })
 
 
-#   # # Get travel times for bike
-#   if ("transit" %in% modes) {
-#   # # ttm_transit <- #TKTK
-#   #
-#   # # Available traveltimes
-#   # all_tables <- sapply(TKTKTK, \(mode) {
-#   #   sapply(TKKTTK, \(ID) {
-#   #     paste("ttm", mode, ID, sep = "_")
-#   #   })
-#   # })
-#   # all_tables <- all_tables[all_tables %in% cc.data::db_list_tables()]
-#   #
-#   # # Combine travel times
-#   # ttm <- c(ttm, ttm_transit)
-# #
-#   # Add day time to transit modes
-#   # transit_pwd, etc.
-#   }
+  #   # # Get travel times for bike
+  #   if ("transit" %in% modes) {
+  #   # # ttm_transit <- #TKTK
+  #   #
+  #   # # Available traveltimes
+  #   # all_tables <- sapply(TKTKTK, \(mode) {
+  #   #   sapply(TKKTTK, \(ID) {
+  #   #     paste("ttm", mode, ID, sep = "_")
+  #   #   })
+  #   # })
+  #   # all_tables <- all_tables[all_tables %in% cc.data::db_list_tables()]
+  #   #
+  #   # # Combine travel times
+  #   # ttm <- c(ttm, ttm_transit)
+  # #
+  #   # Add day time to transit modes
+  #   # transit_pwd, etc.
+  #   }
 
   return(ttm)
 }
@@ -167,8 +167,6 @@ accessibility_get_travel_times <- function(modes = c("foot", "bicycle", "car",
 accessibility_add_intervals <- function(point_per_DA,
                                         traveltimes,
                                         time_intervals = which(1:60 %% 5 == 0)) {
-
-
   # Prepare data to feed to the iterations ----------------------------------
 
   modes <- names(traveltimes)
@@ -179,35 +177,38 @@ accessibility_add_intervals <- function(point_per_DA,
 
   progressr::with_progress({
     pb <- progressr::progressor(
-      steps = sum(sapply(traveltimes, length)) * length(time_intervals))
+      steps = sum(sapply(traveltimes, length)) * length(time_intervals)
+    )
 
     ttm_data <- sapply(modes, \(mode) {
       Reduce(rbind, future.apply::future_lapply(region_DA_IDs, \(ID) {
         # For every mode and ID, iterate oveer all intervals to sum the
         # amount of reachable amenities
         out <- sapply(time_intervals, \(interval) {
-
           df <- traveltimes[[mode]][[ID]]
           df <- df[df$duration <= interval, ]
           df <- merge(df, point_per_DA)
           colsumed <- colSums(df[3:ncol(df)])
 
           names(colsumed) <- paste("access", mode, interval, names(colsumed),
-                                   sep = "_")
+            sep = "_"
+          )
 
           pb()
 
-          do.call(tibble::tibble, c(ID = as.character(ID),
-                                    mapply(\(n, i) i,
-                                           names(colsumed),
-                                           colsumed,
-                                           SIMPLIFY = FALSE, USE.NAMES = TRUE)))
+          do.call(tibble::tibble, c(
+            ID = as.character(ID),
+            mapply(\(n, i) i,
+              names(colsumed),
+              colsumed,
+              SIMPLIFY = FALSE, USE.NAMES = TRUE
+            )
+          ))
         }, simplify = FALSE, USE.NAMES = TRUE)
         out <- Reduce(\(a, b) merge(a, b, by = "ID"), out)
 
         return(out)
-      })
-      )
+      }))
     }, simplify = FALSE, USE.NAMES = TRUE)
 
     # Merge all modes
@@ -218,5 +219,4 @@ accessibility_add_intervals <- function(point_per_DA,
   # Return ------------------------------------------------------------------
 
   return(ttm_data)
-
 }

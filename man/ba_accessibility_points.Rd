@@ -7,7 +7,7 @@
 ba_accessibility_points(
   scales_variables_modules,
   region_DA_IDs,
-  themes = cc.data::accessibility_themes,
+  themes = cc.data::list_accessibility_themes(),
   traveltimes,
   time_intervals = which(1:60\%\%5 == 0),
   crs

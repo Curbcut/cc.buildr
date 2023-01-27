@@ -9,31 +9,32 @@
 #' @return A list containing the post-processed scales, variables and modules
 #' @export
 post_processing <- function(scales_variables_modules) {
-
   # Cast to the right geometry type
   scales_variables_modules$scales <-
-    map_over_scales(all_scales = scales_variables_modules$scales,
-                    fun = \(scale_df = scale_df, ...) {
+    map_over_scales(
+      all_scales = scales_variables_modules$scales,
+      fun = \(scale_df = scale_df, ...) {
+        geos_types <- unique(sf::st_geometry_type(scale_df$geometry))
 
-                      geos_types <- unique(sf::st_geometry_type(scale_df$geometry))
-
-                      if (length(geos_types) == 1) return(scale_df)
-                      if ("MULTIPOLYGON" %in% geos_types) {
-                        return(sf::st_cast(scale_df, "MULTIPOLYGON"))
-                      }
-                      if ("MULTILINESTRING" %in% geos_types) {
-                        return(sf::st_cast(scale_df, "MULTILINESTRING"))
-                      }
-                      if ("MULTIPOINT" %in% geos_types) {
-                        return(sf::st_cast(scale_df, "MULTIPOINT"))
-                      }
-                      return(scale_df)
-                    })
+        if (length(geos_types) == 1) {
+          return(scale_df)
+        }
+        if ("MULTIPOLYGON" %in% geos_types) {
+          return(sf::st_cast(scale_df, "MULTIPOLYGON"))
+        }
+        if ("MULTILINESTRING" %in% geos_types) {
+          return(sf::st_cast(scale_df, "MULTILINESTRING"))
+        }
+        if ("MULTIPOINT" %in% geos_types) {
+          return(sf::st_cast(scale_df, "MULTIPOINT"))
+        }
+        return(scale_df)
+      }
+    )
 
   # Reorder columns so that IDs and names are first
   scales_variables_modules$scales <-
     reorder_columns(scales_variables_modules$scales)
 
   return(scales_variables_modules)
-
 }

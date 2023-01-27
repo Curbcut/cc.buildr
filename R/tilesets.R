@@ -508,10 +508,12 @@ tileset_upload_all <- function(all_scales, map_zoom_levels,
           scale_names
         ), scale_names)
 
-        minz_fun <- function(x) if (x == 0) {
-          return(2)
-        } else {
-          sum(x, 0.5)
+        minz_fun <- function(x) {
+          if (x == 0) {
+            return(2)
+          } else {
+            sum(x, 0.5)
+          }
         }
         minzooms <- sapply(mzl, minz_fun)
         names(minzooms) <- scale_names
@@ -891,20 +893,23 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
   street_3 <- sf::st_transform(street_3, 4326)
 
   # Upload tile_source
-  tileset_upload_tile_source(df = street_1,
-                             id = paste0(prefix, "_street_1"),
-                             username = username,
-                             access_token = access_token
+  tileset_upload_tile_source(
+    df = street_1,
+    id = paste0(prefix, "_street_1"),
+    username = username,
+    access_token = access_token
   )
-  tileset_upload_tile_source(df = street_2,
-                             id = paste0(prefix, "_street_2"),
-                             username = username,
-                             access_token = access_token
+  tileset_upload_tile_source(
+    df = street_2,
+    id = paste0(prefix, "_street_2"),
+    username = username,
+    access_token = access_token
   )
-  tileset_upload_tile_source_large(df = street_3,
-                                   id = paste0(prefix, "_street_3"),
-                                   username = username,
-                                   access_token = access_token
+  tileset_upload_tile_source_large(
+    df = street_3,
+    id = paste0(prefix, "_street_3"),
+    username = username,
+    access_token = access_token
   )
 
 
@@ -1043,4 +1048,54 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
     username = username,
     access_token = access_token
   )
+}
+
+#' Create a tileset from a stories dataframe
+#'
+#' @param stories <`dataframe`>A dataframe with columns "ID", "name_id", "lon",
+#' "lat".
+#' @param prefix <`character`> Prefix attached to every tile source and
+#' created and published tileset. Should correspond to the Curbcut city, e.g. `mtl`.
+#' @param username <`character`> Mapbox account username.
+#' @param access_token <`character`> Private access token to the Mapbox account.
+#'
+#' @return Returns nothing if succeeds. Tilesets are created and published and
+#' ready to be used.
+#' @export
+stories_create_tileset <- function(stories, prefix, username, access_token) {
+
+  # Delete tileset and source
+  tileset_delete_tileset(id = paste0(prefix, "_stories"),
+                         username = username,
+                         access_token = access_token)
+  tileset_delete_tileset_source(id = paste0(prefix, "_stories"),
+                                username = username,
+                                access_token = access_token)
+
+  # Upload source
+  stories <- sf::st_as_sf(stories, coords = c("lon", "lat"), crs = 4326)
+  stories <- stories[c("ID", "name_id", "geometry")]
+  tileset_upload_tile_source(df = stories,
+                             id = paste0(prefix, "_stories"),
+                             username = username,
+                             access_token = access_token)
+
+  # Create recipe
+  stories_recipe <-
+    tileset_create_recipe(
+      layer_names = "stories-stories",
+      source = "mapbox://tileset-source/sus-mcgill/stories-stories",
+      minzoom = 3,
+      maxzoom = 13,
+      recipe_name = paste0(prefix, "_stories"))
+
+  # Create and publish
+  tileset_create_tileset(tileset = paste0(prefix, "_stories"),
+                         recipe = stories_recipe,
+                         username = username,
+                         access_token = access_token)
+  tileset_publish_tileset(tileset = paste0(prefix, "_stories"),
+                          username = username,
+                          access_token = access_token)
+
 }
