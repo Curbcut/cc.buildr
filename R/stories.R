@@ -1,13 +1,15 @@
 #' Create an empty data table for stories
 #'
-#' @return A tibble with columns \code{id}, \code{title}, \code{preview},
-#' \code{lon}, and \code{lat}.
+#' @return A tibble with columns \code{id}, \code{title}, \code{short_title},
+#' \code{preview}, \code{themes}, \code{lon}, and \code{lat}.
 #' @export
 stories_empty_table <- function() {
   tibble::tibble(
     id = character(),
     title = character(),
+    short_title = character(),
     preview = character(),
+    themes = list(),
     lon = numeric(),
     lat = numeric()
   )
@@ -21,8 +23,12 @@ stories_empty_table <- function() {
 #' no spaces, e.g. `metro_evolution`.
 #' @param title <`character`> Full title of the story, e.g.
 #' `The Evolution of the Montreal Metro`
+#' @param short_title <`character`> Shorter version of the title for places where
+#' there won't be lots of spaces to show longer titles, e.g. `Evolution of the Metro`
 #' @param preview <`character`> Teaser for the story to appear elsewhere
 #' in Curbcut. Usually a single sentence.
+#' @param themes <`character vector`> Themes in which the story addresses, e.g.
+#' `c("Green space", "Urban transformation", "Community activism", ...)`
 #' @param lon <`numeric`> Longitude where the story should be placed on the map.
 #' Must be in EPSG Projection 4326 - WGS 84
 #' @param lat <`numeric`> Lattitude where the story should be placed on the map.
@@ -30,14 +36,18 @@ stories_empty_table <- function() {
 #'
 #' @return The same `stories` data.frame fed, with the added row.
 #' @export
-stories_add_story <- function(stories, name_id, title, preview, lon, lat) {
+stories_add_story <- function(stories, name_id, title, short_title, preview,
+                              themes, lon, lat) {
   new_story <-
     tibble::tibble(
       name_id = name_id,
       title = title,
+      short_title = short_title,
       preview = preview,
+      themes = list(sapply(themes, stringr::str_to_sentence,
+                           USE.NAMES = FALSE)),
       lon = as.numeric(lon),
-      lat = as.numeric(lat)
+      lat = as.numeric(lat),
     )
 
   out <- rbind(stories[, names(stories)[names(stories) != "ID"]], new_story)

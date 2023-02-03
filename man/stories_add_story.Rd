@@ -4,7 +4,16 @@
 \alias{stories_add_story}
 \title{Add a story to the stories table}
 \usage{
-stories_add_story(stories, name_id, title, preview, lon, lat)
+stories_add_story(
+  stories,
+  name_id,
+  title,
+  short_title,
+  preview,
+  themes,
+  lon,
+  lat
+)
 }
 \arguments{
 \item{stories}{<\code{data.frame}> The \code{stories} data.frame to which add a
@@ -16,8 +25,14 @@ no spaces, e.g. \code{metro_evolution}.}
 \item{title}{<\code{character}> Full title of the story, e.g.
 \verb{The Evolution of the Montreal Metro}}
 
+\item{short_title}{<\code{character}> Shorter version of the title for places where
+there won't be lots of spaces to show longer titles, e.g. \verb{Evolution of the Metro}}
+
 \item{preview}{<\code{character}> Teaser for the story to appear elsewhere
 in Curbcut. Usually a single sentence.}
+
+\item{themes}{<\verb{character vector}> Themes in which the story addresses, e.g.
+\code{c("Green space", "Urban transformation", "Community activism", ...)}}
 
 \item{lon}{<\code{numeric}> Longitude where the story should be placed on the map.
 Must be in EPSG Projection 4326 - WGS 84}
