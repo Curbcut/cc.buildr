@@ -6,7 +6,9 @@
 #' @param all_scales <`named list`> A named list of scales. The first level is
 #' the geo, and the second is the scales.
 #' @param weight_by <`character`> The denominator for which average variables should
-#' be interpolated. Defaults to `households`. The other option is `population`.
+#' be interpolated. Defaults to `households`. The other options are `population` and
+#' `area`. If `area`, \code{\link[cc.buildr]{interpolate_custom_geo}} will be
+#' used.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32618} for Montreal.
 #' @param existing_census_scales <`character vector`> Which are the census scales
@@ -57,6 +59,20 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
       }
       scales[seq_len(which(scales == base_scale))]
     })
+
+  ## In the case weight_by is `area`
+  if (weight_by == "area") {
+    return(interpolate_custom_geo(data = data,
+                                  all_scales = all_scales,
+                                  crs = crs,
+                                  only_regions = only_regions,
+                                  average_vars = average_vars,
+                                  additive_vars = additive_vars,
+                                  name_interpolate_from = base_scale,
+                                  construct_for = construct_for))
+  }
+
+
   scales_to_interpolate <- mapply(\(geo, scales) {
     all_scales[[geo]][names(all_scales[[geo]]) %in% scales]
   }, names(construct_for), construct_for, SIMPLIFY = FALSE)
@@ -66,7 +82,6 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
     }, scales_to_interpolate, construct_for, SIMPLIFY = FALSE, USE.NAMES = TRUE)
   scales_to_interpolate <-
     scales_to_interpolate[sapply(scales_to_interpolate, \(x) length(x) > 0)]
-
   ## Interpolate over all the scales
   interpolated <-
     sapply(scales_to_interpolate, \(scales) {
@@ -285,7 +300,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
 #' value of a CSD would be the sum of the values of the DAs or CTs that are present
 #' inside the CSD.
 #' @param round_additive <`logical`> If addive variables should be rounded,
-#' e.g. the population or cound of households.
+#' e.g. the population or count of households.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32618} for Montreal.
 #'
@@ -398,6 +413,11 @@ interpolate_from_area <- function(to, from,
 #' the variables that are 'count' variables. In the case of this function, the output
 #' value of a CSD would be the sum of the values of the DAs or CTs that are present
 #' inside the CSD.
+#' @param construct_for <`list`> A list where each region is a level, and
+#' each of them has a vector character of scales for which the `data` should be
+#' interpolated to. Used by \code{\link[cc.buildr]{interpolate_from_census_geo}}.
+#' It bypasses the process where `interpolate_custom_geo` only interpolates
+#' for geometries bigger than the data.
 #'
 #' @return Returns a list of length 3. The first is the same list that is fed in
 #' `all_scales`, with the columns from `data` interpolated in. The second is
@@ -412,26 +432,32 @@ interpolate_custom_geo <- function(data, all_scales, crs,
                                    only_regions = names(all_scales),
                                    average_vars = c(),
                                    additive_vars = c(),
-                                   name_interpolate_from) {
+                                   name_interpolate_from,
+                                   construct_for = NULL) {
   ## Only interpolate for geometries bigger than the data one
   all_tables <- reconstruct_all_tables(all_scales)
   all_tables <- all_tables[names(all_tables) %in% only_regions]
-  construct_for <- all_scales[names(all_scales) %in% only_regions]
-  construct_for <- map_over_scales(
-    all_scales = construct_for,
-    fun = \(geo = geo, scales = scales,
-      scale_df = scale_df, scale_name = scale_name) {
-      data <- sf::st_transform(data, crs)
-      scale_df <- sf::st_transform(scale_df, crs)
-      if (mean(get_area(data), na.rm = TRUE) <
-        mean(get_area(scale_df), na.rm = TRUE)) {
-        scale_name
-      } else {
-        return()
+
+  # If construct_for is NULL
+  if (is.null(construct_for)) {
+    construct_for <- all_scales[names(all_scales) %in% only_regions]
+    construct_for <- map_over_scales(
+      all_scales = construct_for,
+      fun = \(geo = geo, scales = scales,
+              scale_df = scale_df, scale_name = scale_name) {
+        data <- sf::st_transform(data, crs)
+        scale_df <- sf::st_transform(scale_df, crs)
+        if (mean(get_area(data), na.rm = TRUE) <=
+            mean(get_area(scale_df), na.rm = TRUE)) {
+          scale_name
+        } else {
+          return()
+        }
       }
-    }
-  )
-  construct_for <- lapply(construct_for, \(x) unlist(x, use.names = FALSE))
+    )
+    construct_for <- lapply(construct_for, \(x) unlist(x, use.names = FALSE))
+  }
+
   scales_to_interpolate <- mapply(\(geo, scales) {
     all_scales[[geo]][names(all_scales[[geo]]) %in% scales]
   }, names(construct_for), construct_for, SIMPLIFY = FALSE)

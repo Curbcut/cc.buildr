@@ -29,7 +29,7 @@ value of a CSD would be the sum of the values of the DAs or CTs that are present
 inside the CSD.}
 
 \item{round_additive}{<\code{logical}> If addive variables should be rounded,
-e.g. the population or cound of households.}
+e.g. the population or count of households.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32618} for Montreal.}

@@ -26,7 +26,9 @@ and an ID that corresponds to the base scale, e.g. \code{"DA_ID"}.}
 the geo, and the second is the scales.}
 
 \item{weight_by}{<\code{character}> The denominator for which average variables should
-be interpolated. Defaults to \code{households}. The other option is \code{population}.}
+be interpolated. Defaults to \code{households}. The other options are \code{population} and
+\code{area}. If \code{area}, \code{\link[cc.buildr]{interpolate_custom_geo}} will be
+used.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32618} for Montreal.}

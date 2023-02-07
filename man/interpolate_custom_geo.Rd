@@ -11,7 +11,8 @@ interpolate_custom_geo(
   only_regions = names(all_scales),
   average_vars = c(),
   additive_vars = c(),
-  name_interpolate_from
+  name_interpolate_from,
+  construct_for = NULL
 )
 }
 \arguments{
@@ -39,6 +40,12 @@ inside the CSD.}
 \item{name_interpolate_from}{<\code{character}> The name of the scale from which
 data has been interpolated, e.g. \code{grid}. It MUST be an entry in the
 scales_dictionary.}
+
+\item{construct_for}{<\code{list}> A list where each region is a level, and
+each of them has a vector character of scales for which the \code{data} should be
+interpolated to. Used by \code{\link[cc.buildr]{interpolate_from_census_geo}}.
+It bypasses the process where \code{interpolate_custom_geo} only interpolates
+for geometries bigger than the data.}
 }
 \value{
 Returns a list of length 3. The first is the same list that is fed in
