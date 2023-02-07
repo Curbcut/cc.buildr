@@ -265,7 +265,7 @@ save_short_tables_qs <- function(data_folder = "data/", all_scales,
         return()
       }
       d <- sf::st_drop_geometry(x)
-      d[, 1:which(names(d) == "households")]
+      d[, c(1:which(names(d) == "households"), which(names(d) == "centroid"))]
     }, scls, names(scls), SIMPLIFY = FALSE)
     scls <- scls[!sapply(scls, is.null)]
     names(scls) <- paste(geo, names(scls), sep = "_")

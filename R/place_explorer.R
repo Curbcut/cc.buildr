@@ -1,4 +1,22 @@
-placeex_main_card <- function(scales, DA_table, region_DA_IDs = DA_table$ID, crs,
+#' Produce the place explorer main card
+#'
+#' @param scales <`list`> Lists of spatial features dataframes with regions and
+#' scales filled with at minimum census and canale data. Usually is
+#' `scales_variables_modules$scales`.
+#' @param DA_table <`sf data.frame`> Tables containing all the dissemination areas
+#' of the zone under study. Usually is `census_scales$DA`
+#' @param region_DA_IDs <`character vector`> Vector of all the dissemination area's
+#' identifiers in the zone under study. Usually is `census_scales$DA$ID`
+#' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
+#' \code{32617} for Toronto.
+#' @param regions_dictionary <`data.frame`> The regions dictionary built using
+#' \code{\link[cc.buildr]{regions_dictionary}}. Will be used to filter out scales
+#' for which data should not be calculated.
+#'
+#' @return Lists containing all the main card indicators. Sub lists of regions
+#' and scales for data values.
+#' @export
+placeex_main_card <- function(scales, DA_table, region_DA_IDs, crs,
                               regions_dictionary) {
 
 
@@ -6,6 +24,7 @@ placeex_main_card <- function(scales, DA_table, region_DA_IDs = DA_table$ID, crs
 
   dict <- tibble::tibble(name = character(),
                          title = character(),
+                         bs_icon = character(),
                          date = numeric(),
                          percent = logical(),
                          high_is_good = logical(),
@@ -44,6 +63,7 @@ placeex_main_card <- function(scales, DA_table, region_DA_IDs = DA_table$ID, crs
     tibble::tibble(
       name = "no2",
       title = "Air pollution",
+      bs_icon = "wind",
       date = "2016",
       percent = FALSE,
       high_is_good = FALSE,
@@ -68,7 +88,7 @@ placeex_main_card <- function(scales, DA_table, region_DA_IDs = DA_table$ID, crs
                                             weight_by = "area")
 
   # Format correctly
-  data$NO2 <- map_over_scales(all_scales = NO2_scales$scales,
+  data$no2 <- map_over_scales(all_scales = NO2_scales$scales,
                               fun = \(scale_df = scale_df, ...) {
                                 if (!"NO2" %in% names(scale_df)) return(NULL)
                                 out <- scale_df[c("ID", "NO2")]
@@ -77,10 +97,10 @@ placeex_main_card <- function(scales, DA_table, region_DA_IDs = DA_table$ID, crs
                                 return(out)
                               })
   # Remove empty lists
-  data$NO2 <- lapply(data$NO2, \(x) {
+  data$no2 <- lapply(data$no2, \(x) {
     x[!sapply(x, is.null)]
   })
-  data$NO2 <- data$NO2[sapply(data$NO2, length) > 0]
+  data$no2 <- data$no2[sapply(data$no2, length) > 0]
 
 
   # NDVI --------------------------------------------------------------------
@@ -89,6 +109,7 @@ placeex_main_card <- function(scales, DA_table, region_DA_IDs = DA_table$ID, crs
     tibble::tibble(
       name = "ndvi",
       title = "Vegetation",
+      bs_icon = "tree",
       date = "2019",
       percent = TRUE,
       high_is_good = TRUE,
@@ -114,7 +135,7 @@ placeex_main_card <- function(scales, DA_table, region_DA_IDs = DA_table$ID, crs
                                              weight_by = "area")
 
   # Format correctly
-  data$NDVI <- map_over_scales(all_scales = NDVI_scales$scales,
+  data$ndvi <- map_over_scales(all_scales = NDVI_scales$scales,
                                fun = \(scale_df = scale_df, ...) {
                                  if (!"NDVI" %in% names(scale_df)) return(NULL)
                                  out <- scale_df[c("ID", "NDVI")]
@@ -123,10 +144,10 @@ placeex_main_card <- function(scales, DA_table, region_DA_IDs = DA_table$ID, crs
                                  return(out)
                                })
   # Remove empty lists
-  data$NDVI <- lapply(data$NDVI, \(x) {
+  data$ndvi <- lapply(data$ndvi, \(x) {
     x[!sapply(x, is.null)]
   })
-  data$NDVI <- data$NDVI[sapply(data$NDVI, length) > 0]
+  data$ndvi <- data$ndvi[sapply(data$ndvi, length) > 0]
 
 
   # Sustainable transport ---------------------------------------------------
@@ -135,6 +156,7 @@ placeex_main_card <- function(scales, DA_table, region_DA_IDs = DA_table$ID, crs
     tibble::tibble(
       name = "sust",
       title = "Sustainable transport",
+      bs_icon = "bus-front",
       date = current_census_year,
       percent = TRUE,
       high_is_good = TRUE,
@@ -172,6 +194,7 @@ placeex_main_card <- function(scales, DA_table, region_DA_IDs = DA_table$ID, crs
     tibble::tibble(
       name = "singled",
       title = "Housing",
+      bs_icon = "houses",
       date = current_census_year,
       percent = TRUE,
       high_is_good = FALSE,
@@ -207,6 +230,7 @@ placeex_main_card <- function(scales, DA_table, region_DA_IDs = DA_table$ID, crs
     tibble::tibble(
       name = "activel",
       title = "Active living",
+      bs_icon = "activity",
       date = current_census_year,
       percent = FALSE,
       high_is_good = TRUE,

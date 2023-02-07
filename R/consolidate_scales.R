@@ -198,6 +198,21 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs) {
     )
 
 
+  ## Add a centroid vector column -------------------------------------------
+
+  out <-
+    map_over_scales(
+      all_scales = out,
+      fun = \(scale_df = scale_df, ...) {
+        centroids <-
+          suppressWarnings(lapply(sf::st_centroid(scale_df)$geometry,
+                                  sf::st_coordinates))
+        centroids <- lapply(centroids, as.vector)
+        scale_df$centroid <- centroids
+        scale_df
+      }
+    )
+
   ## Reorder all columns ----------------------------------------------------
 
   out <-

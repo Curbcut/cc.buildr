@@ -90,9 +90,9 @@ reorder_columns <- function(all_scales) {
         mandatory_start, all_ids,
         other
       )]
-      rest <- rest[!rest %in% c("popw_centroids_coords", "geometry")]
+      rest <- rest[!rest %in% c("popw_centroids_coords", "centroid", "geometry")]
       last <- names(scale_df)[
-        names(scale_df) %in% c("popw_centroids_coords", "geometry")
+        names(scale_df) %in% c("popw_centroids_coords", "centroid", "geometry")
       ]
 
       out <- scale_df[, c(mandatory_start, all_ids, other, rest, last)]
