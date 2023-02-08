@@ -8,8 +8,7 @@
 #' @param regions_dictionary <`data.frame`> The regions dictionary built using
 #' \code{\link[cc.buildr]{regions_dictionary}}
 #' @param scales_dictionary <`data.frame`> The scales dictionary built using
-#' \code{\link[cc.buildr]{build_census_scales}} and
-#' \code{\link[cc.buildr]{additional_scale}}
+#' \code{\link[cc.buildr]{build_census_scales}}
 #'
 #' @return Returns nothing if the test passes, or errors if it doesn't.
 #' @export

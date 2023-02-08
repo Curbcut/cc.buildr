@@ -29,11 +29,14 @@ Imports:
     DBI,
     RSQLite,
     rlang,
-    stringi
+    stringi,
+    scales
 Suggests:
     styler,
     osmdata,
-    magick
+    magick,
+    glue,
+    rmarkdown
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

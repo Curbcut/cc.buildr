@@ -4,12 +4,11 @@
 \alias{post_processing}
 \title{Post process scales}
 \usage{
-post_processing(scales_variables_modules)
+post_processing(scales)
 }
 \arguments{
-\item{scales_variables_modules}{<\verb{named list}> A list of length three.
-The first is all the scales, the second is the variables table, and the
-third is the modules table.}
+\item{scales}{<\verb{named list}> A list of all the scales ordered in regions.
+Usually \code{scales_variables_modules$scales}}
 }
 \value{
 A list containing the post-processed scales, variables and modules

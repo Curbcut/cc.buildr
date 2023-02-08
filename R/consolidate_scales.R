@@ -198,25 +198,30 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs) {
     )
 
 
+  ## Post-processing (make sure all geometry types are right) ---------------
+
+  out <- post_processing(out)
+
+
   ## Add a centroid vector column -------------------------------------------
 
   out <-
     map_over_scales(
       all_scales = out,
-      fun = \(scale_df = scale_df, ...) {
-        centroids <-
-          suppressWarnings(lapply(sf::st_centroid(scale_df)$geometry,
-                                  sf::st_coordinates))
+      fun = \(scale_df = scale_df, scale_name = scale_name, ...) {
+        df <- sf::st_make_valid(scale_df)
+
+        if (scale_name %in% c("street", "building")) {
+          return(df)
+        }
+
+        centroids <- suppressWarnings(lapply(sf::st_centroid(df)$geometry,
+                                             sf::st_coordinates))
         centroids <- lapply(centroids, as.vector)
-        scale_df$centroid <- centroids
-        scale_df
+        df$centroid <- centroids
+        df
       }
     )
-
-  ## Reorder all columns ----------------------------------------------------
-
-  out <-
-    reorder_columns(all_scales = out)
 
 
   # Return the final output -------------------------------------------------

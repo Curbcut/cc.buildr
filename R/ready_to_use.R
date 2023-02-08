@@ -172,7 +172,7 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
 #' \code{\link[cancensus]{list_census_regions}}.
 #' @param approximate_name_match <`logical`> CMHC zone naming can be different
 #' year to year (A single typo, or other). Should the function search for
-#' approximate matches to the name of the `cmhczone` table in
+#' approximate matches to the name of the `cmhc_zone` table in
 #' `scales_variables_modules`? Useful for Montreal where names are more or less
 #' unique and so an approximate match can be beneficial. less for Toronto where
 #' the name `York` is used in many different names.
@@ -230,13 +230,14 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
             out$name <-
               sapply(out$name,
                 agrep,
-                x = scales_variables_modules$scales$cmhc$cmhczone$name,
+                x = scales_variables_modules$scales$cmhc$cmhc_zone$name,
                 value = TRUE, USE.NAMES = FALSE
               )
             if (!all(sapply(out$name, length) == 1)) {
               stop(paste0(
                 "Approximate name matching matched more than one ",
-                "name. Consider using `approximate_name_match = FALSE`"
+                "name in `", yr,
+                "`. Consider using `approximate_name_match = FALSE`"
               ))
             }
           }
@@ -251,7 +252,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
     Reduce(\(x, y) merge(x, y, by = "name", all.x = TRUE),
       cmhc,
       init = sf::st_drop_geometry(
-        scales_variables_modules$scales$cmhc$cmhczone
+        scales_variables_modules$scales$cmhc$cmhc_zone
       )[, "name"]
     )
 
@@ -260,8 +261,8 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
   unique_vars <- unique(gsub("_\\d{4}$", "", vars))
 
   # Append data
-  scales_variables_modules$scales$cmhc$cmhczone <-
-    merge(scales_variables_modules$scales$cmhc$cmhczone,
+  scales_variables_modules$scales$cmhc$cmhc_zone <-
+    merge(scales_variables_modules$scales$cmhc$cmhc_zone,
       merged,
       by = "name"
     )
