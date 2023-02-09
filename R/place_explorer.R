@@ -331,7 +331,7 @@ placeex_main_card_prep_output_en <- function(data, dict, region, df,  select_id,
 
   # Setup --------------------------------------------------------------------
 
-  df_scale <- scales_dictionary$sing[scales_dictionary$scale == df]
+  df_scale <- paste("The", scales_dictionary$sing[scales_dictionary$scale == df])
   df_scales <- scales_dictionary$plur[scales_dictionary$scale == df]
 
   # To what it compares
@@ -342,7 +342,7 @@ placeex_main_card_prep_output_en <- function(data, dict, region, df,  select_id,
 
   # Get data value
   data_s <- data[data$ID == select_id, ]
-  if (length(data_s$var) == 0 || is.na(data_s$var)) return(NULL)
+  if ({length(data_s$var) == 0} || {is.na(data_s$var)}) return(NULL)
 
 
   # pretty_data_var ---------------------------------------------------------
@@ -371,7 +371,7 @@ placeex_main_card_prep_output_en <- function(data, dict, region, df,  select_id,
       ordinal <- (\(x) {
         # if ranks in the bottom third
         if (data_rank > (2 / 3 * df_row)) return({
-          glue::glue("relatively low at {ordinal_form(lang = lang, data_rank)}")
+          glue::glue("relatively low at {ordinal_form(data_rank)}")
         })
         # if ranks in the second third
         if (data_rank > (1 / 3 * df_row))
@@ -483,7 +483,9 @@ placeex_main_card_final_output <- function(pe_main_card_data, region, df, select
       regions_dictionary = regions_dictionary
     )
 
-    if (is.null(z)) return("No data.")
+    if (is.null(z)) return(list(row_title = dict$title,
+                                percentile = "No data.",
+                                bs_icon = dict$bs_icon))
 
     # Exception - additional text for no2 if over the threshold of 53 ppm
     if (x == "no2") higher_than_threshold <-
@@ -528,6 +530,11 @@ placeex_main_card_final_output <- function(pe_main_card_data, region, df, select
 #' @param tileset_prefix <`character`> Prefix attached to every tile source and
 #' created and published tileset. Should correspond to the Curbcut city, e.g. `mtl`.
 #' @param mapbox_username <`character`> Mapbox account username.
+#' @param rev_geocode_from_localhost <`character`> Use a local instance of nominatim
+#' for reverse geocoding, using \code{\link[cc.data]{rev_geocode_localhost}}. If
+#' TRUE, there must be a local instance of Nominatim runnin on localhost port 8080.
+#' If set to FALSE, the reverse geolocation will be done using
+#' \code{\link[cc.data]{rev_geocode_OSM}}, which uses a remote server (photon.komoot.io).
 #'
 #' @return Returns nothing if successful. All place explorer possibilities are
 #' saved in the `out_folder`.
@@ -539,7 +546,8 @@ placeex_main_card_rmd <- function(scales,
                                   out_folder = "www/place_explorer/",
                                   lang = "en",
                                   tileset_prefix,
-                                  mapbox_username = "sus-mcgill") {
+                                  mapbox_username = "sus-mcgill",
+                                  rev_geocode_from_localhost = FALSE) {
 
   if (!requireNamespace("rmarkdown", quietly = TRUE)) {
     stop(
@@ -559,8 +567,8 @@ placeex_main_card_rmd <- function(scales,
   all_tables <- all_tables[names(all_tables) %in% regions]
   all_tables <- lapply(all_tables, \(scales) scales[!scales %in% c("building", "street")])
 
-  possible_scales <- mapply(\(geo, scale) {
-    scales[[geo]][names(scales[[geo]]) %in% scale]
+  possible_scales <- mapply(\(region, scale) {
+    scales[[region]][names(scales[[region]]) %in% scale]
   }, names(all_tables), all_tables, SIMPLIFY = FALSE)
 
 
@@ -590,7 +598,7 @@ placeex_main_card_rmd <- function(scales,
                       map_zoom = 10,
                       mapbox_username = mapbox_username,
                       title_card_data = title_card_data
-                    ), envir = new.env())
+                    ), envir = new.env(), quiet = TRUE)
 
   x <- readLines(header_file)
   x <-
@@ -602,77 +610,114 @@ placeex_main_card_rmd <- function(scales,
 
   # Iterate over all possibilities ------------------------------------------
 
-  lapply(lang, \(lan) {
+  progressr::with_progress({
+    pb <- progressr::progressor(steps = sapply(
+      possible_scales, sapply, nrow) |> sum() * length(lang))
+    lapply(lang, \(lan) {
 
-    inp <- system.file(paste0("place_explorer_rmd/pe_main_card_", lan, ".Rmd"),
-                       package = "cc.buildr")
+      inp <- system.file(paste0("place_explorer_rmd/pe_main_card_", lan, ".Rmd"),
+                         package = "cc.buildr")
 
-    map_over_scales(
-      all_scales = possible_scales,
-      fun = \(geo = geo, scale_name = scale_name, scale_df = scale_df, ...) {
+      lapply(seq_along(possible_scales), \(region_n) {
 
-        scale_sing <-
-          scales_dictionary$slider_title[scales_dictionary$scale == scale_name]
+        region <- names(possible_scales)[region_n]
+        scales <- possible_scales[[region_n]]
 
-        future.apply::future_lapply(seq_along(scale_df$ID), \(n) {
+        lapply(seq_along(scales), \(scale_n) {
 
-          # Setup all necessary input
-          ID <- scale_df$ID[n]
-          map_loc <- scale_df$centroid[[n]]
-          title_card_data <-
-            placeex_main_card_final_output(
-              pe_main_card_data = pe_main_card_data,
-              region = geo,
-              df = scale_name,
-              select_id = ID,
-              scales_dictionary = scales_dictionary,
-              regions_dictionary = regions_dictionary)
-          map_zoom <- (\(x) {
-            if (scale_name == "CT") return(11)
-            if (scale_name == "DA") return(13)
-            # For first level
-            return(10)
-          })()
-          geo_sc_id <- paste(geo, scale_name, ID, lan, sep = "_")
+          scale_name <- names(scales)[scale_n]
+          scale_df <- scales[[scale_n]]
+          scale_df <- suppressWarnings(sf::st_centroid(scale_df))
+          scale_sing <-
+            scales_dictionary$slider_title[scales_dictionary$scale == scale_name]
 
-          # Setup temporary .kmit.md files to not have names crashing on
-          # each other when using parallelization
-          new_rmd <- paste0(tempdir(), "\\", geo_sc_id)
-          dir.create(new_rmd)
-          file.copy(inp, new_rmd)
-          new_rmd <- list.files(new_rmd, full.names = TRUE)
+          future.apply::future_lapply(seq_along(scale_df$ID), \(n) {
 
-          output_file <- paste0(getwd(), "/", out_folder, geo_sc_id, ".html")
+            # Setup all necessary input
+            ID <- scale_df$ID[n]
+            map_loc <- scale_df$centroid[[n]]
+            title_card_data <-
+              placeex_main_card_final_output(
+                pe_main_card_data = pe_main_card_data,
+                region = region,
+                df = scale_name,
+                select_id = ID,
+                scales_dictionary = scales_dictionary,
+                regions_dictionary = regions_dictionary)
+            map_zoom <- (\(x) {
+              if (scale_name == "CT") return(11)
+              if (scale_name == "DA") return(13)
+              # For first level
+              return(10)
+            })()
+            geo_sc_id <- paste(region, scale_name, ID, lan, sep = "_")
 
-          # Knit the rmardowns to HTML
-          rmarkdown::render(new_rmd, output_file = output_file,
-                            params = list(
-                              select_id = ID,
-                              region = geo,
-                              df = scale_name,
-                              scale_sing = paste(scale_sing, "(count)"),
-                              tileset_prefix = tileset_prefix,
-                              map_loc = map_loc,
-                              map_zoom = map_zoom,
-                              mapbox_username = mapbox_username,
-                              title_card_data = title_card_data
-                            ), envir = new.env())
+            # Setup temporary .kmit.md files to not have names crashing on
+            # each other when using parallelization
+            new_rmd <- tempfile(pattern = geo_sc_id, fileext = ".Rmd")
+            file.copy(inp, new_rmd)
 
-          # Remove header (too heavy)
-          x <- readLines(output_file)
-          x <-
-            x[-{
-              (which(stringr::str_detect(x, "<head"))):(which(stringr::str_detect(x, "</head")))
-            }]
-          writeLines(x, output_file)
+            output_file <- paste0(getwd(), "/", out_folder, geo_sc_id, ".html")
 
-        }, future.seed = NULL)
+            # # Add title
+            title <-
+              # If the `name` column isn't alphabet
+              if (!grepl("[a-z|A-Z]", scale_df$name[n])) {
+
+                name <- if (rev_geocode_localhost) {
+                  cc.data::rev_geocode_localhost(scale_df[n, ])
+                } else {
+                  cc.data::rev_geocode_OSM(scale_df[n, ])
+                }
+
+                if (lan == "en") {
+                  sing <- scales_dictionary$sing[scales_dictionary$scale == scale_name]
+                  paste("The", sing, "around", name)
+                } else if (lan == "fr") {
+                  sing <-
+                    if (scale_name == "CT") "Le secteur de recensement" else
+                      if (scale_name == "DA") "L'aire de diffusion" else
+                        "La zone"
+                  paste(sing, "autour du", name)
+                }
+              } else {
+                scale_df$name[n]
+              }
+
+            rmarkdown::render(
+              new_rmd, output_file = output_file,
+              params = list(
+                title = title,
+                select_id = ID,
+                region = region,
+                df = scale_name,
+                scale_sing = paste(
+                  scale_sing,
+                  if (lan == en) "(count)" else if (lan == "fr") "(compte)"),
+                tileset_prefix = tileset_prefix,
+                map_loc = map_loc,
+                map_zoom = map_zoom,
+                mapbox_username = mapbox_username,
+                title_card_data = title_card_data
+              ), envir = new.env(), quiet = TRUE)
+
+            # Remove header (too heavy)
+            x <- readLines(output_file)
+            x <-
+              x[-{
+                (which(stringr::str_detect(x, "<head"))):(which(stringr::str_detect(x, "</head")))
+              }]
+            writeLines(x, output_file)
+
+            pb()
+
+          }, future.seed = NULL)
+        })
       })
+    })
   })
-
 
   # Return nothing ----------------------------------------------------------
 
   return()
 }
-

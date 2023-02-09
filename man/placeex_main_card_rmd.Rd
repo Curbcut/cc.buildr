@@ -12,7 +12,8 @@ placeex_main_card_rmd(
   out_folder = "www/place_explorer/",
   lang = "en",
   tileset_prefix,
-  mapbox_username = "sus-mcgill"
+  mapbox_username = "sus-mcgill",
+  rev_geocode_from_localhost = FALSE
 )
 }
 \arguments{
@@ -41,6 +42,12 @@ shinyapp. Defaults to \verb{www/place_explorer/}}
 created and published tileset. Should correspond to the Curbcut city, e.g. \code{mtl}.}
 
 \item{mapbox_username}{<\code{character}> Mapbox account username.}
+
+\item{rev_geocode_from_localhost}{<\code{character}> Use a local instance of nominatim
+for reverse geocoding, using \code{\link[cc.data]{rev_geocode_localhost}}. If
+TRUE, there must be a local instance of Nominatim runnin on localhost port 8080.
+If set to FALSE, the reverse geolocation will be done using
+\code{\link[cc.data]{rev_geocode_OSM}}, which uses a remote server (photon.komoot.io).}
 }
 \value{
 Returns nothing if successful. All place explorer possibilities are

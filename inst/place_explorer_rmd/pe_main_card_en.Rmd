@@ -1,5 +1,5 @@
 ---
-title: "Main indicators"
+title: "`r params$title`"
 output:
   html_document:
     theme: 
@@ -12,6 +12,7 @@ output:
       code-color: skyblue
       font-base-size: 1.25rem
 params: 
+    title: "Main indicators"
     select_id: "24663185"
     region: "CMA"
     df: "DA"
@@ -49,14 +50,21 @@ params:
   color:#ffffff
 }
 
+.bg-col_no_data {
+  background-color:#22222222;
+  color:#ffffff
+}
+
 ```
 
 
 ```{r map, echo = FALSE}
 
+with_data <- params$title_card_data[sapply(params$title_card_data, \(x)  "hex_cat" %in% names(x))]
+
 # Decide which color for the map
 hexes <- c("#CA002095", "#F4A58295", "#A9A9A995", "#BAE4B395", "#31A35495")
-map_col <- hexes[mean(sapply(params$title_card_data, `[[`, "hex_cat"))]
+map_col <- hexes[mean(sapply(with_data, `[[`, "hex_cat"))]
 map_col_light <- gsub("95$", "20", map_col)
 
 # Necessary for the mapdeck
@@ -103,7 +111,7 @@ vline <- function(x = 0) {
   )
 }
 
-plotlies <- lapply(params$title_card_data, \(ind) {
+plotlies <- lapply(with_data, \(ind) {
   
   this_dat <- ind$data$var[ind$data$ID == params$select_id]
   
@@ -136,22 +144,33 @@ plotlies <- lapply(params$title_card_data, \(ind) {
   )
 })
 
-
-
 ```
 
 
 ```{r valueboxes, echo = FALSE, warning = FALSE}
 
 boxes <- mapply(\(ind, ind_name) {
-  bslib::value_box(
-  title = htmltools::p(ind$row_title, bsicons::bs_icon(ind$bs_icon)),
-  value = ind$percentile,
-  showcase = plotlies[[ind_name]],
-  htmltools::p(htmltools::HTML(ind$text)),
-  full_screen = TRUE,
-  theme_color = paste0("col_pe_", ind$hex_cat)
-)
+    
+    # If no data
+    if (is.character(ind)) {
+        bslib::value_box(
+            title = htmltools::p(ind$row_title, bsicons::bs_icon(ind$bs_icon)),
+            value = ind$percentile,
+            theme_color = paste0("col_pe_", "no_data"),
+            full_screen = FALSE
+        )
+        # If data
+    } else {
+        bslib::value_box(
+            title = htmltools::p(ind$row_title, bsicons::bs_icon(ind$bs_icon)),
+            value = ind$percentile,
+            showcase = plotlies[[ind_name]],
+            htmltools::p(htmltools::HTML(ind$text)),
+            full_screen = TRUE,
+            theme_color = paste0("col_pe_", ind$hex_cat)
+        )
+    }
+    
 }, params$title_card_data, names(params$title_card_data), SIMPLIFY = FALSE)
 
 do.call(bslib::layout_column_wrap, c(list(width = 1/2), unname(boxes)))
