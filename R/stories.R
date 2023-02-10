@@ -45,7 +45,8 @@ stories_add_story <- function(stories, name_id, title, short_title, preview,
       short_title = short_title,
       preview = preview,
       themes = list(sapply(themes, stringr::str_to_sentence,
-                           USE.NAMES = FALSE)),
+        USE.NAMES = FALSE
+      )),
       lon = as.numeric(lon),
       lat = as.numeric(lat),
     )
@@ -90,8 +91,10 @@ stories_atlas_mapping <- function(
   }
 
   # Stop if missing images
-  if (!all(sapply(paste0(stories$name_id, ".png"), `%in%`,
-                  list.files(input_img_location)))) {
+  if (!all(sapply(
+    paste0(stories$name_id, ".png"), `%in%`,
+    list.files(input_img_location)
+  ))) {
     stop(paste0(
       "Missing images in the `input_img_location`. Every story ",
       "(by their `name_id`) must have an PNG in the ",

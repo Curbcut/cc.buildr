@@ -1063,22 +1063,27 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
 #' ready to be used.
 #' @export
 stories_create_tileset <- function(stories, prefix, username, access_token) {
-
   # Delete tileset and source
-  tileset_delete_tileset(id = paste0(prefix, "_stories"),
-                         username = username,
-                         access_token = access_token)
-  tileset_delete_tileset_source(id = paste0(prefix, "_stories"),
-                                username = username,
-                                access_token = access_token)
+  tileset_delete_tileset(
+    id = paste0(prefix, "_stories"),
+    username = username,
+    access_token = access_token
+  )
+  tileset_delete_tileset_source(
+    id = paste0(prefix, "_stories"),
+    username = username,
+    access_token = access_token
+  )
 
   # Upload source
   stories <- sf::st_as_sf(stories, coords = c("lon", "lat"), crs = 4326)
   stories <- stories[c("ID", "name_id", "geometry")]
-  tileset_upload_tile_source(df = stories,
-                             id = paste0(prefix, "_stories"),
-                             username = username,
-                             access_token = access_token)
+  tileset_upload_tile_source(
+    df = stories,
+    id = paste0(prefix, "_stories"),
+    username = username,
+    access_token = access_token
+  )
 
   # Create recipe
   stories_recipe <-
@@ -1087,15 +1092,19 @@ stories_create_tileset <- function(stories, prefix, username, access_token) {
       source = "mapbox://tileset-source/sus-mcgill/stories-stories",
       minzoom = 3,
       maxzoom = 13,
-      recipe_name = paste0(prefix, "_stories"))
+      recipe_name = paste0(prefix, "_stories")
+    )
 
   # Create and publish
-  tileset_create_tileset(tileset = paste0(prefix, "_stories"),
-                         recipe = stories_recipe,
-                         username = username,
-                         access_token = access_token)
-  tileset_publish_tileset(tileset = paste0(prefix, "_stories"),
-                          username = username,
-                          access_token = access_token)
-
+  tileset_create_tileset(
+    tileset = paste0(prefix, "_stories"),
+    recipe = stories_recipe,
+    username = username,
+    access_token = access_token
+  )
+  tileset_publish_tileset(
+    tileset = paste0(prefix, "_stories"),
+    username = username,
+    access_token = access_token
+  )
 }

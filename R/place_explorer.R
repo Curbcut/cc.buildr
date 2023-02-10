@@ -18,19 +18,19 @@
 #' @export
 placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
                                    regions_dictionary) {
-
-
   # Init --------------------------------------------------------------------
 
-  dict <- tibble::tibble(name = character(),
-                         title = character(),
-                         xaxis_title = character(),
-                         bs_icon = character(),
-                         date = numeric(),
-                         percent = logical(),
-                         high_is_good = logical(),
-                         val_digit = 0,
-                         text = character())
+  dict <- tibble::tibble(
+    name = character(),
+    title = character(),
+    xaxis_title = character(),
+    bs_icon = character(),
+    date = numeric(),
+    percent = logical(),
+    high_is_good = logical(),
+    val_digit = 0,
+    text = character()
+  )
   data <- list()
 
   DA_table <- DA_table["ID"]
@@ -43,8 +43,9 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
   # Common functions --------------------------------------------------------
 
   mc_df_format <- function(df) {
-    if (ncol(df) > 2)
+    if (ncol(df) > 2) {
       stop("Only two columns needed. ID and variable.")
+    }
     # Rename the variable to generic
     names(df)[2] <- "var"
     df$percentile <- {
@@ -70,34 +71,43 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
       percent = FALSE,
       high_is_good = FALSE,
       val_digit = 1,
-      text = paste0("{z$data_rank} in terms of level of NO2 pollution. ",
-                    "{higher_than_threshold}(NO2 = {z$pretty_data_var}, ",
-                    "data from {z$data_date})")
+      text = paste0(
+        "{z$data_rank} in terms of level of NO2 pollution. ",
+        "{higher_than_threshold}(NO2 = {z$pretty_data_var}, ",
+        "data from {z$data_date})"
+      )
     )
   dict <- rbind(dict, no2_dict)
 
   NO2 <- cc.data::db_read_data("no2",
-                               column_to_select = "DA_ID",
-                               IDs = region_DA_IDs, crs = crs)
+    column_to_select = "DA_ID",
+    IDs = region_DA_IDs, crs = crs
+  )
   NO2 <- merge(NO2, DA_table, all = TRUE)
 
   # Interpolate to all possible region and scales
-  NO2_scales <- interpolate_from_census_geo(data = NO2,
-                                            all_scales = scales,
-                                            crs = crs,
-                                            average_vars = "NO2",
-                                            base_scale = "DA",
-                                            weight_by = "area")
+  NO2_scales <- interpolate_from_census_geo(
+    data = NO2,
+    all_scales = scales,
+    crs = crs,
+    average_vars = "NO2",
+    base_scale = "DA",
+    weight_by = "area"
+  )
 
   # Format correctly
-  data$no2 <- map_over_scales(all_scales = NO2_scales$scales,
-                              fun = \(scale_df = scale_df, ...) {
-                                if (!"NO2" %in% names(scale_df)) return(NULL)
-                                out <- scale_df[c("ID", "NO2")]
-                                out <- sf::st_drop_geometry(out)
-                                out <- mc_df_format(out)
-                                return(out)
-                              })
+  data$no2 <- map_over_scales(
+    all_scales = NO2_scales$scales,
+    fun = \(scale_df = scale_df, ...) {
+      if (!"NO2" %in% names(scale_df)) {
+        return(NULL)
+      }
+      out <- scale_df[c("ID", "NO2")]
+      out <- sf::st_drop_geometry(out)
+      out <- mc_df_format(out)
+      return(out)
+    }
+  )
   # Remove empty lists
   data$no2 <- lapply(data$no2, \(x) {
     x[!sapply(x, is.null)]
@@ -117,35 +127,44 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
       percent = TRUE,
       high_is_good = TRUE,
       val_digit = 0,
-      text = paste0("{z$data_rank} in terms of vegetation (<a href='https://",
-                    "www.canuedata.ca/tmp/CANUE_METADATA_GRAVH_AMN_YY.pdf' ",
-                    "target='_blank'>NDVI</a> = {z$pretty_data_var}, data ",
-                    "from {z$data_date})")
+      text = paste0(
+        "{z$data_rank} in terms of vegetation (<a href='https://",
+        "www.canuedata.ca/tmp/CANUE_METADATA_GRAVH_AMN_YY.pdf' ",
+        "target='_blank'>NDVI</a> = {z$pretty_data_var}, data ",
+        "from {z$data_date})"
+      )
     )
   dict <- rbind(dict, ndvi_dict)
 
   NDVI <- cc.data::db_read_data("ndvi",
-                               column_to_select = "DA_ID",
-                               IDs = region_DA_IDs, crs = crs)
+    column_to_select = "DA_ID",
+    IDs = region_DA_IDs, crs = crs
+  )
   NDVI <- merge(NDVI, DA_table, all = TRUE)
 
   # Interpolate to all possible region and scales
-  NDVI_scales <- interpolate_from_census_geo(data = NDVI,
-                                             all_scales = scales,
-                                             crs = crs,
-                                             average_vars = "NDVI",
-                                             base_scale = "DA",
-                                             weight_by = "area")
+  NDVI_scales <- interpolate_from_census_geo(
+    data = NDVI,
+    all_scales = scales,
+    crs = crs,
+    average_vars = "NDVI",
+    base_scale = "DA",
+    weight_by = "area"
+  )
 
   # Format correctly
-  data$ndvi <- map_over_scales(all_scales = NDVI_scales$scales,
-                               fun = \(scale_df = scale_df, ...) {
-                                 if (!"NDVI" %in% names(scale_df)) return(NULL)
-                                 out <- scale_df[c("ID", "NDVI")]
-                                 out <- sf::st_drop_geometry(out)
-                                 out <- mc_df_format(out)
-                                 return(out)
-                               })
+  data$ndvi <- map_over_scales(
+    all_scales = NDVI_scales$scales,
+    fun = \(scale_df = scale_df, ...) {
+      if (!"NDVI" %in% names(scale_df)) {
+        return(NULL)
+      }
+      out <- scale_df[c("ID", "NDVI")]
+      out <- sf::st_drop_geometry(out)
+      out <- mc_df_format(out)
+      return(out)
+    }
+  )
   # Remove empty lists
   data$ndvi <- lapply(data$ndvi, \(x) {
     x[!sapply(x, is.null)]
@@ -165,9 +184,11 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
       percent = TRUE,
       high_is_good = TRUE,
       val_digit = 0,
-      text = paste0("{z$pretty_data_var} of residents use public transit, ",
-                    "walk or bicycle to get to work. {z$data_rank}. ",
-                    "(Data from {z$data_date})")
+      text = paste0(
+        "{z$pretty_data_var} of residents use public transit, ",
+        "walk or bicycle to get to work. {z$data_rank}. ",
+        "(Data from {z$data_date})"
+      )
     )
   dict <- rbind(dict, sust_dict)
 
@@ -175,16 +196,20 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
   vars <- paste0(c("trans_walk_or_bike_", "trans_transit_"), current_census_year)
 
   # Format correctly
-  data$sust <- map_over_scales(all_scales = scales,
-                               fun = \(scale_df = scale_df, ...) {
-                                 if (all(!vars %in% names(scale_df))) return(NULL)
-                                 out <- scale_df[c("ID", vars)]
-                                 out$var <- out[[vars[1]]] + out[[vars[2]]]
-                                 out <- out[c("ID", "var")]
-                                 out <- sf::st_drop_geometry(out)
-                                 out <- mc_df_format(out)
-                                 return(out)
-                               })
+  data$sust <- map_over_scales(
+    all_scales = scales,
+    fun = \(scale_df = scale_df, ...) {
+      if (all(!vars %in% names(scale_df))) {
+        return(NULL)
+      }
+      out <- scale_df[c("ID", vars)]
+      out$var <- out[[vars[1]]] + out[[vars[2]]]
+      out <- out[c("ID", "var")]
+      out <- sf::st_drop_geometry(out)
+      out <- mc_df_format(out)
+      return(out)
+    }
+  )
   # Remove empty lists
   data$sust <- lapply(data$sust, \(x) {
     x[!sapply(x, is.null)]
@@ -204,8 +229,10 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
       percent = TRUE,
       high_is_good = FALSE,
       val_digit = 0,
-      text = paste0("{z$pretty_data_var} of occupied dwellings are single-det",
-                    "ached houses. {z$data_rank}. (Data from {z$data_date})")
+      text = paste0(
+        "{z$pretty_data_var} of occupied dwellings are single-det",
+        "ached houses. {z$data_rank}. (Data from {z$data_date})"
+      )
     )
   dict <- rbind(dict, singled_dict)
 
@@ -213,15 +240,19 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
   vars <- paste0("housing_single_detached_", current_census_year)
 
   # Format correctly
-  data$singled <- map_over_scales(all_scales = scales,
-                               fun = \(scale_df = scale_df, ...) {
-                                 if (all(!vars %in% names(scale_df))) return(NULL)
-                                 out <- scale_df[c("ID", vars)]
-                                 # out <- out[c("ID", "var")]
-                                 out <- sf::st_drop_geometry(out)
-                                 out <- mc_df_format(out)
-                                 return(out)
-                               })
+  data$singled <- map_over_scales(
+    all_scales = scales,
+    fun = \(scale_df = scale_df, ...) {
+      if (all(!vars %in% names(scale_df))) {
+        return(NULL)
+      }
+      out <- scale_df[c("ID", vars)]
+      # out <- out[c("ID", "var")]
+      out <- sf::st_drop_geometry(out)
+      out <- mc_df_format(out)
+      return(out)
+    }
+  )
   # Remove empty lists
   data$singled <- lapply(data$singled, \(x) {
     x[!sapply(x, is.null)]
@@ -241,8 +272,10 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
       percent = FALSE,
       high_is_good = TRUE,
       val_digit = 0,
-      text = paste0("{z$data_rank} in terms of active living. (Data from ",
-                    "{z$data_date})")
+      text = paste0(
+        "{z$data_rank} in terms of active living. (Data from ",
+        "{z$data_date})"
+      )
     )
   dict <- rbind(dict, activel_dict)
 
@@ -250,15 +283,19 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
   vars <- paste0("canale_", current_census_year)
 
   # Format correctly
-  data$activel <- map_over_scales(all_scales = scales,
-                                  fun = \(scale_df = scale_df, ...) {
-                                    if (all(!vars %in% names(scale_df))) return(NULL)
-                                    out <- scale_df[c("ID", vars)]
-                                    # out <- out[c("ID", "var")]
-                                    out <- sf::st_drop_geometry(out)
-                                    out <- mc_df_format(out)
-                                    return(out)
-                                  })
+  data$activel <- map_over_scales(
+    all_scales = scales,
+    fun = \(scale_df = scale_df, ...) {
+      if (all(!vars %in% names(scale_df))) {
+        return(NULL)
+      }
+      out <- scale_df[c("ID", vars)]
+      # out <- out[c("ID", "var")]
+      out <- sf::st_drop_geometry(out)
+      out <- mc_df_format(out)
+      return(out)
+    }
+  )
   # Remove empty lists
   data$activel <- lapply(data$activel, \(x) {
     x[!sapply(x, is.null)]
@@ -268,10 +305,10 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
 
   # Return ------------------------------------------------------------------
 
-  return(list(main_card_dict = dict,
-              main_card_data = data))
-
-
+  return(list(
+    main_card_dict = dict,
+    main_card_data = data
+  ))
 }
 
 #' Prepare data for a title card
@@ -296,10 +333,9 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
 #' data date, data rank (in text), and color category (1-5).
 #'
 #' @export
-placeex_main_card_prep_output_en <- function(data, dict, region, df,  select_id,
+placeex_main_card_prep_output_en <- function(data, dict, region, df, select_id,
                                              scales_dictionary,
                                              regions_dictionary) {
-
   if (!requireNamespace("glue", quietly = TRUE)) {
     stop(
       "Package \"glue\" must be installed to use this function.",
@@ -312,19 +348,31 @@ placeex_main_card_prep_output_en <- function(data, dict, region, df,  select_id,
 
   ordinal_form <- function(x, en_first = "first") {
     if (x > 20) {
-      if (x %% 100 %in% c(11 , 12, 13)) {
+      if (x %% 100 %in% c(11, 12, 13)) {
         form <- "th "
       } else {
-        form <- switch(as.character(x %% 10), "1" = "st", "2" = "nd",
-                       "3" = "rd", "th")
+        form <- switch(as.character(x %% 10),
+          "1" = "st",
+          "2" = "nd",
+          "3" = "rd",
+          "th"
+        )
       }
       paste0(x, form)
     } else {
-      switch(as.character(x), "1" = "", "2" = "second",
-             "3" = "third", "4" = "fourth", "5" = "fifth",
-             "6" = "sixth",  "7" = "seventh", "8" = "eighth",
-             "9" = "ninth", "10" = "tenth",
-             paste0(as.character(x), "th"))
+      switch(as.character(x),
+        "1" = "",
+        "2" = "second",
+        "3" = "third",
+        "4" = "fourth",
+        "5" = "fifth",
+        "6" = "sixth",
+        "7" = "seventh",
+        "8" = "eighth",
+        "9" = "ninth",
+        "10" = "tenth",
+        paste0(as.character(x), "th")
+      )
     }
   }
 
@@ -342,14 +390,22 @@ placeex_main_card_prep_output_en <- function(data, dict, region, df,  select_id,
 
   # Get data value
   data_s <- data[data$ID == select_id, ]
-  if ({length(data_s$var) == 0} || {is.na(data_s$var)}) return(NULL)
+  if ({
+    length(data_s$var) == 0
+  } || {
+    is.na(data_s$var)
+  }) {
+    return(NULL)
+  }
 
 
   # pretty_data_var ---------------------------------------------------------
 
   info$pretty_data_var <- if (dict$percent) {
     scales::percent(data_s$var)
-  } else round(data_s$var, digits = dict$val_digit)
+  } else {
+    round(data_s$var, digits = dict$val_digit)
+  }
 
 
   # Data date ---------------------------------------------------------------
@@ -362,7 +418,6 @@ placeex_main_card_prep_output_en <- function(data, dict, region, df,  select_id,
   info$data_rank <-
     # If the dataset is small
     if (nrow(data) < 40) {
-
       # How many non-na entries in the dataset
       df_row <- sum(!is.na(data$var))
       # If high is good, then last rank means 1st. Inverse!
@@ -370,12 +425,15 @@ placeex_main_card_prep_output_en <- function(data, dict, region, df,  select_id,
 
       ordinal <- (\(x) {
         # if ranks in the bottom third
-        if (data_rank > (2 / 3 * df_row)) return({
-          glue::glue("relatively low at {ordinal_form(data_rank)}")
-        })
+        if (data_rank > (2 / 3 * df_row)) {
+          return({
+            glue::glue("relatively low at {ordinal_form(data_rank)}")
+          })
+        }
         # if ranks in the second third
-        if (data_rank > (1 / 3 * df_row))
+        if (data_rank > (1 / 3 * df_row)) {
           return(ordinal_form(data_rank))
+        }
         # else
         return(glue::glue("{ordinal_form(data_rank)} best"))
       })()
@@ -385,30 +443,42 @@ placeex_main_card_prep_output_en <- function(data, dict, region, df,  select_id,
 
       # If the dataset is large
     } else {
-
       (\(x) {
-        if (data_s$percentile > 0.75) return({
-          paste0(glue::glue("{df_scale} ranks in the top "),
-                 if (abs(data_s$percentile - 1) < 0.01) "1%" else
-                   scales::percent(abs(data_s$percentile - 1)))
-        })
+        if (data_s$percentile > 0.75) {
+          return({
+            paste0(
+              glue::glue("{df_scale} ranks in the top "),
+              if (abs(data_s$percentile - 1) < 0.01) {
+                "1%"
+              } else {
+                scales::percent(abs(data_s$percentile - 1))
+              }
+            )
+          })
+        }
 
-        if (data_s$percentile < 0.25) return({
-          paste0(
-            glue::glue("{df_scale} ranks in the bottom "),
-            if (data_s$percentile < 1) "1%" else scales::percent(data_s$percentile))
-        })
+        if (data_s$percentile < 0.25) {
+          return({
+            paste0(
+              glue::glue("{df_scale} ranks in the bottom "),
+              if (data_s$percentile < 1) "1%" else scales::percent(data_s$percentile)
+            )
+          })
+        }
 
         pretty_perc <- scales::percent(data_s$percentile)
 
         if (dict$high_is_good) {
-          glue::glue("Its value is worse than {pretty_perc} ",
-                     "of {df_scales} {to_compare}")
+          glue::glue(
+            "Its value is worse than {pretty_perc} ",
+            "of {df_scales} {to_compare}"
+          )
         } else {
-          glue::glue("Its value is higher than {pretty_perc} ",
-                     "of {df_scales} {to_compare}")
+          glue::glue(
+            "Its value is higher than {pretty_perc} ",
+            "of {df_scales} {to_compare}"
+          )
         }
-
       })()
     }
 
@@ -441,7 +511,6 @@ placeex_main_card_prep_output_en <- function(data, dict, region, df,  select_id,
   # Return ------------------------------------------------------------------
 
   return(info)
-
 }
 
 
@@ -465,11 +534,9 @@ placeex_main_card_prep_output_en <- function(data, dict, region, df,  select_id,
 #' @export
 placeex_main_card_final_output <- function(pe_main_card_data, region, df, select_id,
                                            scales_dictionary, regions_dictionary) {
-
   ## Generate output grid ---------------------------------------------------
 
   to_grid <- lapply(pe_main_card_data$main_card_dict$name, \(x) {
-
     data <- pe_main_card_data$main_card_data[[x]][[region]][[df]]
     dict <- pe_main_card_data$main_card_dict[pe_main_card_data$main_card_dict$name == x, ]
 
@@ -483,23 +550,33 @@ placeex_main_card_final_output <- function(pe_main_card_data, region, df, select
       regions_dictionary = regions_dictionary
     )
 
-    if (is.null(z)) return(list(row_title = dict$title,
-                                percentile = "No data.",
-                                bs_icon = dict$bs_icon))
+    if (is.null(z)) {
+      return(list(
+        row_title = dict$title,
+        percentile = "No data.",
+        bs_icon = dict$bs_icon
+      ))
+    }
 
     # Exception - additional text for no2 if over the threshold of 53 ppm
-    if (x == "no2") higher_than_threshold <-
-      if (z$pretty_data_var > 53) {
-        "Its value is higher than the WHO's guideline value of 53. "
-      } else ""
+    if (x == "no2") {
+      higher_than_threshold <-
+        if (z$pretty_data_var > 53) {
+          "Its value is higher than the WHO's guideline value of 53. "
+        } else {
+          ""
+        }
+    }
 
-    list(row_title = dict$title,
-         percentile = z$percentile,
-         text = glue::glue(dict$text),
-         hex_cat = z$hex_cat,
-         bs_icon = dict$bs_icon,
-         xaxis_title = dict$xaxis_title,
-         data = data)
+    list(
+      row_title = dict$title,
+      percentile = z$percentile,
+      text = glue::glue(dict$text),
+      hex_cat = z$hex_cat,
+      bs_icon = dict$bs_icon,
+      xaxis_title = dict$xaxis_title,
+      data = data
+    )
   })
 
   names(to_grid) <- pe_main_card_data$main_card_dict$name
@@ -507,7 +584,6 @@ placeex_main_card_final_output <- function(pe_main_card_data, region, df, select
   to_grid[sapply(to_grid, is.null)] <- NULL
 
   to_grid
-
 }
 
 #' Pre-process all the possible Rmds
@@ -548,7 +624,6 @@ placeex_main_card_rmd <- function(scales,
                                   tileset_prefix,
                                   mapbox_username = "sus-mcgill",
                                   rev_geocode_from_localhost = FALSE) {
-
   if (!requireNamespace("rmarkdown", quietly = TRUE)) {
     stop(
       "Package \"rmarkdown\" must be installed to use this function.",
@@ -575,30 +650,35 @@ placeex_main_card_rmd <- function(scales,
   # Get the head file -------------------------------------------------------
 
   inp <- system.file(paste0("place_explorer_rmd/pe_main_card_en.Rmd"),
-                     package = "cc.buildr")
+    package = "cc.buildr"
+  )
 
   header_file <- paste0(getwd(), "/", out_folder, "header.html")
 
   title_card_data <-
-    placeex_main_card_final_output(pe_main_card_data = pe_main_card_data,
-                                   region = names(scales)[1],
-                                   df = names(scales[[1]])[1],
-                                   select_id = scales[[1]][[1]]$ID[1],
-                                   scales_dictionary = scales_dictionary,
-                                   regions_dictionary = regions_dictionary)
+    placeex_main_card_final_output(
+      pe_main_card_data = pe_main_card_data,
+      region = names(scales)[1],
+      df = names(scales[[1]])[1],
+      select_id = scales[[1]][[1]]$ID[1],
+      scales_dictionary = scales_dictionary,
+      regions_dictionary = regions_dictionary
+    )
 
-  rmarkdown::render(inp, output_file = header_file,
-                    params = list(
-                      select_id = scales[[1]][[1]]$ID[1],
-                      region = names(scales)[1],
-                      df = names(scales[[1]])[1],
-                      scale_sing = "",
-                      tileset_prefix = tileset_prefix,
-                      map_loc = scales[[1]][[1]]$centroid[[1]],
-                      map_zoom = 10,
-                      mapbox_username = mapbox_username,
-                      title_card_data = title_card_data
-                    ), envir = new.env(), quiet = TRUE)
+  rmarkdown::render(inp,
+    output_file = header_file,
+    params = list(
+      select_id = scales[[1]][[1]]$ID[1],
+      region = names(scales)[1],
+      df = names(scales[[1]])[1],
+      scale_sing = "",
+      tileset_prefix = tileset_prefix,
+      map_loc = scales[[1]][[1]]$centroid[[1]],
+      map_zoom = 10,
+      mapbox_username = mapbox_username,
+      title_card_data = title_card_data
+    ), envir = new.env(), quiet = TRUE
+  )
 
   x <- readLines(header_file)
   x <-
@@ -612,19 +692,18 @@ placeex_main_card_rmd <- function(scales,
 
   progressr::with_progress({
     pb <- progressr::progressor(steps = sapply(
-      possible_scales, sapply, nrow) |> sum() * length(lang))
+      possible_scales, sapply, nrow
+    ) |> sum() * length(lang))
     lapply(lang, \(lan) {
-
       inp <- system.file(paste0("place_explorer_rmd/pe_main_card_", lan, ".Rmd"),
-                         package = "cc.buildr")
+        package = "cc.buildr"
+      )
 
       lapply(seq_along(possible_scales), \(region_n) {
-
         region <- names(possible_scales)[region_n]
         scales <- possible_scales[[region_n]]
 
         lapply(seq_along(scales), \(scale_n) {
-
           scale_name <- names(scales)[scale_n]
           scale_df <- scales[[scale_n]]
           scale_df <- suppressWarnings(sf::st_centroid(scale_df))
@@ -632,7 +711,6 @@ placeex_main_card_rmd <- function(scales,
             scales_dictionary$slider_title[scales_dictionary$scale == scale_name]
 
           future.apply::future_lapply(seq_along(scale_df$ID), \(n) {
-
             # Setup all necessary input
             ID <- scale_df$ID[n]
             map_loc <- scale_df$centroid[[n]]
@@ -643,10 +721,15 @@ placeex_main_card_rmd <- function(scales,
                 df = scale_name,
                 select_id = ID,
                 scales_dictionary = scales_dictionary,
-                regions_dictionary = regions_dictionary)
+                regions_dictionary = regions_dictionary
+              )
             map_zoom <- (\(x) {
-              if (scale_name == "CT") return(11)
-              if (scale_name == "DA") return(13)
+              if (scale_name == "CT") {
+                return(11)
+              }
+              if (scale_name == "DA") {
+                return(13)
+              }
               # For first level
               return(10)
             })()
@@ -663,7 +746,6 @@ placeex_main_card_rmd <- function(scales,
             title <-
               # If the `name` column isn't alphabet
               if (!grepl("[a-z|A-Z]", scale_df$name[n])) {
-
                 name <- if (rev_geocode_from_localhost) {
                   cc.data::rev_geocode_localhost(scale_df[n, ])
                 } else {
@@ -675,9 +757,13 @@ placeex_main_card_rmd <- function(scales,
                   paste("The", sing, "around", name)
                 } else if (lan == "fr") {
                   sing <-
-                    if (scale_name == "CT") "Le secteur de recensement" else
-                      if (scale_name == "DA") "L'aire de diffusion" else
-                        "La zone"
+                    if (scale_name == "CT") {
+                      "Le secteur de recensement"
+                    } else if (scale_name == "DA") {
+                      "L'aire de diffusion"
+                    } else {
+                      "La zone"
+                    }
                   paste(sing, "autour du", name)
                 }
               } else {
@@ -685,7 +771,8 @@ placeex_main_card_rmd <- function(scales,
               }
 
             rmarkdown::render(
-              new_rmd, output_file = output_file,
+              new_rmd,
+              output_file = output_file,
               params = list(
                 title = title,
                 select_id = ID,
@@ -693,13 +780,15 @@ placeex_main_card_rmd <- function(scales,
                 df = scale_name,
                 scale_sing = paste(
                   scale_sing,
-                  if (lan == "en") "(count)" else if (lan == "fr") "(compte)"),
+                  if (lan == "en") "(count)" else if (lan == "fr") "(compte)"
+                ),
                 tileset_prefix = tileset_prefix,
                 map_loc = map_loc,
                 map_zoom = map_zoom,
                 mapbox_username = mapbox_username,
                 title_card_data = title_card_data
-              ), envir = new.env(), quiet = TRUE)
+              ), envir = new.env(), quiet = TRUE
+            )
 
             # Remove header (too heavy)
             x <- readLines(output_file)
@@ -710,7 +799,6 @@ placeex_main_card_rmd <- function(scales,
             writeLines(x, output_file)
 
             pb()
-
           }, future.seed = NULL)
         })
       })

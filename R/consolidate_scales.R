@@ -215,8 +215,10 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs) {
           return(df)
         }
 
-        centroids <- suppressWarnings(lapply(sf::st_centroid(df)$geometry,
-                                             sf::st_coordinates))
+        centroids <- suppressWarnings(lapply(
+          sf::st_centroid(df)$geometry,
+          sf::st_coordinates
+        ))
         centroids <- lapply(centroids, as.vector)
         df$centroid <- centroids
         df

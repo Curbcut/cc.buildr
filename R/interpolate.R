@@ -62,14 +62,16 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
 
   ## In the case weight_by is `area`
   if (weight_by == "area") {
-    return(interpolate_custom_geo(data = data,
-                                  all_scales = all_scales,
-                                  crs = crs,
-                                  only_regions = only_regions,
-                                  average_vars = average_vars,
-                                  additive_vars = additive_vars,
-                                  name_interpolate_from = base_scale,
-                                  construct_for = construct_for))
+    return(interpolate_custom_geo(
+      data = data,
+      all_scales = all_scales,
+      crs = crs,
+      only_regions = only_regions,
+      average_vars = average_vars,
+      additive_vars = additive_vars,
+      name_interpolate_from = base_scale,
+      construct_for = construct_for
+    ))
   }
 
 
@@ -444,11 +446,11 @@ interpolate_custom_geo <- function(data, all_scales, crs,
     construct_for <- map_over_scales(
       all_scales = construct_for,
       fun = \(geo = geo, scales = scales,
-              scale_df = scale_df, scale_name = scale_name) {
+        scale_df = scale_df, scale_name = scale_name) {
         data <- sf::st_transform(data, crs)
         scale_df <- sf::st_transform(scale_df, crs)
         if (mean(get_area(data), na.rm = TRUE) <=
-            mean(get_area(scale_df), na.rm = TRUE)) {
+          mean(get_area(scale_df), na.rm = TRUE)) {
           scale_name
         } else {
           return()

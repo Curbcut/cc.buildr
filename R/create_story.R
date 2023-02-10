@@ -51,7 +51,7 @@ create_story_script <- function(pages_folder = "dev/data_import/") {
 
   # Pre-fill the file
   template <- readLines(system.file("stories_script.R",
-                                    package = "cc.buildr"
+    package = "cc.buildr"
   ))
 
   # Write the template in the file
