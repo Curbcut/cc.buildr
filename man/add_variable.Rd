@@ -15,6 +15,7 @@ add_variable(
   group_diff = list(),
   theme,
   private,
+  pe_include = TRUE,
   dates,
   scales,
   breaks_q3,
@@ -56,6 +57,9 @@ The list can contain multiple named vectors, multiple group differentiation.}
 
 \item{private}{<\code{logical}> If we have permissions to make the variable available
 for public download.}
+
+\item{pe_include}{<\code{logical}> Should this variable be included in the place
+explorer? Defaults to \code{TRUE}.}
 
 \item{dates}{<\verb{character vector}> A vector of dates for which the data is available.}
 

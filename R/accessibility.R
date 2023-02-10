@@ -19,6 +19,8 @@
 #' 60)`. 60 minutes is the maximum.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
+#' @param pe_include <`character vector`> Which final variables should appear
+#' in the place explorer. Defaults to `c("access_foot_20_education_elementary", "access_foot_20_communitycentres_individual", "access_foot_15_fooddistribution_grocery", "access_car_10_healthcare_hospitals")`.
 #'
 #' @return A list containing the scales, variables, and modules tables.
 #' @export
@@ -27,6 +29,10 @@ ba_accessibility_points <- function(scales_variables_modules,
                                     themes = cc.data::list_accessibility_themes(),
                                     traveltimes,
                                     time_intervals = which(1:60 %% 5 == 0),
+                                    pe_include = c("access_foot_20_education_elementary",
+                                                   "access_foot_20_communitycentres_individual",
+                                                   "access_foot_15_fooddistribution_grocery",
+                                                   "access_car_10_healthcare_hospitals"),
                                     crs) {
   if (max(time_intervals) > 60) {
     stop(paste0(
@@ -160,6 +166,7 @@ ba_accessibility_points <- function(scales_variables_modules,
       group_diff = group_diff,
       theme = "Transport",
       private = FALSE,
+      pe_include = {var %in% pe_include},
       dates = with_breaks$avail_dates[[var]],
       scales = data_interpolated$avail_scales,
       breaks_q3 = with_breaks$q3_breaks_table[[var]],

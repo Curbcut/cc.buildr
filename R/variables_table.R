@@ -21,6 +21,7 @@ append_empty_variables_table <- function(scales_consolidated) {
       group_diff = list(),
       theme = character(),
       private = logical(),
+      pe_include = logical(),
       dates = list(),
       scales = list(),
       breaks_q3 = list(),
@@ -57,6 +58,8 @@ append_empty_variables_table <- function(scales_consolidated) {
 #' "Urban life", ...
 #' @param private <`logical`> If we have permissions to make the variable available
 #' for public download.
+#' @param pe_include <`logical`> Should this variable be included in the place
+#' explorer? Defaults to `TRUE`.
 #' @param dates <`character vector`> A vector of dates for which the data is available.
 #' @param scales <`data.frame`> All the scales at which the data is available
 #' arranged in a data.frame of two columns: \code{geo} and \code{scale}
@@ -77,8 +80,8 @@ append_empty_variables_table <- function(scales_consolidated) {
 add_variable <- function(variables, var_code, type, var_title,
                          var_short = as.character(var_title), explanation,
                          group_name = NA_character_, group_diff = list(),
-                         theme, private, dates, scales, breaks_q3,
-                         breaks_q5, source, interpolated) {
+                         theme, private, pe_include = TRUE, dates, scales,
+                         breaks_q3, breaks_q5, source, interpolated) {
   if (var_code %in% variables$var_code) {
     stop(paste0("`", var_code, "` is a duplicate."))
   }
@@ -92,6 +95,7 @@ add_variable <- function(variables, var_code, type, var_title,
       explanation = as.character(explanation),
       theme = as.character(theme),
       private = as.logical(private),
+      pe_include = as.logical(pe_include),
       source = as.character(source),
       group_name = as.character(group_name),
       dates = list(dates),

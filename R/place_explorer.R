@@ -664,7 +664,7 @@ placeex_main_card_rmd <- function(scales,
               # If the `name` column isn't alphabet
               if (!grepl("[a-z|A-Z]", scale_df$name[n])) {
 
-                name <- if (rev_geocode_localhost) {
+                name <- if (rev_geocode_from_localhost) {
                   cc.data::rev_geocode_localhost(scale_df[n, ])
                 } else {
                   cc.data::rev_geocode_OSM(scale_df[n, ])
@@ -693,7 +693,7 @@ placeex_main_card_rmd <- function(scales,
                 df = scale_name,
                 scale_sing = paste(
                   scale_sing,
-                  if (lan == en) "(count)" else if (lan == "fr") "(compte)"),
+                  if (lan == "en") "(count)" else if (lan == "fr") "(compte)"),
                 tileset_prefix = tileset_prefix,
                 map_loc = map_loc,
                 map_zoom = map_zoom,

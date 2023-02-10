@@ -24,7 +24,7 @@ third is the modules table.}
 
 \item{approximate_name_match}{<\code{logical}> CMHC zone naming can be different
 year to year (A single typo, or other). Should the function search for
-approximate matches to the name of the \code{cmhc_zone} table in
+approximate matches to the name of the \code{cmhczone} table in
 \code{scales_variables_modules}? Useful for Montreal where names are more or less
 unique and so an approximate match can be beneficial. less for Toronto where
 the name \code{York} is used in many different names.}

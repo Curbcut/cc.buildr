@@ -172,7 +172,7 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
 #' \code{\link[cancensus]{list_census_regions}}.
 #' @param approximate_name_match <`logical`> CMHC zone naming can be different
 #' year to year (A single typo, or other). Should the function search for
-#' approximate matches to the name of the `cmhc_zone` table in
+#' approximate matches to the name of the `cmhczone` table in
 #' `scales_variables_modules`? Useful for Montreal where names are more or less
 #' unique and so an approximate match can be beneficial. less for Toronto where
 #' the name `York` is used in many different names.
@@ -230,7 +230,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
             out$name <-
               sapply(out$name,
                 agrep,
-                x = scales_variables_modules$scales$cmhc$cmhc_zone$name,
+                x = scales_variables_modules$scales$cmhc$cmhczone$name,
                 value = TRUE, USE.NAMES = FALSE
               )
             if (!all(sapply(out$name, length) == 1)) {
@@ -252,7 +252,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
     Reduce(\(x, y) merge(x, y, by = "name", all.x = TRUE),
       cmhc,
       init = sf::st_drop_geometry(
-        scales_variables_modules$scales$cmhc$cmhc_zone
+        scales_variables_modules$scales$cmhc$cmhczone
       )[, "name"]
     )
 
@@ -261,8 +261,8 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
   unique_vars <- unique(gsub("_\\d{4}$", "", vars))
 
   # Append data
-  scales_variables_modules$scales$cmhc$cmhc_zone <-
-    merge(scales_variables_modules$scales$cmhc$cmhc_zone,
+  scales_variables_modules$scales$cmhc$cmhczone <-
+    merge(scales_variables_modules$scales$cmhc$cmhczone,
       merged,
       by = "name"
     )
@@ -437,6 +437,10 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
       group_diff <- list(paste("For", cat_title))
       names(group_diff) <- cat_group_name
 
+      # Include in place exporer
+      pe_include <-
+        if (grepl("2_bed$|2000_or_later$|1500_plus$", var)) TRUE else FALSE
+
       out <-
         add_variable(
           variables = scales_variables_modules$variables,
@@ -447,6 +451,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
           explanation = explanation,
           theme = "Housing",
           private = FALSE,
+          pe_include = pe_include,
           dates = with_breaks$avail_dates[[var]],
           scales = tibble::tibble(geo = "cmhc", scale = "zone"),
           breaks_q3 = with_breaks$q3_breaks_table[[var]],

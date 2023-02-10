@@ -10,6 +10,9 @@ ba_accessibility_points(
   themes = cc.data::list_accessibility_themes(),
   traveltimes,
   time_intervals = which(1:60\%\%5 == 0),
+  pe_include = c("access_foot_20_education_elementary",
+    "access_foot_20_communitycentres_individual",
+    "access_foot_15_fooddistribution_grocery", "access_car_10_healthcare_hospitals"),
   crs
 )
 }
@@ -30,6 +33,9 @@ between origin-destination pairs. The output of
 
 \item{time_intervals}{<\verb{numeric vector}> A vector of time intervals
 (in minutes) to calculate travel times for. Defaults to \code{c(5, 10, 15, ..., 60)}. 60 minutes is the maximum.}
+
+\item{pe_include}{<\verb{character vector}> Which final variables should appear
+in the place explorer. Defaults to \code{c("access_foot_20_education_elementary", "access_foot_20_communitycentres_individual", "access_foot_15_fooddistribution_grocery", "access_car_10_healthcare_hospitals")}.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}
