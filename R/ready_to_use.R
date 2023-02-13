@@ -1,6 +1,6 @@
 #' Add a ready to use Can-ALE data and module
 #'
-#' @param scales_variables_modules <`names list`> A list of length three.
+#' @param scales_variables_modules <`named list`> A list of length three.
 #' The first is all the scales, the second is the variables table, and the
 #' third is the modules table.
 #' @param region_DA_IDs <`character vector`> All the current census'
@@ -88,7 +88,7 @@ ru_canale <- function(scales_variables_modules, region_DA_IDs, crs) {
 
 #' Add a ready to use Can-BICS data and module
 #'
-#' @param scales_variables_modules <`names list`> A list of length three.
+#' @param scales_variables_modules <`named list`> A list of length three.
 #' The first is all the scales, the second is the variables table, and the
 #' third is the modules table.
 #' @param region_DA_IDs <`character vector`> All the current census'
@@ -163,7 +163,7 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
 
 #' Add a ready to use Vacancy Rate data and module
 #'
-#' @param scales_variables_modules <`names list`> A list of length three.
+#' @param scales_variables_modules <`named list`> A list of length three.
 #' The first is all the scales, the second is the variables table, and the
 #' third is the modules table.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.

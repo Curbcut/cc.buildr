@@ -392,7 +392,7 @@ placeex_main_card_prep_output_en <- function(data, dict, region, df, select_id,
   data_s <- data[data$ID == select_id, ]
   if ({
     length(data_s$var) == 0
-  } || {
+  } | {
     is.na(data_s$var)
   }) {
     return(NULL)
@@ -588,9 +588,9 @@ placeex_main_card_final_output <- function(pe_main_card_data, region, df, select
 
 #' Pre-process all the possible Rmds
 #'
-#' @param scales <`list`> Lists of spatial features dataframes with regions and
-#' scales filled with at minimum census and canale data. Usually is
-#' `scales_variables_modules$scales`.
+#' @param scales_variables_modules <`named list`> A list of length three.
+#' The first is all the scales, the second is the variables table, and the
+#' third is the modules table.
 #' @param pe_main_card_data <`list`> Data and dictionary necessary to knit the
 #' rmds. The output of \code{\link[cc.buildr]{placeex_main_card_data}}.
 #' @param regions_dictionary <`data.frame`> The regions dictionary built using
@@ -598,9 +598,6 @@ placeex_main_card_final_output <- function(pe_main_card_data, region, df, select
 #' for which data should not be calculated.
 #' @param scales_dictionary <`data.frame`> The scales dictionary built using
 #' \code{\link[cc.buildr]{build_census_scales}}
-#' @param out_folder <`character`> Folder where all the place explorer HTML
-#' documents should be saved. Must be in the www folder to be used by the
-#' shinyapp. Defaults to `www/place_explorer/`
 #' @param lang <`character`> If the Curbcut instance is bilingual, we can use
 #' `c("en", "fr")` and HTML will be built for both languages. Defaults to `"en"`.
 #' @param tileset_prefix <`character`> Prefix attached to every tile source and
@@ -611,19 +608,25 @@ placeex_main_card_final_output <- function(pe_main_card_data, region, df, select
 #' TRUE, there must be a local instance of Nominatim runnin on localhost port 8080.
 #' If set to FALSE, the reverse geolocation will be done using
 #' \code{\link[cc.data]{rev_geocode_OSM}}, which uses a remote server (photon.komoot.io).
+#' @param check_bslib_version <`logical`> The `bslib` library do not allow to
+#' style individually each tab in a navigation bar. As we want to color each
+#' tab depending on how much of an outlier the zone is in each theme, we have to
+#' add `class` arguments to the navigation bar's list creation. This version can
+#' be found at `devtools::install_github('bdbmax/bslib')`. Defaults to `TRUE.`
+#' Set `FALSE` to continue with the version of `bslib` on your system.
 #'
 #' @return Returns nothing if successful. All place explorer possibilities are
 #' saved in the `out_folder`.
 #' @export
-placeex_main_card_rmd <- function(scales,
+placeex_main_card_rmd <- function(scales_variables_modules,
                                   pe_main_card_data,
                                   regions_dictionary,
                                   scales_dictionary,
-                                  out_folder = "www/place_explorer/",
                                   lang = "en",
                                   tileset_prefix,
                                   mapbox_username = "sus-mcgill",
-                                  rev_geocode_from_localhost = FALSE) {
+                                  rev_geocode_from_localhost = FALSE,
+                                  check_bslib_version = TRUE) {
   if (!requireNamespace("rmarkdown", quietly = TRUE)) {
     stop(
       "Package \"rmarkdown\" must be installed to use this function.",
@@ -631,18 +634,32 @@ placeex_main_card_rmd <- function(scales,
     )
   }
 
+  if (check_bslib_version) {
+    if (packageVersion("bslib") != "9.9.9.9999") {
+      stop(paste0("Wrong version of `bslib`. Place explorer tabs won't be ",
+                  "colored according to how much of an outlier the zone is for ",
+                  "every theme. To ignore, set `check_bslib_version = FALSE`. ",
+                  "To build with colored tabs, install ",
+                  "`devtools::install_github('bdbmax/bslib')`"))
+    }
+  }
+
 
   # Setup -------------------------------------------------------------------
 
-  dir.create(out_folder)
+  variables <- scales_variables_modules$variables
+
+  out_folder <-  "www/place_explorer"
+  if (!out_folder %in% list.files("www", full.names = TRUE)) dir.create(out_folder)
   if (!grepl("/$", out_folder)) out_folder <- paste0(out_folder, "/")
 
-  all_tables <- reconstruct_all_tables(scales)
+  all_tables <- reconstruct_all_tables(scales_variables_modules$scales)
   regions <- regions_dictionary$geo[regions_dictionary$pickable]
   all_tables <- all_tables[names(all_tables) %in% regions]
   all_tables <- lapply(all_tables, \(scales) scales[!scales %in% c("building", "street")])
 
   possible_scales <- mapply(\(region, scale) {
+    scales <- scales_variables_modules$scales
     scales[[region]][names(scales[[region]]) %in% scale]
   }, names(all_tables), all_tables, SIMPLIFY = FALSE)
 
@@ -658,9 +675,9 @@ placeex_main_card_rmd <- function(scales,
   title_card_data <-
     placeex_main_card_final_output(
       pe_main_card_data = pe_main_card_data,
-      region = names(scales)[1],
-      df = names(scales[[1]])[1],
-      select_id = scales[[1]][[1]]$ID[1],
+      region = names(possible_scales)[1],
+      df = names(possible_scales[[1]])[1],
+      select_id = possible_scales[[1]][[1]]$ID[1],
       scales_dictionary = scales_dictionary,
       regions_dictionary = regions_dictionary
     )
@@ -668,15 +685,17 @@ placeex_main_card_rmd <- function(scales,
   rmarkdown::render(inp,
     output_file = header_file,
     params = list(
-      select_id = scales[[1]][[1]]$ID[1],
-      region = names(scales)[1],
-      df = names(scales[[1]])[1],
+      select_id = possible_scales[[1]][[1]]$ID[1],
+      region = names(possible_scales)[1],
+      df = names(possible_scales[[1]])[1],
       scale_sing = "",
       tileset_prefix = tileset_prefix,
-      map_loc = scales[[1]][[1]]$centroid[[1]],
+      map_loc = possible_scales[[1]][[1]]$centroid[[1]],
       map_zoom = 10,
       mapbox_username = mapbox_username,
-      title_card_data = title_card_data
+      title_card_data = title_card_data,
+      variables = variables,
+      scale_df = sf::st_drop_geometry(possible_scales[[1]][[1]])
     ), envir = new.env(), quiet = TRUE
   )
 
@@ -691,11 +710,11 @@ placeex_main_card_rmd <- function(scales,
   # Iterate over all possibilities ------------------------------------------
 
   progressr::with_progress({
-    pb <- progressr::progressor(steps = sapply(
-      possible_scales, sapply, nrow
-    ) |> sum() * length(lang))
+    pb <- progressr::progressor(steps = sum(
+      unlist(sapply(possible_scales,
+                    sapply, nrow))) * length(lang))
     lapply(lang, \(lan) {
-      inp <- system.file(paste0("place_explorer_rmd/pe_main_card_", lan, ".Rmd"),
+      inp <- system.file(paste0("place_explorer_rmd/pe_", lan, ".Rmd"),
         package = "cc.buildr"
       )
 
@@ -704,6 +723,7 @@ placeex_main_card_rmd <- function(scales,
         scales <- possible_scales[[region_n]]
 
         lapply(seq_along(scales), \(scale_n) {
+
           scale_name <- names(scales)[scale_n]
           scale_df <- scales[[scale_n]]
           scale_df <- suppressWarnings(sf::st_centroid(scale_df))
@@ -742,7 +762,7 @@ placeex_main_card_rmd <- function(scales,
 
             output_file <- paste0(getwd(), "/", out_folder, geo_sc_id, ".html")
 
-            # # Add title
+            # Add title
             title <-
               # If the `name` column isn't alphabet
               if (!grepl("[a-z|A-Z]", scale_df$name[n])) {
@@ -786,7 +806,9 @@ placeex_main_card_rmd <- function(scales,
                 map_loc = map_loc,
                 map_zoom = map_zoom,
                 mapbox_username = mapbox_username,
-                title_card_data = title_card_data
+                title_card_data = title_card_data,
+                variables = variables,
+                scale_df = sf::st_drop_geometry(scale_df)
               ), envir = new.env(), quiet = TRUE
             )
 

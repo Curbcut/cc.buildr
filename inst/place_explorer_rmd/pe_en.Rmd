@@ -1,0 +1,405 @@
+---
+title: "`r params$title`"
+output:
+  html_document:
+    theme: 
+      bg: "#ffffff" 
+      fg: "#7f7f7f"
+      primary: "#4a5c83"
+      base_font: !expr bslib::font_google("Outfit")
+      heading_font: !expr bslib::font_google("Source Sans Pro")
+      code_font: !expr bslib::font_google("Outfit")
+      code-color: skyblue
+      font-base-size: 1.25rem
+params: 
+    title: "Main indicators"
+    select_id: "24663185"
+    region: "CMA"
+    df: "DA"
+    tileset_prefix: "mtl"
+    scale_sing: "Dissemination area (count)"
+    map_loc: c("lat", "lon")
+    map_zoom: 13.75
+    mapbox_username: "sus-mcgill"
+    title_card_data: ""
+    variables: ""
+    scale_df: ""
+---
+
+```{css, echo=FALSE}
+.bg-col_pe_1 {
+  background-color:#CA002095;
+  color:#ffffff;
+  border-radius: 5px;
+}
+
+.bg-col_pe_2 {
+  background-color:#F4A58295;
+  color:#222222;
+  border-radius: 5px;
+}
+
+.bg-col_pe_3 {
+  background-color:#A9A9A995;
+  color:#222222;
+  border-radius: 5px;
+}
+
+.bg-col_pe_4 {
+  background-color:#BAE4B395;
+  color:#222222;
+  border-radius: 5px;
+}
+
+.bg-col_pe_5 {
+  background-color:#31A35495;
+  color:#ffffff;
+  border-radius: 5px;
+}
+
+.bg-col_no_data {
+  background-color:#22222222;
+  color:#ffffff;
+  border-radius: 5px;
+}
+
+.bg-tab_class_1 {
+  background-color:#6c83b5;
+  color:#ffffff;
+  border-radius: 5px;
+}
+
+.bg-tab_class_2 {
+  background-color:#8b9dc5;
+  color:#ffffff;
+  border-radius: 5px;
+}
+
+.bg-tab_class_3 {
+  background-color:#aab7d5;
+  color:#222222;
+  border-radius: 5px;
+}
+
+.bg-tab_class_4 {
+  background-color:#cad2e4;
+  color:#222222;
+  border-radius: 5px;
+}
+
+.bg-tab_class_5 {
+  background-color:#eaedf4;
+  color:#222222;
+  border-radius: 5px;
+}
+
+.bg-tab_class_no_data {
+  background-color:#22222222;
+  color:#ffffff;
+  border-radius: 5px;
+}
+
+```
+
+
+```{r map, echo = FALSE}
+
+with_data <- params$title_card_data[sapply(params$title_card_data, \(x)  "hex_cat" %in% names(x))]
+
+# Decide which color for the map
+hexes <- c("#CA002095", "#F4A58295", "#A9A9A995", "#BAE4B395", "#31A35495")
+mean_hex <- round(mean(sapply(with_data, `[[`, "hex_cat")))
+map_col <- hexes[mean_hex]
+map_col_light <- gsub("95$", "20", map_col)
+
+# Necessary for the mapdeck
+map_token <- paste0("pk.eyJ1Ijoic3VzLW1jZ2lsbCIsImEiOiJjbDBxMTcyNWwyNTl0M2",
+                    "RtZzRremNxOHA3In0.V2Ah5lxy-3RZlF2QKOvIjg")
+options(rdeck.mapbox_access_token = map_token)
+map_style_building <- "mapbox://styles/sus-mcgill/cl2bwtrsp000516rwyrkt9ior"
+
+map <- rdeck::rdeck(map_style = map_style_building, initial_view_state = rdeck::view_state(
+    center = params$map_loc, zoom = params$map_zoom), width = "100%", height = "200px") |>
+    rdeck::add_mvt_layer(
+        id = "study",
+        data = rdeck::mvt_url(paste0(params$mapbox_username, ".", params$tileset_prefix, "_", params$region, "_", params$df)),
+        pickable = FALSE,
+        auto_highlight = FALSE,
+        get_fill_color = rdeck::scale_color_category(
+            col = ID,
+            palette = c(map_col_light, "#BAE4B300"),
+            unmapped_color = "#BAE4B300",
+            levels = c(params$select_id, "NA"),
+            legend = FALSE),
+        get_line_color = rdeck::scale_color_category(
+            col = ID,
+            palette = c(map_col, "#BAE4B300"),
+            unmapped_color = "#BAE4B300",
+            levels = c(params$select_id, "NA"),
+            legend = FALSE),
+        line_width_units = "pixels",
+        get_line_width = 5) |> suppressWarnings()
+
+```
+
+```{r plotlies, echo = FALSE}
+
+vline <- function(x = 0) {
+  list(
+    type = "line",
+    y0 = 0,
+    y1 = 1,
+    yref = "paper",
+    x0 = x,
+    x1 = x,
+    line = list(color = "#222222")
+  )
+}
+
+plotlies <- lapply(with_data, \(ind) {
+  
+  this_dat <- ind$data$var[ind$data$ID == params$select_id]
+  
+  plot <- plotly::plot_ly(ind$data)
+  plot <- plotly::add_histogram(plot, x = ~var,
+                                color = I("white"),
+                                alpha = 0.75,
+                                hoverinfo = "x")
+  plot <- plotly::layout(
+    plot,
+    xaxis = list(visible = F, showgrid = F, title = ind$xaxis_title),
+    yaxis = list(visible = F, showgrid = F, title = params$scale_sing),
+    hovermode = "x",
+    margin = list(t = 0, r = 0, l = 0, b = 0),
+    font = list(color = "white"),
+    paper_bgcolor = "transparent",
+    plot_bgcolor = "transparent",
+    shapes = list(vline(this_dat))
+  )
+  plot <-  plotly::config(plot, displayModeBar = F)
+  plot <- htmlwidgets::onRender(plot, 
+                                "function(el) {
+      var ro = new ResizeObserver(function() {
+         var visible = el.offsetHeight > 200;
+         Plotly.relayout(el, {'xaxis.visible': visible});
+         Plotly.relayout(el, {'yaxis.visible': visible});
+      });
+      ro.observe(el);
+    }"
+  )
+})
+
+```
+
+
+```{r main_card, echo = FALSE, warning = FALSE}
+
+boxes <- mapply(\(ind, ind_name) {
+    
+    # If no data
+    if (is.character(ind)) {
+        bslib::value_box(
+            title = htmltools::p(ind$row_title, bsicons::bs_icon(ind$bs_icon)),
+            value = ind$percentile,
+            theme_color = paste0("col_pe_", "no_data"),
+            full_screen = FALSE
+        )
+        # If data
+    } else {
+        bslib::value_box(
+            title = htmltools::p(ind$row_title, bsicons::bs_icon(ind$bs_icon)),
+            value = ind$percentile,
+            showcase = plotlies[[ind_name]],
+            htmltools::p(htmltools::HTML(ind$text)),
+            full_screen = TRUE,
+            theme_color = paste0("col_pe_", ind$hex_cat)
+        )
+    }
+    
+}, params$title_card_data, names(params$title_card_data), SIMPLIFY = FALSE)
+
+main_card <- do.call(bslib::layout_column_wrap, c(list(width = 1/2), unname(boxes)))
+main_card <- bslib::nav(
+    "Main card",
+    htmltools::br(),
+    bslib::card_body_fill(map),
+    bslib::card_body_fill(main_card)
+)
+
+```
+
+```{r themes, echo = FALSE, warning = FALSE}
+
+
+mc_df_format <- function(df) {
+    if (ncol(df) > 2) {
+        stop("Only two columns needed. ID and variable.")
+    }
+    # Rename the variable to generic
+    names(df)[2] <- "var"
+    df$percentile <- {
+        (rank(df$var, ties.method = "min", na.last = "keep") - 1) /
+            (sum(!is.na(df$var)) - 1)
+    }
+    df$rank <- rank(df$var)
+    df$var[is.na(df$var)] <- NA
+    df$var[is.infinite(df$var)] <- NA
+    return(df)
+}
+
+ordinal_form <- function(x) {
+    
+    x <- round(x*100)
+    
+    if (x > 20) {
+        if (x %% 100 %in% c(11, 12, 13)) {
+            form <- "th "
+        } else {
+            form <- switch(as.character(x %% 10),
+                           "1" = "st",
+                           "2" = "nd",
+                           "3" = "rd",
+                           "th"
+            )
+        }
+        paste0(x, form)
+    } else {
+        switch(as.character(x),
+               "1" = "",
+               "2" = "2nd",
+               "3" = "3rd",
+               paste0(as.character(x), "th")
+        )
+    }
+}
+
+all_themes <- unique(params$variables$theme[params$variables$pe_include])
+
+contents <- lapply(all_themes, \(t) {
+    
+    vars <- params$variables$var_code[params$variables$theme == t &
+                                          params$variables$pe_include]
+    
+    # Create all the cards
+    cards <- lapply(vars, \(var) {
+        date <- max(params$variables$dates[var == params$variables$var_code][[1]])
+        type <- params$variables$type[var == params$variables$var_code]
+        explanation <- params$variables$explanation[var == params$variables$var_code]
+        title <- params$variables$var_title[var == params$variables$var_code]
+        
+        v <- paste(var, date, sep = "_")
+        if (!v %in% names(scale_df)) return(NULL)
+        
+        out <- params$scale_df[c("ID", v)]
+        out <- sf::st_drop_geometry(out)
+        out <- mc_df_format(out)
+        val <- out$var[out$ID == params$select_id]
+        if (is.na(val)) return(NULL)
+        
+        val <- (\(x) {
+            if ("pct" %in% type) return(scales::percent(val, accuracy = 0.1))
+            if ("dollar" %in% type) return(scales::dollar(val, 1))
+            round(val, 2)
+        })()
+        
+        percentile <- out$percentile[out$ID == params$select_id]
+        
+        color <- (\(x) {
+            x <- abs(percentile - 0.5)
+            if (x >= 0.4) return(1)
+            if (x >= 0.3) return(2)
+            if (x >= 0.2) return(3)
+            if (x >= 0.1) return(4)
+            if (x >= 0) return(5)
+            return("no_data")
+        })()
+        
+        plot <- 
+            ggplot2::ggplot(out[1:2]) +
+            ggplot2::geom_density(ggplot2::aes(x = var), size = 0.3, color = "#48494B") +
+            ggplot2::geom_vline(ggplot2::aes(xintercept = out$var[out$ID == params$select_id]), color = "#000000", linewidth = 0.15,
+                                alpha = 1) +
+            ggplot2::theme_void(base_size = 100)
+        # Make the ggplot HTML friendly
+        tmp <- tempfile(fileext = ".png")
+        ggplot2::ggsave(plot = plot, filename = tmp, width = 110, height = 50,
+                        units = "px")
+        
+        txt <- RCurl::base64Encode(readBin(tmp, "raw", file.info(tmp)[1, "size"]), "txt")
+        myImage <- htmltools::HTML(sprintf('<img src="data:image/png;base64,%s">', txt))
+        
+        
+        list(box = bslib::value_box(
+            title = htmltools::p(title),
+            value = paste0(ordinal_form(percentile), " percentile"),
+            showcase = myImage ,
+            htmltools::p(htmltools::HTML(paste0("The zone has a value of <b>", val, "</b> in ", explanation, "."))),
+            full_screen = FALSE,
+            theme_color = paste0("tab_class_", color)
+        ),
+        ranking = abs(percentile - 0.5))
+        
+    })
+    
+    cards <- cards[!sapply(cards, is.null)]
+    if (length(cards) == 0) return(NULL)
+    
+    # Order the cards in order of relevance (highest/lowest percentile)
+    ranks <- sapply(cards, `[[`, "ranking")
+    ranking <- mean(ranks)
+    ordered_index <- order(ranks, decreasing = TRUE)
+    cards <- cards[ordered_index]
+    cards <- lapply(cards, `[[`, "box")
+    
+    # Create the layout
+    cards <- do.call(bslib::layout_column_wrap, c(list(width = 1/2), unname(cards)))
+    list(nav = bslib::nav(t, htmltools::br(), bslib::card_body_fill(cards)),
+         ranking = ranking)
+})
+
+contents <- contents[!sapply(contents, is.null)]
+# Order the contents in order of relevance (highest/lowest percentile)
+ranks <- sapply(contents, `[[`, "ranking")
+ordered_index <- order(ranks, decreasing = TRUE)
+contents <- contents[ordered_index]
+contents <- lapply(contents, `[[`, "nav")
+
+# Decide the color of the tabs
+which_class <- sapply(ranks[ordered_index], \(r) {
+    r <- (\(x) {
+        if (r >= 0.4) return(1)
+        if (r >= 0.3) return(2)
+        if (r >= 0.2) return(3)
+        if (r >= 0.1) return(4)
+        if (r >= 0) return(5)
+        return("no_data")
+    })()
+    paste0("bg-tab_class_", r)
+}, USE.NAMES = FALSE)
+
+```
+
+```{r legend, echo = FALSE, warning = FALSE, fig.height = 0.575, out.width = "100%"}
+# ranks <- data.frame(x = c(1,2,3,4,5), 
+#                     y = c(1,1,1,1,1),
+#                     fill = c("#6C83B5", "#8B9DC5", "#AAB7D5", "#CAD2E4", "#EAEDF4"))
+# ranks |> 
+#   ggplot(aes(xmin = x - 1, xmax = x, ymin = y - 1, ymax = y, 
+#              fill = fill)) +
+#   geom_rect() + 
+#   scale_x_continuous(breaks = c(1,2,3,4,5) - 0.5, 
+#                      labels = c("Outlier", "", "", "", "Normal")) +
+#   scale_y_continuous(labels = NULL) +
+#   scale_fill_manual(values = setNames(ranks$fill, ranks$fill)) +
+#   labs(x = NULL, y = NULL) + 
+#   theme_minimal() +
+#   theme(text = element_text(family = "SourceSansPro", size = 8),
+#         legend.position = "none", 
+#         panel.grid = element_blank())
+```
+
+```{r navbar, echo = FALSE, warning = FALSE}
+
+do.call(bslib::navs_pill, c(list(li_classes = c(paste0("bg-col_pe_", mean_hex), which_class)), list(main_card), contents))
+
+```

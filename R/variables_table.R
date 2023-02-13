@@ -13,7 +13,7 @@ append_empty_variables_table <- function(scales_consolidated) {
   variables <-
     tibble::tibble(
       var_code = character(),
-      type = character(),
+      type = list(),
       var_title = character(),
       var_short = character(),
       explanation = character(),
@@ -89,7 +89,7 @@ add_variable <- function(variables, var_code, type, var_title,
   new_variable <-
     tibble::tibble(
       var_code = as.character(var_code),
-      type = as.character(type),
+      type = list(type),
       var_title = as.character(var_title),
       var_short = as.character(var_short),
       explanation = as.character(explanation),

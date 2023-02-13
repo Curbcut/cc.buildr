@@ -5,21 +5,21 @@
 \title{Pre-process all the possible Rmds}
 \usage{
 placeex_main_card_rmd(
-  scales,
+  scales_variables_modules,
   pe_main_card_data,
   regions_dictionary,
   scales_dictionary,
-  out_folder = "www/place_explorer/",
   lang = "en",
   tileset_prefix,
   mapbox_username = "sus-mcgill",
-  rev_geocode_from_localhost = FALSE
+  rev_geocode_from_localhost = FALSE,
+  check_bslib_version = TRUE
 )
 }
 \arguments{
-\item{scales}{<\code{list}> Lists of spatial features dataframes with regions and
-scales filled with at minimum census and canale data. Usually is
-\code{scales_variables_modules$scales}.}
+\item{scales_variables_modules}{<\verb{named list}> A list of length three.
+The first is all the scales, the second is the variables table, and the
+third is the modules table.}
 
 \item{pe_main_card_data}{<\code{list}> Data and dictionary necessary to knit the
 rmds. The output of \code{\link[cc.buildr]{placeex_main_card_data}}.}
@@ -30,10 +30,6 @@ for which data should not be calculated.}
 
 \item{scales_dictionary}{<\code{data.frame}> The scales dictionary built using
 \code{\link[cc.buildr]{build_census_scales}}}
-
-\item{out_folder}{<\code{character}> Folder where all the place explorer HTML
-documents should be saved. Must be in the www folder to be used by the
-shinyapp. Defaults to \verb{www/place_explorer/}}
 
 \item{lang}{<\code{character}> If the Curbcut instance is bilingual, we can use
 \code{c("en", "fr")} and HTML will be built for both languages. Defaults to \code{"en"}.}
@@ -48,6 +44,13 @@ for reverse geocoding, using \code{\link[cc.data]{rev_geocode_localhost}}. If
 TRUE, there must be a local instance of Nominatim runnin on localhost port 8080.
 If set to FALSE, the reverse geolocation will be done using
 \code{\link[cc.data]{rev_geocode_OSM}}, which uses a remote server (photon.komoot.io).}
+
+\item{check_bslib_version}{<\code{logical}> The \code{bslib} library do not allow to
+style individually each tab in a navigation bar. As we want to color each
+tab depending on how much of an outlier the zone is in each theme, we have to
+add \code{class} arguments to the navigation bar's list creation. This version can
+be found at \code{devtools::install_github('bdbmax/bslib')}. Defaults to \code{TRUE.}
+Set \code{FALSE} to continue with the version of \code{bslib} on your system.}
 }
 \value{
 Returns nothing if successful. All place explorer possibilities are

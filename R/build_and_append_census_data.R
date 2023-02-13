@@ -1,6 +1,6 @@
 #' Build and append census data
 #'
-#' @param scales_variables_modules <`names list`> A list of length three.
+#' @param scales_variables_modules <`named list`> A list of length three.
 #' The first is all the scales, the second is the variables table, and the
 #' third is the modules table.
 #' @param region_DA_IDs <`character vector`> All the current census'
