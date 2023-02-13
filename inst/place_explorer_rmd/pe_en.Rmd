@@ -288,7 +288,7 @@ contents <- lapply(all_themes, \(t) {
         title <- params$variables$var_title[var == params$variables$var_code]
         
         v <- paste(var, date, sep = "_")
-        if (!v %in% names(scale_df)) return(NULL)
+        if (!v %in% names(params$scale_df)) return(NULL)
         
         out <- params$scale_df[c("ID", v)]
         out <- sf::st_drop_geometry(out)

@@ -666,7 +666,7 @@ placeex_main_card_rmd <- function(scales_variables_modules,
 
   # Get the head file -------------------------------------------------------
 
-  inp <- system.file(paste0("place_explorer_rmd/pe_main_card_en.Rmd"),
+  inp <- system.file(paste0("place_explorer_rmd/pe_en.Rmd"),
     package = "cc.buildr"
   )
 
