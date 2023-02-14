@@ -13,7 +13,8 @@ placeex_main_card_rmd(
   tileset_prefix,
   mapbox_username = "sus-mcgill",
   rev_geocode_from_localhost = FALSE,
-  check_bslib_version = TRUE
+  check_bslib_version = TRUE,
+  overwrite = TRUE
 )
 }
 \arguments{
@@ -51,6 +52,9 @@ tab depending on how much of an outlier the zone is in each theme, we have to
 add \code{class} arguments to the navigation bar's list creation. This version can
 be found at \code{devtools::install_github('bdbmax/bslib')}. Defaults to \code{TRUE.}
 Set \code{FALSE} to continue with the version of \code{bslib} on your system.}
+
+\item{overwrite}{<\code{logical}> Should the .html files be overwritten? Defaults
+to \code{TRUE}.}
 }
 \value{
 Returns nothing if successful. All place explorer possibilities are

@@ -195,9 +195,25 @@ plotlies <- lapply(with_data, \(ind) {
 ```{r main_card, echo = FALSE, warning = FALSE}
 
 boxes <- mapply(\(ind, ind_name) {
+
+# Construct link
+if (!ind$percentile == "No data.") {
+    link <- 
+        if (!is.na(ind$link_module)) {
+            out <- paste0("/?tb=", ind$link_module, "&zm=", params$map_zoom, "&lat=", round(params$map_loc[2], digits = 4), "&lon=", round(params$map_loc[1], digits = 4), "&s_id=", params$select_id)
+            if (!is.na(ind$link_var)) {
+                out <- paste0(out, "&v_l=", ind$link_var)
+            }
+            out
+        } else NULL
+    
+    if (!is.null(link)) {
+        ind$text <- paste0(ind$text, " <a href = ", link, " target='_parent'>[VIEW ON MAP]</a>")
+    }}
+
     
     # If no data
-    if (is.character(ind)) {
+    if (ind$percentile == "No data.") {
         bslib::value_box(
             title = htmltools::p(ind$row_title, bsicons::bs_icon(ind$bs_icon)),
             value = ind$percentile,
@@ -283,7 +299,7 @@ contents <- lapply(all_themes, \(t) {
     # Create all the cards
     cards <- lapply(vars, \(var) {
         date <- max(params$variables$dates[var == params$variables$var_code][[1]])
-        type <- params$variables$type[var == params$variables$var_code]
+        type <- unlist(params$variables$type[var == params$variables$var_code])
         explanation <- params$variables$explanation[var == params$variables$var_code]
         title <- params$variables$var_title[var == params$variables$var_code]
         
@@ -299,7 +315,7 @@ contents <- lapply(all_themes, \(t) {
         val <- (\(x) {
             if ("pct" %in% type) return(scales::percent(val, accuracy = 0.1))
             if ("dollar" %in% type) return(scales::dollar(val, 1))
-            round(val, 2)
+            prettyNum(round(val, 2), big.mark = ",")
         })()
         
         percentile <- out$percentile[out$ID == params$select_id]

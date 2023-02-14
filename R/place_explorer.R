@@ -29,7 +29,9 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
     percent = logical(),
     high_is_good = logical(),
     val_digit = 0,
-    text = character()
+    text = character(),
+    link_module = character(),
+    link_var = numeric()
   )
   data <- list()
 
@@ -72,10 +74,11 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
       high_is_good = FALSE,
       val_digit = 1,
       text = paste0(
-        "{z$data_rank} in terms of level of NO2 pollution. ",
+        "{z$data_rank} in terms of level of <a href = 'https://www.canuedata.ca/tmp/CANUE_METADATA_NO2LUR_A_YY.pdf'>NO2</a> pollution. ",
         "{higher_than_threshold}(NO2 = {z$pretty_data_var}, ",
-        "data from {z$data_date})"
-      )
+        "data from {z$data_date})"),
+      link_module = NA,
+      link_var = NA
     )
   dict <- rbind(dict, no2_dict)
 
@@ -128,11 +131,13 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
       high_is_good = TRUE,
       val_digit = 0,
       text = paste0(
-        "{z$data_rank} in terms of vegetation (<a href='https://",
-        "www.canuedata.ca/tmp/CANUE_METADATA_GRAVH_AMN_YY.pdf' ",
+        "{z$data_rank} in terms of vegetation (<a href='https://canue.ca/wp-c",
+        "ontent/uploads/2018/11/CANUE-Metadata-NDVI-Landsat-Annual.pdf' ",
         "target='_blank'>NDVI</a> = {z$pretty_data_var}, data ",
         "from {z$data_date})"
-      )
+      ),
+      link_module = NA,
+      link_var = NA
     )
   dict <- rbind(dict, ndvi_dict)
 
@@ -188,7 +193,9 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
         "{z$pretty_data_var} of residents use public transit, ",
         "walk or bicycle to get to work. {z$data_rank}. ",
         "(Data from {z$data_date})"
-      )
+      ),
+      link_module = NA,
+      link_var = NA
     )
   dict <- rbind(dict, sust_dict)
 
@@ -232,7 +239,9 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
       text = paste0(
         "{z$pretty_data_var} of occupied dwellings are single-det",
         "ached houses. {z$data_rank}. (Data from {z$data_date})"
-      )
+      ),
+      link_module = "housing",
+      link_var = 11
     )
   dict <- rbind(dict, singled_dict)
 
@@ -275,7 +284,9 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
       text = paste0(
         "{z$data_rank} in terms of active living. (Data from ",
         "{z$data_date})"
-      )
+      ),
+      link_module = "canale",
+      link_var = NA
     )
   dict <- rbind(dict, activel_dict)
 
@@ -575,7 +586,9 @@ placeex_main_card_final_output <- function(pe_main_card_data, region, df, select
       hex_cat = z$hex_cat,
       bs_icon = dict$bs_icon,
       xaxis_title = dict$xaxis_title,
-      data = data
+      data = data,
+      link_module = dict$link_module,
+      link_var = dict$link_var
     )
   })
 
@@ -614,6 +627,8 @@ placeex_main_card_final_output <- function(pe_main_card_data, region, df, select
 #' add `class` arguments to the navigation bar's list creation. This version can
 #' be found at `devtools::install_github('bdbmax/bslib')`. Defaults to `TRUE.`
 #' Set `FALSE` to continue with the version of `bslib` on your system.
+#' @param overwrite <`logical`> Should the .html files be overwritten? Defaults
+#' to `TRUE`.
 #'
 #' @return Returns nothing if successful. All place explorer possibilities are
 #' saved in the `out_folder`.
@@ -626,7 +641,8 @@ placeex_main_card_rmd <- function(scales_variables_modules,
                                   tileset_prefix,
                                   mapbox_username = "sus-mcgill",
                                   rev_geocode_from_localhost = FALSE,
-                                  check_bslib_version = TRUE) {
+                                  check_bslib_version = TRUE,
+                                  overwrite = TRUE) {
   if (!requireNamespace("rmarkdown", quietly = TRUE)) {
     stop(
       "Package \"rmarkdown\" must be installed to use this function.",
@@ -635,7 +651,7 @@ placeex_main_card_rmd <- function(scales_variables_modules,
   }
 
   if (check_bslib_version) {
-    if (packageVersion("bslib") != "9.9.9.9999") {
+    if (utils::packageVersion("bslib") != "9.9.9.9999") {
       stop(paste0("Wrong version of `bslib`. Place explorer tabs won't be ",
                   "colored according to how much of an outlier the zone is for ",
                   "every theme. To ignore, set `check_bslib_version = FALSE`. ",
@@ -709,6 +725,8 @@ placeex_main_card_rmd <- function(scales_variables_modules,
 
   # Iterate over all possibilities ------------------------------------------
 
+  all_files <- list.files(out_folder, full.names = TRUE)
+
   progressr::with_progress({
     pb <- progressr::progressor(steps = sum(
       unlist(sapply(possible_scales,
@@ -731,8 +749,18 @@ placeex_main_card_rmd <- function(scales_variables_modules,
             scales_dictionary$slider_title[scales_dictionary$scale == scale_name]
 
           future.apply::future_lapply(seq_along(scale_df$ID), \(n) {
-            # Setup all necessary input
+
+            # If exists, pass
             ID <- scale_df$ID[n]
+            geo_sc_id <- paste(region, scale_name, ID, lan, sep = "_")
+            output_file <- paste0(out_folder, geo_sc_id, ".html")
+            if (!overwrite & output_file %in% all_files) {
+                pb()
+                return(NULL)
+            }
+            output_file <- paste0(getwd(), "/", out_folder, geo_sc_id, ".html")
+
+            # Setup all necessary input
             map_loc <- scale_df$centroid[[n]]
             title_card_data <-
               placeex_main_card_final_output(
@@ -753,14 +781,11 @@ placeex_main_card_rmd <- function(scales_variables_modules,
               # For first level
               return(10)
             })()
-            geo_sc_id <- paste(region, scale_name, ID, lan, sep = "_")
 
             # Setup temporary .kmit.md files to not have names crashing on
             # each other when using parallelization
             new_rmd <- tempfile(pattern = geo_sc_id, fileext = ".Rmd")
             file.copy(inp, new_rmd)
-
-            output_file <- paste0(getwd(), "/", out_folder, geo_sc_id, ".html")
 
             # Add title
             title <-
