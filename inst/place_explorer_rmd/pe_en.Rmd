@@ -281,7 +281,7 @@ ordinal_form <- function(x) {
         paste0(x, form)
     } else {
         switch(as.character(x),
-               "1" = "",
+               "1" = "1st",
                "2" = "2nd",
                "3" = "3rd",
                paste0(as.character(x), "th")
