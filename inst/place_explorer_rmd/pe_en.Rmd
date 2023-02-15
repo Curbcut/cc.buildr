@@ -118,7 +118,8 @@ map_token <- paste0("pk.eyJ1Ijoic3VzLW1jZ2lsbCIsImEiOiJjbDBxMTcyNWwyNTl0M2",
 options(rdeck.mapbox_access_token = map_token)
 map_style_building <- "mapbox://styles/sus-mcgill/cl2bwtrsp000516rwyrkt9ior"
 
-map <- rdeck::rdeck(map_style = map_style_building, initial_view_state = rdeck::view_state(
+#map <- 
+rdeck::rdeck(map_style = map_style_building, initial_view_state = rdeck::view_state(
     center = params$map_loc, zoom = params$map_zoom), width = "100%", height = "200px") |>
     rdeck::add_mvt_layer(
         id = "study",
@@ -188,59 +189,6 @@ plotlies <- lapply(with_data, \(ind) {
     }"
   )
 })
-
-```
-
-
-```{r main_card, echo = FALSE, warning = FALSE}
-
-boxes <- mapply(\(ind, ind_name) {
-
-# Construct link
-if (!ind$percentile == "No data.") {
-    link <- 
-        if (!is.na(ind$link_module)) {
-            out <- paste0("/?tb=", ind$link_module, "&zm=", params$map_zoom, "&lat=", round(params$map_loc[2], digits = 4), "&lon=", round(params$map_loc[1], digits = 4), "&s_id=", params$select_id)
-            if (!is.na(ind$link_var)) {
-                out <- paste0(out, "&v_l=", ind$link_var)
-            }
-            out
-        } else NULL
-    
-    if (!is.null(link)) {
-        ind$text <- paste0(ind$text, " <a href = ", link, " target='_parent'>[VIEW ON MAP]</a>")
-    }}
-
-    
-    # If no data
-    if (ind$percentile == "No data.") {
-        bslib::value_box(
-            title = htmltools::p(ind$row_title, bsicons::bs_icon(ind$bs_icon)),
-            value = ind$percentile,
-            theme_color = paste0("col_pe_", "no_data"),
-            full_screen = FALSE
-        )
-        # If data
-    } else {
-        bslib::value_box(
-            title = htmltools::p(ind$row_title, bsicons::bs_icon(ind$bs_icon)),
-            value = ind$percentile,
-            showcase = plotlies[[ind_name]],
-            htmltools::p(htmltools::HTML(ind$text)),
-            full_screen = TRUE,
-            theme_color = paste0("col_pe_", ind$hex_cat)
-        )
-    }
-    
-}, params$title_card_data, names(params$title_card_data), SIMPLIFY = FALSE)
-
-main_card <- do.call(bslib::layout_column_wrap, c(list(width = 1/2), unname(boxes)))
-main_card <- bslib::nav(
-    "Main card",
-    htmltools::br(),
-    bslib::card_body_fill(map),
-    bslib::card_body_fill(main_card)
-)
 
 ```
 
@@ -364,13 +312,27 @@ contents <- lapply(all_themes, \(t) {
     ranks <- sapply(cards, `[[`, "ranking")
     ranking <- mean(ranks)
     ordered_index <- order(ranks, decreasing = TRUE)
-    cards <- cards[ordered_index]
-    cards <- lapply(cards, `[[`, "box")
+    cards_ordered <- cards[ordered_index]
+    
+    # Extract cards for main card / outliers
+    main_card_boxes_outliers <- cards_ordered[sapply(cards_ordered, `[[`, "ranking") > 0.40]
+    main_card_boxes_outliers <- lapply(main_card_boxes_outliers, `[[`, "box")
+    if (length(main_card_boxes_outliers) > 2) main_card_boxes_outliers <- main_card_boxes_outliers[1:2]
+    
+    # Extract cards for main card / normal
+    main_card_boxes_normal <- cards_ordered[sapply(cards_ordered, `[[`, "ranking") < 0.10]
+    main_card_boxes_normal <- lapply(main_card_boxes_normal, `[[`, "box")
+    if (length(main_card_boxes_normal) > 2) main_card_boxes_normal <- main_card_boxes_normal[1:2]
+    
+    # Only keep the boxes
+    cards_ordered <- lapply(cards_ordered, `[[`, "box")
     
     # Create the layout
-    cards <- do.call(bslib::layout_column_wrap, c(list(width = 1/2), unname(cards)))
-    list(nav = bslib::nav(t, htmltools::br(), bslib::card_body_fill(cards)),
-         ranking = ranking)
+    cards_ordered <- do.call(bslib::layout_column_wrap, c(list(width = 1/2), unname(cards_ordered)))
+    list(nav = bslib::nav(t, htmltools::br(), bslib::card_body_fill(cards_ordered)),
+         ranking = ranking,
+         main_card_boxes_outliers = main_card_boxes_outliers,
+         main_card_boxes_normal = main_card_boxes_normal)
 })
 
 contents <- contents[!sapply(contents, is.null)]
@@ -378,8 +340,20 @@ contents <- contents[!sapply(contents, is.null)]
 ranks <- sapply(contents, `[[`, "ranking")
 ordered_index <- order(ranks, decreasing = TRUE)
 contents <- contents[ordered_index]
-contents <- lapply(contents, `[[`, "nav")
 
+# Extract for main card
+main_card_outliers <- lapply(contents, `[[`, "main_card_boxes_outliers")[sapply(contents, `[[`, "ranking") > 0.35]
+main_card_outliers <- unlist(main_card_outliers, recursive = FALSE)
+if (length(main_card_outliers) > 4) main_card_outliers[1:4] <- main_card_outliers[1:4]
+main_card_outliers <- do.call(bslib::layout_column_wrap, c(list(width = 1/2), unname(main_card_outliers)))
+
+main_card_normal <- lapply(contents, `[[`, "main_card_boxes_normal")[sapply(contents, `[[`, "ranking") < 0.15]
+main_card_normal <- unlist(main_card_normal, recursive = FALSE)
+if (length(main_card_normal) > 4) main_card_normal[1:4] <- main_card_normal[1:4]
+main_card_normal <- do.call(bslib::layout_column_wrap, c(list(width = 1/2), unname(main_card_normal)))
+
+
+contents <- lapply(contents, `[[`, "nav")
 # Decide the color of the tabs
 which_class <- sapply(ranks[ordered_index], \(r) {
     r <- (\(x) {
@@ -395,23 +369,62 @@ which_class <- sapply(ranks[ordered_index], \(r) {
 
 ```
 
-```{r legend, echo = FALSE, warning = FALSE, fig.height = 0.575, out.width = "100%"}
-# ranks <- data.frame(x = c(1,2,3,4,5), 
-#                     y = c(1,1,1,1,1),
-#                     fill = c("#6C83B5", "#8B9DC5", "#AAB7D5", "#CAD2E4", "#EAEDF4"))
-# ranks |> 
-#   ggplot(aes(xmin = x - 1, xmax = x, ymin = y - 1, ymax = y, 
-#              fill = fill)) +
-#   geom_rect() + 
-#   scale_x_continuous(breaks = c(1,2,3,4,5) - 0.5, 
-#                      labels = c("Outlier", "", "", "", "Normal")) +
-#   scale_y_continuous(labels = NULL) +
-#   scale_fill_manual(values = setNames(ranks$fill, ranks$fill)) +
-#   labs(x = NULL, y = NULL) + 
-#   theme_minimal() +
-#   theme(text = element_text(family = "SourceSansPro", size = 8),
-#         legend.position = "none", 
-#         panel.grid = element_blank())
+```{r main_card, echo = FALSE, warning = FALSE}
+
+boxes <- mapply(\(ind, ind_name) {
+
+# Construct link
+if (!ind$percentile == "No data.") {
+    link <- 
+        if (!is.na(ind$link_module)) {
+            out <- paste0("/?tb=", ind$link_module, "&zm=", params$map_zoom, "&lat=", round(params$map_loc[2], digits = 4), "&lon=", round(params$map_loc[1], digits = 4), "&s_id=", params$select_id)
+            if (!is.na(ind$link_var)) {
+                out <- paste0(out, "&v_l=", ind$link_var)
+            }
+            out
+        } else NULL
+    
+    if (!is.null(link)) {
+        ind$text <- paste0(ind$text, " <a href = ", link, " target='_parent'>[VIEW ON MAP]</a>")
+    }}
+
+    
+    # If no data
+    if (ind$percentile == "No data.") {
+        bslib::value_box(
+            title = htmltools::p(ind$row_title, bsicons::bs_icon(ind$bs_icon)),
+            value = ind$percentile,
+            theme_color = paste0("col_pe_", "no_data"),
+            full_screen = FALSE
+        )
+        # If data
+    } else {
+        bslib::value_box(
+            title = htmltools::p(ind$row_title, bsicons::bs_icon(ind$bs_icon)),
+            value = ind$percentile,
+            showcase = plotlies[[ind_name]],
+            htmltools::p(htmltools::HTML(ind$text)),
+            full_screen = TRUE,
+            theme_color = paste0("col_pe_", ind$hex_cat)
+        )
+    }
+    
+}, params$title_card_data, names(params$title_card_data), SIMPLIFY = FALSE)
+
+main_card <- do.call(bslib::layout_column_wrap, c(list(width = 1/2), unname(boxes)))
+main_card <- bslib::nav(
+    "Main card",
+    htmltools::br(),
+    # bslib::card_body_fill(map),
+    bslib::card_body_fill(main_card),
+    htmltools::br(),
+    htmltools::h3("What makes this area unique?"),
+    bslib::card_body_fill(main_card_outliers),
+    htmltools::h3("What makes this area similar to others?"),
+    bslib::card_body_fill(main_card_normal)
+    
+)
+
 ```
 
 ```{r navbar, echo = FALSE, warning = FALSE}
