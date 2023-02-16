@@ -4,7 +4,13 @@
 \alias{build_census_data}
 \title{Build census data at all possible scales}
 \usage{
-build_census_data(scales_consolidated, region_DA_IDs, census_vectors, crs)
+build_census_data(
+  scales_consolidated,
+  region_DA_IDs,
+  census_vectors,
+  census_years,
+  crs
+)
 }
 \arguments{
 \item{scales_consolidated}{A named list of sf data.frame
@@ -19,6 +25,9 @@ to do interpolation.}
 to the scales. By default, all: \code{\link[cc.data]{census_vectors}}. Look
 at the \code{\link[cc.data]{census_vectors_table}} to view all
 variables explained.}
+
+\item{census_years}{<\verb{character vector}> Years for which the census data
+should be added to the scales. Defaults to \code{\link[cc.data]{census_years}}}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}

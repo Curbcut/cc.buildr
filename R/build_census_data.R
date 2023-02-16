@@ -88,6 +88,7 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
     destination = ready,
     DA_IDs = region_DA_IDs,
     census_vectors = census_vectors,
+    census_years = census_years,
     crs = crs
   )
 

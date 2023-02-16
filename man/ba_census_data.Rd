@@ -8,6 +8,7 @@ ba_census_data(
   scales_variables_modules,
   region_DA_IDs,
   census_vectors = cc.data::census_vectors,
+  census_years = cc.data::census_years,
   crs,
   housing_module = TRUE
 )
@@ -25,6 +26,9 @@ to do interpolation.}
 to the scales. By default, all: \code{\link[cc.data]{census_vectors}}. Look
 at the \code{\link[cc.data]{census_vectors_table}} to view all
 variables explained.}
+
+\item{census_years}{<\verb{character vector}> Years for which the census data
+should be added to the scales. Defaults to \code{\link[cc.data]{census_years}}}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}
