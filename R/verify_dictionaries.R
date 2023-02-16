@@ -17,7 +17,7 @@ verify_dictionaries <- function(all_tables, regions_dictionary,
   # Verify regions first -------------------------------------------------------
 
   regions <- names(all_tables)
-  z <- regions[!regions %in% regions_dictionary$geo]
+  z <- regions[!regions %in% regions_dictionary$region]
   if (length(z) > 0) {
     stop(paste0("Missing `", regions, "` in the `regions_dictionary`"))
   }

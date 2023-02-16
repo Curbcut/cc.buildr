@@ -344,12 +344,12 @@ contents <- contents[ordered_index]
 # Extract for main card
 main_card_outliers <- lapply(contents, `[[`, "main_card_boxes_outliers")[sapply(contents, `[[`, "ranking") > 0.35]
 main_card_outliers <- unlist(main_card_outliers, recursive = FALSE)
-if (length(main_card_outliers) > 4) main_card_outliers[1:4] <- main_card_outliers[1:4]
+if (length(main_card_outliers) > 4) main_card_outliers <- main_card_outliers[1:4]
 main_card_outliers <- do.call(bslib::layout_column_wrap, c(list(width = 1/2), unname(main_card_outliers)))
 
 main_card_normal <- lapply(contents, `[[`, "main_card_boxes_normal")[sapply(contents, `[[`, "ranking") < 0.15]
 main_card_normal <- unlist(main_card_normal, recursive = FALSE)
-if (length(main_card_normal) > 4) main_card_normal[1:4] <- main_card_normal[1:4]
+if (length(main_card_normal) > 4) main_card_normal <- main_card_normal[1:4]
 main_card_normal <- do.call(bslib::layout_column_wrap, c(list(width = 1/2), unname(main_card_normal)))
 
 
@@ -418,10 +418,10 @@ main_card <- bslib::nav(
     # bslib::card_body_fill(map),
     bslib::card_body_fill(main_card),
     htmltools::br(),
-    htmltools::h3("What makes this area unique?"),
-    bslib::card_body_fill(main_card_outliers),
-    htmltools::h3("What makes this area similar to others?"),
-    bslib::card_body_fill(main_card_normal)
+    if (length(main_card_outliers) > 0) htmltools::h3("What makes this area unique?"),
+    if (length(main_card_outliers) > 0) bslib::card_body_fill(main_card_outliers),
+    if (length(main_card_normal) > 0) htmltools::h3("What makes this area similar to others?"),
+    if (length(main_card_normal) > 0) bslib::card_body_fill(main_card_normal)
     
 )
 

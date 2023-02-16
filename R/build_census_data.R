@@ -10,6 +10,8 @@
 #' to the scales. By default, all: \code{\link[cc.data]{census_vectors}}. Look
 #' at the \code{\link[cc.data]{census_vectors_table}} to view all
 #' variables explained.
+#' @param census_years <`character vector`> Years for which the census data
+#' should be added to the scales. Defaults to \code{\link[cc.data]{census_years}}
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
 #'
@@ -22,7 +24,7 @@
 #' interpolated argument of add_variable.
 #' @export
 build_census_data <- function(scales_consolidated, region_DA_IDs,
-                              census_vectors, crs) {
+                              census_vectors, census_years, crs) {
   # Filter out scales smaller than DAs --------------------------------------
 
   higher_DA <- lapply(scales_consolidated, \(x) {
@@ -108,7 +110,7 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
         census_data <- cc.data::db_read_data(
           table = paste0("processed_", scale),
           columns = sapply(
-            cc.data::census_years,
+            census_years,
             \(x) paste(census_vectors, x, sep = "_")
           ),
           IDs = ids,
@@ -136,7 +138,7 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
           csd_data <- cc.data::db_read_data(
             table = paste0("processed_", "CSD"),
             columns = sapply(
-              cc.data::census_years,
+              census_years,
               \(x) paste(census_vectors, x, sep = "_")
             ),
             IDs = csd_ids,

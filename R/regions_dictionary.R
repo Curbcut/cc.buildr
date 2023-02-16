@@ -2,7 +2,7 @@
 #'
 #' @param all_tables <`named list`> Named list of regions and their scales within,
 #' ordered in priority.
-#' @param geo <`vector of character`> A vector of characters used to identify
+#' @param region <`vector of character`> A vector of characters used to identify
 #' which large geometry the user is interested in, e.g.
 #' \code{c("CMA", "city", "island")}.
 #' @param name <`named character vector`> Named with their corresponding geo value.
@@ -22,29 +22,29 @@
 #' @return Returns the same vectors fed arranged in a data.frame ordered in
 #' priorty.
 #' @export
-regions_dictionary <- function(all_tables, geo, name, to_compare, pickable) {
+regions_dictionary <- function(all_tables, region, name, to_compare, pickable) {
   # Error check
   if (is.null(names(name))) {
-    stop("`geo`must be a named character vector.")
+    stop("`region` must be a named character vector.")
   }
   if (is.null(names(to_compare))) {
-    stop("`to_compare`must be a named character vector.")
+    stop("`to_compare` must be a named character vector.")
   }
-  invisible(lapply(c("geo", "name", "to_compare", "pickable"), \(x) {
+  invisible(lapply(c("region", "name", "to_compare", "pickable"), \(x) {
     if (length(get(x)) != length(all_tables)) {
       stop("length of`", x, "` is not the same as the length of `all_tables`")
     }
   }))
 
-  geo <- geo[order(match(geo, names(all_tables)))]
+  region <- region[order(match(region, names(all_tables)))]
   name <- name[order(match(names(name), names(all_tables)))]
   to_compare <- to_compare[order(match(names(to_compare), names(all_tables)))]
   pickable <- pickable[order(match(names(pickable), names(all_tables)))]
 
 
   tibble::tibble(
-    geo = geo,
-    priority = seq_len(length(geo)),
+    region = region,
+    priority = seq_len(length(region)),
     name = name,
     to_compare = to_compare,
     pickable = pickable

@@ -10,6 +10,8 @@
 #' to the scales. By default, all: \code{\link[cc.data]{census_vectors}}. Look
 #' at the \code{\link[cc.data]{census_vectors_table}} to view all
 #' variables explained.
+#' @param census_years <`character vector`> Years for which the census data
+#' should be added to the scales. Defaults to \code{\link[cc.data]{census_years}}
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
 #' @param housing_module <`logical`> Should a housing module be added to
@@ -22,13 +24,14 @@
 ba_census_data <- function(scales_variables_modules,
                            region_DA_IDs,
                            census_vectors = cc.data::census_vectors,
+                           census_years = cc.data::census_years,
                            crs,
                            housing_module = TRUE) {
   # Declare all variables from the census -----------------------------------
 
   vars <-
     sapply(census_vectors,
-      \(x) paste(x, cc.data::census_years, sep = "_"),
+      \(x) paste(x, census_years, sep = "_"),
       simplify = FALSE, USE.NAMES = FALSE
     ) |> unlist()
 
@@ -41,6 +44,7 @@ ba_census_data <- function(scales_variables_modules,
     scales_consolidated = scales_variables_modules$scales,
     region_DA_IDs = region_DA_IDs,
     census_vectors = census_vectors,
+    census_years = census_years,
     crs = crs
   )
 

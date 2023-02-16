@@ -17,6 +17,7 @@
 #' in which the centroid of the master polygon falls.
 #' @export
 create_master_polygon <- function(all_regions, crs = NULL) {
+
   # Download or retrieve the geo sf -----------------------------------------
 
   regions <-
