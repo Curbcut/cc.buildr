@@ -97,20 +97,20 @@ build_colours <- function(
                           y = 1,
                           fill = c(delta_5, col_NA))
 
-  qual <- tibble::tibble(x = seq_along(qual) - 1,
+  qual <- tibble::tibble(group = as.character(seq_along(qual) - 1),
                          y = 1,
-                         qual)
+                         fill = qual)
 
-  variant_5 <- tibble::tibble(group = 1:5, y = 1, fill = right_5)
+  variant_5 <- tibble::tibble(group = as.character(1:5), y = 1, fill = right_5)
 
 
   # Return ------------------------------------------------------------------
 
-  list(table = colour_table,
-       left_5 = left_5,
-       bivar = bivar,
-       delta = delta,
-       variant_5 = variant_5,
-       qual = qual)
+  return(list(table = colour_table,
+              left_5 = left_5,
+              bivar = bivar,
+              delta = delta,
+              variant_5 = variant_5,
+              qual = qual))
 
 }

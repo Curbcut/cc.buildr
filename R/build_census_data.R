@@ -15,13 +15,14 @@
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
 #'
-#' @return Returns a list of length 3. The first is the possible scales for which
+#' @return Returns a list of length 4. The first is the possible scales for which
 #' census data can be added in scales_consolidated. The second is a
 #' data.frame of scales reference, to know for which scales the data is
 #' available. It can directly be fed to the scales argument of add_variable.
 #' The third is a data.frame of interpolation reference, to know for which
 #' scales the data has been interpolated. It can directly be fed to the
-#' interpolated argument of add_variable.
+#' interpolated argument of add_variable. The fourth is a character
+#' vector of all regions at which the data will be available.
 #' @export
 build_census_data <- function(scales_consolidated, region_DA_IDs,
                               census_vectors, census_years, crs) {
@@ -185,21 +186,12 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
 
   # Keep track of scales for which census data is available ------------------
 
-  avail_scales <-
+  avail_df <-
     map_over_scales(census_data_merged,
-      fun = \(geo = geo, scale_name = scale_name, ...) {
-        tibble::tibble(
-          geo = geo,
-          scale = scale_name
-        )
-      }
-    )
-  avail_scales <-
-    sapply(avail_scales, \(x) do.call(rbind, x),
-      simplify = FALSE, USE.NAMES = TRUE
-    ) |>
-    (\(x) do.call(rbind, x))()
-  row.names(avail_scales) <- NULL
+                    fun = \(geo = geo, scale_name = scale_name, ...) {
+                      paste(geo, scale_name, sep = "_")
+                    }
+    ) |> unlist() |> unname()
 
 
   # Create interpolated references as a data.frame --------------------------
@@ -218,8 +210,7 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
       fun = \(geo = geo, scale_name = scale_name,
         scale_df = scale_df, ...) {
         tibble::tibble(
-          geo = geo,
-          scale = scale_name,
+          df = paste(geo, scale_name, sep = "_"),
           interpolated_from = scale_df
         )
       }
@@ -236,7 +227,8 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
 
   return(list(
     scales = final_scales,
-    avail_scales = avail_scales,
-    interpolated_ref = interpolated_ref
+    avail_df = avail_df,
+    interpolated_ref = interpolated_ref,
+    regions = names(census_data_merged)
   ))
 }

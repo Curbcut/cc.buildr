@@ -23,7 +23,7 @@ append_empty_variables_table <- function(scales_consolidated) {
       private = logical(),
       pe_include = logical(),
       dates = list(),
-      scales = list(),
+      avail_df = list(),
       breaks_q3 = list(),
       breaks_q5 = list(),
       source = character(),
@@ -61,8 +61,8 @@ append_empty_variables_table <- function(scales_consolidated) {
 #' @param pe_include <`logical`> Should this variable be included in the place
 #' explorer? Defaults to `TRUE`.
 #' @param dates <`character vector`> A vector of dates for which the data is available.
-#' @param scales <`data.frame`> All the scales at which the data is available
-#' arranged in a data.frame of two columns: \code{geo} and \code{scale}
+#' @param avail_df <`list`> All the combinations of region and scales
+#' at which the data is available, e.g. `c("CMA_CSD", "CMA_CT", ...)`
 #' @param breaks_q3 <`data.frame`> A data.frame with with information regarding
 #' scales, date, rank, breaks. The last outputs of
 #' \code{\link[cc.buildr]{calculate_breaks}}
@@ -80,7 +80,7 @@ append_empty_variables_table <- function(scales_consolidated) {
 add_variable <- function(variables, var_code, type, var_title,
                          var_short = as.character(var_title), explanation,
                          group_name = NA_character_, group_diff = list(),
-                         theme, private, pe_include = TRUE, dates, scales,
+                         theme, private, pe_include = TRUE, dates, avail_df,
                          breaks_q3, breaks_q5, source, interpolated) {
   if (var_code %in% variables$var_code) {
     stop(paste0("`", var_code, "` is a duplicate."))
@@ -99,7 +99,7 @@ add_variable <- function(variables, var_code, type, var_title,
       source = as.character(source),
       group_name = as.character(group_name),
       dates = list(dates),
-      scales = list(scales),
+      avail_df = list(avail_df),
       breaks_q3 = list(breaks_q3),
       breaks_q5 = list(breaks_q5),
       interpolated = list(interpolated),

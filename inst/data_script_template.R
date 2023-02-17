@@ -59,7 +59,7 @@ build_and_append__name_ <- function(scales_variables_modules, crs) {
       theme = "Urban life",
       private = FALSE,
       dates = with_breaks$avail_dates[[unique_var]],
-      scales = data_interpolated$avail_scales,
+      avail_df = data_interpolated$avail_df,
       breaks_q3 = with_breaks$q3_breaks_table[[unique_var]],
       breaks_q5 = with_breaks$q5_breaks_table[[unique_var]],
       source = "McGill Geo-Social Determinants of Health Research Group",
@@ -83,7 +83,7 @@ build_and_append__name_ <- function(scales_variables_modules, crs) {
           title_text_title = "Active living potential: the CanALE index",
           title_text_main = paste0(),
           title_text_extra = paste0(),
-          regions = unique(data_interpolated$avail_scales$geo),
+          regions = data_interpolated$regions,
           metadata = TRUE,
           dataset_info = paste0()
         )

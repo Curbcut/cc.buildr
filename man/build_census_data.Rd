@@ -33,13 +33,14 @@ should be added to the scales. Defaults to \code{\link[cc.data]{census_years}}}
 \code{32617} for Toronto.}
 }
 \value{
-Returns a list of length 3. The first is the possible scales for which
+Returns a list of length 4. The first is the possible scales for which
 census data can be added in scales_consolidated. The second is a
 data.frame of scales reference, to know for which scales the data is
 available. It can directly be fed to the scales argument of add_variable.
 The third is a data.frame of interpolation reference, to know for which
 scales the data has been interpolated. It can directly be fed to the
-interpolated argument of add_variable.
+interpolated argument of add_variable. The fourth is a character
+vector of all regions at which the data will be available.
 }
 \description{
 Build census data at all possible scales

@@ -142,6 +142,7 @@ split_scale <- function(destination, cutting_layer,
 
   # Go back to unprojected
   destination_out <- sf::st_transform(destination_out, 4326)
+  destination_out <- sf::st_make_valid(destination_out)
 
   # Return
   return(destination_out)

@@ -48,14 +48,15 @@ It bypasses the process where \code{interpolate_custom_geo} only interpolates
 for geometries bigger than the data.}
 }
 \value{
-Returns a list of length 3. The first is the same list that is fed in
+Returns a list of length 4. The first is the same list that is fed in
 \code{all_scales}, with the columns from \code{data} interpolated in. The second is
 a data.frame of scales reference, to know for which scales the data is
 available. It can directly be fed to the \code{scales}
 argument of \code{\link[cc.buildr]{add_variable}}.The third
 is a data.frame of interpolation reference, to know for which scales the data
 has been interpolated. It can directly be fed to the \code{interpolated}
-argument of \code{\link[cc.buildr]{add_variable}}.
+argument of \code{\link[cc.buildr]{add_variable}}. The fourth is a character
+vector of all regions at which the data will be available.
 }
 \description{
 Used to interpolate any polygons to all the used scale in the instance of

@@ -298,7 +298,7 @@ calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
               substring(v, loc)
             }
             tibble::tibble(
-              df = paste0(geo, scale_name, sep = "_"),
+              df = paste(geo, scale_name, sep = "_"),
               date = if (date == "") NA else date,
               rank = seq_len(nrow(scale_df)) - 1,
               var = scale_df[[v]]
@@ -327,7 +327,7 @@ calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
           var_all_years <- names(scale_df)[grepl(var, names(scale_df))]
           out <- lapply(var_all_years, \(v) {
             tibble::tibble(
-              df = paste0(geo, scale_name, sep = "_"),
+              df = paste(geo, scale_name, sep = "_"),
               rank = seq_len(nrow(scale_df)) - 1,
               var = scale_df[[v]]
             )

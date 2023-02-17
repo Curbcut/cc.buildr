@@ -25,14 +25,15 @@
 #' value of a CSD would be the sum of the values of the DAs or CTs that are present
 #' inside the CSD.
 #'
-#' @return Returns a list of length 3. The first is the same list that is fed in
+#' @return Returns a list of length 4. The first is the same list that is fed in
 #' `all_scales`, with the columns from `data` interpolated in. The second is
 #' a data.frame of scales reference, to know for which scales the data is
 #' available. It can directly be fed to the \code{scales}
 #' argument of \code{\link[cc.buildr]{add_variable}}.The third
 #' is a data.frame of interpolation reference, to know for which scales the data
 #' has been interpolated. It can directly be fed to the \code{interpolated}
-#' argument of \code{\link[cc.buildr]{add_variable}}.
+#' argument of \code{\link[cc.buildr]{add_variable}}. The fourth is a character
+#' vector of all regions at which the data will be available.
 #' @export
 interpolate_from_census_geo <- function(data, base_scale, all_scales,
                                         weight_by = "households", crs,
@@ -235,21 +236,12 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
 
 
   ## Scales at which the data is available
-  avail_scales <-
+  avail_df <-
     map_over_scales(interpolated,
       fun = \(geo = geo, scale_name = scale_name, ...) {
-        tibble::tibble(
-          geo = geo,
-          scale = scale_name
-        )
+        paste(geo, scale_name, sep = "_")
       }
-    )
-  avail_scales <-
-    sapply(avail_scales, \(x) do.call(rbind, x),
-      simplify = FALSE, USE.NAMES = TRUE
-    ) |>
-    (\(x) do.call(rbind, x))()
-  row.names(avail_scales) <- NULL
+    ) |> unlist() |> unname()
 
 
   ## Create interpolated references as a data.frame
@@ -267,8 +259,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
       fun = \(geo = geo, scale_name = scale_name,
         scale_df = scale_df, ...) {
         tibble::tibble(
-          geo = geo,
-          scale = scale_name,
+          df = paste(geo, scale_name, sep = "_"),
           interpolated_from = scale_df
         )
       }
@@ -284,8 +275,9 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
   ## Return
   return(list(
     scales = all_scales_reattached,
-    avail_scales = avail_scales,
-    interpolated_ref = interpolated_ref
+    avail_df = avail_df,
+    interpolated_ref = interpolated_ref,
+    regions = names(construct_for)
   ))
 }
 
@@ -421,14 +413,15 @@ interpolate_from_area <- function(to, from,
 #' It bypasses the process where `interpolate_custom_geo` only interpolates
 #' for geometries bigger than the data.
 #'
-#' @return Returns a list of length 3. The first is the same list that is fed in
+#' @return Returns a list of length 4. The first is the same list that is fed in
 #' `all_scales`, with the columns from `data` interpolated in. The second is
 #' a data.frame of scales reference, to know for which scales the data is
 #' available. It can directly be fed to the \code{scales}
 #' argument of \code{\link[cc.buildr]{add_variable}}.The third
 #' is a data.frame of interpolation reference, to know for which scales the data
 #' has been interpolated. It can directly be fed to the \code{interpolated}
-#' argument of \code{\link[cc.buildr]{add_variable}}.
+#' argument of \code{\link[cc.buildr]{add_variable}}. The fourth is a character
+#' vector of all regions at which the data will be available.
 #' @export
 interpolate_custom_geo <- function(data, all_scales, crs,
                                    only_regions = names(all_scales),
@@ -513,21 +506,12 @@ interpolate_custom_geo <- function(data, all_scales, crs,
 
 
   ## Scales at which the data is available
-  avail_scales <-
+  avail_df <-
     map_over_scales(interpolated,
-      fun = \(geo = geo, scale_name = scale_name, ...) {
-        tibble::tibble(
-          geo = geo,
-          scale = scale_name
-        )
-      }
-    )
-  avail_scales <-
-    sapply(avail_scales, \(x) do.call(rbind, x),
-      simplify = FALSE, USE.NAMES = TRUE
-    ) |>
-    (\(x) do.call(rbind, x))()
-  row.names(avail_scales) <- NULL
+                    fun = \(geo = geo, scale_name = scale_name, ...) {
+                      paste(geo, scale_name, sep = "_")
+                    }
+    ) |> unlist() |> unname()
 
 
   ## Create interpolated references as a data.frame
@@ -545,8 +529,7 @@ interpolate_custom_geo <- function(data, all_scales, crs,
       fun = \(geo = geo, scale_name = scale_name,
         scale_df = scale_df, ...) {
         tibble::tibble(
-          geo = geo,
-          scale = scale_name,
+          df = paste(geo, scale_name, sep = "_"),
           interpolated_from = scale_df
         )
       }
@@ -562,7 +545,8 @@ interpolate_custom_geo <- function(data, all_scales, crs,
   ## Return
   return(list(
     scales = all_scales_reattached,
-    avail_scales = avail_scales,
-    interpolated_ref = interpolated_ref
+    avail_df = avail_df,
+    interpolated_ref = interpolated_ref,
+    regions = names(construct_for)
   ))
 }

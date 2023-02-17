@@ -172,7 +172,7 @@ ba_accessibility_points <- function(scales_variables_modules,
         var %in% pe_include
       },
       dates = with_breaks$avail_dates[[var]],
-      scales = data_interpolated$avail_scales,
+      avail_df = data_interpolated$avail_df,
       breaks_q3 = with_breaks$q3_breaks_table[[var]],
       breaks_q5 = with_breaks$q5_breaks_table[[var]],
       source = d_entry$source,
@@ -214,7 +214,7 @@ ba_accessibility_points <- function(scales_variables_modules,
           "transportation gives a glimpse into how different areas ",
           "are serviced and what that might imply for residents."
         ),
-      regions = unique(data_interpolated$avail_scales$geo),
+      regions = data_interpolated$regions,
       metadata = TRUE,
       dataset_info =
         paste0(

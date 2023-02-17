@@ -17,7 +17,7 @@ add_variable(
   private,
   pe_include = TRUE,
   dates,
-  scales,
+  avail_df,
   breaks_q3,
   breaks_q5,
   source,
@@ -63,8 +63,8 @@ explorer? Defaults to \code{TRUE}.}
 
 \item{dates}{<\verb{character vector}> A vector of dates for which the data is available.}
 
-\item{scales}{<\code{data.frame}> All the scales at which the data is available
-arranged in a data.frame of two columns: \code{geo} and \code{scale}}
+\item{avail_df}{<\code{list}> All the combinations of region and scales
+at which the data is available, e.g. \code{c("CMA_CSD", "CMA_CT", ...)}}
 
 \item{breaks_q3}{<\code{data.frame}> A data.frame with with information regarding
 scales, date, rank, breaks. The last outputs of
