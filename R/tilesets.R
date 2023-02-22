@@ -527,14 +527,32 @@ tileset_upload_all <- function(all_scales, map_zoom_levels,
             return(sum(x, 1.5))
           }
         }
+
+        maxz_fun <- function(x) {
+          if (x == 0) {
+            return(10)
+          } else if (x == 15.5) {
+            return(16)
+          } else {
+            return(sum(x, 1.5))
+          }
+        }
+
+        # Adjust when there's a gap between the DA and the building scale.
         maxzooms <- sapply(mzl, maxz_fun)
+        if (identical(names(mzl)[(length(mzl) - 1):length(mzl)], c("DA", "building"))) {
+          if (maxzooms[["DA"]] == 14 && maxzooms[["building"]] == 16)
+            maxzooms[["DA"]] <- 15
+        }
+        # Adjust to not leave gaps between DAs and buildings
+        if (maxzooms[[""]])
         names(maxzooms) <- scale_names
 
 
         layer_sizes <-
           stats::setNames(rep(NA, length(scale_names)), scale_names)
 
-        recipe <-
+        # recipe <-
           tileset_create_recipe(
             layer_names = scale_names,
             source = sources,
@@ -544,27 +562,27 @@ tileset_upload_all <- function(all_scales, map_zoom_levels,
             recipe_name = name
           )
 
-        # Reset
-        tileset_delete_tileset_source(
-          id = name,
-          username = username,
-          access_token = access_token
-        )
-        tileset_delete_tileset(
-          id = name,
-          username = username,
-          access_token = access_token
-        )
-        # New tileset
-        tileset_create_tileset(name,
-          recipe = recipe,
-          username = username,
-          access_token = access_token
-        )
-        tileset_publish_tileset(name,
-          username = username,
-          access_token = access_token
-        )
+        # # Reset
+        # tileset_delete_tileset_source(
+        #   id = name,
+        #   username = username,
+        #   access_token = access_token
+        # )
+        # tileset_delete_tileset(
+        #   id = name,
+        #   username = username,
+        #   access_token = access_token
+        # )
+        # # New tileset
+        # tileset_create_tileset(name,
+        #   recipe = recipe,
+        #   username = username,
+        #   access_token = access_token
+        # )
+        # tileset_publish_tileset(name,
+        #   username = username,
+        #   access_token = access_token
+        # )
       }, names(zoom_levels), zoom_levels, SIMPLIFY = FALSE)
     }, names(map_zoom_levels), map_zoom_levels, SIMPLIFY = FALSE)
 
