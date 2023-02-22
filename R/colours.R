@@ -103,6 +103,9 @@ build_colours <- function(
 
   variant_5 <- tibble::tibble(group = as.character(1:5), y = 1, fill = right_5)
 
+  viridis <- tibble::tibble(group = as.character(1:10), y = 1,
+                            fill = scales::viridis_pal()(10))
+
 
   # Return ------------------------------------------------------------------
 
@@ -111,6 +114,7 @@ build_colours <- function(
               bivar = bivar,
               delta = delta,
               variant_5 = variant_5,
-              qual = qual))
+              qual = qual,
+              viridis = viridis))
 
 }
