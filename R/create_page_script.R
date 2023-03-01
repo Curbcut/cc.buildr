@@ -145,8 +145,9 @@ create_page_script <- function(source_file, R_folder = "R/", overwrite = FALSE,
     template <- gsub("`__time__`", write_as_vector(time), template)
   } else {
     ui <- readLines(system.file("modules/time_ui.R", package = "cc.buildr"))
-    ui <- gsub("`__mid__year`", paste0('"', time[ceiling(length(time) / 2)], '"'), ui)
-    ui <- gsub("`__max__year`", paste0('"', max(time), '"'), ui)
+    ui <- gsub("`__min__year`", min(time), ui)
+    ui <- gsub("`__mid__year`", time[ceiling(length(time) / 2)], ui)
+    ui <- gsub("`__max__year`", max(time), ui)
     uis <- c(uis, ui)
 
     template <- gsub(
@@ -157,32 +158,17 @@ create_page_script <- function(source_file, R_folder = "R/", overwrite = FALSE,
         paste0(collapse = "\n"),
       template
     )
-    more_args <- c(more_args, readLines(system.file("modules/time_more_args.R",
-      package = "cc.buildr"
-    )))
   }
 
-  # Add more arguments to the bookmark
-  template <- gsub(
-    "more_args = reactive\\(c\\(\\)\\)",
-    paste0(
-      "more_args = reactive(c(",
-      paste0(more_args, collapse = ",\n"),
-      "))"
-    ),
-    template
-  )
-
   # Add all uis
-  template <- gsub(
-    "susSidebarWidgets\\(\\)",
-    paste0(
-      "susSidebarWidgets(\n",
-      paste0(uis, collapse = ",\n"),
-      ")"
-    ),
-    template
-  )
+  template <-
+    if (length(uis) == 0) gsub("`__widgets_UI__`,", "", template) else {
+      gsub(
+        "`__widgets_UI__`,",
+        paste0(paste0(uis, collapse = ",\n"), ","),
+        template
+      )
+    }
 
   # Write the latter to the file
   writeLines(template, con = new_file_connection)

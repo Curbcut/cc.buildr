@@ -5,32 +5,34 @@
 `__id___default_region` <- unlist(modules$regions[modules$id == "__id__"])[1]
 `__id___mzp` <-
   eval(parse(text = paste0("map_zoom_levels_", `__id___default_region`)))
-
+default_region <- modules$regions[modules$id == "__id__"][[1]][1]
 
 # UI ----------------------------------------------------------------------
 
 `__id___UI` <- function(id) {
-  id_map <- paste0(id, "-map")
 
-  tagList(
+  shiny::tagList(
     # Sidebar
-    sidebar_UI(
-      NS(id, id),
-      susSidebarWidgets(),
-      bottom = div(class = "bottom_sidebar",
-                   tagList(legend_UI(NS(id, id)),
-                           zoom_UI(NS(id, id), `__id___mzp`)))),
+    curbcut::sidebar_UI(
+      id = shiny::NS(id, id),
+      `__widgets_UI__`,
+      bottom = shiny::tagList(
+        curbcut::legend_UI(shiny::NS(id, id)),
+        curbcut::zoom_UI(shiny::NS(id, id), `canale_mzp`)
+      )),
 
     # Map
-    div(class = "mapdeck_div", rdeckOutput(NS(id, id_map), height = "100%")),
+    curbcut::map_UI(NS(id, id)),
 
     # Right panel
-    right_panel(
+    curbcut::right_panel(
       id = id,
-      compare_UI(NS(id, id), make_dropdown(compare = TRUE)),
+      curbcut::compare_UI(
+        id = NS(id, id),
+        var_list = curbcut::dropdown_make(vars = " ", compare = TRUE)),
       explore_UI(NS(id, id)),
-      dyk_UI(NS(id, id)))
-
+      dyk_UI(NS(id, id))
+    )
   )
 }
 
@@ -38,71 +40,53 @@
 # Server ------------------------------------------------------------------
 
 `__id___server` <- function(id, r) {
-  moduleServer(id, function(input, output, session) {
-    id_map <- paste0(id, "-map")
+  shiny::moduleServer(id, function(input, output, session) {
 
     # Initial reactives
-    zoom_string <- reactiveVal(get_zoom_string(map_zoom, `__id___mzp`))
-    poi <- reactiveVal(NULL)
+    rv_zoom_string <- reactiveVal(
+      curbcut::zoom_get_string(zoom = map_zoom,
+                               zoom_levels = `canale_mzp`,
+                               region = default_region))
 
-    # Map
-    output[[id_map]] <- renderRdeck({
-      rdeck(map_style = map_base_style, layer_selector = FALSE,
-            initial_view_state = view_state(
-        center = map_loc, zoom = isolate(r[[id]]$zoom())))
+    # Zoom and POI reactives when the view state of the map changes.
+    observeEvent(map_viewstate(), {
+      r[[id]]$zoom(curbcut::zoom_get(zoom = map_viewstate()$zoom))
+      r[[id]]$poi(curbcut::update_poi(id = id, poi = r[[id]]$poi(),
+                                      map_viewstate = map_viewstate()))
     })
-
-    # Zoom and POI reactives
-    observe({
-      r[[id]]$zoom(get_zoom(get_view_state(id_map)$zoom))
-      new_poi <- observe_map(get_view_state(id_map))
-      if ((is.null(new_poi) && !is.null(poi())) ||
-          (!is.null(new_poi) && (is.null(poi()) || !all(new_poi == poi()))))
-        poi(new_poi)
-    }) |> bindEvent(get_view_state(id_map))
 
     # Map zoom levels change depending on r$region()
-    map_zoom_levels <- eventReactive(r$region(), {
-      get_zoom_levels(default = `__id___default_region`,
-                      geo = r$region(),
-                      var_left = isolate(var_left()))
-    })
+    zoom_levels <-
+      reactive(curbcut::zoom_get_levels(id = id, region = r$region()))
 
     # Zoom string reactive
     observe({
-      new_zoom_string <- get_zoom_string(r[[id]]$zoom(), map_zoom_levels()$levels,
-                                         map_zoom_levels()$region)
-      if (new_zoom_string != zoom_string()) zoom_string(new_zoom_string)
-    }) |> bindEvent(r[[id]]$zoom(), map_zoom_levels()$levels)
+      rv_zoom_string({
+        curbcut::zoom_get_string(
+          zoom = r[[id]]$zoom(),
+          zoom_levels = zoom_levels()$zoom_levels,
+          region = zoom_levels()$region)
+      })
+    })
 
-    # Click reactive
-    observe({
-      selection <- get_clicked_object(id_map)$ID
-      if (!is.na(r[[id]]$select_id()) &&
-          selection == r[[id]]$select_id()) {
-        r[[id]]$select_id(NA)
-      } else r[[id]]$select_id(selection)
-    }) |> bindEvent(get_clicked_object(id_map))
-
-    # Default location
-    observe({
-      if (is.null(r$default_select_id())) return(NULL)
-      new_id <- data()$ID[data()$ID %in%
-                            r$default_select_id()[[gsub("_.*", "", r[[id]]$df())]]]
-      if (length(new_id) == 0) return(NULL)
-      r[[id]]$select_id(new_id)
-    }) |> bindEvent(r$default_select_id(), r[[id]]$df())
+    # Update selected ID
+    curbcut::update_select_id(id = id, r = r, data = data)
 
     # Choose tileset
-    tile <- zoom_server(
+    tile <- curbcut::zoom_server(
       id = id,
       r = r,
-      zoom_string = zoom_string,
-      zoom_levels = map_zoom_levels)
+      zoom_string = rv_zoom_string,
+      zoom_levels = zoom_levels
+    )
 
-    # Get df for explore/legend/etc
-    observe(r[[id]]$df(get_df(tile(), zoom_string()))) |>
-      bindEvent(tile(), zoom_string())
+    # Get df
+    observeEvent({
+      tile()
+      rv_zoom_string()}, {
+        r[[id]]$df(curbcut::update_df(tile = tile(),
+                                      zoom_string = rv_zoom_string()))
+      })
 
     # Time
     time <- reactive(`__time__`)
@@ -111,32 +95,39 @@
     var_left <- reactive(paste(`__var_left__`, time(), sep = "_"))
 
     # Right variable / compare panel
-    var_right <- compare_server(
+    var_right <- curbcut::compare_server(
       id = id,
       r = r,
-      var_list = make_dropdown(multi_year = FALSE,
-                               only_vars = `__var_right__`,
-                               only = NULL,
-                               exclude = NULL,
-                               compare = TRUE),
-      time = time)
+      var_list = curbcut::dropdown_make(
+        vars = `__var_right__`,
+        compare = TRUE
+      ),
+      time = time
+    )
+
+    # The `vars` reactive
+    vars <- reactive(curbcut::vars_build(
+      var_left = var_left(),
+      var_right = var_right(),
+      df = r[[id]]$df()))
 
     # Sidebar
     sidebar_server(id = id, r = r)
 
+    # Sidebar
+    curbcut::sidebar_server(id = id, r = r)
+
     # Data
-    data <- reactive(get_data(
-      df = r[[id]]$df(),
-      geo = map_zoom_levels()$region,
-      var_left = var_left(),
-      var_right = var_right()))
+    data <- reactive(curbcut::data_get(
+      vars = vars(),
+      df = r[[id]]$df()
+    ))
 
     # Data for tile coloring
-    data_color <- reactive(get_data_color(
-      map_zoom_levels = map_zoom_levels()$levels,
-      geo = map_zoom_levels()$region,
-      var_left = var_left(),
-      var_right = var_right()
+    data_colours <- reactive(curbcut::data_get_colours(
+      vars = vars(),
+      region = zoom_levels()$region,
+      zoom_levels = zoom_levels()$zoom_levels
     ))
 
     # Year disclaimer
@@ -150,12 +141,13 @@
     )
 
     # Legend
-    legend <- legend_server(
+    curbcut::legend_server(
       id = id,
       r = r,
-      var_left = var_left,
-      var_right = var_right,
-      geo = reactive(map_zoom_levels()$region))
+      vars,
+      data = data,
+      df = r[[id]]$df
+    )
 
     # Did-you-know panel
     dyk_server(
@@ -163,51 +155,49 @@
       r = r,
       var_left = var_left,
       var_right = var_right,
-      poi = poi)
-
-    # Update map in response to variable changes or zooming
-    rdeck_server(
-      id = id,
-      r = r,
-      map_id = "map",
-      tile = tile,
-      data_color = data_color,
-      zoom_levels = reactive(map_zoom_levels()$levels))
-
-    # Update map labels
-    label_server(
-      id = id,
-      r = r,
-      map_id = "map",
-      tile = tile)
-
-    # Explore panel
-    explore_content <- explore_server(
-      id = id,
-      r = r,
-      data = data,
-      geo = reactive(map_zoom_levels()$region),
-      var_left = var_left,
-      var_right = var_right)
-
-    # Bookmarking
-    bookmark_server(
-      id = id,
-      r = r,
-      s_id = r[[id]]$select_id,
-      df = r[[id]]$df,
-      map_viewstate = reactive(get_view_state(id_map)),
-      var_left = var_left,
-      var_right = var_right,
-      more_args = reactive(c())
+      poi = r[[id]]$poi
     )
 
+    # Update map in response to variable changes or zooming
+    map_viewstate <- curbcut::map_server(
+      id = id,
+      tile = tile,
+      data_colours = data_colours,
+      select_id = r[[id]]$select_id,
+      zoom_levels = reactive(zoom_levels()$zoom_levels),
+      zoom = r[[id]]$zoom,
+      coords = r[[id]]$coords)
+
+    # Update map labels
+    curbcut::label_server(
+      id = id,
+      tile = tile,
+      zoom = r[[id]]$zoom,
+      zoom_levels = reactive(zoom_levels()$zoom_levels),
+      region = reactive(zoom_levels()$region))
+
+    # # Explore panel
+    # explore_content <- explore_server(
+    #   id = id,
+    #   r = r,
+    #   data = data,
+    #   geo = reactive(map_zoom_levels()$region),
+    #   var_left = var_left,
+    #   var_right = var_right)
+
+    # Bookmarking
+    curbcut::bookmark_server(id = id,
+                             r = r,
+                             select_id = r[[id]]$select_id,
+                             map_viewstate = map_viewstate)
+
     # Data transparency and export
-    r[[id]]$export_data <- reactive(data_export(id = id,
-                                                data = data(),
-                                                var_left = var_left(),
-                                                var_right = var_right(),
-                                                df = r[[id]]$df()))
+    r[[id]]$export_data <- reactive(data_export(
+      id = id,
+      data = data(),
+      var_left = var_left(),
+      var_right = var_right(),
+      df = r[[id]]$df()))
 
   })
 }

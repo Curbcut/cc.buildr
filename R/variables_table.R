@@ -86,6 +86,14 @@ add_variable <- function(variables, var_code, type, var_title,
     stop(paste0("`", var_code, "` is a duplicate."))
   }
 
+  if (var_code %in% variables$var_code)
+    stop(paste0("`", var_code, "` is already a `var_code` present in the variables table."))
+
+  # Necessary to not have issues with the dropdowns (unique title can't hold 2 variables)
+  if (var_title %in% variables$var_title)
+    stop(paste0("`", var_title, "` is already a `var_title` present in the variables table."))
+
+
   new_variable <-
     tibble::tibble(
       var_code = as.character(var_code),
