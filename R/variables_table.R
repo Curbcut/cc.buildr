@@ -17,6 +17,8 @@ append_empty_variables_table <- function(scales_consolidated) {
       var_title = character(),
       var_short = character(),
       explanation = character(),
+      exp_q5 = character(),
+      parent_vec = character(),
       group_name = character(),
       group_diff = list(),
       theme = character(),
@@ -26,8 +28,10 @@ append_empty_variables_table <- function(scales_consolidated) {
       avail_df = list(),
       breaks_q3 = list(),
       breaks_q5 = list(),
+      region_values = list(),
       source = character(),
-      interpolated = list()
+      interpolated = list(),
+      rankings_chr = list()
     )
 
   list(scales = scales_consolidated, variables = variables)
@@ -46,6 +50,24 @@ append_empty_variables_table <- function(scales_consolidated) {
 #' space is limited. Preferably ~ <12 characters.
 #' @param explanation <`character`> Variable explanation, e.g. the percentage of
 #' private dwellings occupied by tenants
+#' @param exp_q5 <`character`> String used for the explore panel explaining the
+#' variable. Depends on the `type`. The rules are:
+#' \itemize{
+#'  \item{"pct"}{starts with a verb and follows the absolute count of the parent
+#'  string. the string will read e.g. '50 households (3%) are tenants' where
+#'  `are tenants` is the definition value.}
+#'  \item{"dollar"}{starts with a subject and ends with a verb. It's assumed it
+#'  will be followed by a dollar number. e.g. 'the average rent is 800$' where
+#'  `the average rent is` is the definition value.}
+#'  \item{"ind"}{starts with a verb and follow the absolute count of the parent
+#'  string. Uses a place holder written `_X_` which would translates to, e.g. 'medium to high'.
+#'  example: '50 households are living in areas with low potential for active living'
+#'  where the definition would be: `are living in areas with _X_ potential for active living`}
+#' }
+#' @param parent_vec <`character`> Parent vector of the variable. Used for
+#' the explore panel. Must be another entry in the variable table. E.g. for
+#' Tenant households (%), the parent variable would be the number of
+#' private households (denominator of the percentage) : `private_households`.
 #' @param group_name <`character`> The name of the larger group to which the
 #' variable belongs. e.g. for the variable accessibility to public schools by bike,
 #' the group_name would be \code{"Accessibility to schools"}
@@ -69,19 +91,32 @@ append_empty_variables_table <- function(scales_consolidated) {
 #' @param breaks_q5 <`data.frame`> A data.frame with with information regarding
 #' scales, date, rank, breaks. The last outputs of
 #' \code{\link[cc.buildr]{calculate_breaks}}
+#' @param region_values <`data.frame`> A data.frame with information regarding
+#' the values of the overall region. Must include the region, and potentially
+#' the year, val and count columns, depending on the variable type. Can be
+#' created using \code{\link{variables_get_region_vals}}.
 #' @param source <`character`> The source where the data comes from, e.g.
 #' "McGill Geo-Social Determinants of Health Research Group"
 #' @param interpolated <`data.frame`> A data.frame indicating from which scale
 #' the geo/scale comination has been interpolated. The non-interpolated data
 #' is populated with \code{"FALSE"}
+#' @param rankings_chr <`character vector`> Vector of character that will be used
+#' in the explore text to inform how a location ranks within the region.
+#' The attach character will be its `q5` break. `ranking_chr` must be in order of
+#' lower to higher. `The variable score is 90% which is unusually low for Montreal`.
+#' Defaults to `c("exceptionally low", "unusually low", "just about average", "unusually high", "exceptionally high")`
 #'
 #' @return The same `variables` data.frame fed, with the added row.
 #' @export
 add_variable <- function(variables, var_code, type, var_title,
                          var_short = as.character(var_title), explanation,
-                         group_name = NA_character_, group_diff = list(),
-                         theme, private, pe_include = TRUE, dates, avail_df,
-                         breaks_q3, breaks_q5, source, interpolated) {
+                         exp_q5, parent_vec, group_name = NA_character_,
+                         group_diff = list(), theme, private, pe_include = TRUE,
+                         dates, avail_df, breaks_q3, breaks_q5,
+                         region_values = NULL, source, interpolated,
+                         rankings_chr = c("exceptionally low", "unusually low",
+                                          "just about average", "unusually high",
+                                          "exceptionally high")) {
   if (var_code %in% variables$var_code) {
     stop(paste0("`", var_code, "` is a duplicate."))
   }
@@ -93,6 +128,12 @@ add_variable <- function(variables, var_code, type, var_title,
   if (var_title %in% variables$var_title)
     stop(paste0("`", var_title, "` is already a `var_title` present in the variables table."))
 
+  # If NULL is supplied, revert to the default
+  if (all(is.null(rankings_chr))) {
+    rankings_chr <- c("exceptionally low", "unusually low",
+                      "just about average", "unusually high",
+                      "exceptionally high")
+  }
 
   new_variable <-
     tibble::tibble(
@@ -101,6 +142,8 @@ add_variable <- function(variables, var_code, type, var_title,
       var_title = as.character(var_title),
       var_short = as.character(var_short),
       explanation = as.character(explanation),
+      exp_q5 = as.character(exp_q5),
+      parent_vec = as.character(parent_vec),
       theme = as.character(theme),
       private = as.logical(private),
       pe_include = as.logical(pe_include),
@@ -110,9 +153,142 @@ add_variable <- function(variables, var_code, type, var_title,
       avail_df = list(avail_df),
       breaks_q3 = list(breaks_q3),
       breaks_q5 = list(breaks_q5),
+      region_values = list(region_values),
       interpolated = list(interpolated),
-      group_diff = list(group_diff)
+      group_diff = list(group_diff),
+      rankings_chr = list(rankings_chr)
     )
 
   rbind(variables, new_variable)
+}
+
+#' Get variable values for regions
+#'
+#' This function takes in a set of variables and scales, and iterates over
+#' each variable to get its values for each region and year. The function
+#' returns a data frame with the region, year, value, and count (if applicable)
+#' for each variable.
+#'
+#' @param scales <`list`> Lists of spatial features dataframes with regions and
+#' scales. List of two depths (region and scales).
+#' @param vars <`character`> A character vector of variable codes. Unique variable
+#' codes, no times appended.
+#' @param types <`list`> A named list of variable types (e.g., "pct", "avg", "count", "ind").
+#' The names of the list should match the variable names in \code{vars}.
+#' @param parent_strings <`list`> A named list of parent strings. The names of the list
+#' should match the variable names in \code{vars}. The parent strings are used
+#' to calculate the absolute values of certain variable types. We know the
+#' absolute number of tenant households by multiplying the percentage with the
+#' number of households. The parent_strings must be present in the same `df` as the
+#' vars.
+#' @param breaks <`named list`> A named list of dataframes of variable breaks
+#' for `ind` variables. Usually the `q5_breaks_table` of \code{\link{calculate_breaks}}
+#' The names of the list should match the variable names in \code{vars}.
+#' @param time_regex <`character`> A regular expression used to identify the
+#' years for which a variable has data. The default is "`_\\d{4}$`".
+#' @param round_closest_5 <`logical`> Whether the absolute count or `pct` variables
+#' should be rounded up to the closest 5, to not give impression of accuracy
+#' we do not have. The census is rounded to a random 5 units.
+#'
+#' @return A list with dataframes of the region, year, value, and count (if
+#' applicable) for each variable.
+#' @export
+variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL,
+                                      breaks = NULL, time_regex = "_\\d{4}$",
+                                      round_closest_5 = TRUE) {
+
+  sapply(vars, \(var) {
+
+    # Grab the variable types
+    type <- unlist(types[[var]])
+
+    # Missing arguments depending on type
+    if (sum(type %in% c("pct", "avg", "median", "ind")) > 0 && is.null(parent_strings)) {
+      stop(paste0("A variable of type `", type, "` must have a parent string."))
+    }
+    if (sum(type %in% c("ind")) > 0 && is.null(breaks)) {
+      stop(paste0("A variable of type `", type, "` must have the breaks ",
+                  "supplied, usually the `q5_breaks_table` output of ",
+                  "`cc.buildr::calculate_breaks`."))
+    }
+
+    # Iterate the count over all regions
+    region_vals <- mapply(\(region_name, region) {
+
+      # Get the names of all the scales inside a region
+      cols <- lapply(region, names)[length(region):1]
+      # Grab the first scale which has a variable corresponding to ours
+      has_var <- sapply(cols, \(x) sum(grepl(paste0(var, time_regex), x)) > 0)
+      if (sum(has_var) == 0) return(data.frame())
+      df_name <- names(has_var[has_var])[[1]]
+      df <- region[[df_name]]
+      # Get all the years at which the variable is available
+      all_var <- names(df)[grepl(paste0(var, time_regex), names(df))]
+
+      # Iterate over all years of the variable and get the right information
+      # depending on the variable type
+      out <- lapply(all_var, \(v) {
+
+        out <- tibble::tibble(region = region_name,
+                              year = gsub(var, "", v))
+        out$year <- gsub("^_", "", out$year)
+
+        if ("pct" %in% type) {
+          parent_string <- parent_strings[[var]]
+          parent_string_year <- paste0(parent_string, "_", out$year)
+          no_nas <- df[!is.na(df[[parent_string_year]]) &
+                         !is.na(df[[v]]), ]
+
+          out$val <- stats::weighted.mean(no_nas[[v]], no_nas[[parent_string_year]])
+          out$count <- out$val * sum(no_nas[[parent_string_year]])
+
+          # Round if necessary
+          if (round_closest_5) out$count <- round(out$count/5)*5
+
+        } else if ("avg" %in% type || "median" %in% type) {
+          parent_string <- parent_strings[[var]]
+          parent_string_year <- paste0(parent_string, "_", out$year)
+          no_nas <- df[!is.na(df[[parent_string_year]]) &
+                         !is.na(df[[v]]), ]
+
+          out$val <- stats::weighted.mean(no_nas[[v]], no_nas[[parent_string_year]])
+        } else if ("count" %in% type) {
+          out$val <- sum(df[[v]], na.rm = TRUE)
+        } else if ("ind" %in% type) {
+          parent_string <- parent_strings[[var]]
+
+          brk <- breaks[[var]]
+          brk <- brk[grepl(paste0("^", region_name, "_"), brk$df), ]
+          last_df <- unique(brk$df)
+          last_df <- last_df[length(last_df)]
+          brk <- brk[brk$df == last_df, ]
+
+          # Higher than the values of the second to last bracket
+          val <- brk$var[brk$rank == 3]
+          second_to_last <- df[df[[v]] > val, ]
+
+          out$count <- sum(second_to_last[[parent_string]], na.rm = TRUE)
+          out$val <- out$count / sum(df[[parent_string]], na.rm = TRUE)
+        }
+
+        # Switch NaN to NA
+        out[is.na(out)] <- NA
+
+        return(out)
+      })
+
+      # Make it in one ordered dataframe
+      out <- Reduce(rbind, out)
+
+      if ("year" %in% names(out))
+        out <- out[order(out$year, decreasing = TRUE), ]
+
+      return(out)
+
+    }, names(scales), scales, SIMPLIFY = FALSE)
+
+    return(Reduce(rbind, region_vals))
+
+  }, simplify = FALSE, USE.NAMES = TRUE)
+
 }

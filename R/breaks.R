@@ -11,8 +11,7 @@
 #'
 #' @return Returns the same data.frame as df with q3 columns appended.
 #' @export
-add_q3 <- function(df, vars, time_regex = "\\d{4}") {
-  time_regex_end <- paste0("_", time_regex, "$")
+add_q3 <- function(df, vars, time_regex = "_\\d{4}$") {
 
   # Get all q3s arranged in a dataframe
   q3s <-
@@ -27,9 +26,9 @@ add_q3 <- function(df, vars, time_regex = "\\d{4}") {
 
   # Change names to get q3 between the variable name and the timeframe
   names(q3s) <- paste0(
-    gsub(time_regex_end, "", names(q3s)), "_q3",
+    gsub(time_regex, "", names(q3s)), "_q3",
     sapply(names(q3s), \(x) {
-      loc <- regexpr(time_regex_end, x)
+      loc <- regexpr(time_regex, x)
       if (loc < 0) {
         return("")
       }
@@ -93,8 +92,7 @@ get_breaks_q3 <- function(df, vars) {
 #'
 #' @return Returns the same data.frame as df with q5 columns appended.
 #' @export
-add_q5 <- function(df, breaks, time_regex = "\\d{4}") {
-  time_regex_end <- paste0("_", time_regex, "$")
+add_q5 <- function(df, breaks, time_regex = "_\\d{4}$") {
 
   all_q5s <- mapply(\(var, values) {
     values[1] <- -Inf
@@ -110,9 +108,9 @@ add_q5 <- function(df, breaks, time_regex = "\\d{4}") {
 
     # Change names to get q3 between the variable name and the timeframe
     names(q5s) <- paste0(
-      gsub(time_regex_end, "", var), "_q5",
+      gsub(time_regex, "", var), "_q5",
       sapply(var, \(x) {
-        loc <- regexpr(time_regex_end, x)
+        loc <- regexpr(time_regex, x)
         if (loc < 0) {
           return("")
         }
@@ -160,10 +158,9 @@ find_breaks_q5 <- function(min_val, max_val) {
 #'
 #' @return A data.frame where each column in a var, and the rows are the q3
 #' @export
-get_breaks_q5 <- function(df, vars, time_regex = "\\d{4}") {
+get_breaks_q5 <- function(df, vars, time_regex = "_\\d{4}$") {
   # Calculate q5 using ALL years
-  time_regex_end <- paste0("_", time_regex, "$")
-  unique_vars <- unique(gsub(time_regex_end, "", vars))
+  unique_vars <- unique(gsub(time_regex, "", vars))
 
   q5s <- sapply(unique_vars, \(u_var) {
     # Extract the variable in a numeric vector
@@ -199,7 +196,7 @@ get_breaks_q5 <- function(df, vars, time_regex = "\\d{4}") {
     if (!var %in% names(df)) {
       return()
     }
-    unlist(q5s[which(gsub(time_regex_end, "", var) == names(q5s))],
+    unlist(q5s[which(gsub(time_regex, "", var) == names(q5s))],
       use.names = FALSE
     )
   }, simplify = FALSE, USE.NAMES = TRUE)
@@ -217,13 +214,26 @@ get_breaks_q5 <- function(df, vars, time_regex = "\\d{4}") {
 #' @param time_regex <`character`> Regular expression which corresponds to
 #' a timeframe, placed at the end of the `vars` vector. e.g. `\\d{4}` for
 #' years. If the variable does not have a timeframe, enter an empty string (`""`).
+#' @param types <`list`> A named list of variable types (e.g., "pct", "avg", "count", "ind").
+#' The names of the list should match the variable names in \code{vars} (without the dates).
+#' @param rank_name <`character vector`> If the type is `ind`, how should every ranks
+#' from 1 to 5 (q5) be named. Defaults to c("Low", "Below average", "Average",
+#' "Above average", "High")
+#' @param rank_name_short <`character vector`> Same as rank_name but shorter
+#' to not take too much space in the legend labels. Defaults to c("Low", "B. average",
+#' "Average", "A. average", "High")
 #'
 #' @return Returns a list of length 4. The first is the same data.frame as df
 #' with q3 and q5 columns appended. The second is the q3 breaks table, and the third
 #' is the q5 breaks table. The fourth is vectors of characters of all dates at
 #' which variables are available for.
 #' @export
-calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
+calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
+                             types = NULL,
+                             rank_name = c("Low", "Below average", "Average",
+                                           "Above average", "High"),
+                             rank_name_short = c("Low", "B. average", "Average",
+                                                 "A. average", "High")) {
   if (time_regex != "") {
     if (sum(sapply(vars, \(var) grepl(time_regex, var))) == 0) {
       stop(paste0(
@@ -278,9 +288,7 @@ calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
 
   # Arrange the breaks tables
   # Unique variables
-  time_regex_end_ <- paste0("_", time_regex, "$")
-  unique_vars <- unique(gsub(time_regex_end_, "", vars))
-  time_regex_end <- paste0(time_regex, "$")
+  unique_vars <- unique(gsub(time_regex, "", vars))
 
   # q3
   q3_breaks_table <-
@@ -290,13 +298,8 @@ calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
         fun = \(geo = geo, scale_name = scale_name, scale_df = scale_df, ...) {
           var_all_years <- names(scale_df)[grepl(var, names(scale_df))]
           out <- lapply(var_all_years, \(v) {
-            date <- {
-              loc <- regexpr(time_regex_end, v)
-              if (loc < 0) {
-                return(NA)
-              }
-              substring(v, loc)
-            }
+            date <- stringr::str_extract(v, time_regex)
+            date <- gsub("^_", "", date)
             tibble::tibble(
               df = paste(geo, scale_name, sep = "_"),
               date = if (date == "") NA else date,
@@ -326,11 +329,19 @@ calculate_breaks <- function(all_scales, vars, time_regex = "\\d{4}") {
         fun = \(geo = geo, scale_name = scale_name, scale_df = scale_df, ...) {
           var_all_years <- names(scale_df)[grepl(var, names(scale_df))]
           out <- lapply(var_all_years, \(v) {
-            tibble::tibble(
+            out <- tibble::tibble(
               df = paste(geo, scale_name, sep = "_"),
               rank = seq_len(nrow(scale_df)) - 1,
               var = scale_df[[v]]
             )
+
+            # If type is `ind`, add rank_name and rank_name_short
+            if (!is.null(types) && "ind" %in% types[[var]]) {
+              out$rank_name <- c(NA, rank_name)
+              out$rank_name_short <- c(NA, rank_name_short)
+            }
+
+            return(out)
           })
           unique(Reduce(rbind, out))
         }

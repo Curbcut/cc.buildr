@@ -18,7 +18,7 @@ default_region <- modules$regions[modules$id == "__id__"][[1]][1]
       `__widgets_UI__`,
       bottom = shiny::tagList(
         curbcut::legend_UI(shiny::NS(id, id)),
-        curbcut::zoom_UI(shiny::NS(id, id), `canale_mzp`)
+        curbcut::zoom_UI(shiny::NS(id, id), `__id___mzp`)
       )),
 
     # Map
@@ -45,7 +45,7 @@ default_region <- modules$regions[modules$id == "__id__"][[1]][1]
     # Initial reactives
     rv_zoom_string <- reactiveVal(
       curbcut::zoom_get_string(zoom = map_zoom,
-                               zoom_levels = `canale_mzp`,
+                               zoom_levels = `__id___mzp`,
                                region = default_region))
 
     # Zoom and POI reactives when the view state of the map changes.
@@ -176,14 +176,15 @@ default_region <- modules$regions[modules$id == "__id__"][[1]][1]
       zoom_levels = reactive(zoom_levels()$zoom_levels),
       region = reactive(zoom_levels()$region))
 
-    # # Explore panel
-    # explore_content <- explore_server(
-    #   id = id,
-    #   r = r,
-    #   data = data,
-    #   geo = reactive(map_zoom_levels()$region),
-    #   var_left = var_left,
-    #   var_right = var_right)
+    # Explore panel
+    curbcut::explore_server(
+      id = id,
+      r = r,
+      data = data,
+      region = reactive(zoom_levels()$region),
+      vars = vars,
+      df = r[[id]]$df,
+      select_id = r[[id]]$select_id)
 
     # Bookmarking
     curbcut::bookmark_server(id = id,

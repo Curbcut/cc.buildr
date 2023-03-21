@@ -4,7 +4,7 @@
 \alias{add_q3}
 \title{Append q3 column to the dataframe}
 \usage{
-add_q3(df, vars, time_regex = "\\\\d{4}")
+add_q3(df, vars, time_regex = "_\\\\d{4}$")
 }
 \arguments{
 \item{df}{<\code{data.frame}> Contains all columns in \code{vars}.}

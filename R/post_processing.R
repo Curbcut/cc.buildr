@@ -43,6 +43,18 @@ post_processing <- function(scales) {
     }
   )
 
+  # Order the rows using the ID (recurring assumption in Curbcut)
+  scales <- map_over_scales(
+    all_scales = scales,
+    fun = function(scale_df = scale_df,
+                   scale_name = scale_name,
+                   geo = geo,
+                   ...) {
+      scale_df[order(scale_df$ID), ]
+    }
+  )
+
+  # Reorder the columns
   scales <- reorder_columns(scales)
 
   return(scales)

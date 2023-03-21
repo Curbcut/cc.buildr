@@ -33,14 +33,36 @@ build_and_append__name_ <- function(scales_variables_modules, crs) {
     )
 
 
+  # Make a types named list -------------------------------------------------
+
+  # This will be used to inform which methods to use to calculate breaks and
+  # the region values. Percentages, dollars, index, ... get treated differently.
+  # See the `add_variable`'s documentation to see possible types.
+  types <- list(`_name_` = "ind")
+
+
   # Calculate breaks --------------------------------------------------------
 
   # Calculate breaks using the `calculate_breaks` function.
   with_breaks <-
     calculate_breaks(
       all_scales = data_interpolated$scales,
-      vars = vars
+      vars = vars,
+      types = types
     )
+
+
+  # Get the variables values per regions ------------------------------------
+
+  # Make a parent string the same way as the types
+  parent_strings <- list(`_name_` = "households")
+
+  region_vals <- variables_get_region_vals(
+    scales = data_interpolated$scales,
+    vars = vars,
+    types = types,
+    parent_strings = parent_strings,
+    breaks = with_breaks$q5_breaks_table)
 
 
   # Variables table ---------------------------------------------------------
@@ -52,16 +74,19 @@ build_and_append__name_ <- function(scales_variables_modules, crs) {
     add_variable(
       variables = scales_variables_modules$variables,
       var_code = "canale",
-      type = "ind",
+      type = types[[`_name_`]],
       var_title = "Can-ALE index",
       var_short = "Can-ALE",
       explanation = "the potential for active living",
+      exp_q5 = "are living in an area with _X_ potential for active living",
+      parent_vec = "households",
       theme = "Urban life",
       private = FALSE,
       dates = with_breaks$avail_dates[[unique_var]],
       avail_df = data_interpolated$avail_df,
       breaks_q3 = with_breaks$q3_breaks_table[[unique_var]],
       breaks_q5 = with_breaks$q5_breaks_table[[unique_var]],
+      region_values = region_vals[[unique_var]],
       source = "McGill Geo-Social Determinants of Health Research Group",
       interpolated = data_interpolated$interpolated_ref
     )

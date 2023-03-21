@@ -803,9 +803,10 @@ tileset_upload_custom_auto_zoom <- function(smaller_limit_scale,
 
 #' Create CSD labels tileset
 #'
-#' @param CSD_table <`sf data.frame`> The data.frame containing the most filled
-#' set of CSDs. Their labels will be the `name` column, and the `population`
-#' column will be used to weight which label to display first.
+#' @param scales <`list`> Lists of spatial features dataframes with regions and
+#' scales, Usually `scales_variables_modules$scales`. Their labels will be the
+#' `name` column of the first scale for each region, and the `population` column
+#' will be used to weight which label to display first.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
 #' @param prefix <`character`> Prefix attached to every tile source and
@@ -816,30 +817,33 @@ tileset_upload_custom_auto_zoom <- function(smaller_limit_scale,
 #' @return Returns nothing if succeeds. Tilesets are created and published and
 #' ready to be used.
 #' @export
-tileset_labels <- function(CSD_table, crs, prefix, username, access_token) {
-  ## Error catch
-  if (all((!c("name", "population", "geometry") %in% names(CSD_table)))) {
-    stop("One of `name`, `population` or `geometry` column is missing.")
-  }
+tileset_labels <- function(scales, crs, prefix, username, access_token) {
+  mapply(\(region_name, scale) {
+    scale <- scale[[1]]
 
-  name <- paste(prefix, "CSD_label", sep = "_")
+    ## Error catch
+    if (all((!c("name", "population", "geometry") %in% names(scale)))) {
+      stop("One of `name`, `population` or `geometry` column is missing.")
+    }
 
-  # Calculate centroid using a projection
-  CSD_table <- sf::st_transform(CSD_table, crs)
+    name <- paste(prefix, region_name, "label", sep = "_")
 
-  CSD_table <- CSD_table[c("name", "population", "geometry")]
-  CSD_table$name <- stringi::stri_trans_general(CSD_table$name, id = "Latin-ASCII")
-  CSD_table <- sf::st_set_agr(CSD_table, "constant")
-  CSD_table <- sf::st_centroid(CSD_table)
+    # Calculate centroid using a projection
+    scale <- sf::st_transform(scale, crs)
 
-  CSD_table <- sf::st_transform(CSD_table, 4326)
-  tileset_upload_tile_source(
-    df = CSD_table, id = name,
-    username = username,
-    access_token = access_token
-  )
+    scale <- scale[c("name", "population", "geometry")]
+    scale$name <- stringi::stri_trans_general(scale$name, id = "Latin-ASCII")
+    scale <- sf::st_set_agr(scale, "constant")
+    scale <- sf::st_centroid(scale)
 
-  recipe_label <- paste0('
+    scale <- sf::st_transform(scale, 4326)
+    tileset_upload_tile_source(
+      df = scale, id = name,
+      username = username,
+      access_token = access_token
+    )
+
+    recipe_label <- paste0('
 {
   "recipe": {
     "version": 1,
@@ -860,21 +864,19 @@ tileset_labels <- function(CSD_table, crs, prefix, username, access_token) {
 }
 ')
 
-  # Create and publish tileset
+    # Create and publish tileset
 
-  tileset_create_tileset(name, recipe_label,
-    username = username,
-    access_token = access_token
-  )
-  tileset_publish_tileset(name,
-    username = username,
-    access_token = access_token
-  )
+    tileset_create_tileset(name, recipe_label,
+                           username = username,
+                           access_token = access_token
+    )
+    tileset_publish_tileset(name,
+                            username = username,
+                            access_token = access_token
+    )
+
+  }, names(scales), scales)
 }
-
-
-
-
 
 #' Create and publish street and park tilesets
 #'

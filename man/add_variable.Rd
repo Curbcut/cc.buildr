@@ -11,6 +11,8 @@ add_variable(
   var_title,
   var_short = as.character(var_title),
   explanation,
+  exp_q5,
+  parent_vec,
   group_name = NA_character_,
   group_diff = list(),
   theme,
@@ -20,8 +22,11 @@ add_variable(
   avail_df,
   breaks_q3,
   breaks_q5,
+  region_values = NULL,
   source,
-  interpolated
+  interpolated,
+  rankings_chr = c("exceptionally low", "unusually low", "just about average",
+    "unusually high", "exceptionally high")
 )
 }
 \arguments{
@@ -41,6 +46,26 @@ space is limited. Preferably ~ <12 characters.}
 
 \item{explanation}{<\code{character}> Variable explanation, e.g. the percentage of
 private dwellings occupied by tenants}
+
+\item{exp_q5}{<\code{character}> String used for the explore panel explaining the
+variable. Depends on the \code{type}. The rules are:
+\itemize{
+\item{"pct"}{starts with a verb and follows the absolute count of the parent
+string. the string will read e.g. '50 households (3\%) are tenants' where
+\verb{are tenants} is the definition value.}
+\item{"dollar"}{starts with a subject and ends with a verb. It's assumed it
+will be followed by a dollar number. e.g. 'the average rent is 800$' where
+\verb{the average rent is} is the definition value.}
+\item{"ind"}{starts with a verb and follow the absolute count of the parent
+string. Uses a place holder written \verb{_X_} which would translates to, e.g. 'medium to high'.
+example: '50 households are living in areas with low potential for active living'
+where the definition would be: \verb{are living in areas with _X_ potential for active living}}
+}}
+
+\item{parent_vec}{<\code{character}> Parent vector of the variable. Used for
+the explore panel. Must be another entry in the variable table. E.g. for
+Tenant households (\%), the parent variable would be the number of
+private households (denominator of the percentage) : \code{private_households}.}
 
 \item{group_name}{<\code{character}> The name of the larger group to which the
 variable belongs. e.g. for the variable accessibility to public schools by bike,
@@ -74,12 +99,23 @@ scales, date, rank, breaks. The last outputs of
 scales, date, rank, breaks. The last outputs of
 \code{\link[cc.buildr]{calculate_breaks}}}
 
+\item{region_values}{<\code{data.frame}> A data.frame with information regarding
+the values of the overall region. Must include the region, and potentially
+the year, val and count columns, depending on the variable type. Can be
+created using \code{\link{variables_get_region_vals}}.}
+
 \item{source}{<\code{character}> The source where the data comes from, e.g.
 "McGill Geo-Social Determinants of Health Research Group"}
 
 \item{interpolated}{<\code{data.frame}> A data.frame indicating from which scale
 the geo/scale comination has been interpolated. The non-interpolated data
 is populated with \code{"FALSE"}}
+
+\item{rankings_chr}{<\verb{character vector}> Vector of character that will be used
+in the explore text to inform how a location ranks within the region.
+The attach character will be its \code{q5} break. \code{ranking_chr} must be in order of
+lower to higher. \verb{The variable score is 90\% which is unusually low for Montreal}.
+Defaults to \code{c("exceptionally low", "unusually low", "just about average", "unusually high", "exceptionally high")}}
 }
 \value{
 The same \code{variables} data.frame fed, with the added row.

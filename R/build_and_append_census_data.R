@@ -29,13 +29,13 @@ ba_census_data <- function(scales_variables_modules,
                            housing_module = TRUE) {
   # Declare all variables from the census -----------------------------------
 
-  vars <-
-    sapply(census_vectors,
-      \(x) paste(x, census_years, sep = "_"),
-      simplify = FALSE, USE.NAMES = FALSE
-    ) |> unlist()
+  unique_var <- cc.data::census_add_parent_vectors(census_vectors)
 
-  unique_var <- census_vectors
+  vars <-
+    sapply(unique_var,
+           \(x) paste(x, census_years, sep = "_"),
+           simplify = FALSE, USE.NAMES = FALSE
+    ) |> unlist()
 
 
   # Build census data for all possible scales -------------------------------
@@ -54,7 +54,8 @@ ba_census_data <- function(scales_variables_modules,
   with_breaks <-
     calculate_breaks(
       all_scales = census_dat$scales,
-      vars = vars
+      vars = vars,
+      types = census_dat$types
     )
 
 
@@ -77,6 +78,12 @@ ba_census_data <- function(scales_variables_modules,
         explanation = cc.data::census_vectors_table$explanation[
           cc.data::census_vectors_table$var_code == u_var
         ],
+        exp_q5 = cc.data::census_vectors_table$exp_q5[
+          cc.data::census_vectors_table$var_code == u_var
+        ],
+        parent_vec = cc.data::census_vectors_table$parent_vec[
+          cc.data::census_vectors_table$var_code == u_var
+        ],
         theme = cc.data::census_vectors_table$theme[
           cc.data::census_vectors_table$var_code == u_var
         ],
@@ -85,8 +92,12 @@ ba_census_data <- function(scales_variables_modules,
         avail_df = census_dat$avail_df,
         breaks_q3 = with_breaks$q3_breaks_table[[u_var]],
         breaks_q5 = with_breaks$q5_breaks_table[[u_var]],
+        region_values = census_dat$region_values[[u_var]],
         source = "Canadian census",
-        interpolated = census_dat$interpolated_ref
+        interpolated = census_dat$interpolated_ref,
+        rankings_chr = cc.data::census_vectors_table$rankings_chr[
+          cc.data::census_vectors_table$var_code == u_var
+        ][[1]]
       )
       out[out$var_code == u_var, ]
     })

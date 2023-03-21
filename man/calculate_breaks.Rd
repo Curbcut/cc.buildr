@@ -4,7 +4,14 @@
 \alias{calculate_breaks}
 \title{Calculate all breaks when all_scales is a list of regions and scales}
 \usage{
-calculate_breaks(all_scales, vars, time_regex = "\\\\d{4}")
+calculate_breaks(
+  all_scales,
+  vars,
+  time_regex = "_\\\\d{4}$",
+  types = NULL,
+  rank_name = c("Low", "Below average", "Average", "Above average", "High"),
+  rank_name_short = c("Low", "B. average", "Average", "A. average", "High")
+)
 }
 \arguments{
 \item{all_scales}{<\code{named_list}> A named list of scales. The first level is
@@ -16,6 +23,17 @@ to add q3s. Must fit with a name in \code{df}.}
 \item{time_regex}{<\code{character}> Regular expression which corresponds to
 a timeframe, placed at the end of the \code{vars} vector. e.g. \verb{\\\\d\{4\}} for
 years. If the variable does not have a timeframe, enter an empty string (\code{""}).}
+
+\item{types}{<\code{list}> A named list of variable types (e.g., "pct", "avg", "count", "ind").
+The names of the list should match the variable names in \code{vars} (without the dates).}
+
+\item{rank_name}{<\verb{character vector}> If the type is \code{ind}, how should every ranks
+from 1 to 5 (q5) be named. Defaults to c("Low", "Below average", "Average",
+"Above average", "High")}
+
+\item{rank_name_short}{<\verb{character vector}> Same as rank_name but shorter
+to not take too much space in the legend labels. Defaults to c("Low", "B. average",
+"Average", "A. average", "High")}
 }
 \value{
 Returns a list of length 4. The first is the same data.frame as df

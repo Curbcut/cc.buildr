@@ -4,12 +4,13 @@
 \alias{tileset_labels}
 \title{Create CSD labels tileset}
 \usage{
-tileset_labels(CSD_table, crs, prefix, username, access_token)
+tileset_labels(scales, crs, prefix, username, access_token)
 }
 \arguments{
-\item{CSD_table}{<\verb{sf data.frame}> The data.frame containing the most filled
-set of CSDs. Their labels will be the \code{name} column, and the \code{population}
-column will be used to weight which label to display first.}
+\item{scales}{<\code{list}> Lists of spatial features dataframes with regions and
+scales, Usually \code{scales_variables_modules$scales}. Their labels will be the
+\code{name} column of the first scale for each region, and the \code{population} column
+will be used to weight which label to display first.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}

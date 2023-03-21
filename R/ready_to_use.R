@@ -23,12 +23,13 @@ ru_canale <- function(scales_variables_modules, region_DA_IDs, crs) {
     base_scale = "DA",
     weight_by = "households",
     crs = crs,
-    average_vars = c("canale_2016"),
+    average_vars = names(data)[names(data) != "DA_ID"],
     variable_var_code = "canale",
     variable_type = "ind",
     variable_var_title = "Can-ALE index",
     variable_var_short = "Can-ALE",
     variable_explanation = "the potential for active living",
+    variable_exp_q5 = "are living in areas with _X_ potential for active living",
     variable_theme = "Urban life",
     variable_private = FALSE,
     variable_source = "McGill Geo-Social Determinants of Health Research Group",
@@ -117,6 +118,7 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
     variable_var_title = "Can-BICS metric",
     variable_var_short = "Can-BICS",
     variable_explanation = "the bikeway comfort and safety classification system",
+    variable_exp_q5 = "are living in areas with _X_ cycling infrastructure comfort and safety",
     variable_theme = "Transport",
     variable_private = FALSE,
     variable_source = "Meghan Winters at Faculty of Health Sciences, Simon Fraser University",
@@ -184,13 +186,15 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
 ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
                         approximate_name_match = TRUE) {
   # Relevant dimensions
+  # Rent ranges temporarily taken out as they are not available for the
+  # Rental Univers series (parent vector)
   dimensions <-
-    c("Bedroom Type", "Year of Construction", "Rent Ranges")
+    c("Bedroom Type", "Year of Construction")#, "Rent Ranges")
   dimensions_short <-
-    c("bed", "year", "rent_range")
+    c("bed", "year")#, "rent_range")
 
   # Retrieval
-  cmhc <-
+  cmhc_vac_rate <-
     sapply(2010:2021, \(yr) {
       over_year <-
         mapply(\(x, y) {
@@ -209,8 +213,8 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
 
           # Pivot and rename
           out <- tidyr::pivot_wider(out,
-            names_from = tidyr::all_of(y),
-            values_from = "Value"
+                                    names_from = tidyr::all_of(y),
+                                    values_from = "Value"
           )
           names(out) <- gsub("Non-Market/Unknown", "non_market", names(out))
           names(out) <- gsub(" |-", "_", tolower(names(out)))
@@ -229,9 +233,9 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
           if (approximate_name_match) {
             out$name <-
               sapply(out$name,
-                agrep,
-                x = scales_variables_modules$scales$cmhc$cmhczone$name,
-                value = TRUE, USE.NAMES = FALSE
+                     agrep,
+                     x = scales_variables_modules$scales$cmhc$cmhczone$name,
+                     value = TRUE, USE.NAMES = FALSE
               )
             if (!all(sapply(out$name, length) == 1)) {
               stop(paste0(
@@ -248,6 +252,69 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
       tibble::as_tibble(cmhc)
     }, simplify = FALSE, USE.NAMES = TRUE)
 
+  cmhc_rental_units <-
+    sapply(2010:2021, \(yr) {
+      over_year <-
+        mapply(\(x, y) {
+          # Get data
+          out <- cmhc::get_cmhc(
+            survey = "Rms",
+            series = "Rental Universe",
+            dimension = x,
+            breakdown = "Survey Zones",
+            geo_uid = geo_uid,
+            year = yr
+          )[, 1:3]
+          # Rename column and update for real percentage
+          names(out)[2] <- y
+          out[3] <- out[3]
+
+          # Pivot and rename
+          out <- tidyr::pivot_wider(out,
+                                    names_from = tidyr::all_of(y),
+                                    values_from = "Value"
+          )
+          names(out) <- gsub("Non-Market/Unknown", "non_market", names(out))
+          names(out) <- gsub(" |-", "_", tolower(names(out)))
+          names(out) <- gsub("___", "_", names(out))
+          names(out) <- gsub("\\+", "plus", names(out))
+          names(out) <- gsub("_units", "", names(out))
+          names(out) <- gsub("bedroom", "bed", names(out))
+          names(out) <- gsub("\\$", "", names(out))
+          names(out) <- gsub("less_than", "less", names(out))
+          names(out) <- gsub(",", "", names(out))
+          names(out) <- paste("rental_universe", y, names(out), yr, sep = "_")
+          names(out)[1] <- "name"
+
+          # Change the name to the closest string in the CMHC zone scale
+          out <- out[!is.na(out$name), ]
+          if (approximate_name_match) {
+            out$name <-
+              sapply(out$name,
+                     agrep,
+                     x = scales_variables_modules$scales$cmhc$cmhczone$name,
+                     value = TRUE, USE.NAMES = FALSE
+              )
+            if (!all(sapply(out$name, length) == 1)) {
+              stop(paste0(
+                "Approximate name matching matched more than one ",
+                "name in `", yr,
+                "`. Consider using `approximate_name_match = FALSE`"
+              ))
+            }
+          }
+          # Return
+          out
+        }, dimensions, dimensions_short, SIMPLIFY = FALSE, USE.NAMES = TRUE)
+      cmhc <- Reduce(merge, over_year)
+      tibble::as_tibble(cmhc)
+    }, simplify = FALSE, USE.NAMES = TRUE)
+
+  # Merge vacancy rate with rental units
+  cmhc <- mapply(merge, cmhc_vac_rate, cmhc_rental_units,
+                 SIMPLIFY = FALSE)
+
+  # Merge with the `sf`
   merged <-
     Reduce(\(x, y) merge(x, y, by = "name", all.x = TRUE),
       cmhc,
@@ -271,13 +338,34 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
   with_breaks <-
     calculate_breaks(
       all_scales = scales_variables_modules$scales,
-      vars = vars,
-      time_regex = "\\d{4}"
+      vars = vars
     )
+
+  # Types
+  types <- rep(list("pct"), sum(grepl("^vac_rate", unique_vars)))
+  names(types) <- unique_vars[grepl("^vac_rate", unique_vars)]
+  types_count <- rep(list("count"), sum(grepl("^rental_universe", unique_vars)))
+  names(types_count) <- unique_vars[grepl("^rental_universe", unique_vars)]
+  types <- c(types, types_count)
+
+  # Parent strings
+  parent_strings <- lapply(gsub("vac_rate", "rental_universe", unique_vars[
+    grepl("^vac_rate", unique_vars)]), c)
+  names(parent_strings) <- unique_vars[grepl("^vac_rate", unique_vars)]
+  parent_strings_count <- lapply(rep(NA, sum(grepl("^rental_universe", unique_vars))), c)
+  names(parent_strings_count) <- unique_vars[grepl("^rental_universe", unique_vars)]
+  parent_strings <- c(parent_strings, parent_strings_count)
+
+  # Region values
+  region_values <- variables_get_region_vals(scales = with_breaks$scales,
+                            vars = unique_vars,
+                            types = types,
+                            parent_strings = parent_strings,
+                            breaks = with_breaks$q5_breaks_table)
 
   # Add to the variables table
   variables <-
-    lapply(unique_vars, \(var) {
+    lapply(unique_vars[grepl("^vac_rate", unique_vars)], \(var) {
       # Create title and explanation
       cat_title <- (\(x) {
         # Bedroom types
@@ -346,9 +434,9 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
       })(var)
       title <- paste("Vacancy rate in", cat_title)
       explanation <- paste(
-        "the percentage of all available",
+        "the percentage of available rental",
         gsub("^all ", "", cat_title),
-        "in a rental property that are vacant or unoccupied"
+        "that are vacant or unoccupied"
       )
 
       # Create short title
@@ -449,6 +537,9 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
           var_title = title,
           var_short = short,
           explanation = explanation,
+          exp_q5 = "are vacant or unoccupied",
+          parent_vec = parent_strings[[var]],
+          region_values = region_values[[var]],
           theme = "Vacancy rate",
           private = FALSE,
           pe_include = pe_include,
@@ -462,11 +553,180 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
             interpolated_from = FALSE
           ),
           group_name = group_name,
-          group_diff = group_diff
+          group_diff = group_diff,
+          rankings_chr = c("an exceptionally low vacancy rate",
+                           "an unusually low vacancy rate",
+                           "a just about average vacancy rate",
+                           "an unusually high vacancy rate",
+                           "an exceptionally high vacancy rate")
         )
 
       out[out$var_code == var, ]
     }) |> (\(x) Reduce(rbind, x, init = scales_variables_modules$variables))()
+
+  variables <-
+    lapply(unique_vars[grepl("^rental_universe", unique_vars)], \(var) {
+      # Create title and explanation
+      cat_title <- (\(x) {
+        # Bedroom types
+        if (grepl("_bed_", var)) {
+          if (grepl("bachelor$", var)) {
+            return("rental studio apartments")
+          }
+          suff <- "rental housing units"
+          if (grepl("1_bed$", var)) {
+            return(paste("one-bedroom", suff))
+          }
+          if (grepl("2_bed$", var)) {
+            return(paste("two-bedroom", suff))
+          }
+          if (grepl("3_bed_plus$", var)) {
+            return(paste("three-bedroom and larger", suff))
+          }
+          if (grepl("bed_total$", var)) {
+            return(paste(suff))
+          }
+        }
+        # Year of construction
+        if (grepl("_year_", var)) {
+          pre <- "rental housing units built"
+          if (grepl("before_1960$", var)) {
+            return(paste(pre, "before 1960"))
+          }
+          if (grepl("1960_1979$", var)) {
+            return(paste(pre, "between 1960 and 1979"))
+          }
+          if (grepl("1980_1999$", var)) {
+            return(paste(pre, "between 1980 and 1999"))
+          }
+          if (grepl("2000_or_later$", var)) {
+            return(paste(pre, "after 2000"))
+          }
+          if (grepl("year_total$", var)) {
+            return(paste("rental housing units"))
+          }
+        }
+        # Rent ranges
+        if (grepl("_rent_range_", var)) {
+          pre <- "rental housing units with a rent"
+          if (grepl("less_750$", var)) {
+            return(paste(pre, "below $750"))
+          }
+          if (grepl("750_999$", var)) {
+            return(paste(pre, "between $750 and $999"))
+          }
+          if (grepl("1000_1249$", var)) {
+            return(paste(pre, "between $1,000 and $1,249"))
+          }
+          if (grepl("1250_1499$", var)) {
+            return(paste(pre, "between $1,250 and $1,499"))
+          }
+          if (grepl("1500_plus$", var)) {
+            return(paste(pre, "higher than $1,500"))
+          }
+          if (grepl("non_market$", var)) {
+            return(paste("rental housing units with an unknown rent"))
+          }
+          if (grepl("rent_range_total$", var)) {
+            return(paste("rental housing units"))
+          }
+        }
+      })(var)
+      title <- stringr::str_to_sentence(cat_title)
+      explanation <- paste("the number of", cat_title)
+
+
+      # Create short title
+      cat_short <- (\(x) {
+        # Bedroom types
+        if (grepl("_bed_", var)) {
+          if (grepl("bachelor$", var)) {
+            return("studio")
+          }
+          if (grepl("1_bed$", var)) {
+            return("1bed")
+          }
+          if (grepl("2_bed$", var)) {
+            return("2bed")
+          }
+          if (grepl("3_bed_plus$", var)) {
+            return("3+bed")
+          }
+          if (grepl("bed_total$", var)) {
+            return("total")
+          }
+        }
+        # Year of construction
+        if (grepl("_year_", var)) {
+          if (grepl("before_1960$", var)) {
+            return("<1960")
+          }
+          if (grepl("1960_1979$", var)) {
+            return(">1960<1979")
+          }
+          if (grepl("1980_1999$", var)) {
+            return(">1980<1999")
+          }
+          if (grepl("2000_or_later$", var)) {
+            return(">2000")
+          }
+          if (grepl("year_total$", var)) {
+            return("total")
+          }
+        }
+        # Rent ranges
+        if (grepl("_rent_range_", var)) {
+          if (grepl("less_750$", var)) {
+            return("<$750")
+          }
+          if (grepl("750_999$", var)) {
+            return(">$750<$999")
+          }
+          if (grepl("1000_1249$", var)) {
+            return(">$1k<$1.25k")
+          }
+          if (grepl("1250_1499$", var)) {
+            return(">$1.25k<$1.5k")
+          }
+          if (grepl("1500_plus$", var)) {
+            return(">$1.5k")
+          }
+          if (grepl("non_market$", var)) {
+            return("?$")
+          }
+          if (grepl("rent_range_total$", var)) {
+            return("total")
+          }
+        }
+      })(var)
+      short <- paste("Vac. rate", cat_short)
+
+      out <-
+        add_variable(
+          variables = scales_variables_modules$variables,
+          var_code = var,
+          type = "pct",
+          var_title = title,
+          var_short = short,
+          explanation = explanation,
+          exp_q5 = NA,
+          parent_vec = NA,
+          region_values = region_values[[var]],
+          theme = "Vacancy rate",
+          private = FALSE,
+          dates = with_breaks$avail_dates[[var]],
+          avail_df = "cmhc_cmhczone",
+          breaks_q3 = with_breaks$q3_breaks_table[[var]],
+          breaks_q5 = with_breaks$q5_breaks_table[[var]],
+          source = "Canada Mortgage and Housing Corporation",
+          interpolated = tibble::tibble(
+            geo = "cmhc", scale = "zone",
+            interpolated_from = FALSE
+          )
+        )
+
+      out[out$var_code == var, ]
+    })  |> (\(x) Reduce(rbind, x, init = variables))()
 
 
   # Create a module

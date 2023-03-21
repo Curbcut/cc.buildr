@@ -4,7 +4,15 @@
 \alias{regions_dictionary}
 \title{Build the regions dictionary}
 \usage{
-regions_dictionary(all_tables, region, name, to_compare, pickable)
+regions_dictionary(
+  all_tables,
+  region,
+  name,
+  to_compare,
+  to_compare_determ,
+  to_compare_short,
+  pickable
+)
 }
 \arguments{
 \item{all_tables}{<\verb{named list}> Named list of regions and their scales within,
@@ -14,18 +22,29 @@ ordered in priority.}
 which large geometry the user is interested in, e.g.
 \code{c("CMA", "city", "island")}.}
 
-\item{name}{<\verb{named character vector}> Named with their corresponding geo value.
-Same length as the vector fed in the \code{geo} argument. Used to name the geo
+\item{name}{<\verb{named character vector}> Named with their corresponding region value.
+Same length as the vector fed in the \code{region} argument. Used to name the region
 when the user will want to change which large geometry they are interested in. e.g.
 \code{c("Metropolitan Area", "City of Montreal", "Island of Montreal")}.}
 
-\item{to_compare}{<\verb{named character vector}> Named with their corresponding geo value.
-Same length as the vector fed in the \code{geo} argument. The same length as
-the vector fed in the \code{geo} argument. Used at the end of dynamically generated
+\item{to_compare}{<\verb{named character vector}> Named with their corresponding region value.
+Same length as the vector fed in the \code{region} argument. Used by the dynamically generated
 text, when a particular zone is compared with the whole geography. 'x DA
 has a higher value than y\% of DAs in the Montreal region'.
 e.g. \code{c("in the Montreal region", "in the City of Montreal",
 "on the island of Montreal")}}
+
+\item{to_compare_determ}{<\verb{named character vector}> Named with their corresponding
+region value. Same length as the vector fed in the \code{region} argument. Used by the
+dynamically generated text and must start with a determinant. 'This is usually affordable
+for the Montreal region'. e.g. \code{c("the Montreal region", "the City of Montreal",
+"the island of Montreal")}}
+
+\item{to_compare_short}{<\verb{named character vector}> Named with their corresponding
+region value. Same length as the vector fed in the \code{region} argument. Used by the
+dynamically generated text and is used for shorter compare. 'It is higher than 99\%
+of other cities in the region'. e.g. \code{c("in the region", "in the city",
+"on the island")}}
 
 \item{pickable}{<\verb{named vector of logical}> Will the user be able to select this
 scale as a default all over the platform?}

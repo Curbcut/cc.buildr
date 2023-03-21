@@ -4,7 +4,7 @@
 \alias{get_breaks_q5}
 \title{Get q5 break values}
 \usage{
-get_breaks_q5(df, vars, time_regex = "\\\\d{4}")
+get_breaks_q5(df, vars, time_regex = "_\\\\d{4}$")
 }
 \arguments{
 \item{df}{<\code{data.frame}> Contains all columns in \code{vars}.}

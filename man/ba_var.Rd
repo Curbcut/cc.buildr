@@ -12,12 +12,13 @@ ba_var(
   crs,
   additive_vars = c(),
   average_vars = c(),
-  time_regex = "\\\\d{4}",
+  time_regex = "_\\\\d{4}$",
   variable_var_code,
   variable_type,
   variable_var_title,
   variable_var_short,
   variable_explanation,
+  variable_exp_q5,
   variable_theme,
   variable_private,
   variable_source,
@@ -68,6 +69,8 @@ years.}
 \item{variable_var_short}{<\code{charater}> See \code{\link[cc.buildr]{add_variable}}.}
 
 \item{variable_explanation}{<\code{charater}> See \code{\link[cc.buildr]{add_variable}}.}
+
+\item{variable_exp_q5}{<\code{character}> See \code{\link[cc.buildr]{add_variable}}.}
 
 \item{variable_theme}{<\code{charater}> See \code{\link[cc.buildr]{add_variable}}.}
 

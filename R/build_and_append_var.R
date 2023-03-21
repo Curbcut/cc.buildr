@@ -24,6 +24,7 @@
 #' @param variable_var_title <`charater`> See \code{\link[cc.buildr]{add_variable}}.
 #' @param variable_var_short <`charater`> See \code{\link[cc.buildr]{add_variable}}.
 #' @param variable_explanation <`charater`> See \code{\link[cc.buildr]{add_variable}}.
+#' @param variable_exp_q5 <`character`> See \code{\link[cc.buildr]{add_variable}}.
 #' @param variable_theme <`charater`> See \code{\link[cc.buildr]{add_variable}}.
 #' @param variable_private <`charater`> See \code{\link[cc.buildr]{add_variable}}.
 #' @param variable_source <`charater`> See \code{\link[cc.buildr]{add_variable}}.
@@ -43,9 +44,10 @@
 ba_var <- function(data, scales_variables_modules, base_scale,
                    weight_by = "households", crs,
                    additive_vars = c(), average_vars = c(),
-                   time_regex = "\\d{4}", variable_var_code,
+                   time_regex = "_\\d{4}$", variable_var_code,
                    variable_type, variable_var_title,
                    variable_var_short, variable_explanation,
+                   variable_exp_q5,
                    variable_theme, variable_private, variable_source,
                    module_id = NULL,
                    module_theme = NULL,
@@ -61,8 +63,7 @@ ba_var <- function(data, scales_variables_modules, base_scale,
     names(data)[!grepl("ID$", names(data))]
 
   # Check if we are really looking at a single variable.
-  time_regex_end <- paste0("_", time_regex, "$")
-  unique_var <- unique(gsub(time_regex_end, "", var))
+  unique_var <- unique(gsub(time_regex, "", var))
 
   if (length(unique_var) > 1) {
     stop(paste0(
@@ -89,13 +90,33 @@ ba_var <- function(data, scales_variables_modules, base_scale,
     )
 
 
+  # Declare the types of the variables in a named list ----------------------
+
+  types <- list(variable_type)
+  names(types) <- unique_var
+
+
   # Calculate breaks --------------------------------------------------------
 
   with_breaks <-
     calculate_breaks(
       all_scales = data_interpolated$scales,
-      vars = var
+      vars = var,
+      types = types
     )
+
+
+  # Region values -----------------------------------------------------------
+
+  parent_strings <- list(canale = weight_by)
+
+  region_vals <-
+    variables_get_region_vals(
+      scales = data_interpolated$scales,
+      vars = unique_var,
+      types = types,
+      breaks = with_breaks$q5_breaks_table,
+      parent_strings = parent_strings)
 
 
   # Variables table ---------------------------------------------------------
@@ -108,12 +129,15 @@ ba_var <- function(data, scales_variables_modules, base_scale,
       var_title = variable_var_title,
       var_short = variable_var_short,
       explanation = variable_explanation,
+      exp_q5 = variable_exp_q5,
+      parent_vec = weight_by,
       theme = variable_theme,
       private = variable_private,
       dates = with_breaks$avail_dates[[unique_var]],
       avail_df = data_interpolated$avail_df,
       breaks_q3 = with_breaks$q3_breaks_table[[unique_var]],
       breaks_q5 = with_breaks$q5_breaks_table[[unique_var]],
+      region_values = region_vals[[unique_var]],
       source = variable_source,
       interpolated = data_interpolated$interpolated_ref
     )
