@@ -17,6 +17,7 @@ append_empty_variables_table <- function(scales_consolidated) {
       var_title = character(),
       var_short = character(),
       explanation = character(),
+      explanation_nodet = character(),
       exp_q5 = character(),
       parent_vec = character(),
       group_name = character(),
@@ -49,8 +50,12 @@ append_empty_variables_table <- function(scales_consolidated) {
 #' @param var_title <`character`> The variable title
 #' @param var_short <`character`> A short variable title used in graphs or where
 #' space is limited. Preferably ~ <12 characters.
-#' @param explanation <`character`> Variable explanation, e.g. the percentage of
-#' private dwellings occupied by tenants
+#' @param explanation <`character`> Variable explanation. Starts with a determinant.
+#'  e.g. the percentage of private dwellings occupied by tenants
+#' @param explanation_nodet <`character`> Usually the same as `explanation`
+#' without the determinant it starts with. It defaults to `explanation` with the `^the `
+#' it starts with removed. Used in the compare panel following `a higher x`.
+#' e.g. a higher 'percentage of private dwellings occupied by tenants'.
 #' @param exp_q5 <`character`> String used for the explore panel explaining the
 #' variable. Depends on the `type`. The rules are:
 #' \itemize{
@@ -128,6 +133,7 @@ append_empty_variables_table <- function(scales_consolidated) {
 #' @export
 add_variable <- function(variables, var_code, type, var_title,
                          var_short = as.character(var_title), explanation,
+                         explanation_nodet = gsub("^the ", "", explanation),
                          exp_q5, parent_vec, group_name = NA_character_,
                          group_diff = list(), theme, private, pe_include = TRUE,
                          dates, avail_df, breaks_q3, breaks_q5,
@@ -175,6 +181,7 @@ add_variable <- function(variables, var_code, type, var_title,
       var_title = as.character(var_title),
       var_short = as.character(var_short),
       explanation = as.character(explanation),
+      explanation_nodet = as.character(explanation_nodet),
       exp_q5 = as.character(exp_q5),
       parent_vec = as.character(parent_vec),
       theme = as.character(theme),

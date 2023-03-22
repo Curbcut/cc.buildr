@@ -11,6 +11,7 @@ add_variable(
   var_title,
   var_short = as.character(var_title),
   explanation,
+  explanation_nodet = gsub("^the ", "", explanation),
   exp_q5,
   parent_vec,
   group_name = NA_character_,
@@ -46,8 +47,13 @@ new row.}
 \item{var_short}{<\code{character}> A short variable title used in graphs or where
 space is limited. Preferably ~ <12 characters.}
 
-\item{explanation}{<\code{character}> Variable explanation, e.g. the percentage of
-private dwellings occupied by tenants}
+\item{explanation}{<\code{character}> Variable explanation. Starts with a determinant.
+e.g. the percentage of private dwellings occupied by tenants}
+
+\item{explanation_nodet}{<\code{character}> Usually the same as \code{explanation}
+without the determinant it starts with. It defaults to \code{explanation} with the \verb{^the }
+it starts with removed. Used in the compare panel following \verb{a higher x}.
+e.g. a higher 'percentage of private dwellings occupied by tenants'.}
 
 \item{exp_q5}{<\code{character}> String used for the explore panel explaining the
 variable. Depends on the \code{type}. The rules are:

@@ -101,32 +101,31 @@ get_breaks_q3 <- function(df, vars, time_regex = "_\\d{4}$") {
 #' @export
 add_q5 <- function(df, breaks, time_regex = "_\\d{4}$") {
 
-  all_q5s <- mapply(\(var, values) {
-    values[1] <- -Inf
-    values[length(values)] <- Inf
+  all_q5s <- lapply(names(breaks), \(var) {
 
-    q5s <- if (length(df[[var]][!is.na(df[[var]])]) == 0) {
-      rep(NA, nrow(df))
-    } else {
-      as.numeric(cut(df[[var]], values, include.lowest = TRUE))
-    }
+    var_regex <- paste0("^", var, time_regex)
+    df_var <- names(df)[grepl(var_regex, names(df))]
 
-    q5s <- tibble::as_tibble(q5s)
+    q5s <- lapply(df_var, \(v) {
+      vals <- df[[v]]
+      if (all(is.na(vals))) return({
+        out <- tibble::tibble(var = vals)
+        time <- stringr::str_extract(v, time_regex)
+        names(out) <- paste0(var, "_q5", time)
+        out
+        })
 
-    # Change names to get q5 between the variable name and the timeframe
-    names(q5s) <- paste0(
-      gsub(time_regex, "", var), "_q5",
-      sapply(var, \(x) {
-        loc <- regexpr(time_regex, x)
-        if (loc < 0) {
-          return("")
-        }
-        substring(x, loc)
-      })
-    )
+      brks <- breaks[[var]]
+      q5s <- as.numeric(cut(vals, brks, include.lowest = TRUE))
 
-    q5s
-  }, names(breaks), breaks, SIMPLIFY = FALSE, USE.NAMES = TRUE)
+      out <- tibble::tibble(var = q5s)
+      time <- stringr::str_extract(v, time_regex)
+      names(out) <- paste0(var, "_q5", time)
+      return(out)
+    })
+
+    Reduce(cbind, q5s)
+  })
 
   to_bind <- if (length(all_q5s) > 0) do.call(cbind, all_q5s) else all_q5s[[1]]
 
@@ -279,7 +278,9 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
       if (all(!vars %in% names(scale_df))) {
         return(scale_df)
       }
-      add_q5(scale_df, tables_q5[[geo]][[scale_name]], time_regex = time_regex)
+      add_q5(df = scale_df,
+             breaks = tables_q5[[geo]][[scale_name]],
+             time_regex = time_regex)
     }
   )
 
@@ -325,6 +326,7 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
       map_over_scales(
         all_scales = tables_q5,
         fun = \(geo = geo, scale_name = scale_name, scale_df = scale_df, ...) {
+          if (nrow(scale_df) == 0) return(tibble::tibble())
             out <- tibble::tibble(
               df = paste(geo, scale_name, sep = "_"),
               rank = seq_len(nrow(scale_df)) - 1,
