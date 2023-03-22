@@ -13,11 +13,11 @@ get_breaks_q5(df, vars, time_regex = "_\\\\d{4}$")
 be calculated. Must fit with a name in \code{df}.}
 
 \item{time_regex}{<\code{character}> Regular expression which corresponds to
-a timeframe, placed at the end of the \code{vars} vector. e.g. \verb{\\\\d\{4\}} for
+a timeframe, placed at the end of the \code{vars} vector. e.g. \verb{_\\\\d\{4\}$} for
 years.}
 }
 \value{
-A data.frame where each column in a var, and the rows are the q3
+A data.frame where each column is a var, and the rows are the q5
 }
 \description{
 Get q5 break values

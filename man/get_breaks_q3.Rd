@@ -4,7 +4,7 @@
 \alias{get_breaks_q3}
 \title{Get q3 break values}
 \usage{
-get_breaks_q3(df, vars)
+get_breaks_q3(df, vars, time_regex = "_\\\\d{4}$")
 }
 \arguments{
 \item{df}{<\code{data.frame}> Contains all columns in \code{vars} as well as their
@@ -12,6 +12,10 @@ q3s. The result of \code{\link[cc.buildr]{add_q3}}.}
 
 \item{vars}{<\verb{vector of character}> Contains all variable names from which
 to add q3s. Must fit with a name in \code{df}.}
+
+\item{time_regex}{<\code{character}> Regular expression which corresponds to
+a timeframe, placed at the end of the \code{vars} vector. e.g. \verb{_\\\\d\{4\}$} for
+years.}
 }
 \value{
 A data.frame where each column in a var, and the rows are the q3

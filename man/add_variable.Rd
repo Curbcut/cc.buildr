@@ -26,7 +26,9 @@ add_variable(
   source,
   interpolated,
   rankings_chr = c("exceptionally low", "unusually low", "just about average",
-    "unusually high", "exceptionally high")
+    "unusually high", "exceptionally high"),
+  var_measurement = data.frame(df = avail_df, measurement = rep("scalar",
+    length(avail_df)))
 )
 }
 \arguments{
@@ -116,6 +118,24 @@ in the explore text to inform how a location ranks within the region.
 The attach character will be its \code{q5} break. \code{ranking_chr} must be in order of
 lower to higher. \verb{The variable score is 90\% which is unusually low for Montreal}.
 Defaults to \code{c("exceptionally low", "unusually low", "just about average", "unusually high", "exceptionally high")}}
+
+\item{var_measurement}{<\verb{character list}> Data.frame where every row is an available
+df (\code{aval_df}) and the second column is the measurement type. These will impact
+both the explore panel text and the explore panel graph. Options are:
+\itemize{
+\item{"scalar"}{The default. If \code{var_measurement} is not supplied, the row will
+be automatically filled with this measurement. Represents numeric data with both
+meaningful order and consistent distance between values. Example: age, temperature,
+height, weight.}
+\item{"ordinal"}{Represents rank or order within a dataset. It has meaningful
+order or sequence, but the distance between values is not consistent. It is
+the one used for the climate risk page at the grid scale where
+1 = Insignificant vulnerability, 2 = Minore, 3 = Moderate, ...
+Other example: survey responses with options like 'Strongly disagree', 'Disagree', ...}
+\item{"nominal"}{Represents categories without inherent order. No meaningful
+order or ranking is possible. Qualitative variables. Example: animal types,
+such as 'Mammal', 'Bird', 'Reptile', 'Fish'.}
+}}
 }
 \value{
 The same \code{variables} data.frame fed, with the added row.

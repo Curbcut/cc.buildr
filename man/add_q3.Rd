@@ -13,7 +13,7 @@ add_q3(df, vars, time_regex = "_\\\\d{4}$")
 to add q3s. Must fit with a name in \code{df}.}
 
 \item{time_regex}{<\code{character}> Regular expression which corresponds to
-a timeframe, placed at the end of the \code{vars} vector. e.g. \verb{\\\\d\{4\}} for
+a timeframe, placed at the end of the \code{vars} vector. e.g. \verb{_\\\\d\{4\}$} for
 years.}
 }
 \value{

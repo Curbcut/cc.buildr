@@ -6,7 +6,7 @@
 #' @param vars <`vector of character`> Contains all variable names from which
 #' to add q3s. Must fit with a name in `df`.
 #' @param time_regex <`character`> Regular expression which corresponds to
-#' a timeframe, placed at the end of the `vars` vector. e.g. `\\d{4}` for
+#' a timeframe, placed at the end of the `vars` vector. e.g. `_\\d{4}$` for
 #' years.
 #'
 #' @return Returns the same data.frame as df with q3 columns appended.
@@ -47,17 +47,24 @@ add_q3 <- function(df, vars, time_regex = "_\\d{4}$") {
 #' q3s. The result of \code{\link[cc.buildr]{add_q3}}.
 #' @param vars <`vector of character`> Contains all variable names from which
 #' to add q3s. Must fit with a name in `df`.
+#' @param time_regex <`character`> Regular expression which corresponds to
+#' a timeframe, placed at the end of the `vars` vector. e.g. `_\\d{4}$` for
+#' years.
 #'
 #' @return A data.frame where each column in a var, and the rows are the q3
 #' breaks.
 #' @export
-get_breaks_q3 <- function(df, vars) {
+get_breaks_q3 <- function(df, vars, time_regex = "_\\d{4}$") {
   tb <- sapply(vars, \(var) {
     if (!var %in% names(df)) {
       return()
     }
     dat <- sf::st_drop_geometry(df)
-    dat <- dat[, grepl(var, gsub("_q3", "", names(dat)))]
+
+    var_q3_regex <- paste0(gsub(time_regex, "", var), "_q3")
+    time <- stringr::str_extract(var, time_regex)
+    var_q3 <- paste0(var_q3_regex, time)
+    dat <- dat[, c(var, var_q3)]
     names(dat) <- c("v", "q3")
 
     if (sum(is.na(dat$v)) == nrow(dat)) {
@@ -87,7 +94,7 @@ get_breaks_q3 <- function(df, vars) {
 #' @param breaks <`data.frame`> A data.frame containing all the q5 breaks. The
 #' output of \code{\link[cc.buildr]{get_breaks_q5}}.
 #' @param time_regex <`character`> Regular expression which corresponds to
-#' a timeframe, placed at the end of the `vars` vector. e.g. `\\d{4}` for
+#' a timeframe, placed at the end of the `vars` vector. e.g. `_\\d{4}$` for
 #' years.
 #'
 #' @return Returns the same data.frame as df with q5 columns appended.
@@ -106,7 +113,7 @@ add_q5 <- function(df, breaks, time_regex = "_\\d{4}$") {
 
     q5s <- tibble::as_tibble(q5s)
 
-    # Change names to get q3 between the variable name and the timeframe
+    # Change names to get q5 between the variable name and the timeframe
     names(q5s) <- paste0(
       gsub(time_regex, "", var), "_q5",
       sapply(var, \(x) {
@@ -153,25 +160,24 @@ find_breaks_q5 <- function(min_val, max_val) {
 #' @param vars <`vector of character`> Contains all variable names from q5s should
 #' be calculated. Must fit with a name in `df`.
 #' @param time_regex <`character`> Regular expression which corresponds to
-#' a timeframe, placed at the end of the `vars` vector. e.g. `\\d{4}` for
+#' a timeframe, placed at the end of the `vars` vector. e.g. `_\\d{4}$` for
 #' years.
 #'
-#' @return A data.frame where each column in a var, and the rows are the q3
+#' @return A data.frame where each column is a var, and the rows are the q5
 #' @export
 get_breaks_q5 <- function(df, vars, time_regex = "_\\d{4}$") {
-  # Calculate q5 using ALL years
+  # Calculate q5 only using MOST RECENT year
   unique_vars <- unique(gsub(time_regex, "", vars))
+  unique_vars_regex <- paste0("^", unique_vars, time_regex)
+  unique_vars <- sapply(unique_vars_regex, \(x) {
+    all_years <- vars[grepl(x, vars)]
+    all_years_ordered <- all_years[order(all_years)]
+    all_years_ordered[length(all_years_ordered)]
+  }, USE.NAMES = FALSE)
 
   q5s <- sapply(unique_vars, \(u_var) {
     # Extract the variable in a numeric vector
-    df <- sf::st_drop_geometry(df)
-    df_no_q3 <- df[!grepl("_q3", names(df))]
-    as_vec <- unlist(df_no_q3[grepl(
-      paste0(u_var, c("_[0-9]+$", "$"),
-        collapse = "|"
-      ),
-      names(df_no_q3)
-    )], use.names = FALSE)
+    as_vec <- df[[u_var]]
     as_vec <- stats::na.omit(as_vec)
 
     # Calculate minimum and maximum
@@ -188,21 +194,12 @@ get_breaks_q5 <- function(df, vars, time_regex = "_\\d{4}$") {
     min_val <- max(var_mean - (4 * standard_d), cat_min)
     max_val <- min(var_mean + (4 * standard_d), cat_max)
 
-    find_breaks_q5(min_val, max_val)
+    out <- tibble::tibble(var = find_breaks_q5(min_val, max_val))
+    names(out) <- gsub(time_regex, "", u_var)
+    return(out)
   }, simplify = FALSE, USE.NAMES = TRUE)
 
-  # Make a list with the according q5
-  tb <- sapply(vars, \(var) {
-    if (!var %in% names(df)) {
-      return()
-    }
-    unlist(q5s[which(gsub(time_regex, "", var) == names(q5s))],
-      use.names = FALSE
-    )
-  }, simplify = FALSE, USE.NAMES = TRUE)
-
-  tb <- tb[!sapply(tb, is.null)]
-  tibble::as_tibble(tb)
+  tibble::as_tibble(Reduce(cbind, q5s))
 }
 
 #' Calculate all breaks when all_scales is a list of regions and scales
@@ -212,7 +209,7 @@ get_breaks_q5 <- function(df, vars, time_regex = "_\\d{4}$") {
 #' @param vars <`vector of character`> Contains all variable names from which
 #' to add q3s. Must fit with a name in `df`.
 #' @param time_regex <`character`> Regular expression which corresponds to
-#' a timeframe, placed at the end of the `vars` vector. e.g. `\\d{4}` for
+#' a timeframe, placed at the end of the `vars` vector. e.g. `_\\d{4}$` for
 #' years. If the variable does not have a timeframe, enter an empty string (`""`).
 #' @param types <`list`> A named list of variable types (e.g., "pct", "avg", "count", "ind").
 #' The names of the list should match the variable names in \code{vars} (without the dates).
@@ -237,9 +234,9 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
   if (time_regex != "") {
     if (sum(sapply(vars, \(var) grepl(time_regex, var))) == 0) {
       stop(paste0(
-        "The time regular expression `", time_regex, "` isn't found in",
+        "The time_regex argument `", time_regex, "` isn't found in",
         " the variables name. Add the time, or set the `time_regex` ",
-        "argument to an empty string."
+        "argument to an empty string: `''`."
       ))
     }
   }
@@ -262,7 +259,7 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
       if (all(!vars %in% names(scale_df))) {
         return(tibble::tibble())
       }
-      get_breaks_q3(scale_df, vars)
+      get_breaks_q3(scale_df, vars, time_regex = time_regex)
     }
   )
   tables_q5 <- map_over_scales(
@@ -296,7 +293,8 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
       map_over_scales(
         all_scales = tables_q3,
         fun = \(geo = geo, scale_name = scale_name, scale_df = scale_df, ...) {
-          var_all_years <- names(scale_df)[grepl(var, names(scale_df))]
+          var_regex <- paste0("^", var, time_regex)
+          var_all_years <- names(scale_df)[grepl(var_regex, names(scale_df))]
           out <- lapply(var_all_years, \(v) {
             date <- stringr::str_extract(v, time_regex)
             date <- gsub("^_", "", date)
@@ -327,12 +325,10 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
       map_over_scales(
         all_scales = tables_q5,
         fun = \(geo = geo, scale_name = scale_name, scale_df = scale_df, ...) {
-          var_all_years <- names(scale_df)[grepl(var, names(scale_df))]
-          out <- lapply(var_all_years, \(v) {
             out <- tibble::tibble(
               df = paste(geo, scale_name, sep = "_"),
               rank = seq_len(nrow(scale_df)) - 1,
-              var = scale_df[[v]]
+              var = scale_df[[var]]
             )
 
             # If type is `ind`, add rank_name and rank_name_short
@@ -342,8 +338,6 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
             }
 
             return(out)
-          })
-          unique(Reduce(rbind, out))
         }
       )
     }, simplify = FALSE, USE.NAMES = TRUE)

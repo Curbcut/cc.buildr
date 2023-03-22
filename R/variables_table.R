@@ -31,7 +31,8 @@ append_empty_variables_table <- function(scales_consolidated) {
       region_values = list(),
       source = character(),
       interpolated = list(),
-      rankings_chr = list()
+      rankings_chr = list(),
+      var_measurement = list()
     )
 
   list(scales = scales_consolidated, variables = variables)
@@ -105,6 +106,23 @@ append_empty_variables_table <- function(scales_consolidated) {
 #' The attach character will be its `q5` break. `ranking_chr` must be in order of
 #' lower to higher. `The variable score is 90% which is unusually low for Montreal`.
 #' Defaults to `c("exceptionally low", "unusually low", "just about average", "unusually high", "exceptionally high")`
+#' @param var_measurement <`character list`> Data.frame where every row is an available
+#' df (`aval_df`) and the second column is the measurement type. These will impact
+#' both the explore panel text and the explore panel graph. Options are:
+#' \itemize{
+#'  \item{"scalar"}{The default. If `var_measurement` is not supplied, the row will
+#'  be automatically filled with this measurement. Represents numeric data with both
+#'  meaningful order and consistent distance between values. Example: age, temperature,
+#'  height, weight.}
+#'  \item{"ordinal"}{Represents rank or order within a dataset. It has meaningful
+#'  order or sequence, but the distance between values is not consistent. It is
+#'  the one used for the climate risk page at the grid scale where
+#'  1 = Insignificant vulnerability, 2 = Minore, 3 = Moderate, ...
+#'  Other example: survey responses with options like 'Strongly disagree', 'Disagree', ...}
+#'  \item{"nominal"}{Represents categories without inherent order. No meaningful
+#'  order or ranking is possible. Qualitative variables. Example: animal types,
+#'  such as 'Mammal', 'Bird', 'Reptile', 'Fish'.}
+#' }
 #'
 #' @return The same `variables` data.frame fed, with the added row.
 #' @export
@@ -116,7 +134,10 @@ add_variable <- function(variables, var_code, type, var_title,
                          region_values = NULL, source, interpolated,
                          rankings_chr = c("exceptionally low", "unusually low",
                                           "just about average", "unusually high",
-                                          "exceptionally high")) {
+                                          "exceptionally high"),
+                         var_measurement = data.frame(
+                           df = avail_df,
+                           measurement = rep("scalar", length(avail_df)))) {
   if (var_code %in% variables$var_code) {
     stop(paste0("`", var_code, "` is a duplicate."))
   }
@@ -133,6 +154,18 @@ add_variable <- function(variables, var_code, type, var_title,
     rankings_chr <- c("exceptionally low", "unusually low",
                       "just about average", "unusually high",
                       "exceptionally high")
+  }
+
+  # `var_measurement` well made
+  if (!identical(names(var_measurement), c("df", "measurement"))) {
+    stop("names of `var_measurement` column must be `df` and `measurement`.")
+  }
+  if (!all(avail_df %in% var_measurement$df)) {
+    stop("One or more `avail_df` is missing in the `var_measurement` data.frame.")
+  }
+  if (!all(var_measurement$measurement %in% c("scalar", "ordinal", "nominal"))) {
+    stop(paste0("One or more of `var_measurement$measurement` is other than ",
+                "`scalar`, `ordinal` or `nominal` (the only possible options)."))
   }
 
   new_variable <-
@@ -156,7 +189,8 @@ add_variable <- function(variables, var_code, type, var_title,
       region_values = list(region_values),
       interpolated = list(interpolated),
       group_diff = list(group_diff),
-      rankings_chr = list(rankings_chr)
+      rankings_chr = list(rankings_chr),
+      var_measurement = list(var_measurement)
     )
 
   rbind(variables, new_variable)
