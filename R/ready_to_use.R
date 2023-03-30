@@ -15,15 +15,13 @@
 #' @export
 ru_canale <- function(scales_variables_modules, region_DA_IDs, crs) {
   ba_var(
-    data = cc.data::db_read_data("canale",
-      column_to_select = "DA_ID",
-      IDs = region_DA_IDs, crs = crs
-    ),
+    data = cc.data::db_read_data(table = "canale", column_to_select = "DA_ID", IDs = region_DA_IDs, crs = crs),
     scales_variables_modules = scales_variables_modules,
     base_scale = "DA",
     weight_by = "households",
     crs = crs,
-    average_vars = names(data)[names(data) != "DA_ID"],
+    average_vars = c("canale_2001", "canale_2006", "canale_2011", "canale_2016",
+                     "canale_2021"),
     variable_var_code = "canale",
     variable_type = "ind",
     variable_var_title = "Can-ALE index",

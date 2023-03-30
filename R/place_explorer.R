@@ -38,7 +38,7 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
   DA_table <- DA_table["ID"]
   names(DA_table)[1] <- "DA_ID"
   current_census_year <- gsub("CA", "20", cc.buildr::current_census)
-  regions <- regions_dictionary$geo[regions_dictionary$pickable]
+  regions <- regions_dictionary$region[regions_dictionary$pickable]
   scales <- scales[names(scales) %in% regions]
 
 
@@ -394,7 +394,7 @@ placeex_main_card_prep_output_en <- function(data, dict, region, df, select_id,
   df_scales <- scales_dictionary$plur[scales_dictionary$scale == df]
 
   # To what it compares
-  to_compare <- regions_dictionary$to_compare[regions_dictionary$geo == region]
+  to_compare <- regions_dictionary$to_compare[regions_dictionary$region == region]
 
   # Prepare list to store all data
   info <- list()
@@ -670,7 +670,7 @@ placeex_main_card_rmd <- function(scales_variables_modules,
   if (!grepl("/$", out_folder)) out_folder <- paste0(out_folder, "/")
 
   all_tables <- reconstruct_all_tables(scales_variables_modules$scales)
-  regions <- regions_dictionary$geo[regions_dictionary$pickable]
+  regions <- regions_dictionary$region[regions_dictionary$pickable]
   all_tables <- all_tables[names(all_tables) %in% regions]
   all_tables <- lapply(all_tables, \(scales) scales[!scales %in% c("building", "street")])
 

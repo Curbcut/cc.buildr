@@ -227,7 +227,7 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
   interpolated_ref <-
     sapply(sapply(higher_DA, names), \(scales) {
       sapply(scales, \(scale) {
-        if (!scale %in% names(census_data_merged)) {
+        if (!scale %in% cc.data::census_scales) {
           return("DA")
         }
         return(FALSE)

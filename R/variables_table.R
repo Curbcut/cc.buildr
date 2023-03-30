@@ -104,8 +104,9 @@ append_empty_variables_table <- function(scales_consolidated) {
 #' @param source <`character`> The source where the data comes from, e.g.
 #' "McGill Geo-Social Determinants of Health Research Group"
 #' @param interpolated <`data.frame`> A data.frame indicating from which scale
-#' the geo/scale comination has been interpolated. The non-interpolated data
-#' is populated with \code{"FALSE"}
+#' the region/scale comination has been interpolated. The non-interpolated data
+#' is populated with \code{"FALSE"}. The interpolation scale must be one of the
+#' scale code in the `scales_dictionary`.
 #' @param rankings_chr <`character vector`> Vector of character that will be used
 #' in the explore text to inform how a location ranks within the region.
 #' The attach character will be its `q5` break. `ranking_chr` must be in order of

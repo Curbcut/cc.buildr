@@ -116,6 +116,14 @@ add_q5 <- function(df, breaks, time_regex = "_\\d{4}$") {
         })
 
       brks <- breaks[[var]]
+
+      # Attach the breaks. Make sure the lower and upper limit are included
+      # in the q5s even if they are lower/higher than the break by temporarily
+      # editing the lower and higher breaks
+      min_val <- min(vals, na.rm = TRUE)
+      if (min_val < brks[[1]]) brks[[1]] <- min_val
+      max_val <- max(vals, na.rm = TRUE)
+      if (max_val > brks[[length(brks)]]) brks[[length(brks)]] <- max_val
       q5s <- as.numeric(cut(vals, brks, include.lowest = TRUE))
 
       out <- tibble::tibble(var = q5s)

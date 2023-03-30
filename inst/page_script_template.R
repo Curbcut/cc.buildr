@@ -24,6 +24,9 @@ default_region <- modules$regions[modules$id == "__id__"][[1]][1]
     # Map
     curbcut::map_UI(NS(id, id)),
 
+    # Change view (Map/Data/Place explorer)
+    curbcut::panel_view_UI(id = NS(id, id)),
+
     # Right panel
     curbcut::right_panel(
       id = id,
@@ -192,13 +195,12 @@ default_region <- modules$regions[modules$id == "__id__"][[1]][1]
                              select_id = r[[id]]$select_id,
                              map_viewstate = map_viewstate)
 
-    # Data transparency and export
-    r[[id]]$export_data <- reactive(data_export(
-      id = id,
-      data = data(),
-      var_left = var_left(),
-      var_right = var_right(),
-      df = r[[id]]$df()))
+    # Change view
+    curbcut::panel_view_server(id = id,
+                               r = r,
+                               vars = vars,
+                               data = data,
+                               zoom_levels = reactive(zoom_levels()$zoom_levels))
 
   })
 }

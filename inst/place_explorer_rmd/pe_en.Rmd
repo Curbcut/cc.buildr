@@ -120,7 +120,7 @@ map_style_building <- "mapbox://styles/sus-mcgill/cl2bwtrsp000516rwyrkt9ior"
 
 #map <- 
 rdeck::rdeck(map_style = map_style_building, initial_view_state = rdeck::view_state(
-    center = params$map_loc, zoom = params$map_zoom), width = "100%", height = "200px") |>
+    center = params$map_loc, zoom = params$map_zoom), width = "100%", height = "200px", layer_selector = FALSE) |>
     rdeck::add_mvt_layer(
         id = "study",
         data = rdeck::mvt_url(paste0(params$mapbox_username, ".", params$tileset_prefix, "_", params$region, "_", params$df)),
