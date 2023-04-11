@@ -116,8 +116,9 @@ created using \code{\link{variables_get_region_vals}}.}
 "McGill Geo-Social Determinants of Health Research Group"}
 
 \item{interpolated}{<\code{data.frame}> A data.frame indicating from which scale
-the geo/scale comination has been interpolated. The non-interpolated data
-is populated with \code{"FALSE"}}
+the region/scale comination has been interpolated. The non-interpolated data
+is populated with \code{"FALSE"}. The interpolation scale must be one of the
+scale code in the \code{scales_dictionary}.}
 
 \item{rankings_chr}{<\verb{character vector}> Vector of character that will be used
 in the explore text to inform how a location ranks within the region.

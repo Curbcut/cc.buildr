@@ -16,6 +16,7 @@ default_region <- modules$regions[modules$id == "__id__"][[1]][1]
     curbcut::sidebar_UI(
       id = shiny::NS(id, id),
       `__widgets_UI__`,
+      curbcut::warnuser_UI(shiny::NS(id, id)),
       bottom = shiny::tagList(
         curbcut::legend_UI(shiny::NS(id, id)),
         curbcut::zoom_UI(shiny::NS(id, id), `__id___mzp`)
@@ -33,8 +34,8 @@ default_region <- modules$regions[modules$id == "__id__"][[1]][1]
       curbcut::compare_UI(
         id = NS(id, id),
         var_list = curbcut::dropdown_make(vars = " ", compare = TRUE)),
-      explore_UI(NS(id, id)),
-      dyk_UI(NS(id, id))
+      curbcut::explore_UI(NS(id, id)),
+      curbcut::dyk_UI(NS(id, id))
     )
   )
 }
@@ -133,15 +134,13 @@ default_region <- modules$regions[modules$id == "__id__"][[1]][1]
       zoom_levels = zoom_levels()$zoom_levels
     ))
 
-    # Year disclaimer
-    year_disclaimer_server(
+    # Warn user
+    curbcut::warnuser_server(
       id = id,
       r = r,
-      data = data,
-      var_left = var_left,
-      var_right = var_right,
-      time = time
-    )
+      vars = vars,
+      time = time,
+      data = data)
 
     # Legend
     curbcut::legend_server(
@@ -153,12 +152,12 @@ default_region <- modules$regions[modules$id == "__id__"][[1]][1]
     )
 
     # Did-you-know panel
-    dyk_server(
+    curbcut::dyk_server(
       id = id,
       r = r,
-      var_left = var_left,
-      var_right = var_right,
-      poi = r[[id]]$poi
+      vars = vars,
+      poi = r[[id]]$poi,
+      df = r[[id]]$df
     )
 
     # Update map in response to variable changes or zooming
@@ -190,17 +189,19 @@ default_region <- modules$regions[modules$id == "__id__"][[1]][1]
       select_id = r[[id]]$select_id)
 
     # Bookmarking
-    curbcut::bookmark_server(id = id,
-                             r = r,
-                             select_id = r[[id]]$select_id,
-                             map_viewstate = map_viewstate)
+    curbcut::bookmark_server(
+      id = id,
+      r = r,
+      select_id = r[[id]]$select_id,
+      map_viewstate = map_viewstate)
 
     # Change view
-    curbcut::panel_view_server(id = id,
-                               r = r,
-                               vars = vars,
-                               data = data,
-                               zoom_levels = reactive(zoom_levels()$zoom_levels))
+    curbcut::panel_view_server(
+      id = id,
+      r = r,
+      vars = vars,
+      data = data,
+      zoom_levels = reactive(zoom_levels()$zoom_levels))
 
   })
 }
