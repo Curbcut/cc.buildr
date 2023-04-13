@@ -10,7 +10,7 @@ build_census_data(
   census_vectors,
   census_years,
   crs,
-  skip_scale_interpolation
+  skip_scale_interpolation = NULL
 )
 }
 \arguments{
@@ -35,7 +35,8 @@ should be added to the scales. Defaults to \code{\link[cc.data]{census_years}}}
 
 \item{skip_scale_interpolation}{<\verb{character vector}> Scales for which census
 data should not be interpolated (e.g. very small scales like 25m grid cells.).
-In those cases, census data won't be interpolated and appended.}
+In those cases, census data won't be interpolated and appended. Defaults to
+NULL to interpolate to everything.}
 }
 \value{
 Returns a list of length 4. The first is the possible scales for which

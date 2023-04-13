@@ -9,6 +9,7 @@ ba_census_data(
   region_DA_IDs,
   census_vectors = cc.data::census_vectors,
   census_years = cc.data::census_years,
+  skip_scale_interpolation = NULL,
   crs,
   housing_module = TRUE
 )
@@ -29,6 +30,11 @@ variables explained.}
 
 \item{census_years}{<\verb{character vector}> Years for which the census data
 should be added to the scales. Defaults to \code{\link[cc.data]{census_years}}}
+
+\item{skip_scale_interpolation}{<\verb{character vector}> Scales for which census
+data should not be interpolated (e.g. very small scales like 25m grid cells.).
+In those cases, census data won't be interpolated and appended. Defaults to
+NULL to interpolate to everything.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}
