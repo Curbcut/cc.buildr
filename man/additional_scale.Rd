@@ -7,9 +7,9 @@
 additional_scale(additional_table, DA_table, ID_prefix, name_2, crs)
 }
 \arguments{
-\item{additional_table}{<\verb{sf data.frame}> An sf data.frame of two columns:
-\code{name} and \code{geometry}. Ideally, the name of each zone should be
-unique.}
+\item{additional_table}{<\verb{sf data.frame}> An sf data.frame of two or three columns:
+\code{name} and \code{geometry} or \code{ID}, \code{name} and \code{geometry}.
+Ideally, the name of each zone should be unique.}
 
 \item{DA_table}{<\verb{sf data.frame}> A \code{DA} sf data.frame from which
 population and households will be interpolated.}
@@ -17,7 +17,8 @@ population and households will be interpolated.}
 \item{ID_prefix}{<\code{character}> A character of length 1. In order to keep
 the identifiers unique on the platform, the prefix used before the
 \code{seq_along()} that will be called to create unique identifiers.
-e.g. \code{"ward"}}
+e.g. \code{"ward"}. If there is already an ID in the \code{additional_table},
+the ID_prefix will be appended in front of it.}
 
 \item{name_2}{<\code{character}> A character of length 1. \code{name_2} will be
 used to define the zone along with the \code{name}. The display on Sus would

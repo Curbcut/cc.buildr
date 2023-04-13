@@ -25,7 +25,7 @@ data.frame, most probably built using \code{\link[cc.buildr]{census_scales_dicti
 \item{plur}{<\code{character}> The scale name in plurial, e.g. \code{"cities"}.}
 
 \item{slider_title}{<\code{character}> The scale name used on the map slider,
-e.g. \code{"City"}.}
+e.g. \code{"City"}. Can't start with a digit}
 
 \item{place_heading}{<\code{character}> The place heading on a selection, e.g.
 for "City of Laval" -> \code{"City of {name}"}.}

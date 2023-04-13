@@ -12,6 +12,10 @@
 #' variables explained.
 #' @param census_years <`character vector`> Years for which the census data
 #' should be added to the scales. Defaults to \code{\link[cc.data]{census_years}}
+#' @param skip_scale_interpolation <`character vector`> Scales for which census
+#' data should not be interpolated (e.g. very small scales like 25m grid cells.).
+#' In those cases, census data won't be interpolated and appended. Defaults to
+#' NULL to interpolate to everything.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
 #' @param housing_module <`logical`> Should a housing module be added to
@@ -25,6 +29,7 @@ ba_census_data <- function(scales_variables_modules,
                            region_DA_IDs,
                            census_vectors = cc.data::census_vectors,
                            census_years = cc.data::census_years,
+                           skip_scale_interpolation = NULL,
                            crs,
                            housing_module = TRUE) {
   # Declare all variables from the census -----------------------------------
@@ -45,7 +50,8 @@ ba_census_data <- function(scales_variables_modules,
     region_DA_IDs = region_DA_IDs,
     census_vectors = census_vectors,
     census_years = census_years,
-    crs = crs
+    crs = crs,
+    skip_scale_interpolation = skip_scale_interpolation
   )
 
 

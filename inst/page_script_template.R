@@ -116,9 +116,6 @@ default_region <- modules$regions[modules$id == "__id__"][[1]][1]
       df = r[[id]]$df()))
 
     # Sidebar
-    sidebar_server(id = id, r = r)
-
-    # Sidebar
     curbcut::sidebar_server(id = id, r = r)
 
     # Data

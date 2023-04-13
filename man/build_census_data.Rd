@@ -9,7 +9,8 @@ build_census_data(
   region_DA_IDs,
   census_vectors,
   census_years,
-  crs
+  crs,
+  skip_scale_interpolation
 )
 }
 \arguments{
@@ -31,6 +32,10 @@ should be added to the scales. Defaults to \code{\link[cc.data]{census_years}}}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}
+
+\item{skip_scale_interpolation}{<\verb{character vector}> Scales for which census
+data should not be interpolated (e.g. very small scales like 25m grid cells.).
+In those cases, census data won't be interpolated and appended.}
 }
 \value{
 Returns a list of length 4. The first is the possible scales for which

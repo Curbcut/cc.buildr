@@ -192,8 +192,8 @@ get_breaks_q5 <- function(df, vars, time_regex = "_\\d{4}$") {
     cat_max <- max(as_vec)
 
     # Calculate mean and standard deviation with outliers filtered out
-    prep_mean <- as_vec[!as_vec <= stats::quantile(as_vec, .01)]
-    prep_mean <- prep_mean[!prep_mean >= stats::quantile(prep_mean, .99)]
+    prep_mean <- as_vec[!as_vec < stats::quantile(as_vec, .01)]
+    prep_mean <- prep_mean[!prep_mean > stats::quantile(prep_mean, .99)]
     var_mean <- mean(prep_mean)
     standard_d <- stats::sd(prep_mean)
 

@@ -14,6 +14,10 @@
 #' should be added to the scales. Defaults to \code{\link[cc.data]{census_years}}
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
+#' @param skip_scale_interpolation <`character vector`> Scales for which census
+#' data should not be interpolated (e.g. very small scales like 25m grid cells.).
+#' In those cases, census data won't be interpolated and appended. Defaults to
+#' NULL to interpolate to everything.
 #'
 #' @return Returns a list of length 4. The first is the possible scales for which
 #' census data can be added in scales_consolidated. The second is a
@@ -25,7 +29,8 @@
 #' vector of all regions at which the data will be available.
 #' @export
 build_census_data <- function(scales_consolidated, region_DA_IDs,
-                              census_vectors, census_years, crs) {
+                              census_vectors, census_years, crs,
+                              skip_scale_interpolation = NULL) {
   # Filter out scales smaller than DAs --------------------------------------
 
   higher_DA <- lapply(scales_consolidated, \(x) {
@@ -81,6 +86,11 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
       if (!is.null(out)) out
     }, simplify = FALSE, USE.NAMES = TRUE)
   ready <- ready[!sapply(ready, is.null)]
+
+  # Skip the scales we don't want to append the census data
+  if (!is.null(skip_scale_interpolation)) {
+    ready <- ready[!names(ready) %in% skip_scale_interpolation]
+  }
 
 
   # Interpolate -------------------------------------------------------------
