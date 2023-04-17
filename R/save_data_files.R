@@ -1,7 +1,72 @@
-#' Save all buildings dataset in a SQLite
+#' Save all buildings-street-like dataset in a SQLite
 #'
+#' The function is used for any scales that ressembles to buildings or street, in
+#' that they are very large in the amount of observations and most of the time,
+#' the data attached to it on Curbcut will be the one of the dissemination areas.
+#'
+#' @param scale_chr <`character`> The name of the scale, e.g. "building".
 #' @param path <`character`> Path where to save the `.sqlite`. Defaults to
 #' `data/building.sqlite`
+#' @param all_scales <`named list`> A named list of sf data.frame
+#' containing all scales listed with their regions, normally
+#' `scales_variables_modules$scales`.
+#'
+#' @return Returns an error or nothing if ran successfully. All existing `scale_chr`
+#' data.frame in the fed `all_scales` are saved in the created `.sqlite`.
+#' @export
+save_bslike_sqlite <- function(scale_chr, path = sprintf("data/%s.sqlite", scale_chr),
+                               all_scales) {
+  # Save all scales in the same database
+  if (file.exists(path)) unlink(path)
+  scale_sql <- DBI::dbConnect(RSQLite::SQLite(), path)
+
+  # Iterate and save every scales dataset
+  map_over_scales(
+    all_scales = all_scales,
+    fun = \(geo = geo, scales = scales, scale_name = scale_name,
+            scale_df = scale_df) {
+      if (scale_name != scale_chr) {
+        return()
+      }
+      geo_scale <- paste0(geo, "_", scale_chr)
+      df <- sf::st_drop_geometry(scale_df)[, c("ID", "name", "name_2", "DA_ID")]
+
+      if (geo_scale %in% DBI::dbListTables(scale_sql)) {
+        DBI::dbRemoveTable(scale_sql, geo_scale)
+      }
+
+      DBI::dbWriteTable(scale_sql, "pre_pk_scale", df)
+      DBI::dbExecute(scale_sql, paste0(
+        "CREATE TABLE ", geo_scale,
+        " (ID VARCHAR, ",
+        "name VARCHAR, ",
+        "name_2 VARCHAR, ",
+        "DA_ID VARCHAR, ",
+        "CONSTRAINT ", scale_name, "_pk PRIMARY KEY (ID))"
+      ))
+
+      DBI::dbExecute(
+        scale_sql,
+        paste0(
+          "INSERT INTO ", geo_scale,
+          " SELECT * FROM pre_pk_scale"
+        )
+      )
+      DBI::dbExecute(scale_sql, "DROP TABLE pre_pk_scale")
+    }
+  )
+
+  DBI::dbDisconnect(scale_sql)
+
+  # Return nothing
+  return(invisible(NULL))
+}
+
+#' Save all buildings dataset in a SQLite
+#'
+#' This function uses \code{\link{save_bslike_sqlite}}.
+#'
+#' @param scale_chr <`character`> The name of the scale: "building
 #' @param all_scales <`named list`> A named list of sf data.frame
 #' containing all scales listed with their regions, normally
 #' `scales_variables_modules$scales`.
@@ -9,58 +74,15 @@
 #' @return Returns an error or nothing if ran successfully. All existing `building`
 #' data.frame in the fed `all_scales` are saved in the created `.sqlite`.
 #' @export
-save_buildings_sqlite <- function(path = "data/building.sqlite", all_scales) {
-  # Save all buildings in the same database
-  building_path <- "data/building.sqlite"
-  if (file.exists(building_path)) unlink(building_path)
-  building_sql <- DBI::dbConnect(RSQLite::SQLite(), building_path)
-
-  # Iterate and save every building dataset
-  map_over_scales(
-    all_scales = all_scales,
-    fun = \(geo = geo, scales = scales, scale_name = scale_name,
-      scale_df = scale_df) {
-      if (scale_name != "building") {
-        return()
-      }
-      geo_scale <- paste0(geo, "_building")
-      df <- sf::st_drop_geometry(scale_df)[, c("ID", "name", "name_2", "DA_ID")]
-
-      if (geo_scale %in% DBI::dbListTables(building_sql)) {
-        DBI::dbRemoveTable(building_sql, geo_scale)
-      }
-
-      DBI::dbWriteTable(building_sql, "pre_pk_building", df)
-      DBI::dbExecute(building_sql, paste0(
-        "CREATE TABLE ", geo_scale,
-        " (ID VARCHAR, ",
-        "name VARCHAR, ",
-        "name_2 VARCHAR, ",
-        "DA_ID VARCHAR,
-                     CONSTRAINT building_pk PRIMARY KEY (ID))"
-      ))
-
-      DBI::dbExecute(
-        building_sql,
-        paste0(
-          "INSERT INTO ", geo_scale,
-          " SELECT * FROM pre_pk_building"
-        )
-      )
-      DBI::dbExecute(building_sql, "DROP TABLE pre_pk_building")
-    }
-  )
-
-  DBI::dbDisconnect(building_sql)
-
-  # Return nothing
-  return(invisible(NULL))
+save_buildings_sqlite <- function(scale_chr = "building", all_scales) {
+  save_bslike_sqlite(scale_chr = scale_chr, all_scales = all_scales)
 }
 
 #' Save all streets dataset in a SQLite
 #'
-#' @param path <`character`> Path where to save the `.sqlite`. Defaults to
-#' `data/streets.sqlite`
+#' This function uses \code{\link{save_bslike_sqlite}}.
+#'
+#' @param scale_chr <`character`> The name of the scale: street
 #' @param all_scales <`named list`> A named list of sf data.frame
 #' containing all scales listed with their regions, normally
 #' `scales_variables_modules$scales`.
@@ -68,52 +90,8 @@ save_buildings_sqlite <- function(path = "data/building.sqlite", all_scales) {
 #' @return Returns an error or nothing if ran successfully. All existing `streets`
 #' data.frame in the fed `all_scales` are saved in the created `.sqlite`.
 #' @export
-save_streets_sqlite <- function(path = "data/streets.sqlite", all_scales) {
-  # Save all buildings in the same database
-  streets_path <- "data/streets.sqlite"
-  if (file.exists(streets_path)) unlink(streets_path)
-  streets_sql <- DBI::dbConnect(RSQLite::SQLite(), streets_path)
-
-  # Iterate and save every streets dataset
-  map_over_scales(
-    all_scales = all_scales,
-    fun = \(geo = geo, scales = scales, scale_name = scale_name,
-      scale_df = scale_df) {
-      if (scale_name != "streets") {
-        return()
-      }
-      geo_scale <- paste0(geo, "_streets")
-      df <- sf::st_drop_geometry(scale_df)[, c("ID", "name", "name_2", "DA_ID")]
-
-      if (geo_scale %in% DBI::dbListTables(streets_sql)) {
-        DBI::dbRemoveTable(streets_sql, geo_scale)
-      }
-
-      DBI::dbWriteTable(streets_sql, "pre_pk_streets", df)
-      DBI::dbExecute(streets_sql, paste0(
-        "CREATE TABLE ", geo_scale,
-        " (ID VARCHAR, ",
-        "name VARCHAR, ",
-        "name_2 VARCHAR, ",
-        "DA_ID VARCHAR,
-                     CONSTRAINT streets_pk PRIMARY KEY (ID))"
-      ))
-
-      DBI::dbExecute(
-        streets_sql,
-        paste0(
-          "INSERT INTO ", geo_scale,
-          " SELECT * FROM pre_pk_streets"
-        )
-      )
-      DBI::dbExecute(streets_sql, "DROP TABLE pre_pk_streets")
-    }
-  )
-
-  DBI::dbDisconnect(streets_sql)
-
-  # Return nothing
-  return(invisible(NULL))
+save_streets_sqlite <- function(scale_chr = "street", all_scales) {
+  save_bslike_sqlite(scale_chr = scale_chr, all_scales = all_scales)
 }
 
 #' Save every scales in their own SQLite database

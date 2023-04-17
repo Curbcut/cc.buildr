@@ -223,7 +223,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
           names(out) <- gsub("\\$", "", names(out))
           names(out) <- gsub("less_than", "less", names(out))
           names(out) <- gsub(",", "", names(out))
-          names(out) <- paste("vac_rate", y, names(out), yr, sep = "_")
+          names(out) <- paste("vac_rate", names(out), y, yr, sep = "_")
           names(out)[1] <- "name"
 
           # Change the name to the closest string in the CMHC zone scale
@@ -731,7 +731,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
   modules <-
     scales_variables_modules$modules |>
     add_module(
-      id = "vac_rate",
+      id = "vacancyrate",
       theme = "Housing",
       nav_title = "Vacancy rate",
       title_text_title = "Vacancy rate",

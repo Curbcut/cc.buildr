@@ -81,7 +81,8 @@ default_region <- modules$regions[modules$id == "__id__"][[1]][1]
       id = id,
       r = r,
       zoom_string = rv_zoom_string,
-      zoom_levels = zoom_levels
+      zoom_levels = zoom_levels,
+      no_autozoom = shiny::reactive(`__no_autozoom__`)
     )
 
     # Get df

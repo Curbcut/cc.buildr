@@ -4,11 +4,10 @@
 \alias{save_streets_sqlite}
 \title{Save all streets dataset in a SQLite}
 \usage{
-save_streets_sqlite(path = "data/streets.sqlite", all_scales)
+save_streets_sqlite(scale_chr = "street", all_scales)
 }
 \arguments{
-\item{path}{<\code{character}> Path where to save the \code{.sqlite}. Defaults to
-\code{data/streets.sqlite}}
+\item{scale_chr}{<\code{character}> The name of the scale: street}
 
 \item{all_scales}{<\verb{named list}> A named list of sf data.frame
 containing all scales listed with their regions, normally
@@ -19,5 +18,5 @@ Returns an error or nothing if ran successfully. All existing \code{streets}
 data.frame in the fed \code{all_scales} are saved in the created \code{.sqlite}.
 }
 \description{
-Save all streets dataset in a SQLite
+This function uses \code{\link{save_bslike_sqlite}}.
 }

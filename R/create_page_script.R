@@ -22,6 +22,7 @@ create_page_script <- function(source_file, R_folder = "R/", overwrite = FALSE,
   var_right <- NULL
   time <- NULL
   group_name_label <- NULL
+  no_autozoom <- FALSE
 
 
   # Source the file containing all the variables
@@ -148,6 +149,7 @@ create_page_script <- function(source_file, R_folder = "R/", overwrite = FALSE,
     ui <- gsub("`__min__year`", min(time), ui)
     ui <- gsub("`__mid__year`", time[ceiling(length(time) / 2)], ui)
     ui <- gsub("`__max__year`", max(time), ui)
+    ui <- gsub("`__step__`", diff(unique(time))[1], ui)
     uis <- c(uis, ui)
 
     template <- gsub(
@@ -159,6 +161,9 @@ create_page_script <- function(source_file, R_folder = "R/", overwrite = FALSE,
       template
     )
   }
+
+  # Other
+  template <- gsub("`__no_autozoom__`", no_autozoom, template)
 
   # Add all uis
   template <-

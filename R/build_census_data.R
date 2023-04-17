@@ -138,9 +138,9 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
         # Bind all the data
         all_data <- if (scale %in% cc.data::census_scales) {
           sf::st_drop_geometry(rbind(census_data, filled_vals[[scale]]))
-        } else {
+        } else if (scale %in% names(filled_vals)) {
           sf::st_drop_geometry(filled_vals[[scale]])
-        }
+        } else data.frame(ID = character())
 
         out_df <- merge(df, all_data, by = "ID", all.x = TRUE)
 
