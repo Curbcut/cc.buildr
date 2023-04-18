@@ -281,7 +281,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
           names(out) <- gsub("\\$", "", names(out))
           names(out) <- gsub("less_than", "less", names(out))
           names(out) <- gsub(",", "", names(out))
-          names(out) <- paste("rental_universe", y, names(out), yr, sep = "_")
+          names(out) <- paste("rental_universe", names(out), y, yr, sep = "_")
           names(out)[1] <- "name"
 
           # Change the name to the closest string in the CMHC zone scale
@@ -367,65 +367,65 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
       # Create title and explanation
       cat_title <- (\(x) {
         # Bedroom types
-        if (grepl("_bed_", var)) {
-          if (grepl("bachelor$", var)) {
+        if (grepl("_bed$", var)) {
+          if (grepl("bachelor", var)) {
             return("studio apartments")
           }
           suff <- "housing units"
-          if (grepl("1_bed$", var)) {
+          if (grepl("1_bed", var)) {
             return(paste("one-bedroom", suff))
           }
-          if (grepl("2_bed$", var)) {
+          if (grepl("2_bed", var)) {
             return(paste("two-bedroom", suff))
           }
-          if (grepl("3_bed_plus$", var)) {
+          if (grepl("3_bed_plus", var)) {
             return(paste("three-bedroom and larger", suff))
           }
-          if (grepl("bed_total$", var)) {
+          if (grepl("total_bed", var)) {
             return(paste("all", suff))
           }
         }
         # Year of construction
-        if (grepl("_year_", var)) {
+        if (grepl("_year$", var)) {
           pre <- "housing units built"
-          if (grepl("before_1960$", var)) {
+          if (grepl("before_1960", var)) {
             return(paste(pre, "before 1960"))
           }
-          if (grepl("1960_1979$", var)) {
+          if (grepl("1960_1979", var)) {
             return(paste(pre, "between 1960 and 1979"))
           }
-          if (grepl("1980_1999$", var)) {
+          if (grepl("1980_1999", var)) {
             return(paste(pre, "between 1980 and 1999"))
           }
-          if (grepl("2000_or_later$", var)) {
+          if (grepl("2000_or_later", var)) {
             return(paste(pre, "after 2000"))
           }
-          if (grepl("year_total$", var)) {
+          if (grepl("total_year", var)) {
             return(paste("all housing units"))
           }
         }
         # Rent ranges
-        if (grepl("_rent_range_", var)) {
+        if (grepl("rent_range$", var)) {
           pre <- "housing units with a rent"
-          if (grepl("less_750$", var)) {
+          if (grepl("less_750", var)) {
             return(paste(pre, "below $750"))
           }
-          if (grepl("750_999$", var)) {
+          if (grepl("750_999", var)) {
             return(paste(pre, "between $750 and $999"))
           }
-          if (grepl("1000_1249$", var)) {
+          if (grepl("1000_1249", var)) {
             return(paste(pre, "between $1,000 and $1,249"))
           }
-          if (grepl("1250_1499$", var)) {
+          if (grepl("1250_1499", var)) {
             return(paste(pre, "between $1,250 and $1,499"))
           }
-          if (grepl("1500_plus$", var)) {
+          if (grepl("1500_plus", var)) {
             return(paste(pre, "higher than $1,500"))
           }
-          if (grepl("non_market$", var)) {
+          if (grepl("non_market", var)) {
             return(paste("housing units with an unknown rent"))
           }
-          if (grepl("rent_range_total$", var)) {
+          if (grepl("total_rent_range", var)) {
             return(paste("all housing units"))
           }
         }
@@ -440,62 +440,62 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
       # Create short title
       cat_short <- (\(x) {
         # Bedroom types
-        if (grepl("_bed_", var)) {
-          if (grepl("bachelor$", var)) {
+        if (grepl("_bed$", var)) {
+          if (grepl("bachelor", var)) {
             return("studio")
           }
-          if (grepl("1_bed$", var)) {
+          if (grepl("1_bed", var)) {
             return("1bed")
           }
-          if (grepl("2_bed$", var)) {
+          if (grepl("2_bed", var)) {
             return("2bed")
           }
-          if (grepl("3_bed_plus$", var)) {
+          if (grepl("3_bed_plus", var)) {
             return("3+bed")
           }
-          if (grepl("bed_total$", var)) {
+          if (grepl("total_bed", var)) {
             return("total")
           }
         }
         # Year of construction
-        if (grepl("_year_", var)) {
-          if (grepl("before_1960$", var)) {
+        if (grepl("_year$", var)) {
+          if (grepl("before_1960", var)) {
             return("<1960")
           }
-          if (grepl("1960_1979$", var)) {
+          if (grepl("1960_1979", var)) {
             return(">1960<1979")
           }
-          if (grepl("1980_1999$", var)) {
+          if (grepl("1980_1999", var)) {
             return(">1980<1999")
           }
-          if (grepl("2000_or_later$", var)) {
+          if (grepl("2000_or_later", var)) {
             return(">2000")
           }
-          if (grepl("year_total$", var)) {
+          if (grepl("total_year", var)) {
             return("total")
           }
         }
         # Rent ranges
-        if (grepl("_rent_range_", var)) {
-          if (grepl("less_750$", var)) {
+        if (grepl("_rent_range$", var)) {
+          if (grepl("less_750", var)) {
             return("<$750")
           }
-          if (grepl("750_999$", var)) {
+          if (grepl("750_999", var)) {
             return(">$750<$999")
           }
-          if (grepl("1000_1249$", var)) {
+          if (grepl("1000_1249", var)) {
             return(">$1k<$1.25k")
           }
-          if (grepl("1250_1499$", var)) {
+          if (grepl("1250_1499", var)) {
             return(">$1.25k<$1.5k")
           }
-          if (grepl("1500_plus$", var)) {
+          if (grepl("1500_plus", var)) {
             return(">$1.5k")
           }
-          if (grepl("non_market$", var)) {
+          if (grepl("non_market", var)) {
             return("?$")
           }
-          if (grepl("rent_range_total$", var)) {
+          if (grepl("total_rent_range", var)) {
             return("total")
           }
         }
@@ -505,15 +505,15 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
       # Create group_name
       cat_group_name <- (\(x) {
         # Bedroom types
-        if (grepl("_bed_", var)) {
+        if (grepl("_bed$", var)) {
           return("Bedroom type")
         }
         # Year of construction
-        if (grepl("_year_", var)) {
+        if (grepl("_year$", var)) {
           return("Year of construction")
         }
         # Rent ranges
-        if (grepl("_rent_range_", var)) {
+        if (grepl("_rent_range$", var)) {
           return("Rent range")
         }
       })(var)
@@ -567,65 +567,65 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
       # Create title and explanation
       cat_title <- (\(x) {
         # Bedroom types
-        if (grepl("_bed_", var)) {
-          if (grepl("bachelor$", var)) {
+        if (grepl("_bed$", var)) {
+          if (grepl("bachelor", var)) {
             return("rental studio apartments")
           }
           suff <- "rental housing units"
-          if (grepl("1_bed$", var)) {
+          if (grepl("1_bed", var)) {
             return(paste("one-bedroom", suff))
           }
-          if (grepl("2_bed$", var)) {
+          if (grepl("2_bed", var)) {
             return(paste("two-bedroom", suff))
           }
-          if (grepl("3_bed_plus$", var)) {
+          if (grepl("3_bed_plus", var)) {
             return(paste("three-bedroom and larger", suff))
           }
-          if (grepl("bed_total$", var)) {
+          if (grepl("total_bed", var)) {
             return(paste(suff))
           }
         }
         # Year of construction
-        if (grepl("_year_", var)) {
+        if (grepl("_year$", var)) {
           pre <- "rental housing units built"
-          if (grepl("before_1960$", var)) {
+          if (grepl("before_1960", var)) {
             return(paste(pre, "before 1960"))
           }
-          if (grepl("1960_1979$", var)) {
+          if (grepl("1960_1979", var)) {
             return(paste(pre, "between 1960 and 1979"))
           }
-          if (grepl("1980_1999$", var)) {
+          if (grepl("1980_1999", var)) {
             return(paste(pre, "between 1980 and 1999"))
           }
-          if (grepl("2000_or_later$", var)) {
+          if (grepl("2000_or_later", var)) {
             return(paste(pre, "after 2000"))
           }
-          if (grepl("year_total$", var)) {
+          if (grepl("total_year", var)) {
             return(paste("rental housing units"))
           }
         }
         # Rent ranges
-        if (grepl("_rent_range_", var)) {
+        if (grepl("_rent_range$", var)) {
           pre <- "rental housing units with a rent"
-          if (grepl("less_750$", var)) {
+          if (grepl("less_750", var)) {
             return(paste(pre, "below $750"))
           }
-          if (grepl("750_999$", var)) {
+          if (grepl("750_999", var)) {
             return(paste(pre, "between $750 and $999"))
           }
-          if (grepl("1000_1249$", var)) {
+          if (grepl("1000_1249", var)) {
             return(paste(pre, "between $1,000 and $1,249"))
           }
-          if (grepl("1250_1499$", var)) {
+          if (grepl("1250_1499", var)) {
             return(paste(pre, "between $1,250 and $1,499"))
           }
-          if (grepl("1500_plus$", var)) {
+          if (grepl("1500_plus", var)) {
             return(paste(pre, "higher than $1,500"))
           }
-          if (grepl("non_market$", var)) {
+          if (grepl("non_market", var)) {
             return(paste("rental housing units with an unknown rent"))
           }
-          if (grepl("rent_range_total$", var)) {
+          if (grepl("total_rent_range", var)) {
             return(paste("rental housing units"))
           }
         }
@@ -637,62 +637,62 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
       # Create short title
       cat_short <- (\(x) {
         # Bedroom types
-        if (grepl("_bed_", var)) {
-          if (grepl("bachelor$", var)) {
+        if (grepl("_bed$", var)) {
+          if (grepl("bachelor", var)) {
             return("studio")
           }
-          if (grepl("1_bed$", var)) {
+          if (grepl("1_bed", var)) {
             return("1bed")
           }
-          if (grepl("2_bed$", var)) {
+          if (grepl("2_bed", var)) {
             return("2bed")
           }
-          if (grepl("3_bed_plus$", var)) {
+          if (grepl("3_bed_plus", var)) {
             return("3+bed")
           }
-          if (grepl("bed_total$", var)) {
+          if (grepl("total_bed", var)) {
             return("total")
           }
         }
         # Year of construction
-        if (grepl("_year_", var)) {
-          if (grepl("before_1960$", var)) {
+        if (grepl("_year$", var)) {
+          if (grepl("before_1960", var)) {
             return("<1960")
           }
-          if (grepl("1960_1979$", var)) {
+          if (grepl("1960_1979", var)) {
             return(">1960<1979")
           }
-          if (grepl("1980_1999$", var)) {
+          if (grepl("1980_1999", var)) {
             return(">1980<1999")
           }
-          if (grepl("2000_or_later$", var)) {
+          if (grepl("2000_or_later", var)) {
             return(">2000")
           }
-          if (grepl("year_total$", var)) {
+          if (grepl("total_year", var)) {
             return("total")
           }
         }
         # Rent ranges
-        if (grepl("_rent_range_", var)) {
-          if (grepl("less_750$", var)) {
+        if (grepl("_rent_range$", var)) {
+          if (grepl("less_750", var)) {
             return("<$750")
           }
-          if (grepl("750_999$", var)) {
+          if (grepl("750_999", var)) {
             return(">$750<$999")
           }
-          if (grepl("1000_1249$", var)) {
+          if (grepl("1000_1249", var)) {
             return(">$1k<$1.25k")
           }
-          if (grepl("1250_1499$", var)) {
+          if (grepl("1250_1499", var)) {
             return(">$1.25k<$1.5k")
           }
-          if (grepl("1500_plus$", var)) {
+          if (grepl("1500_plus", var)) {
             return(">$1.5k")
           }
-          if (grepl("non_market$", var)) {
+          if (grepl("non_market", var)) {
             return("?$")
           }
-          if (grepl("rent_range_total$", var)) {
+          if (grepl("total_rent_range", var)) {
             return("total")
           }
         }

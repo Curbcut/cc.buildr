@@ -4,11 +4,7 @@
 \alias{save_geometry_export}
 \title{Save, for each scale, a table of ID and geometry used for export}
 \usage{
-save_geometry_export(
-  data_folder = "data/",
-  all_scales,
-  scales_to_drop = c("buildings", "streets")
-)
+save_geometry_export(data_folder = "data/", all_scales)
 }
 \arguments{
 \item{data_folder}{<\code{character}> Where the \code{.qsm} files should be
@@ -17,9 +13,6 @@ written to. Defaults to \verb{data/}.}
 \item{all_scales}{<\verb{named list}> A named list of sf data.frame
 containing all scales listed with their regions, normally
 \code{scales_variables_modules$scales}.}
-
-\item{scales_to_drop}{<\verb{character vector}> Scales that shouldn't have their
-own geometry export Defaults to \code{c("building", "street")}.}
 }
 \value{
 Returns an error or nothing if ran succesfully. Every scale is saved

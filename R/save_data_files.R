@@ -103,24 +103,18 @@ save_streets_sqlite <- function(scale_chr = "street", all_scales) {
 #' `scales_variables_modules$scales`.
 #' @param variables <`data.frame`> The `variables` data.frame, normally
 #' `scales_variables_modules$variables`.
-#' @param scales_to_drop <`character vector`> Scales that shouldn't have their
-#' own SQLite database. Defaults to `c("building", "street")`.
 #'
 #' @return Returns an error or nothing if ran successfully. Every existing region-geo
 #' combination is a new SQLite db, and every variable is a table saved in each
 #' of the db.
 #' @export
-save_all_scales_sqlite <- function(data_folder = "data/", all_scales, variables,
-                                   scales_to_drop = c("building", "street")) {
+save_all_scales_sqlite <- function(data_folder = "data/", all_scales, variables) {
   # Drop geometry of other scales
   all_scales_no_geo <-
     map_over_scales(
       all_scales = all_scales,
       fun = \(geo = geo, scales = scales, scale_name = scale_name,
         scale_df = scale_df) {
-        if (scale_name %in% scales_to_drop) {
-          return()
-        }
         sf::st_drop_geometry(scale_df)
       }
     )
@@ -228,24 +222,20 @@ save_all_scales_sqlite <- function(data_folder = "data/", all_scales, variables,
 #' @param all_scales <`named list`> A named list of sf data.frame
 #' containing all scales listed with their regions, normally
 #' `scales_variables_modules$scales`.
-#' @param scales_to_drop <`character vector`> Scales that shouldn't have their
-#' own short table. Defaults to `c("building", "street")`.
 #'
 #' @return Returns an error or nothing if ran successfully. Every `region` is
 #' its own `.qsm` file in which there are all the scales trimed down to only
 #' the columns from `ID` to `households` (NO data columns).
 #' @export
-save_short_tables_qs <- function(data_folder = "data/", all_scales,
-                                 scales_to_drop = c("building", "street")) {
+save_short_tables_qs <- function(data_folder = "data/", all_scales) {
   mapply(\(scls, geo) {
     scls <- mapply(\(x, y) {
-      if (y %in% scales_to_drop) {
-        return()
-      }
       d <- sf::st_drop_geometry(x)
-      d[, c(1:which(names(d) == "households"), which(names(d) == "centroid"))]
+      subs <- grepl("ID$|name|name_2|population|households|centroid", names(d))
+      d[, subs]
     }, scls, names(scls), SIMPLIFY = FALSE)
     scls <- scls[!sapply(scls, is.null)]
+    if (length(scls) == 0) return(NULL)
     names(scls) <- paste(geo, names(scls), sep = "_")
 
     for (i in seq_len(length(scls))) {
@@ -267,15 +257,12 @@ save_short_tables_qs <- function(data_folder = "data/", all_scales,
 #' @param all_scales <`named list`> A named list of sf data.frame
 #' containing all scales listed with their regions, normally
 #' `scales_variables_modules$scales`.
-#' @param scales_to_drop <`character vector`> Scales that shouldn't have their
-#' own geometry export Defaults to `c("building", "street")`.
 #'
 #' @return Returns an error or nothing if ran succesfully. Every scale is saved
 #' in their most minimal version. Only used for when a user wants to do a
 #' geometry export.
 #' @export
-save_geometry_export <- function(data_folder = "data/", all_scales,
-                                 scales_to_drop = c("buildings", "streets")) {
+save_geometry_export <- function(data_folder = "data/", all_scales) {
   if (!file.exists(paste0(data_folder, "geometry_export/"))) {
     dir.create(paste0(data_folder, "geometry_export/"))
   }
@@ -284,10 +271,6 @@ save_geometry_export <- function(data_folder = "data/", all_scales,
     all_scales = all_scales,
     fun = \(geo = geo, scales = scales, scale_name = scale_name,
       scale_df = scale_df) {
-      if (scale_name %in% scales_to_drop) {
-        return()
-      }
-
       geo_scale <- paste(geo, scale_name, sep = "_")
       out <- scale_df[, "ID"]
       file_link <- paste0(data_folder, "geometry_export/", geo_scale, ".qs")

@@ -150,7 +150,8 @@ add_q5 <- function(df, breaks, time_regex = "_\\d{4}$") {
 #' @return Returns a numeric vector with pretty q5 break values.
 #' @export
 find_breaks_q5 <- function(min_val, max_val) {
-  breaks <- unlist(lapply(-3:7, \(x) (10^x) * c(1, 1.5, 2, 2.5, 3, 4, 5, 6)))
+  breaks <- unlist(lapply(-4:7, \(x) (10^x) * c(0.75, 1, 1.5, 2, 2.5, 3, 4, 5, 6)))
+  breaks <- unique(breaks)
 
   range <- max_val - min_val
   break_val <- range / 5

@@ -174,9 +174,9 @@ add_variable <- function(variables, var_code, type, var_title,
     stop(paste0("One or more of `var_measurement$measurement` is other than ",
                 "`scalar`, `ordinal` or `nominal` (the only possible options)."))
   }
-  if (grepl("\\d$", var_code)) {
-    stop(paste0("`var_code` can not finish with a numeric. (Numeric at the end ",
-                "of the variables code is reserved only to the time.)"))
+  if (grepl("\\d{4}$", var_code)) {
+    stop(paste0("`var_code` can not finish with 4 numerics. (This string at the end ",
+                "of the variables code is reserved only to the year of the data.)"))
   }
 
   new_variable <-
