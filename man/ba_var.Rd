@@ -29,7 +29,10 @@ ba_var(
   module_title_text_main = NULL,
   module_title_text_extra = NULL,
   module_metadata = NULL,
-  module_dataset_info = NULL
+  module_dataset_info = NULL,
+  module_var_left = NULL,
+  module_dates = NULL,
+  module_main_dropdown_title = NULL
 )
 }
 \arguments{
@@ -93,6 +96,12 @@ years.}
 \item{module_metadata}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 
 \item{module_dataset_info}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
+
+\item{module_var_left}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
+
+\item{module_dates}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
+
+\item{module_main_dropdown_title}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 }
 \value{
 A list of length 3, similar to the one fed to

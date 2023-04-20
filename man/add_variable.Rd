@@ -14,8 +14,6 @@ add_variable(
   explanation_nodet = gsub("^the ", "", explanation),
   exp_q5,
   parent_vec,
-  group_name = NA_character_,
-  group_diff = list(),
   theme,
   private,
   pe_include = TRUE,
@@ -74,16 +72,6 @@ where the definition would be: \verb{are living in areas with _X_ potential for 
 the explore panel. Must be another entry in the variable table. E.g. for
 Tenant households (\%), the parent variable would be the number of
 private households (denominator of the percentage) : \code{private_households}.}
-
-\item{group_name}{<\code{character}> The name of the larger group to which the
-variable belongs. e.g. for the variable accessibility to public schools by bike,
-the group_name would be \code{"Accessibility to schools"}}
-
-\item{group_diff}{<\verb{named list}> A named list for when the variable is part
-of a greater group. e.g. accessibility to public schools by bike, the bigger group
-is \verb{Accessibility to schools}, and bike is a group differentiation.
-e.g. The \code{list("Mode of transport" = "By bike", "Public/Prviate" = "Public")}.
-The list can contain multiple named vectors, multiple group differentiation.}
 
 \item{theme}{<\code{character}> The theme to which the variable belongs, e.g. "Housing",
 "Urban life", ...}

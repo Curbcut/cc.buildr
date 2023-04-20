@@ -20,8 +20,6 @@ append_empty_variables_table <- function(scales_consolidated) {
       explanation_nodet = character(),
       exp_q5 = character(),
       parent_vec = character(),
-      group_name = character(),
-      group_diff = list(),
       theme = character(),
       private = logical(),
       pe_include = logical(),
@@ -74,14 +72,6 @@ append_empty_variables_table <- function(scales_consolidated) {
 #' the explore panel. Must be another entry in the variable table. E.g. for
 #' Tenant households (%), the parent variable would be the number of
 #' private households (denominator of the percentage) : `private_households`.
-#' @param group_name <`character`> The name of the larger group to which the
-#' variable belongs. e.g. for the variable accessibility to public schools by bike,
-#' the group_name would be \code{"Accessibility to schools"}
-#' @param group_diff <`named list`> A named list for when the variable is part
-#' of a greater group. e.g. accessibility to public schools by bike, the bigger group
-#' is `Accessibility to schools`, and bike is a group differentiation.
-#' e.g. The \code{list("Mode of transport" = "By bike", "Public/Prviate" = "Public")}.
-#' The list can contain multiple named vectors, multiple group differentiation.
 #' @param theme <`character`> The theme to which the variable belongs, e.g. "Housing",
 #' "Urban life", ...
 #' @param private <`logical`> If we have permissions to make the variable available
@@ -135,8 +125,7 @@ append_empty_variables_table <- function(scales_consolidated) {
 add_variable <- function(variables, var_code, type, var_title,
                          var_short = as.character(var_title), explanation,
                          explanation_nodet = gsub("^the ", "", explanation),
-                         exp_q5, parent_vec, group_name = NA_character_,
-                         group_diff = list(), theme, private, pe_include = TRUE,
+                         exp_q5, parent_vec, theme, private, pe_include = TRUE,
                          dates, avail_df, breaks_q3, breaks_q5,
                          region_values = NULL, source, interpolated,
                          rankings_chr = c("exceptionally low", "unusually low",
@@ -193,14 +182,12 @@ add_variable <- function(variables, var_code, type, var_title,
       private = as.logical(private),
       pe_include = as.logical(pe_include),
       source = as.character(source),
-      group_name = as.character(group_name),
       dates = list(dates),
       avail_df = list(avail_df),
       breaks_q3 = list(breaks_q3),
       breaks_q5 = list(breaks_q5),
       region_values = list(region_values),
       interpolated = list(interpolated),
-      group_diff = list(group_diff),
       rankings_chr = list(rankings_chr),
       var_measurement = list(var_measurement)
     )

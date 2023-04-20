@@ -6,52 +6,42 @@
 #' @param all_tables <`named list`> A named list of character. The names are
 #' the \code{region} e.g. CMA, island, city, ... and the vectors are all the
 #' scales available in these geo e.g. CSD, CT, DA, building, ...
-#' @param first_scale_zoom <`numeric`>¨On auto zoom, the zoom that should be
-#' attributed to the first scale in a list of scales under a region.
-#' @param CT_zoom <`numeric`>¨On auto zoom, the zoom that should be
-#' attributed to the census tracts.
-#' @param DA_zoom <`numeric`>¨On auto zoom, the zoom that should be
-#' attributed to the dissemination ares.
-#' @param building_zoom <`numeric`>¨On auto zoom, the zoom that should be
-#' attributed to the buildings.
-#' @param building_or_street <`character`>¨Which is the default smaller scale?
-#' `building` or `street`.
+#' @param zoom_levels <`named list`> A numeric list with names. Every scale
+#' that is not located first in the region's list must be part of this list,
+#' with a numeric applied to it (at which zoom level will the user switch between
+#' one scale to another on auto-zoom). The first element of every region's list
+#' of scales has the name `first` in that list, which will always be defaulted
+#' to 0.
 #'
 #' @return Returns a named list of all basic map zoom levels.
 #' @export
-map_zoom_levels_create_all <- function(all_tables, first_scale_zoom = 0,
-                                       CT_zoom = 10.5, DA_zoom = 12.5,
-                                       building_zoom = 15.5,
-                                       building_or_street = "building") {
-  auto_zoom_levels <- function(x, first) {
-    if (x == "CT") {
-      return(CT_zoom)
-    }
-    if (x == "DA") {
-      return(DA_zoom)
-    }
-    if (x %in% building_or_street) {
-      return(building_zoom)
-    }
-    if (x == first) {
-      return(first_scale_zoom)
-    }
-    stop(paste0("`", x, "` is an unrecognized scale."))
-  }
+map_zoom_levels_create_all <- function(all_tables,
+                                       zoom_levels = list(first = 0, CT = 10.5,
+                                                          DA = 12.5, building = 15.5)) {
 
-  zoom_levels <- sapply(all_tables, \(scales) {
-    scales <- scales[scales %in% c(scales[[1]], "CT", "DA", building_or_street)]
-    sapply(scales, \(scale) {
-      stats::setNames(auto_zoom_levels(scale, first = scales[[1]]), scale)
-    }, simplify = TRUE, USE.NAMES = FALSE)
-  }, simplify = FALSE)
+  levels <- lapply(all_tables, \(scales) {
+    out <- sapply(scales, \(s) {
+      if (s == scales[[1]]) {
+        zoom_levels$first
+      } else {
+        unlist(zoom_levels[names(zoom_levels) == s])
+      }
+    })
+    names(out) <- scales
+    if (sum(sapply(out, is.null)) > 0) {
+      stop(paste0("Scale `", names(out)[sapply(out, is.null)], "` does not ",
+                  "have a zoom_levels supplied."))
+    }
+    return(out)
+  })
 
-  zoom_levels <- lapply(zoom_levels, list)
-  zoom_levels <- mapply(\(z, n) {
+
+  levels <- lapply(levels, list)
+  levels <- mapply(\(z, n) {
     stats::setNames(z, paste0("map_zoom_levels_", n))
-  }, zoom_levels, names(zoom_levels), SIMPLIFY = FALSE, USE.NAMES = TRUE)
+  }, levels, names(levels), SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
-  return(zoom_levels)
+  return(levels)
 }
 
 #' Create a custom zoom level

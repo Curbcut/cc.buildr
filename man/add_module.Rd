@@ -14,7 +14,10 @@ add_module(
   title_text_extra,
   metadata,
   dataset_info,
-  regions = NULL
+  regions = NULL,
+  var_left = NULL,
+  dates = NULL,
+  main_dropdown_title = NULL
 )
 }
 \arguments{
@@ -50,6 +53,34 @@ from the module.}
 
 \item{regions}{<\verb{character vector}> List of all the regions the module should be
 able to show.}
+
+\item{var_left}{<\verb{character vector or tibble}> This is used to create basic
+modules. If a character vector is supplied, the module will show a single
+dropdown with the options of the variables. If a tibble is supplied, dynamic
+widgets will be introduces based on the values of group_diff. The columns of
+the tibble must be \code{var_code}, \code{group_name} and \code{group_diff}.
+\itemize{
+\item group_name <\code{character}> The name of the larger group to which the
+variable belongs. e.g. for the variable accessibility to public schools by bike,
+the group_name would be \code{"Accessibility to schools"}. This will be one of
+the values in the main dropdown.
+\item group_diff <\verb{named list}> A named list for when the variable is part
+of a greater group. e.g. accessibility to public schools by bike, the bigger group
+is \verb{Accessibility to schools}, and bike is a group differentiation.
+e.g. The \code{list("Mode of transport" = "By bike", "Public/Prviate" = "Public")}.
+The list can contain multiple named vectors, multiple group differentiation. In the
+case of the example, two dropdowns will be added dynamically: Modes of transport
+and Public/Private, which will include all the values of the variables sharing
+the same \code{group_name}.
+}}
+
+\item{dates}{<\verb{numeric vector}> In the case where var_left is used, supply a umeric
+vector of dates. NULL if there are no dates for the variables. This will create
+a time slider widget on the module.}
+
+\item{main_dropdown_title}{<\code{character}> In the case where var_left is used,
+supply a character for the label of the main dropdown. NULL if there should be no
+dropdown label.}
 }
 \value{
 The same \code{modules} data.frame fed, with the added row.

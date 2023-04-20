@@ -4,11 +4,7 @@
 \alias{save_short_tables_qs}
 \title{Save short tables as .qsm (regions regrouped)}
 \usage{
-save_short_tables_qs(
-  data_folder = "data/",
-  all_scales,
-  scales_to_drop = c("building", "street")
-)
+save_short_tables_qs(data_folder = "data/", all_scales)
 }
 \arguments{
 \item{data_folder}{<\code{character}> Where the \code{.qsm} files should be
@@ -17,9 +13,6 @@ written to. Defaults to \verb{data/}.}
 \item{all_scales}{<\verb{named list}> A named list of sf data.frame
 containing all scales listed with their regions, normally
 \code{scales_variables_modules$scales}.}
-
-\item{scales_to_drop}{<\verb{character vector}> Scales that shouldn't have their
-own short table. Defaults to \code{c("building", "street")}.}
 }
 \value{
 Returns an error or nothing if ran successfully. Every \code{region} is

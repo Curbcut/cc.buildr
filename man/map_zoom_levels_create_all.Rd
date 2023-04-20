@@ -6,11 +6,7 @@
 \usage{
 map_zoom_levels_create_all(
   all_tables,
-  first_scale_zoom = 0,
-  CT_zoom = 10.5,
-  DA_zoom = 12.5,
-  building_zoom = 15.5,
-  building_or_street = "building"
+  zoom_levels = list(first = 0, CT = 10.5, DA = 12.5, building = 15.5)
 )
 }
 \arguments{
@@ -18,20 +14,12 @@ map_zoom_levels_create_all(
 the \code{region} e.g. CMA, island, city, ... and the vectors are all the
 scales available in these geo e.g. CSD, CT, DA, building, ...}
 
-\item{first_scale_zoom}{<\code{numeric}>¨On auto zoom, the zoom that should be
-attributed to the first scale in a list of scales under a region.}
-
-\item{CT_zoom}{<\code{numeric}>¨On auto zoom, the zoom that should be
-attributed to the census tracts.}
-
-\item{DA_zoom}{<\code{numeric}>¨On auto zoom, the zoom that should be
-attributed to the dissemination ares.}
-
-\item{building_zoom}{<\code{numeric}>¨On auto zoom, the zoom that should be
-attributed to the buildings.}
-
-\item{building_or_street}{<\code{character}>¨Which is the default smaller scale?
-\code{building} or \code{street}.}
+\item{zoom_levels}{<\verb{named list}> A numeric list with names. Every scale
+that is not located first in the region's list must be part of this list,
+with a numeric applied to it (at which zoom level will the user switch between
+one scale to another on auto-zoom). The first element of every region's list
+of scales has the name \code{first} in that list, which will always be defaulted
+to 0.}
 }
 \value{
 Returns a named list of all basic map zoom levels.

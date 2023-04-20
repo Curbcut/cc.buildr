@@ -249,8 +249,8 @@ tileset_publish_tileset <- function(tileset, username, access_token) {
       "/publish"
     ),
     query = list(access_token = access_token),
-    times = 3,
-    pause_min = 30
+    times = 4,
+    pause_min = 35
   )
 
 
@@ -371,7 +371,6 @@ tileset_create_recipe <- function(layer_names, source, minzoom, maxzoom,
   out
 }
 
-
 #' Do it all tileset function
 #'
 #' Constructs the combinations with the default auto-zoom, creates the tile
@@ -385,6 +384,9 @@ tileset_create_recipe <- function(layer_names, source, minzoom, maxzoom,
 #' @param map_zoom_levels <`named list`> The previously created zoom levels
 #' using \code{\link[cc.buildr]{map_zoom_levels_create_all}} and
 #' \code{\link[cc.buildr]{map_zoom_levels_create_custom}}.
+#' @param tweak_max_zoom <`named list`> What would be the maximum zoom of the
+#' additional scales? Named list, where the name is the scale name and the value
+#' is the maximum zoom of the scale.
 #' @param prefix <`character`> Prefix attached to every tile source and
 #' created and published tileset. Should correspond to the Curbcut city, e.g. `mtl`.
 #' @param username <`character`> Mapbox account username.
@@ -393,21 +395,21 @@ tileset_create_recipe <- function(layer_names, source, minzoom, maxzoom,
 #' @return Returns nothing if succeeds. Tilesets are created and published and
 #' ready to be used.
 #' @export
-tileset_upload_all <- function(all_scales, map_zoom_levels,
+tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom,
                                prefix, username, access_token) {
   tn <- function(geo, scale_name) paste(prefix, geo, scale_name, sep = "_")
 
   # All tables
   all_tables <- reconstruct_all_tables(all_scales)
 
-  # Arrange the data
-  all_scales <- map_over_scales(
-    all_scales = all_scales,
-    fun = \(scale_df = scale_df, ...) {
-      scale_df[, grepl("ID$", names(scale_df))]
-    }
-  )
-
+  # # Arrange the data
+  # all_scales <- map_over_scales(
+  #   all_scales = all_scales,
+  #   fun = \(scale_df = scale_df, ...) {
+  #     scale_df[, grepl("ID$", names(scale_df))]
+  #   }
+  # )
+  #
   # Reset
   mapply(\(geo, scales) {
     sapply(scales, \(scale) {
@@ -429,35 +431,38 @@ tileset_upload_all <- function(all_scales, map_zoom_levels,
   mapply(function(scales, geo) {
     lapply(scales, function(scale) {
       geo_scale <- tn(geo, scale)
+      df <- all_scales[[geo]][[scale]]
 
-      if (scale == "building") {
-        building_to_process <- all_scales[[geo]][[scale]]
-        building_to_process <- building_to_process[, c("ID", "DA_ID")]
-        names(building_to_process) <- c("ID", "ID_color", "geometry")
-        building_to_process <- sf::st_transform(building_to_process, 4326)
+      # We can detect too large data to pass by the normal flow by the fact
+      # they don't have population and households interpolated
+      if (!all(c("population", "households") %in% names(df))) {
+        df <- df[, grepl("ID$", names(df))]
+        df <- df[, c("ID", "DA_ID")]
+        names(df) <- c("ID", "ID_color", "geometry")
+        df <- sf::st_transform(df, 4326)
 
         tileset_upload_tile_source_large(
           id = geo_scale,
-          df = building_to_process,
+          df = df,
           username = username,
           access_token = access_token
         )
       } else {
-        df <- all_scales[[geo]][[scale]]
-        df[c("ID")]
+        df <- df[, grepl("ID$", names(df))]
         df$ID_color <- df$ID
         df <- sf::st_transform(df, 4326)
         df <- sf::st_set_agr(df, "constant")
 
         tileset_upload_tile_source(df,
-          id = geo_scale,
-          username = username,
-          access_token = access_token
+                                   id = geo_scale,
+                                   username = username,
+                                   access_token = access_token
         )
       }
     })
   }, all_tables, names(all_tables))
 
+  # TKTK CHECK IF ALL SCALES HAVE BEEN CORRECTLY UPLOADED
 
   # Create recipe, create tileset and publish
   maxzooms <-
@@ -465,6 +470,11 @@ tileset_upload_all <- function(all_scales, map_zoom_levels,
       scale = c("first_level", "CT", "DA", "DB", "building"),
       maxzoom = c(11, 12, 13, 14, 16)
     )
+  addition <- tibble::tibble(scale = names(tweak_max_zoom),
+                             maxzoom = unlist(tweak_max_zoom))
+  maxzooms <- rbind(addition, maxzooms)
+  # If there are duplicated, only keep the ones coming first in the 'tweak_max_zoom'
+  maxzooms <- maxzooms[!duplicated(maxzooms$scale), ]
 
   all_recipes <-
     mapply(\(scales, geo) {
@@ -483,17 +493,61 @@ tileset_upload_all <- function(all_scales, map_zoom_levels,
           )
 
         tileset_create_tileset(name,
-          recipe = recipe,
-          username = username,
-          access_token = access_token
+                               recipe = recipe,
+                               username = username,
+                               access_token = access_token
         )
 
         tileset_publish_tileset(name,
-          username = username,
-          access_token = access_token
+                                username = username,
+                                access_token = access_token
         )
       }, scales, seq_along(scales), SIMPLIFY = FALSE)
     }, all_tables, names(all_tables), SIMPLIFY = FALSE)
+
+  # Verify if all scales have been published
+  t_list <- tileset_list_tilesets(username = username, access_token = access_token)
+  mapply(\(scales, geo) {
+    mapply(function(scale, level) {
+      scale_for_dict <- if (level == 1) "first_level" else scale
+      name <- tn(geo, scale)
+      if (!name %in% t_list$id)
+        warning("Tileset `", name, "` was not succesfully published.")
+    }, scales, seq_along(scales), SIMPLIFY = FALSE)
+  }, all_tables, names(all_tables), SIMPLIFY = FALSE)
+
+  # Function to calculate on autozoom when the scale starts and when it ends
+  calculate_zoom_levels <- function(zoom_levels) {
+
+    # Initialize the output tibble
+    result <- tibble::tibble(scale = character(), min_zoom = integer(),
+                             max_zoom = integer())
+
+    # Loop through the named numeric vector
+    for (i in seq_along(zoom_levels)) {
+      scale_name <- names(zoom_levels)[i]
+      zoom_value <- zoom_levels[i]
+
+      # Calculate min zoom
+      min_zoom <- ifelse(i == 1, 0, result$max_zoom[i - 1] + 1)
+
+      # Calculate max zoom
+      max_zoom <-
+        if (length(zoom_levels) == 1) {
+          10
+        } else {
+          ifelse(i == length(zoom_levels), zoom_value + 0.5, zoom_levels[i + 1] - 0.5)
+        }
+
+
+      # Add the min and max zoom to the result tibble
+      result <- result %>%
+        tibble::add_row(scale = scale_name, min_zoom = min_zoom, max_zoom = max_zoom)
+    }
+
+    return(result)
+  }
+
 
   auto_zoom_recipes <-
     mapply(\(geo, zoom_levels) {
@@ -508,46 +562,11 @@ tileset_upload_all <- function(all_scales, map_zoom_levels,
           scale_names
         ), scale_names)
 
-        minz_fun <- function(x) {
-          if (x == 0) {
-            return(2)
-          } else {
-            sum(x, 0.5)
-          }
-        }
-        minzooms <- sapply(mzl, minz_fun)
+        zooms <- calculate_zoom_levels(mzl)
+        minzooms <- zooms$min_zoom
+        maxzooms <- zooms$max_zoom
         names(minzooms) <- scale_names
-
-        maxz_fun <- function(x) {
-          if (x == 0) {
-            return(10)
-          } else if (x == 15.5) {
-            return(16)
-          } else {
-            return(sum(x, 1.5))
-          }
-        }
-
-        maxz_fun <- function(x) {
-          if (x == 0) {
-            return(10)
-          } else if (x == 15.5) {
-            return(16)
-          } else {
-            return(sum(x, 1.5))
-          }
-        }
-
-        maxzooms <- sapply(mzl, maxz_fun)
-        # Adjust when there's a gap between the DA and the building scale and that
-        # they are the two last scales.
-        if (identical(names(mzl)[(length(mzl) - 1):length(mzl)], c("DA", "building"))) {
-          if (maxzooms[["DA"]] == 14 && maxzooms[["building"]] == 16)
-            maxzooms[["DA"]] <- 15
-        }
-        # Adjust to not leave gaps between DAs and buildings
         names(maxzooms) <- scale_names
-
 
         layer_sizes <-
           stats::setNames(rep(NA, length(scale_names)), scale_names)
@@ -573,18 +592,33 @@ tileset_upload_all <- function(all_scales, map_zoom_levels,
           username = username,
           access_token = access_token
         )
+        # Give some time so the deletion is completed
+        Sys.sleep(5)
+
         # New tileset
         tileset_create_tileset(name,
-          recipe = recipe,
-          username = username,
-          access_token = access_token
+                               recipe = recipe,
+                               username = username,
+                               access_token = access_token
         )
         tileset_publish_tileset(name,
-          username = username,
-          access_token = access_token
+                                username = username,
+                                access_token = access_token
         )
       }, names(zoom_levels), zoom_levels, SIMPLIFY = FALSE)
     }, names(map_zoom_levels), map_zoom_levels, SIMPLIFY = FALSE)
+
+  # Verify if all auto zooms have been published
+  t_list <- tileset_list_tilesets(username = username, access_token = access_token)
+  mapply(\(geo, zoom_levels) {
+    mapply(\(mzl_name, mzl) {
+      suffix <- gsub(paste0(".*_", geo), "", mzl_name)
+      suffix <- if (grepl("_", suffix)) suffix else ""
+      name <- tn(geo, scale_name = paste0("auto_zoom", suffix))
+      if (!name %in% t_list$id)
+        warning("Tileset `", name, "` was not succesfully published.")
+    }, names(zoom_levels), zoom_levels, SIMPLIFY = FALSE)
+  }, names(map_zoom_levels), map_zoom_levels, SIMPLIFY = FALSE)
 
   return(invisible(NULL))
 }

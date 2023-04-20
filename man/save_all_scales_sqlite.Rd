@@ -4,12 +4,7 @@
 \alias{save_all_scales_sqlite}
 \title{Save every scales in their own SQLite database}
 \usage{
-save_all_scales_sqlite(
-  data_folder = "data/",
-  all_scales,
-  variables,
-  scales_to_drop = c("building", "street")
-)
+save_all_scales_sqlite(data_folder = "data/", all_scales, variables)
 }
 \arguments{
 \item{data_folder}{<\code{character}> Where the \code{.sqlite} databases should be
@@ -21,9 +16,6 @@ containing all scales listed with their regions, normally
 
 \item{variables}{<\code{data.frame}> The \code{variables} data.frame, normally
 \code{scales_variables_modules$variables}.}
-
-\item{scales_to_drop}{<\verb{character vector}> Scales that shouldn't have their
-own SQLite database. Defaults to \code{c("building", "street")}.}
 }
 \value{
 Returns an error or nothing if ran successfully. Every existing region-geo

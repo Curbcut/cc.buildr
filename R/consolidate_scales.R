@@ -170,12 +170,8 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs) {
         merge_ <- function(x, y) merge(x, y, by = "ID")
         out <- Reduce(merge_, other_ids[!sapply(other_ids, is.null)], init = out)
 
-        # Take out _IDs that aren't in the scales (e.g., CSD)
-        all_ids <- names(out)[grepl("_ID$", names(out))]
-        drop_ids <- all_ids[!all_ids %in% paste0(names(scales), "_ID")]
-
         # Return
-        out[, !names(out) %in% drop_ids]
+        out
       }
     )
 
