@@ -77,6 +77,8 @@ append_empty_modules_table <- function(scales) {
 #' @param main_dropdown_title <`character`> In the case where var_left is used,
 #' supply a character for the label of the main dropdown. NULL if there should be no
 #' dropdown label.
+#' @param var_right <`character vector`> Character vector of variable codes that
+#' there should be in the 'compare' dropdown of the page.
 #'
 #'
 #' @return The same `modules` data.frame fed, with the added row.
@@ -84,7 +86,8 @@ append_empty_modules_table <- function(scales) {
 add_module <- function(modules, id, theme = "", nav_title, title_text_title,
                        title_text_main,
                        title_text_extra, metadata, dataset_info, regions = NULL,
-                       var_left = NULL, dates = NULL, main_dropdown_title = NULL) {
+                       var_left = NULL, dates = NULL, main_dropdown_title = NA,
+                       var_right = NULL) {
 
   if (is.data.frame(var_left)) {
     if (!all(names(var_left) == c("var_code", "group_name", "group_diff"))) {
@@ -93,21 +96,21 @@ add_module <- function(modules, id, theme = "", nav_title, title_text_title,
     }
   }
 
-  new_module <-
-    tibble::tibble(
-      id = id,
-      theme,
-      nav_title = nav_title,
-      title_text_title = title_text_title,
-      title_text_main = title_text_main,
-      title_text_extra = title_text_extra,
-      regions = if (is.null(regions)) list(NULL) else list(regions),
-      metadata = metadata,
-      dataset_info = dataset_info,
-      var_left = list(var_left),
-      dates = list(dates),
-      main_dropdown_title = main_dropdown_title
-    )
+  tibble::add_row(
+    modules,
+    id = id,
+    theme,
+    nav_title = nav_title,
+    title_text_title = title_text_title,
+    title_text_main = title_text_main,
+    title_text_extra = title_text_extra,
+    regions = if (is.null(regions)) list(NULL) else list(regions),
+    metadata = metadata,
+    dataset_info = dataset_info,
+    var_left = list(var_left),
+    dates = list(dates),
+    main_dropdown_title = main_dropdown_title,
+    var_right = list(var_right)
+  )
 
-  rbind(modules, new_module)
 }

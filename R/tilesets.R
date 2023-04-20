@@ -541,8 +541,9 @@ tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom,
 
 
       # Add the min and max zoom to the result tibble
-      result <- result %>%
-        tibble::add_row(scale = scale_name, min_zoom = min_zoom, max_zoom = max_zoom)
+      result <-
+        tibble::add_row(result, scale = scale_name, min_zoom = min_zoom,
+                        max_zoom = max_zoom)
     }
 
     return(result)

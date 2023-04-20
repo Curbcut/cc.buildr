@@ -78,6 +78,14 @@ append_empty_variables_table <- function(scales_consolidated) {
 #' for public download.
 #' @param pe_include <`logical`> Should this variable be included in the place
 #' explorer? Defaults to `TRUE`.
+#' @param group_name <`character`> The name of the larger group to which the
+#' variable belongs. e.g. for the variable accessibility to public schools by bike,
+#' the group_name would be \code{"Accessibility to schools"}
+#' @param group_diff <`named list`> A named list for when the variable is part
+#' of a greater group. e.g. accessibility to public schools by bike, the bigger group
+#' is `Accessibility to schools`, and bike is a group differentiation.
+#' e.g. The \code{list("Mode of transport" = "By bike", "Public/Prviate" = "Public")}.
+#' The list can contain multiple named vectors, multiple group differentiation.
 #' @param dates <`character vector`> A vector of dates for which the data is available.
 #' @param avail_df <`list`> All the combinations of region and scales
 #' at which the data is available, e.g. `c("CMA_CSD", "CMA_CT", ...)`
@@ -125,7 +133,8 @@ append_empty_variables_table <- function(scales_consolidated) {
 add_variable <- function(variables, var_code, type, var_title,
                          var_short = as.character(var_title), explanation,
                          explanation_nodet = gsub("^the ", "", explanation),
-                         exp_q5, parent_vec, theme, private, pe_include = TRUE,
+                         exp_q5, parent_vec, group_name = NULL,
+                         group_diff = list(), theme, private, pe_include = FALSE,
                          dates, avail_df, breaks_q3, breaks_q5,
                          region_values = NULL, source, interpolated,
                          rankings_chr = c("exceptionally low", "unusually low",
@@ -168,8 +177,8 @@ add_variable <- function(variables, var_code, type, var_title,
                 "of the variables code is reserved only to the year of the data.)"))
   }
 
-  new_variable <-
-    tibble::tibble(
+    tibble::add_row(
+      variables,
       var_code = as.character(var_code),
       type = list(type),
       var_title = as.character(var_title),
@@ -182,6 +191,8 @@ add_variable <- function(variables, var_code, type, var_title,
       private = as.logical(private),
       pe_include = as.logical(pe_include),
       source = as.character(source),
+      group_name = as.character(group_name),
+      group_diff = list(group_diff),
       dates = list(dates),
       avail_df = list(avail_df),
       breaks_q3 = list(breaks_q3),
@@ -191,8 +202,6 @@ add_variable <- function(variables, var_code, type, var_title,
       rankings_chr = list(rankings_chr),
       var_measurement = list(var_measurement)
     )
-
-  rbind(variables, new_variable)
 }
 
 #' Get variable values for regions

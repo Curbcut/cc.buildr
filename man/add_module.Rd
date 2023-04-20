@@ -17,7 +17,8 @@ add_module(
   regions = NULL,
   var_left = NULL,
   dates = NULL,
-  main_dropdown_title = NULL
+  main_dropdown_title = NA,
+  var_right = NULL
 )
 }
 \arguments{
@@ -81,6 +82,9 @@ a time slider widget on the module.}
 \item{main_dropdown_title}{<\code{character}> In the case where var_left is used,
 supply a character for the label of the main dropdown. NULL if there should be no
 dropdown label.}
+
+\item{var_right}{<\verb{character vector}> Character vector of variable codes that
+there should be in the 'compare' dropdown of the page.}
 }
 \value{
 The same \code{modules} data.frame fed, with the added row.

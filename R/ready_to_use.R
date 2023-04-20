@@ -30,60 +30,50 @@ ru_canale <- function(scales_variables_modules, region_DA_IDs, crs) {
     variable_exp_q5 = "are living in areas with _X_ potential for active living",
     variable_theme = "Urban life",
     variable_private = FALSE,
-    variable_source = "McGill Geo-Social Determinants of Health Research Group",
+    variable_source = "Curbcut",
+    variable_pe_include = TRUE,
     module_id = "canale",
     module_theme = "Urban life",
     module_nav_title = "Active living potential",
-    module_title_text_title = "Active living potential: the CanALE index",
+    module_title_text_title = "Active Living Potential",
     module_title_text_main = paste0(
-      "The CanALE dataset (developed by Prof. Nancy Ross ",
-      "and her team) captures four key elements related to ",
-      "active living environments: population density, ",
-      "points of interest, street grid, and proximity of transit service."
+      "The walkability of an area is influenced by both the built environment ",
+      "and socio-economic factors. The Active Living Potential index ",
+      "quantifies which areas provide walkable environments to their residents."
     ),
     module_title_text_extra = paste0(
-      "<p>A safe and inviting pedestrian environment is not ",
-      "a given in all neighbourhoods: it is influenced by ",
-      "socio-economic factors. The risks of pedestrian ",
-      "injuries and fatalities are higher in low-income and ",
-      "racialized communities where residents often rely on ",
-      "walking as a daily mode of transport but where the ",
-      "local environment is not necessarily inviting and ",
-      "safe.<p>In addition to evidence pointing towards ",
-      "large discrepancies in the provision of walkable ",
-      "urban space across income and racial lines, concern ",
-      "has been raised with regard to the possible ",
-      "gentrification and displacement impacts of ",
-      "improved pedestrian infrastructure. In other words, ",
-      "who can afford to live in walkable neighbourhoods?",
-      "<br><p>Further resources: <ul><li><a href='https://",
-      "www150.statcan.gc.ca/n1/pub/82-003-x/2019005/",
-      "article/00002-eng.htm' target = '_blank'>Thomas Herrmann, William ",
-      "Gleckner, Rania A. Wasfi, Benoît Thierry, Yan ",
-      "Kestens and Nancy A. Ross. 2019. 'A pan-Canadian ",
-      "measure of active living environments using open ",
-      "data. Statistics Canada Health Reports, 82-003-X.",
-      "</a><li>Kevin Manaugh, Linnea Soli, Samuel Kohn, ",
-      "Robin Basalaev-Binder, Ty Tuff, David Wachsmuth. ",
-      "2020. 'Montreal's response to COVID-19: An equity ",
-      "analysis of new active transport infrastructure.' ",
-      "Transportation Research Board working paper. ",
-      "<b>(MSSI research)</b></ul><br><p><i>Module lead ",
-      "authors: David Wachsmuth, Robin Basalaev-Binder</i>"
+      "The datasets visualized on this page come from Curbcut using data from",
+      " the Canadian Censuses and DMTI. Our index considers street connectivity",
+      ", building density, and points of interest. Active Living Potential is",
+      " then calculated based on dissemination areas accessible within a 15-m",
+      "inute walk. The work on this page was highly influenced by the <a href",
+      " = 'http://canue.ca/wp-content/uploads/2018/03/CanALE_UserGuide.pdf', ",
+      "target = '_blank'>CanALE index</a> developed by Prof. Nancy Ross and h",
+      "er team."
     ),
     module_metadata = TRUE,
-    module_dataset_info =
-      paste0(
-        "<p><a target = '_blank' href = 'https://nancyrossresearchgroup.ca/",
-        "research/can-ale/'>",
-        "The Canadian Active Living Environments (Can-ALE)</a> dataset is ",
-        "a geographic-based set of measures charac",
-        "terizing the active living environments (often referred to as '",
-        "walkability') of Canadian communities. The data is provided at ",
-        "the dissemination area level.</p>"
-      ),
+    module_dataset_info = paste0(
+      "The data visualized on this page come from Curbcut. This data was creat",
+      "ed using datasets from DMTI, Statistics Canada road network files and Canadian Censuses.",
+      " Our index considers three variables: street connectivity, building de",
+      "nsity, and points of interest. Active Living Potential is then calcula",
+      "ted based on dissemination areas accessible within a 15-minute walk. T",
+      "he dataset is calculated based on Census data from 2001 until present ",
+      "and is represented by a z-index based on the same years and our three ",
+      "variables. Our Active Liv",
+      "ing Potential index was highly influenced by the <a href = 'http://can",
+      "ue.ca/wp-content/uploads/2018/03/CanALE_UserGuide.pdf', target = '_bla",
+      "nk'>CanALE index</a> developed by Prof. Nancy Ross and her team. Our i",
+      "ndex differs by calculating a buffer using a 15-minute walk on the str",
+      "eet network using our travel time matrix dataset instead of a 1km buff",
+      "er around the centroid of dissemination areas. This provides a more ac",
+      "curate representation of walkable areas."
+    ),
     module_var_left = "canale",
-    module_dates = c(2001, 2006, 2011, 2016, 2021)
+    module_dates = c(2001, 2006, 2011, 2016, 2021),
+    module_var_right = scales_variables_modules$variables$var_code[
+      scales_variables_modules$variables$source == "Canadian census" &&
+        !is.na(scales_variables_modules$variables$parent_vec)]
   )
 }
 
@@ -505,9 +495,30 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
       })(var)
       short <- paste("Vac. rate", cat_short)
 
+      # Create group_name
+      cat_group_name <- (\(x) {
+        # Bedroom types
+        if (grepl("_bed$", var)) {
+          return("Bedroom type")
+        }
+        # Year of construction
+        if (grepl("_year$", var)) {
+          return("Year of construction")
+        }
+        # Rent ranges
+        if (grepl("_rent_range$", var)) {
+          return("Rent range")
+        }
+      })(var)
+      group_name <- paste("Vacancy rate by", tolower(cat_group_name))
+
+      # Create group_diff
+      group_diff <- list(paste("For", cat_title))
+      names(group_diff) <- cat_group_name
+
       # Include in place exporer
       pe_include <-
-        if (grepl("2_bed$|2000_or_later$|1500_plus$", var)) TRUE else FALSE
+        if (grepl("2_bed|2000_or_later|1500_plus", var)) TRUE else FALSE
 
       out <-
         add_variable(
@@ -532,6 +543,8 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
             geo = "cmhc", scale = "zone",
             interpolated_from = FALSE
           ),
+          group_name = group_name,
+          group_diff = group_diff,
           rankings_chr = c("an exceptionally low vacancy rate",
                            "an unusually low vacancy rate",
                            "a just about average vacancy rate",
@@ -811,27 +824,25 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
     add_module(
       id = "vacancyrate",
       theme = "Housing",
-      nav_title = "Vacancy rate",
+      nav_title = "Vacancy",
       title_text_title = "Vacancy rate",
       title_text_main = paste0(
-        "Examining residential rental vacancy rates is an important part of ",
-        "understanding the housing landscape in a region. Information ",
-        "about vacancy rates and its related variables can help define past ",
-        "and current trends in the housing market and what is needed to ",
-        "better provide adequate rental housing."
+        "Information about vacancy rates can help define past and current trend",
+        "s in the housing market and what is needed to better provide adequate ",
+        "rental housing."
       ),
       title_text_extra = paste0(
-        "The comparative analysis seen in this module is based on data from ",
-        "the CMHC. In selecting different options from the drop-down menus, ",
-        "insights can be gained on how vacancy rates vary over time and spatially ",
-        "by type of unit, year of construction, and rent range."
+        "The datasets visualized on this page come from the CMHC and the 2021 Canadian Census."
       ),
       regions = "cmhc",
       metadata = TRUE,
-      dataset_info = "TKTK",
+      dataset_info = "The datasets visualized on this page come from the CMHC and the 2021 Canadian Census.",
       var_left = var_left_tb,
       dates = years,
-      main_dropdown_title = "Vacancy rate distribution"
+      main_dropdown_title = "Vacancy rate distribution",
+      var_right = scales_variables_modules$variables$var_code[
+        scales_variables_modules$variables$source == "Canadian census" &&
+          !is.na(scales_variables_modules$variables$parent_vec)]
     )
 
 

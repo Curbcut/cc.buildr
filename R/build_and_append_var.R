@@ -28,6 +28,7 @@
 #' @param variable_theme <`charater`> See \code{\link[cc.buildr]{add_variable}}.
 #' @param variable_private <`charater`> See \code{\link[cc.buildr]{add_variable}}.
 #' @param variable_source <`charater`> See \code{\link[cc.buildr]{add_variable}}.
+#' @param variable_pe_include <`charater`> See \code{\link[cc.buildr]{add_variable}}.
 #' @param module_id <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
 #' @param module_theme <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
 #' @param module_nav_title <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
@@ -36,9 +37,10 @@
 #' @param module_title_text_extra <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
 #' @param module_metadata <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
 #' @param module_dataset_info <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
-#' @param module_var_left <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
-#' @param module_dates <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
+#' @param module_var_left <`charater vector`> Optional. See \code{\link[cc.buildr]{add_module}}.
+#' @param module_dates <`numeric vector`> Optional. See \code{\link[cc.buildr]{add_module}}.
 #' @param module_main_dropdown_title <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
+#' @param module_var_right <`character vector`> Optional. See \code{\link[cc.buildr]{add_module}}.
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with the new variable added, and possible a new
@@ -52,6 +54,7 @@ ba_var <- function(data, scales_variables_modules, base_scale,
                    variable_var_short, variable_explanation,
                    variable_exp_q5,
                    variable_theme, variable_private, variable_source,
+                   variable_pe_include = TRUE,
                    module_id = NULL,
                    module_theme = NULL,
                    module_nav_title = NULL,
@@ -62,7 +65,8 @@ ba_var <- function(data, scales_variables_modules, base_scale,
                    module_dataset_info = NULL,
                    module_var_left = NULL,
                    module_dates = NULL,
-                   module_main_dropdown_title = NULL) {
+                   module_main_dropdown_title = NULL,
+                   module_var_right = NULL) {
   # Get list of data variables ----------------------------------------------
 
   var <-
@@ -139,6 +143,7 @@ ba_var <- function(data, scales_variables_modules, base_scale,
       parent_vec = weight_by,
       theme = variable_theme,
       private = variable_private,
+      pe_include = variable_pe_include,
       dates = with_breaks$avail_dates[[unique_var]],
       avail_df = data_interpolated$avail_df,
       breaks_q3 = with_breaks$q3_breaks_table[[unique_var]],
@@ -173,7 +178,8 @@ ba_var <- function(data, scales_variables_modules, base_scale,
           dataset_info = module_dataset_info,
           var_left = module_var_left,
           dates = module_dates,
-          main_dropdown_title = module_main_dropdown_title
+          main_dropdown_title = module_main_dropdown_title,
+          var_right = module_var_right
         )
     } else {
       scales_variables_modules$modules

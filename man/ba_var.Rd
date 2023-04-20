@@ -22,6 +22,7 @@ ba_var(
   variable_theme,
   variable_private,
   variable_source,
+  variable_pe_include = TRUE,
   module_id = NULL,
   module_theme = NULL,
   module_nav_title = NULL,
@@ -32,7 +33,8 @@ ba_var(
   module_dataset_info = NULL,
   module_var_left = NULL,
   module_dates = NULL,
-  module_main_dropdown_title = NULL
+  module_main_dropdown_title = NULL,
+  module_var_right = NULL
 )
 }
 \arguments{
@@ -81,6 +83,8 @@ years.}
 
 \item{variable_source}{<\code{charater}> See \code{\link[cc.buildr]{add_variable}}.}
 
+\item{variable_pe_include}{<\code{charater}> See \code{\link[cc.buildr]{add_variable}}.}
+
 \item{module_id}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 
 \item{module_theme}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
@@ -97,11 +101,13 @@ years.}
 
 \item{module_dataset_info}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 
-\item{module_var_left}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
+\item{module_var_left}{<\verb{charater vector}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 
-\item{module_dates}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
+\item{module_dates}{<\verb{numeric vector}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 
 \item{module_main_dropdown_title}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
+
+\item{module_var_right}{<\verb{character vector}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 }
 \value{
 A list of length 3, similar to the one fed to

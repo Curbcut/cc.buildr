@@ -94,6 +94,7 @@ ba_census_data <- function(scales_variables_modules,
           cc.data::census_vectors_table$var_code == u_var
         ],
         private = FALSE,
+        pe_include = TRUE,
         dates = with_breaks$avail_dates[[u_var]],
         avail_df = census_dat$avail_df,
         breaks_q3 = with_breaks$q3_breaks_table[[u_var]],
@@ -122,26 +123,24 @@ ba_census_data <- function(scales_variables_modules,
           nav_title = "Housing system",
           title_text_title = "The housing system",
           title_text_main = paste0(
-            "Housing is at the centre of our lives. Our ability to find affordable, ",
-            "adequate and healthy accommodations profoundly affects our life ",
-            "chances."
+            "Housing is at the centre of our lives. Our ability to find affordable,",
+            " adequate, and healthy accommodations profoundly affects our life chan",
+            "ces."
           ),
           title_text_extra = paste0(
-            "<p>Access to affordable and adequate housing is a core element of ",
-            "social equity in cities. In Canada, the National Housing Strategy aims ",
-            "to housing needs and houselessness through modernization, new ",
-            "construction, and innovation and research. Within the City of Montreal, ",
-            "important housing initiatives include the Diverse Metropolis by-law and ",
-            "the 12,000 housing unit strategy. <p>This module presents housing data ",
-            "from the Census from 1996 to the present, and explores relationships ",
-            "with demographic patterns.<br><p><i>Further reading:</i></p><ul><li>",
-            "<a href = 'https://www.cmhc-schl.gc.ca/en/nhs/'>CMHC. (n.d.). National ",
-            "Housing Strategy.</a><li><a href ='https://montreal.ca/articles/",
-            "metropole-mixte-les-grandes-lignes-du-reglement-7816'>Ville de ",
-            "Montréal. (4 octobre 2021). Métropole Mixte: Les grandes lignes du ",
-            "règlement.</a><li>Madden, D., & Marcuse, P. (2016). <i>In Defense of ",
-            "Housing: The Politics of Crisis</i>. New York and London: Verso ",
-            "Books.</ul>"
+            "The datasets visualized on this page come from the Canadian Census fro",
+            "m 1996 to the present. There are a few efforts in place to better the ",
+            "housing landscape from the federal and municipal governments. In Canad",
+            "a, the National Housing Strategy aims to address housing needs and hou",
+            "selessness through modernization, new construction, and innovation and",
+            " research. Within the City of Montreal, important housing initiatives ",
+            "include the Diverse Metropolis by-law and the 12,000-housing unit stra",
+            "tegy. For more information on these initiatives visit:<ul><li><a href=",
+            "'https://www.cmhc-schl.gc.ca/en/nhs/', target = '_blank'>CMHC. (n.d.).",
+            " National Housing Strategy</a><li><a href='https://montreal.ca/article",
+            "s/metropole-mixte-les-grandes-lignes-du-reglement-7816', target = '_bl",
+            "ank'>Ville de Montréal. (4 octobre 2021). Métropole Mixte: Les grandes",
+            " lignes du règlement.</a>"
           ),
           regions = census_dat$regions,
           metadata = TRUE,
@@ -152,7 +151,10 @@ ba_census_data <- function(scales_variables_modules,
           ),
           var_left = unique_var[grepl("^housing_", unique_var)],
           dates = census_years,
-          main_dropdown_title = "Housing indicator"
+          main_dropdown_title = "Housing indicator",
+          var_right = variables$var_code[variables$source == "Canadian census" &&
+                                           variables$theme != "Housing" &&
+                                           !is.na(variables$parent_vec)]
         )
     } else {
       scales_variables_modules$modules

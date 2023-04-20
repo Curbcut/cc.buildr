@@ -110,11 +110,9 @@ default_region <- modules$regions[modules$id == "__id__"][[1]][1]
       time = time
     )
 
-    # The `vars` reactive
-    vars <- reactive(curbcut::vars_build(
-      var_left = var_left(),
-      var_right = var_right(),
-      df = r[[id]]$df()))
+    # Update the `r[[id]]$vars` reactive
+    curbcut::update_vars(id = id, r = r, var_left = var_left,
+                         var_right = var_right)
 
     # Sidebar
     curbcut::sidebar_server(id = id, r = r)
