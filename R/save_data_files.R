@@ -6,7 +6,7 @@
 #'
 #' @param scale_chr <`character`> The name of the scale, e.g. "building".
 #' @param path <`character`> Path where to save the `.sqlite`. Defaults to
-#' `data/building.sqlite`
+#' `data/'scale_chr'.sqlite`
 #' @param all_scales <`named list`> A named list of sf data.frame
 #' containing all scales listed with their regions, normally
 #' `scales_variables_modules$scales`.

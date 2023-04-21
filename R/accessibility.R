@@ -193,36 +193,46 @@ ba_accessibility_points <- function(scales_variables_modules,
       theme = "Transport",
       nav_title = "Access to amenities",
       title_text_title = "Access to amenities",
-      title_text_main =
-        paste0(
-          "Being able to access amenities and services in our nearby ",
-          "urban environment can greatly impact our daily ",
-          "experiences and quality of life. The time and mode of ",
-          "transportation needed to reach these amenities plays a ",
-          "large role in this. In this module, explore information ",
-          "about access to schools, food distributors, health care ",
-          "facilities, and more by walk, bike, transit, or car."
-        ),
-      title_text_extra =
-        paste0(
-          "In selecting different options from the drop-down menus, ",
-          "insights can be gained about access to different types of ",
-          "amenities by a certain mode of transportation within a ",
-          "given amount of time. Using the panel on the right, you ",
-          "can compare these options to socio-demographic variables. ",
-          "Understanding access to amenities by mode of ",
-          "transportation gives a glimpse into how different areas ",
-          "are serviced and what that might imply for residents."
-        ),
+      title_text_main = paste0(
+        "The time and mode of transportation needed to reach amenities plays a ",
+        "large role in daily experiences and quality of life. Understanding acc",
+        "ess to amenities by mode of transportation gives a glimpse into how di",
+        "fferent areas are serviced and what that might imply for residents. "
+      ),
+      title_text_extra = paste0(
+        "Curbcut has calculated travel times for walking, cycling, and driving ",
+        "using the Open Source Routing Machine (OSRM) and the OpenStreetMap (OS",
+        "M) street network. For transit travel times, Curbcut has employed GTFS",
+        " feeds and a multimodal approach, incorporating walking times derived ",
+        "from OSRM and the OSM street network. The amenities data has been sour",
+        "ced from a combination of DMTI Spatial and OpenStreetMap."
+      ),
       regions = data_interpolated$regions,
       metadata = TRUE,
-      dataset_info =
-        paste0(
-          "The travel time matrices in this module were calculated ",
-          "using a combination of methods, with the underlying data ",
-          "coming from an Open Street Map (OSM) network file and ",
-          "General Transit Feed Specification (GTFS) files."
-        )
+      dataset_info = paste0(
+        "<p>Curbcut has developed a comprehensive methodology for calculating t",
+        "ravel times and determining accessibility to various amenities. Travel",
+        " times for walking, cycling, and driving have been calculated using th",
+        "e Open Source Routing Machine (OSRM) and the OpenStreetMap (OSM) stree",
+        "t network. Transit travel times are calculated using GTFS feeds and a ",
+        "multimodal approach that incorporates walking times from OSRM and the ",
+        "OSM street network.<p>To analyze the accessibility to amenities, Curbc",
+        "ut utilizes a two-step process. First, the travel time distances are c",
+        "alculated using a custom function which computes the shortest travel t",
+        "imes between Dissemination Area (DA) centroids and their closest neigh",
+        "bors within specified distances. Next, the number of accessible amenit",
+        "ies within each DA is determined by joining amenity points with the DA",
+        " boundaries and counting the number of intersections.<p>The amenities ",
+        "data is sourced from a combination of DMTI Spatial and OpenStreetMap, ",
+        "ensuring an accurate representation of various types of amenities in t",
+        "he area. This methodology allows for a detailed analysis of travel tim",
+        "es and accessibility to amenities, providing valuable insights for urb",
+        "an planning and development purposes."
+      ),
+      var_left = ,
+      var_right = scales_variables_modules$variables$var_code[
+        scales_variables_modules$variables$source == "Canadian census" &&
+          !is.na(scales_variables_modules$variables$parent_vec)]
     )
 
 

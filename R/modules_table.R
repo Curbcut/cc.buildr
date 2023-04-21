@@ -14,6 +14,7 @@ append_empty_modules_table <- function(scales) {
   modules <-
     tibble::tibble(
       id = character(),
+      theme = character(),
       nav_title = character(),
       title_text_title = character(),
       title_text_main = character(),
@@ -23,7 +24,8 @@ append_empty_modules_table <- function(scales) {
       regions = list(),
       var_left = list(),
       dates = list(),
-      main_dropdown_title = character()
+      main_dropdown_title = character(),
+      var_right = list()
     )
 
   c(scales, list(modules = modules))
@@ -99,7 +101,7 @@ add_module <- function(modules, id, theme = "", nav_title, title_text_title,
   tibble::add_row(
     modules,
     id = id,
-    theme,
+    theme = theme,
     nav_title = nav_title,
     title_text_title = title_text_title,
     title_text_main = title_text_main,

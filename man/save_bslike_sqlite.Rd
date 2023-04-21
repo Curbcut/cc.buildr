@@ -14,7 +14,7 @@ save_bslike_sqlite(
 \item{scale_chr}{<\code{character}> The name of the scale, e.g. "building".}
 
 \item{path}{<\code{character}> Path where to save the \code{.sqlite}. Defaults to
-\code{data/building.sqlite}}
+\verb{data/'scale_chr'.sqlite}}
 
 \item{all_scales}{<\verb{named list}> A named list of sf data.frame
 containing all scales listed with their regions, normally

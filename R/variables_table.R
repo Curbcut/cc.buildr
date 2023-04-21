@@ -23,6 +23,8 @@ append_empty_variables_table <- function(scales_consolidated) {
       theme = character(),
       private = logical(),
       pe_include = logical(),
+      group_name = character(),
+      group_diff = list(),
       dates = list(),
       avail_df = list(),
       breaks_q3 = list(),
@@ -133,7 +135,7 @@ append_empty_variables_table <- function(scales_consolidated) {
 add_variable <- function(variables, var_code, type, var_title,
                          var_short = as.character(var_title), explanation,
                          explanation_nodet = gsub("^the ", "", explanation),
-                         exp_q5, parent_vec, group_name = NULL,
+                         exp_q5, parent_vec, group_name = NA,
                          group_diff = list(), theme, private, pe_include = FALSE,
                          dates, avail_df, breaks_q3, breaks_q5,
                          region_values = NULL, source, interpolated,
@@ -259,10 +261,15 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
 
       # Get the names of all the scales inside a region
       cols <- lapply(region, names)[length(region):1]
-      # Grab the first scale which has a variable corresponding to ours
+      # Grab the first scale which has a variable + parent corresponding to ours
       has_var <- sapply(cols, \(x) sum(grepl(paste0(var, time_regex), x)) > 0)
+      has_parent <- sapply(cols, \(x) sum(grepl(paste0(unlist(parent_strings[var]), time_regex), x)) > 0)
       if (sum(has_var) == 0) return(data.frame())
-      df_name <- names(has_var[has_var])[[1]]
+      if (sum(has_parent) == 0) return(data.frame())
+
+      which_df_avail <- has_var + has_parent
+      # Take the first one as it's the lowest level (more granularity in data)
+      df_name <- names(which(which_df_avail == max(which_df_avail)))[[1]]
       df <- region[[df_name]]
       # Get all the years at which the variable is available
       all_var <- names(df)[grepl(paste0(var, time_regex), names(df))]
