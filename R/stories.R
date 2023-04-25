@@ -71,11 +71,10 @@ stories_add_story <- function(stories, name_id, title, short_title, preview,
 #' @return A list containing the mapping for the stories. This will be an input
 #' for the stories rdeck.
 #' @export
-stories_atlas_mapping <- function(
-    stories,
-    input_img_location = "dev/data/stories/main_img/",
-    output_bandeau_location = "www/stories/bandeau_img/",
-    output_atlas_location = "www/stories/image_atlas.png") {
+stories_atlas_mapping <- function(stories,
+                                  input_img_location = "dev/data/stories/main_img/",
+                                  output_bandeau_location = "dev/data/stories/bandeau_img/",
+                                  output_atlas_location = "www/stories/image_atlas.png") {
   if (!requireNamespace("magick", quietly = TRUE)) {
     stop(
       "Package \"magick\" must be installed to use this function.",
@@ -183,4 +182,130 @@ stories_atlas_mapping <- function(
 
   # Return mapping, input for rdeck
   return(stories_mapping)
+}
+
+#' Render RMarkdown files as HTML with a custom CSS file and an inserted 'bandeau'
+#' image.
+#'
+#' This function renders RMarkdown files as HTML with a custom CSS file and
+#' inserts a badeau image previously created with \code{\link{stories_atlas_mapping}}
+#' below the title. The rendered HTML files are saved to a specified directory.
+#'
+#' @param file <`character`> Full path to the RMarkdown file to be rendered. File
+#' should be have ".Rmd" extension.
+#' @param css_path <`character`> A character string specifying the path to the
+#' CSS file to be applied to the rendered HTML files. Default is "www/sus.css".
+#' @param bandeau_location <`character`> String specifying the path to the
+#' directory containing the images to be inserted below the titles. Default
+#' is "dev/data/stories/bandeau_img/". The bandeau image needs to already be
+#' created using \code{\link{stories_atlas_mapping}}
+#' @param output_dir <`character`> A character string specifying the directory
+#' where the rendered HTML files will be saved. Default is "www/stories/".
+#'
+#' @return NULL. The function saves the rendered HTML files to the specified
+#' output directory.
+#' @seealso
+#' \code{\link[rmarkdown]{render}} for more details on rendering RMarkdown files.
+#' @export
+stories_knit_rmd <- function(file, css_path = here::here("www/sus.css"),
+                             bandeau_location = "dev/data/stories/bandeau_img/",
+                             output_dir = "www/stories/") {
+
+  if (!requireNamespace("rmarkdown", quietly = TRUE)) {
+    stop(
+      "Package \"rmarkdown\" must be installed to use this function.",
+      call. = FALSE
+    )
+  }
+  if (!requireNamespace("here", quietly = TRUE)) {
+    stop(
+      "Package \"here\" must be installed to use this function.",
+      call. = FALSE
+    )
+  }
+  if (!grepl("/$", bandeau_location)) {
+    bandeau_location <- paste0(bandeau_location, "/")
+  }
+  if (!grepl("/$", output_dir)) {
+    output_dir <- paste0(output_dir, "/")
+  }
+
+  # Error handling
+  if (!sum(grepl(".Rmd$", file)) == length(file)) return(
+    warning(sprintf("Skipped %s as it's not an Rmd document.", file))
+  )
+
+  # Prep locations
+  split_string <- strsplit(file, "/")[[1]]
+  file_name <- split_string[length(split_string)]
+  out_file <- gsub("Rmd", "html", file_name)
+  out <- paste0(output_dir, out_file)
+
+  # Custom output format with the CSS file
+  custom_html_output_format <- rmarkdown::html_document(css = css_path)
+
+  # Extract image filename
+  image_filename <- gsub("_en|_fr", "", file_name)
+  image_filename <- gsub("\\.Rmd", "", image_filename)
+  image_filename <- paste0(bandeau_location, image_filename, ".png")
+  image_filename <- here::here(image_filename)
+
+  # Read RMarkdown content
+  rmd_content <- readLines(file)
+
+  # Add image chunk right after the title texts
+  title_chunk_index <- which(grepl("---", rmd_content))
+  image_chunk <- paste0(
+    c(
+      "",
+      "```{r echo=FALSE, out.width='100%', fig.align='center'}",
+      paste0("knitr::include_graphics('", image_filename, "')"),
+      "```"
+    ),
+    collapse = "\n"
+  )
+  rmd_content <- append(rmd_content, image_chunk, after = title_chunk_index[length(title_chunk_index)])
+
+  # Save modified RMarkdown content to a temporary file
+  temp_rmd_file <- tempfile(pattern = "temp_", fileext = ".Rmd")
+  writeLines(rmd_content, temp_rmd_file)
+
+  # Render temporary RMarkdown document
+  rmarkdown::render(
+    temp_rmd_file,
+    output_file = out,
+    output_format = custom_html_output_format,
+    output_dir = output_dir,
+    quiet = TRUE
+  )
+}
+
+#' Knit All Stories
+#'
+#' This function knits all R Markdown story files located in a specified directory
+#' and saves the HTML output in another specified directory. It uses
+#' \code{\link{stories_knit_rmd}} to do so.
+#'
+#' @param stories_location <`character`> The path to the directory containing
+#' the R Markdown story files. Default is "dev/Rmd/stories/".
+#' @param css_path <`character`> A character string specifying the path to the
+#' CSS file to be applied to the rendered HTML files. Default is "www/sus.css".
+#' @param bandeau_location <`character`> String specifying the path to the
+#' directory containing the images to be inserted below the titles. Default
+#' is "dev/data/stories/bandeau_img/". The bandeau image needs to already be
+#' created using \code{\link{stories_atlas_mapping}}
+#' @param output_dir <`character`> A character string specifying the directory
+#' where the rendered HTML files will be saved. Default is "www/stories/".
+#'
+#' @return A list of the knitted HTML files, with each item corresponding to the
+#' output of a single R Markdown story file.
+#' @export
+stories_knit_all <- function(stories_location = "dev/Rmd/stories/",
+                             css_path = here::here("www/sus.css"),
+                             bandeau_location = "dev/data/stories/bandeau_img/",
+                             output_dir = "www/stories/") {
+  all_stories <- list.files(stories_location, full.names = TRUE)
+  lapply(all_stories, stories_knit_rmd, css_path = css_path,
+         bandeau_location = bandeau_location,
+         output_dir = output_dir)
 }

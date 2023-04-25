@@ -94,6 +94,93 @@ save_streets_sqlite <- function(scale_chr = "street", all_scales) {
   save_bslike_sqlite(scale_chr = scale_chr, all_scales = all_scales)
 }
 
+#' Save all scale tables in QS format
+#'
+#' This function saves all scale tables in QS format in the specified data folder.
+#' It first drops the geometry of other scales and creates a list of tables for all
+#' scales, then creates the folders for each region and scale, and finally saves the
+#' tables in the database.
+#'
+#' @param data_folder <`character`> Where the `.qs` files should be
+#' written to. Defaults to `data/`.
+#' @param all_scales <`named list`> A named list of sf data.frame
+#' containing all scales listed with their regions, normally
+#' `scales_variables_modules$scales`.
+#' @param variables <`data.frame`> The `variables` data.frame, normally
+#' `scales_variables_modules$variables`.
+#'
+#' @return An invisible NULL value.
+#' @export
+save_all_scales_qs <- function(data_folder = "data/", all_scales, variables) {
+  # Drop geometry of other scales
+  all_scales_no_geo <-
+    map_over_scales(
+      all_scales = all_scales,
+      fun = \(geo = geo, scales = scales, scale_name = scale_name,
+              scale_df = scale_df) {
+        sf::st_drop_geometry(scale_df)
+      }
+    )
+  all_scales_no_geo <- lapply(all_scales_no_geo, \(x) x[!sapply(x, is.null)])
+
+
+  # For all scales, list the tables that will be saved
+  qs_table_list <-
+    map_over_scales(
+      all_scales = all_scales_no_geo,
+      fun = \(geo = geo, scales = scales, scale_name = scale_name,
+              scale_df = scale_df) {
+        var_combinations <-
+          lapply(variables$var_code, \(y) {
+            vars <- names(scale_df)[grepl(y, names(scale_df))]
+            vars <- stringr::str_subset(vars, "_q5|_q3", negate = TRUE)
+
+            sapply(vars, \(x) {
+              time_format <- "\\d{4}$"
+              q3 <- paste0(
+                gsub(time_format, "", x),
+                if (grepl(time_format, x)) "q3_" else "_q3",
+                stats::na.omit(stringr::str_extract(x, time_format))
+              )
+              q5 <- paste0(
+                gsub(time_format, "", x),
+                if (grepl(time_format, x)) "q5_" else "_q5",
+                stats::na.omit(stringr::str_extract(x, time_format))
+              )
+
+              c(x, q3, q5)
+            }, simplify = FALSE, USE.NAMES = TRUE)
+          })
+        var_combinations <- Reduce(c, var_combinations)
+
+        lapply(var_combinations, \(x) scale_df[, c("ID", x)])
+      }
+    )
+
+  # Create folders
+  all_tables <- cc.buildr::reconstruct_all_tables(all_scales = all_scales)
+  mapply(\(region, scales) {
+    lapply(scales, \(scale_name) {
+      folder_path <- paste0(data_folder, "/", region, "/", scale_name)
+      if (!dir.exists(folder_path)) {
+        dir.create(folder_path, recursive = TRUE)
+      }
+    })
+  }, names(all_tables), all_tables)
+
+  # Save the scales in the database
+  mapply(\(region, scales) {
+    mapply(\(scale_name, tables) {
+      mapply(\(table_name, table) {
+        path <- sprintf("%s/%s/%s/%s.qs", data_folder,  region, scale_name, table_name)
+        qs::qsave(table, file = path)
+      }, names(tables), tables)
+    }, names(scales), scales)
+  }, names(qs_table_list), qs_table_list)
+
+  return(invisible(NULL))
+}
+
 #' Save every scales in their own SQLite database
 #'
 #' @param data_folder <`character`> Where the `.sqlite` databases should be
@@ -231,7 +318,7 @@ save_short_tables_qs <- function(data_folder = "data/", all_scales) {
   mapply(\(scls, geo) {
     scls <- mapply(\(x, y) {
       d <- sf::st_drop_geometry(x)
-      subs <- grepl("ID$|name|name_2|population|households|centroid", names(d))
+      subs <- grepl("ID$|^name$|^name_2$|^population$|^households$|^centroid$", names(d))
       d[, subs]
     }, scls, names(scls), SIMPLIFY = FALSE)
     scls <- scls[!sapply(scls, is.null)]
@@ -243,7 +330,7 @@ save_short_tables_qs <- function(data_folder = "data/", all_scales) {
     }
 
     do.call(qs::qsavem, c(lapply(names(scls), rlang::sym),
-      file = paste0(data_folder, geo, ".qsm")
+                          file = paste0(data_folder, geo, ".qsm")
     ))
   }, all_scales, names(all_scales))
 

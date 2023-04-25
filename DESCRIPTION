@@ -36,7 +36,8 @@ Suggests:
     osmdata,
     magick,
     glue,
-    rmarkdown
+    rmarkdown,
+    here
 License: AGPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

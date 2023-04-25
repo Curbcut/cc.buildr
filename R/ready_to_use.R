@@ -72,7 +72,7 @@ ru_canale <- function(scales_variables_modules, region_DA_IDs, crs) {
     module_var_left = "canale",
     module_dates = c(2001, 2006, 2011, 2016, 2021),
     module_var_right = scales_variables_modules$variables$var_code[
-      scales_variables_modules$variables$source == "Canadian census" &&
+      scales_variables_modules$variables$source == "Canadian census" &
         !is.na(scales_variables_modules$variables$parent_vec)]
   )
 }
@@ -349,10 +349,10 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
 
   # Region values
   region_values <- variables_get_region_vals(scales = with_breaks$scales,
-                            vars = unique_vars,
-                            types = types,
-                            parent_strings = parent_strings,
-                            breaks = with_breaks$q5_breaks_table)
+                                             vars = unique_vars,
+                                             types = types,
+                                             parent_strings = parent_strings,
+                                             breaks = with_breaks$q5_breaks_table)
 
   # Add to the variables table
   variables <-
@@ -741,7 +741,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
       dates = years,
       main_dropdown_title = "Vacancy rate distribution",
       var_right = scales_variables_modules$variables$var_code[
-        scales_variables_modules$variables$source == "Canadian census" &&
+        scales_variables_modules$variables$source == "Canadian census" &
           !is.na(scales_variables_modules$variables$parent_vec)]
     )
 

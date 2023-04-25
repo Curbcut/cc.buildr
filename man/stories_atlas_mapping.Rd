@@ -7,7 +7,7 @@
 stories_atlas_mapping(
   stories,
   input_img_location = "dev/data/stories/main_img/",
-  output_bandeau_location = "www/stories/bandeau_img/",
+  output_bandeau_location = "dev/data/stories/bandeau_img/",
   output_atlas_location = "www/stories/image_atlas.png"
 )
 }

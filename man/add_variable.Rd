@@ -14,7 +14,7 @@ add_variable(
   explanation_nodet = gsub("^the ", "", explanation),
   exp_q5,
   parent_vec,
-  group_name = NULL,
+  group_name = NA,
   group_diff = list(),
   theme,
   private,

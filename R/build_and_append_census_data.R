@@ -152,8 +152,8 @@ ba_census_data <- function(scales_variables_modules,
           var_left = unique_var[grepl("^housing_", unique_var)],
           dates = census_years,
           main_dropdown_title = "Housing indicator",
-          var_right = variables$var_code[variables$source == "Canadian census" &&
-                                           variables$theme != "Housing" &&
+          var_right = variables$var_code[variables$source == "Canadian census" &
+                                           variables$theme != "Housing" &
                                            !is.na(variables$parent_vec)]
         )
     } else {

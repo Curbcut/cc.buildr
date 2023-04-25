@@ -265,7 +265,6 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
       has_var <- sapply(cols, \(x) sum(grepl(paste0(var, time_regex), x)) > 0)
       has_parent <- sapply(cols, \(x) sum(grepl(paste0(unlist(parent_strings[var]), time_regex), x)) > 0)
       if (sum(has_var) == 0) return(data.frame())
-      if (sum(has_parent) == 0) return(data.frame())
 
       which_df_avail <- has_var + has_parent
       # Take the first one as it's the lowest level (more granularity in data)
@@ -284,6 +283,9 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
 
         if ("pct" %in% type) {
           parent_string <- parent_strings[[var]]
+          if (is.na(parent_string) | is.null(parent_string)) {
+            stop(sprintf("No parent_string found for `%s`", var))
+          }
           parent_string_year <- paste0(parent_string, "_", out$year)
           no_nas <- df[!is.na(df[[parent_string_year]]) &
                          !is.na(df[[v]]), ]
@@ -296,6 +298,9 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
 
         } else if ("avg" %in% type || "median" %in% type) {
           parent_string <- parent_strings[[var]]
+          if (is.na(parent_string) | is.null(parent_string)) {
+            stop(sprintf("No parent_string found for `%s`", var))
+          }
           parent_string_year <- paste0(parent_string, "_", out$year)
           no_nas <- df[!is.na(df[[parent_string_year]]) &
                          !is.na(df[[v]]), ]
@@ -305,11 +310,15 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
           out$val <- sum(df[[v]], na.rm = TRUE)
         } else if ("ind" %in% type) {
           parent_string <- parent_strings[[var]]
+          if (is.na(parent_string) | is.null(parent_string)) {
+            stop(sprintf("No parent_string found for `%s`", var))
+          }
 
           brk <- breaks[[var]]
           brk <- brk[grepl(paste0("^", region_name, "_"), brk$df), ]
           last_df <- unique(brk$df)
-          last_df <- last_df[length(last_df)]
+          # Grab the smallest scale that has both the var and the parent
+          last_df <- last_df[grepl(df_name, last_df)]
           brk <- brk[brk$df == last_df, ]
 
           # Higher than the values of the second to last bracket
