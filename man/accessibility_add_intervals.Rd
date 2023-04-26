@@ -6,6 +6,7 @@
 \usage{
 accessibility_add_intervals(
   point_per_DA,
+  region_DA_IDs = region_DA_IDs,
   traveltimes,
   time_intervals = which(1:60\%\%5 == 0)
 )
@@ -14,6 +15,9 @@ accessibility_add_intervals(
 \item{point_per_DA}{A dataframe containing the number of data points per DA.
 The first two columns should be \code{ID} and \code{geometry}, and the remaining
 columns should be the number of points per amenity type.}
+
+\item{region_DA_IDs}{<\verb{character vector}> All the current census'
+DA IDs present in the region. Only those will be extracted from the database.}
 
 \item{traveltimes}{A list of dataframes of travel times by mode. The output
 of \code{\link[cc.buildr]{accessibility_get_travel_times}}.}

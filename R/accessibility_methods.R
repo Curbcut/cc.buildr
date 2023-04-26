@@ -95,11 +95,14 @@ accessibility_get_travel_times <- function(modes = c(
                                            region_DA_IDs) {
   # Get travel times --------------------------------------------------------
 
-  # Get travel times for walk, bike and car
-  foot_bike_car <- modes[modes %in% c("foot", "bicycle", "car")]
+  if ("transit" %in% modes) {
+    gtfs_time <- c("opwe", "pwe", "nwd", "nwe", "opwd", "pwd")
+    modes <- modes[modes != "transit"]
+    modes <- c(modes, paste("transit", gtfs_time, sep = "_"))
+  }
 
   # Available traveltimes
-  all_tables <- sapply(foot_bike_car, \(mode) {
+  all_tables <- sapply(modes, \(mode) {
     sapply(region_DA_IDs, \(ID) {
       paste("ttm", mode, ID, sep = "_")
     })
@@ -108,10 +111,11 @@ accessibility_get_travel_times <- function(modes = c(
 
   # Retrieve from the server
   progressr::with_progress({
-    pb <- progressr::progressor(steps = length(foot_bike_car) * length(region_DA_IDs))
-    ttm <- sapply(foot_bike_car, \(mode) {
-      future.apply::future_sapply(region_DA_IDs, \(ID) {
-        out <- cc.data::db_read_all_table(paste("ttm", mode, ID, sep = "_"))
+    pb <- progressr::progressor(steps = length(all_tables))
+    ttm <- future.apply::future_sapply(modes, \(mode) {
+      all <- all_tables[grepl(mode, all_tables)]
+      sapply(all, \(tb) {
+        out <- cc.data::db_read_all_table(tb)
         names(out)[2] <- "duration"
         # Convert seconds to minutes
         out[[2]] <- out[[2]] / 60
@@ -121,26 +125,6 @@ accessibility_get_travel_times <- function(modes = c(
       }, simplify = FALSE, USE.NAMES = TRUE)
     }, simplify = FALSE, USE.NAMES = TRUE)
   })
-
-
-  #   # # Get travel times for bike
-  #   if ("transit" %in% modes) {
-  #   # # ttm_transit <- #TKTK
-  #   #
-  #   # # Available traveltimes
-  #   # all_tables <- sapply(TKTKTK, \(mode) {
-  #   #   sapply(TKKTTK, \(ID) {
-  #   #     paste("ttm", mode, ID, sep = "_")
-  #   #   })
-  #   # })
-  #   # all_tables <- all_tables[all_tables %in% cc.data::db_list_tables()]
-  #   #
-  #   # # Combine travel times
-  #   # ttm <- c(ttm, ttm_transit)
-  # #
-  #   # Add day time to transit modes
-  #   # transit_pwd, etc.
-  #   }
 
   return(ttm)
 }
@@ -155,6 +139,8 @@ accessibility_get_travel_times <- function(modes = c(
 #' @param point_per_DA A dataframe containing the number of data points per DA.
 #' The first two columns should be `ID` and `geometry`, and the remaining
 #' columns should be the number of points per amenity type.
+#' @param region_DA_IDs <`character vector`> All the current census'
+#' DA IDs present in the region. Only those will be extracted from the database.
 #' @param traveltimes A list of dataframes of travel times by mode. The output
 #' of \code{\link[cc.buildr]{accessibility_get_travel_times}}.
 #' @param time_intervals A vector with the time intervals to use (in
@@ -165,56 +151,60 @@ accessibility_get_travel_times <- function(modes = c(
 #'
 #' @export
 accessibility_add_intervals <- function(point_per_DA,
+                                        region_DA_IDs = region_DA_IDs,
                                         traveltimes,
                                         time_intervals = which(1:60 %% 5 == 0)) {
   # Prepare data to feed to the iterations ----------------------------------
 
   modes <- names(traveltimes)
-  region_DA_IDs <- unique(as.vector(sapply(traveltimes, names)))
 
 
   # Use travel times to put the point data in intervals ---------------------
-
+# ARE THERE SOME DAS THAT ARE CUT HERE? I'M PASSING FROM A 6.5K DAS TO 4.5'
   progressr::with_progress({
-    pb <- progressr::progressor(
-      steps = sum(sapply(traveltimes, length)) * length(time_intervals)
-    )
+    pb <- progressr::progressor(steps = sum(sapply(traveltimes, length)) + length(traveltimes))
 
-    ttm_data <- sapply(modes, \(mode) {
-      Reduce(rbind, future.apply::future_lapply(region_DA_IDs, \(ID) {
-        # For every mode and ID, iterate oveer all intervals to sum the
-        # amount of reachable amenities
-        out <- sapply(time_intervals, \(interval) {
-          df <- traveltimes[[mode]][[ID]]
-          df <- df[df$duration <= interval, ]
-          df <- merge(df, point_per_DA)
-          colsumed <- colSums(df[3:ncol(df)])
+    ttm_data <- future.apply::future_lapply(modes, \(mode) {
+      # Grab the right traveltimes and iterate over all DAs
+      ttm <- traveltimes[[mode]]
+      along_ttm <- lapply(seq_along(ttm), \(x) {
+        # Grab the DA ID from the ttm name
+        DA <- gsub(".*_(?=\\d)", "", names(ttm)[[x]], perl = TRUE)
+        tt <- ttm[[x]]
+        # Add self
+        tt <- rbind(tibble::tibble(DA_ID = DA, duration = 0), tt)
 
-          names(colsumed) <- paste("access", mode, interval, names(colsumed),
-            sep = "_"
-          )
+        # Calculate the amount of amenities accessible in every time intervals
+        intervaled <- sapply(as.character(time_intervals), \(ti) {
+          z <- tt[tt$duration <= as.numeric(ti), ]
 
-          pb()
+          accessible <-
+            point_per_DA[point_per_DA$DA_ID %in% z$DA_ID, 2:ncol(point_per_DA)]
 
-          do.call(tibble::tibble, c(
-            ID = as.character(ID),
-            mapply(\(n, i) i,
-              names(colsumed),
-              colsumed,
-              SIMPLIFY = FALSE, USE.NAMES = TRUE
-            )
-          ))
-        }, simplify = FALSE, USE.NAMES = TRUE)
-        out <- Reduce(\(a, b) merge(a, b, by = "ID"), out)
+          colsumed <- colSums(accessible)
 
-        return(out)
-      }))
-    }, simplify = FALSE, USE.NAMES = TRUE)
+          out <- tibble::tibble(DA_ID = DA)
 
-    # Merge all modes
-    ttm_data <- Reduce(\(a, b) merge(a, b, by = "ID"), ttm_data)
+          for (i in names(colsumed)) {
+            out[[sprintf("access_%s_%s_%s", mode, ti, i)]] <-
+              colsumed[[i]]
+          }
+
+          return(out[2:ncol(out)])
+        }, simplify = FALSE, USE.NAMES = FALSE)
+        pb()
+        Reduce(cbind, list(tibble::tibble(DA_ID = DA), intervaled))
+      })
+      out <- Reduce(rbind, along_ttm)
+      pb()
+      out
+    })
   })
 
+  ttm_data <- Reduce(\(x, y) merge(x, y, all.x = TRUE, all.y = TRUE, by = "DA_ID"),
+                     ttm_data)
+  # If NA values, then no amenities are available (0)
+  ttm_data[is.na(ttm_data)] <- 0
 
   # Return ------------------------------------------------------------------
 

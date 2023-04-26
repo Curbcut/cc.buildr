@@ -272,6 +272,7 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
       df <- region[[df_name]]
       # Get all the years at which the variable is available
       all_var <- names(df)[grepl(paste0(var, time_regex), names(df))]
+      all_var <- all_var[!grepl("_q3$|_q5$", all_var)]
 
       # Iterate over all years of the variable and get the right information
       # depending on the variable type
@@ -301,9 +302,8 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
           if (is.na(parent_string) | is.null(parent_string)) {
             stop(sprintf("No parent_string found for `%s`", var))
           }
-          parent_string_year <- paste0(parent_string, "_", out$year)
-          no_nas <- df[!is.na(df[[parent_string_year]]) &
-                         !is.na(df[[v]]), ]
+          parent_string_year <- if (out$year != "") paste0(parent_string, "_", out$year) else parent_string
+          no_nas <- df[!is.na(df[[parent_string_year]]) & !is.na(df[[v]]), ]
 
           out$val <- stats::weighted.mean(no_nas[[v]], no_nas[[parent_string_year]])
         } else if ("count" %in% type) {

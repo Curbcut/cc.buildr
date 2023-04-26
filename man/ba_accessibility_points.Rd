@@ -10,9 +10,8 @@ ba_accessibility_points(
   themes = cc.data::list_accessibility_themes(),
   traveltimes,
   time_intervals = which(1:60\%\%5 == 0),
-  pe_include = c("access_foot_20_education_elementary",
-    "access_foot_20_communitycentres_individual",
-    "access_foot_15_fooddistribution_grocery", "access_car_10_healthcare_hospitals"),
+  pe_include = c("access_foot_20_education_elementary", "access_foot_20_cultural_total",
+    "access_foot_15_food_grocery", "access_car_10_healthcare_hospitals"),
   crs
 )
 }

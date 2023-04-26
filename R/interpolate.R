@@ -1,3 +1,72 @@
+#' Fast Weighted Mean for Interpolation
+#'
+#' This function computes the weighted mean for each group of IDs interpolated
+#' within a data frame. The data frame must have columns for ID, weight, and
+#' value. The output is a data frame containing the IDs and their corresponding
+#' weighted means.
+#'
+#' @param df <`data.frame`> A data frame containing the data to be interpolated.
+#' It must have columns corresponding to the specified id_col, weight_col, and
+#' value_col.
+#' @param id_col <`character`> A string representing the name of the ID column
+#' in the input data frame.
+#' @param weight_col <`character`> A string representing the name of the weight
+#' column in the input data frame.
+#' @param value_col <`character`> A string representing the name of the value
+#' column in the input data frame.
+#'
+#' @return A data frame with two columns: the ID column (with the same name as
+#' in the input data frame) and a column containing the weighted means, named
+#' after the input value_col
+interpolate_fast_weighted_mean <- function(df, id_col, weight_col, value_col) {
+  # Split the data by IDs
+  split_data <- split(df, df[[id_col]])
+
+  # Calculate the weighted average for each group
+  weighted_avgs <- sapply(split_data, function(x) {
+    stats::weighted.mean(x[[value_col]], x[[weight_col]], na.rm = TRUE)
+  })
+
+  # Return the results as a data frame
+  result <- data.frame(ID = names(weighted_avgs), avg = as.vector(weighted_avgs))
+  names(result)[2] <- value_col
+
+  return(result)
+}
+
+#' Fast Summation for interpolation
+#'
+#' This function computes the the summation for each group within a
+#' data frame. The data frame must have columns for ID and the column to be
+#' summed. The output is a data frame containing the IDs and their corresponding
+#' summed values.
+#'
+#' @param col_name <`character`> A string representing the name of the column
+#' to be summed in the input data frame.
+#' @param data <`data.frame`> A data frame containing the data to be summed. It
+#' must have columns corresponding to the specified id_col and col_name.
+#' @param id_col <`character`> A string representing the name of the ID column
+#' in the input data frame.
+#'
+#' @return A data frame with two columns: the ID column (with the same name as
+#' in the input data frame) and a column containing the summed values, named
+#' after the input col_name.
+interpolate_fast_additive_sum <- function(col_name, data, id_col) {
+  # Extract the necessary columns
+  col_df <- data[c(id_col, col_name)]
+
+  # Calculate the sum for each group
+  summed_data <- stats::aggregate(col_df[, col_name],
+                                  by = list(col_df[[id_col]]),
+                                  FUN = sum, na.rm = TRUE)
+
+  # Rename the columns
+  colnames(summed_data) <- c("ID", col_name)
+
+  # Return the results as a data frame
+  return(summed_data)
+}
+
 #' Interpolate variables from a census geometry to all scales above
 #'
 #' @param data <`data.frame`> Containing any number of column with data,
@@ -86,127 +155,167 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
   scales_to_interpolate <-
     scales_to_interpolate[sapply(scales_to_interpolate, \(x) length(x) > 0)]
   ## Interpolate over all the scales
-  interpolated <-
-    sapply(scales_to_interpolate, \(scales) {
-      if (length(scales) == 0) {
-        return()
-      }
+  progressr::with_progress({
+    pb <- progressr::progressor(length(scales_to_interpolate))
 
-      # Get the base scale and clean up columns
-      base <-
-        merge(scales[[base_scale]], data, by = paste0(base_scale, "_ID"))
-      base <- sf::st_transform(base, crs)
-      base$area <- get_area(base$geometry)
-      base <- sf::st_set_agr(base, "constant")
-      ids <- names(base)[grepl("_ID$", names(base))]
-      other_cols <- names(base)[names(base) %in% c(weight_by, names(data))]
-      other_cols <- other_cols[!other_cols %in% ids]
-      base <- base[, c(ids, other_cols, "area")]
+    interpolated <-
+      sapply(scales_to_interpolate, \(scales) {
+        if (length(scales) == 0) {
+          return()
+        }
 
-      # Get only data column names
-      data_col_names <- names(data)[!grepl("ID$", names(data))]
+        # Get the base scale and clean up columns
+        base <-
+          merge(scales[[base_scale]], data, by = paste0(base_scale, "_ID"))
+        base <- sf::st_transform(base, crs)
+        base$area <- get_area(base$geometry)
+        base <- sf::st_set_agr(base, "constant")
+        ids <- names(base)[grepl("_ID$", names(base))]
+        other_cols <- names(base)[names(base) %in% c(weight_by, names(data))]
+        other_cols <- other_cols[!other_cols %in% ids]
+        base <- base[, c(ids, other_cols, "area")]
 
-      # Interpolate to other census scales
-      census_interpolated <-
-        mapply(\(scale_name, scale_df) {
-          # If the scale is already the one containing data, merge and return
-          if (scale_name == base_scale) {
-            return(merge(scale_df, data,
-              by = paste0(base_scale, "_ID"),
-              all.x = TRUE
-            ))
-          }
-          # If the scale is not a census scale, do nothing
-          if (!scale_name %in% existing_census_scales) {
-            return(scale_df)
-          }
+        # Get only data column names
+        data_col_names <- names(data)[!grepl("ID$", names(data))]
 
-          # Preparation
-          scale_id <- paste0(scale_name, "_ID")
-          from <- sf::st_drop_geometry(base)
+        # Interpolate to other census scales
+        census_interpolated <-
+          mapply(\(scale_name, scale_df) {
 
-          # Group by scale_id, and calculate a weighted.mean using the weight_by
-          # argument.
-          # TKTK Review if I can send just column values in the lapply instead of
-          # retrieving the whole dataframe each time
-          data_col_names_avg <- data_col_names[data_col_names %in% average_vars]
-          data_col_names_avg <- lapply(data_col_names_avg, \(col_name) {
-            as.data.frame(from)[c(ids, weight_by, col_name)]
-          })
-          pb <- progressr::progressor(steps = length(data_col_names_avg))
-          summarized_avg <-
-            lapply(data_col_names_avg, \(col_df) {
-              dat <- stats::ave(
-                col_df, col_df[[scale_id]],
-                FUN = \(x) stats::weighted.mean(x[[ncol(col_df)]],
-                  x[[weight_by]],
-                  na.rm = TRUE
-                )
-              )[ncol(col_df)]
-              dat[[scale_id]] <- col_df[[scale_id]]
-              # Get unique values per zone
-              pb()
-              unique(dat)
-            })
-
-          # Group by scale_id and calculate a count
-          data_col_names_add <- data_col_names[data_col_names %in% additive_vars]
-          data_col_names_add <- lapply(data_col_names_add, \(col_name) {
-            as.data.frame(from)[c(ids, col_name)]
-          })
-          pb <- progressr::progressor(steps = length(data_col_names_add))
-          summarized_add <-
-            lapply(data_col_names_add, \(col_df) {
-              dat <- stats::ave(
-                col_df, col_df[[scale_id]],
-                FUN = \(x) sum(x[[ncol(col_df)]], na.rm = TRUE)
-              )[ncol(col_df)]
-              dat[[scale_id]] <- col_df[[scale_id]]
-              # Get unique values per zone
-              pb()
-              unique(dat)
-            })
-
-          summarized <- c(summarized_avg, summarized_add)
-
-          # Merge all data out of the weighted averages
-          out <- if (length(summarized) > 1) {
-            Reduce(merge, summarized)
-          } else {
-            summarized[[1]]
-          }
-
-          # Merge to the existing data
-          merge(scale_df, out, by = scale_id, all.x = TRUE)
-        }, names(scales), scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
-
-      # Interpolate to non-census scales
-      non_census_scales <- names(scales)[!names(scales) %in% existing_census_scales]
-      if (length(non_census_scales) == 0) {
-        return(census_interpolated)
-      }
-
-      all_scales_interpolated <-
-        mapply(
-          \(scale_name, scale_df) {
-            # If the scale is a census scale, just return it
-            if (!scale_name %in% non_census_scales) {
+            # If the scale is already the one containing data, merge and return
+            if (scale_name == base_scale) {
+              return(merge(scale_df, data,
+                           by = paste0(base_scale, "_ID"),
+                           all.x = TRUE
+              ))
+            }
+            # If the scale is not a census scale, do nothing
+            if (!scale_name %in% existing_census_scales) {
               return(scale_df)
             }
-            interpolate_from_area(
-              to = scale_df,
-              from = base,
-              average_vars = average_vars,
-              additive_vars = additive_vars,
-              crs = crs
-            )
-          }, names(census_interpolated), census_interpolated,
-          SIMPLIFY = FALSE, USE.NAMES = TRUE
-        )
 
-      all_scales_interpolated
-    }, simplify = FALSE, USE.NAMES = TRUE)
+            # Preparation
+            scale_id <- paste0(scale_name, "_ID")
+            from <- sf::st_drop_geometry(base)
 
+            summarized_avg <- lapply(average_vars, \(col_name) {
+              # Extract the necessary columns
+              col_df <- from[c(scale_id, weight_by, col_name)]
+
+              # Calculate the weighted average for the current column
+              interpolate_fast_weighted_mean(col_df, scale_id, weight_by, col_name)
+            })
+
+            # Calculate the sum for each column using lapply
+            summarized_add <- lapply(additive_vars, interpolate_fast_additive_sum,
+                                     data = from, id_col = scale_id)
+
+            # Concatenate both
+            summarized <- c(summarized_avg, summarized_add)
+
+            # Merge all data out of the weighted averages
+            out <- if (length(summarized) > 1) {
+              # Create a function to not always use 'merge', as it can be quite slow
+              # when there are many datasets. Filter out NAs from both left and right,
+              # look if the ID columns are identical and if they are, use cbind by
+              # taking out the ID column of the right table. If the ID column is not
+              # identical, use the merge function.
+              merg_ <- \(x, y) {
+                x <- x[!is.na(x$ID), ]
+                y <- y[!is.na(y$ID), ]
+                if (identical(x[[2]], y[[2]])) {
+                  cbind(x, y[1])
+                } else {
+                  merge(x, y)
+                }
+              }
+              Reduce(merg_, summarized)
+            } else {
+              summarized[[1]]
+            }
+
+            # Merge to the existing data
+            merge(scale_df, out, by = "ID", all.x = TRUE)
+          }, names(scales), scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
+
+        # Interpolate to non-census scales
+        non_census_scales <- names(scales)[!names(scales) %in% existing_census_scales]
+        if (length(non_census_scales) == 0) {
+          return(census_interpolated)
+        }
+
+        all_scales_interpolated <-
+          mapply(
+            \(scale_name, scale_df) {
+              # If the scale is a census scale, just return it
+              if (!scale_name %in% non_census_scales) {
+                return(scale_df)
+              }
+
+              # Preparation
+              scale_id <- paste0(scale_name, "_ID")
+              scale_df <- sf::st_transform(scale_df, crs)
+              scale_df <- sf::st_set_agr(scale_df, "constant")
+              trim_df <- scale_df[, names(scale_df)[names(scale_df) != weight_by]]
+              trim_base <- base[, c(data_col_names, weight_by, "area")]
+
+              # Intersect and calculate area proportion
+              intersected <- sf::st_intersection(trim_df, trim_base)
+              intersected$area_prop <-
+                get_area(intersected$geometry) / intersected$area
+
+              # Proportion of 'weight_by' in the base scale
+              intersected$n_weight_by <- intersected[[weight_by]] * intersected$area_prop
+
+              # Group by ID, and calculate a weighted.mean using the weight_by argument.
+              intersected <- sf::st_drop_geometry(intersected)
+
+              summarized_avg <- lapply(average_vars, \(col_name) {
+                # Extract the necessary columns
+                col_df <- intersected[c(scale_id, weight_by, col_name)]
+
+                # Calculate the weighted average for the current column
+                interpolate_fast_weighted_mean(col_df, scale_id, weight_by, col_name)
+              })
+
+              # Calculate the sum for each column using lapply
+              summarized_add <- lapply(additive_vars, interpolate_fast_additive_sum,
+                                       data = intersected, id_col = scale_id)
+
+              # Concatenate both
+              summarized <- c(summarized_avg, summarized_add)
+
+              # Merge all data out of the weighted averages
+              out <- if (length(summarized) > 1) {
+                # Create a function to not always use 'merge', as it can be quite slow
+                # when there are many datasets. Filter out NAs from both left and right,
+                # look if the ID columns are identical and if they are, use cbind by
+                # taking out the ID column of the right table. If the ID column is not
+                # identical, use the merge function.
+                merg_ <- \(x, y) {
+                  x <- x[!is.na(x$ID), ]
+                  y <- y[!is.na(y$ID), ]
+                  if (identical(x[[2]], y[[2]])) {
+                    cbind(x, y[1])
+                  } else {
+                    merge(x, y)
+                  }
+                }
+                Reduce(merg_, summarized)
+              } else {
+                summarized[[1]]
+              }
+
+              # Merge to the existing data
+              merge(scale_df, out, by = "ID", all.x = TRUE)
+            }, names(census_interpolated), census_interpolated,
+            SIMPLIFY = FALSE, USE.NAMES = TRUE
+          )
+
+        pb()
+        all_scales_interpolated
+      }, simplify = FALSE, USE.NAMES = TRUE)
+  })
 
   ## Reorder all columns
   interpolated <-
@@ -325,53 +434,38 @@ interpolate_from_area <- function(to, from,
     intersected_table$new_area / intersected_table$area
   intersected_table <- sf::st_drop_geometry(intersected_table)
 
-  data_col_names_avg <- names(intersected_table)[
-    names(intersected_table) %in% average_vars
-  ]
-  data_col_names_avg <- lapply(data_col_names_avg, \(col_name) {
-    as.data.frame(intersected_table)[c("ID", weight_by, col_name)]
-  })
-  pb <- progressr::progressor(steps = length(data_col_names_avg))
-  summarized_avg <-
-    lapply(data_col_names_avg, \(col_df) {
-      dat <- stats::ave(
-        col_df, col_df$ID,
-        FUN = \(x) stats::weighted.mean(x[[ncol(col_df)]],
-          x[[weight_by]],
-          na.rm = TRUE
-        )
-      )[ncol(col_df)]
-      dat$ID <- col_df$ID
-      # Get unique values per zone
-      pb()
-      unique(dat)
-    })
+  summarized_avg <- lapply(average_vars, \(col_name) {
+    # Extract the necessary columns
+    col_df <- intersected_table[c("ID", weight_by, col_name)]
 
-  # Group by ID and calculate a count
-  data_col_names_add <- names(intersected_table)[
-    names(intersected_table) %in% additive_vars
-  ]
-  data_col_names_add <- lapply(data_col_names_add, \(col_name) {
-    as.data.frame(intersected_table)[c("ID", weight_by, col_name)]
+    # Calculate the weighted average for the current column
+    interpolate_fast_weighted_mean(col_df, "ID", weight_by, col_name)
   })
-  pb <- progressr::progressor(steps = length(data_col_names_add))
-  summarized_add <-
-    lapply(data_col_names_add, \(col_df) {
-      dat <- stats::ave(
-        col_df, col_df$ID,
-        FUN = \(x) sum(x[[ncol(col_df)]], na.rm = TRUE)
-      )[ncol(col_df)]
-      dat$ID <- col_df$ID
-      # Get unique values per zone
-      pb()
-      unique(dat)
-    })
 
+  # Calculate the sum for each column using lapply
+  summarized_add <- lapply(additive_vars, interpolate_fast_additive_sum,
+                           data = intersected_table, id_col = "ID")
+
+  # Concatenate both
   summarized <- c(summarized_avg, summarized_add)
 
   # Merge all data out of the weighted averages
   out <- if (length(summarized) > 1) {
-    Reduce(merge, summarized)
+    # Create a function to not always use 'merge', as it can be quite slow
+    # when there are many datasets. Filter out NAs from both left and right,
+    # look if the ID columns are identical and if they are, use cbind by
+    # taking out the ID column of the right table. If the ID column is not
+    # identical, use the merge function.
+    merg_ <- \(x, y) {
+      x <- x[!is.na(x$ID), ]
+      y <- y[!is.na(y$ID), ]
+      if (identical(x[[2]], y[[2]])) {
+        cbind(x, y[1])
+      } else {
+        merge(x, y)
+      }
+    }
+    Reduce(merg_, summarized)
   } else {
     summarized[[1]]
   }

@@ -27,6 +27,7 @@ add_q3 <- function(df, vars, time_regex = "_\\d{4}$") {
   # Change names to get q3 between the variable name and the timeframe
   names(q3s) <- paste0(
     gsub(time_regex, "", names(q3s)), "_q3",
+    if (time_regex != "")
     sapply(names(q3s), \(x) {
       loc <- regexpr(time_regex, x)
       if (loc < 0) {
@@ -62,7 +63,7 @@ get_breaks_q3 <- function(df, vars, time_regex = "_\\d{4}$") {
     dat <- sf::st_drop_geometry(df)
 
     var_q3_regex <- paste0(gsub(time_regex, "", var), "_q3")
-    time <- stringr::str_extract(var, time_regex)
+    time <- if (time_regex == "") "" else stringr::str_extract(var, time_regex)
     var_q3 <- paste0(var_q3_regex, time)
     dat <- dat[, c(var, var_q3)]
     names(dat) <- c("v", "q3")
@@ -105,6 +106,7 @@ add_q5 <- function(df, breaks, time_regex = "_\\d{4}$") {
 
     var_regex <- paste0("^", var, time_regex)
     df_var <- names(df)[grepl(var_regex, names(df))]
+    df_var <- df_var[!grepl("_q3$|_q5$", df_var)]
 
     q5s <- lapply(df_var, \(v) {
       vals <- df[[v]]
@@ -121,13 +123,20 @@ add_q5 <- function(df, breaks, time_regex = "_\\d{4}$") {
       # in the q5s even if they are lower/higher than the break by temporarily
       # editing the lower and higher breaks
       min_val <- min(vals, na.rm = TRUE)
-      if (min_val < brks[[1]]) brks[[1]] <- min_val
+      if (is.na(brks[[1]])) brks[[1]] <- 0 else {
+        if (min_val < brks[[1]]) brks[[1]] <- min_val
+      }
       max_val <- max(vals, na.rm = TRUE)
-      if (max_val > brks[[length(brks)]]) brks[[length(brks)]] <- max_val
-      q5s <- as.numeric(cut(vals, brks, include.lowest = TRUE))
+      if (is.na(brks[[length(brks)]])) brks[[length(brks)]] <- 0 else {
+        if (max_val > brks[[length(brks)]]) brks[[length(brks)]] <- max_val
+      }
+      brks[is.na(brks)] <- 0
+      q5s <- if (all(brks == 0)) rep(0, length(vals)) else {
+        as.numeric(cut(vals, brks, include.lowest = TRUE))
+      }
 
       out <- tibble::tibble(var = q5s)
-      time <- stringr::str_extract(v, time_regex)
+      time <- if (time_regex == "") "" else stringr::str_extract(v, time_regex)
       names(out) <- paste0(var, "_q5", time)
       return(out)
     })
@@ -306,7 +315,7 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
           var_regex <- paste0("^", var, time_regex)
           var_all_years <- names(scale_df)[grepl(var_regex, names(scale_df))]
           out <- lapply(var_all_years, \(v) {
-            date <- stringr::str_extract(v, time_regex)
+            date <- if (time_regex == "") "" else stringr::str_extract(v, time_regex)
             date <- gsub("^_", "", date)
             tibble::tibble(
               df = paste(geo, scale_name, sep = "_"),
