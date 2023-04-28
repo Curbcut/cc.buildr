@@ -402,14 +402,6 @@ tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom,
   # All tables
   all_tables <- reconstruct_all_tables(all_scales)
 
-  # # Arrange the data
-  # all_scales <- map_over_scales(
-  #   all_scales = all_scales,
-  #   fun = \(scale_df = scale_df, ...) {
-  #     scale_df[, grepl("ID$", names(scale_df))]
-  #   }
-  # )
-  #
   # Reset
   mapply(\(geo, scales) {
     sapply(scales, \(scale) {

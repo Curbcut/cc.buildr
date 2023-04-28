@@ -55,6 +55,9 @@ interpolate_fast_additive_sum <- function(col_name, data, id_col) {
   # Extract the necessary columns
   col_df <- data[c(id_col, col_name)]
 
+  # Weight by
+  col_df[[col_name]] <- col_df[[col_name]] * data[[weight_by]]
+
   # Calculate the sum for each group
   summed_data <- stats::aggregate(col_df[, col_name],
                                   by = list(col_df[[id_col]]),
@@ -208,7 +211,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
 
             # Calculate the sum for each column using lapply
             summarized_add <- lapply(additive_vars, interpolate_fast_additive_sum,
-                                     data = from, id_col = scale_id)
+                                     data = from, id_col = scale_id, weight_col = weight_by)
 
             # Concatenate both
             summarized <- c(summarized_avg, summarized_add)
@@ -280,7 +283,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
 
               # Calculate the sum for each column using lapply
               summarized_add <- lapply(additive_vars, interpolate_fast_additive_sum,
-                                       data = intersected, id_col = scale_id)
+                                       data = intersected, id_col = scale_id, weight_col = weight_by)
 
               # Concatenate both
               summarized <- c(summarized_avg, summarized_add)
@@ -444,7 +447,8 @@ interpolate_from_area <- function(to, from,
 
   # Calculate the sum for each column using lapply
   summarized_add <- lapply(additive_vars, interpolate_fast_additive_sum,
-                           data = intersected_table, id_col = "ID")
+                           data = intersected_table, id_col = "ID",
+                           weight_col = weight_by)
 
   # Concatenate both
   summarized <- c(summarized_avg, summarized_add)

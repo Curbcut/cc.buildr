@@ -128,111 +128,117 @@ ba_accessibility_points <- function(scales_variables_modules,
 
   # Variables table ---------------------------------------------------------
 
-  new_variables <- lapply(average_vars, \(var) {
+  progressr::with_progress({
 
-    dict <- cc.data::accessibility_point_dict
-    dict <- dict[sapply(dict$var, grepl, var), ]
+    pb <- progressr::progressor(length(average_vars))
 
-    mode <- (\(x) {
-      if (grepl("_car_", var)) return("car")
-      if (grepl("_foot_", var)) return("walking")
-      if (grepl("_bicycle_", var)) return("bicycle")
-      if (grepl("_transit_opwe_", var)) return("public transit on off-peak weekend days")
-      if (grepl("_transit_pwe_", var)) return("public transit on peak weekend days")
-      if (grepl("_transit_nwd_", var)) return("public transit on weekdays at night")
-      if (grepl("_transit_nwe_", var)) return("public transit on weekends at night")
-      if (grepl("_transit_opwd_", var)) return("public transit on off-peak weekdays")
-      if (grepl("_transit_pwd_", var)) return("public transit on peak weekdays")
-    })()
+    new_variables <- future.apply::future_lapply(average_vars, \(var) {
 
-    time <- gsub("_", "", stringr::str_extract(var, "_\\d*_"))
+      dict <- cc.data::accessibility_point_dict
+      dict <- dict[sapply(dict$var, grepl, var), ]
 
-    var_title <- stringr::str_to_sentence(paste0(dict$title, " accessible by ", mode))
-    var_short <- stringr::str_to_sentence(dict$short)
-    explanation <- paste0(
-      "the number of ", tolower(dict$title),
-      " an average resident of the area can reach within ", time, " minutes by ", mode
-    )
-    exp_q5 <- paste0(
-      "the average resident has access to _X_ ", tolower(dict$title), " within ", time,
-      " minutes by ", mode
-    )
-
-    theme <- (\(x) {
-      if (dict$theme == "retail") return("retail stores")
-      if (dict$theme == "finance") return("finance establishments")
-      if (dict$theme == "food") return("food distributors")
-      if (dict$theme == "healthcare") return("healthcare facilities")
-      if (dict$theme == "educational") return("schools")
-      if (dict$theme == "cultural") return("cultural facilities")
-    })()
-    group_name <- paste("Access to", theme)
-    group_diff <- list(
-      "Mode of transport" = stringr::str_to_sentence(mode),
-      "Transportation time" = time
-    )
-
-    if (grepl("_transit_", var)) {
-      timing <- (\(x) {
-        if (grepl("_transit_opwe_", var)) return("Weekend traffic off-peak")
-        if (grepl("_transit_pwe_", var)) return("Weekend traffic peak")
-        if (grepl("_transit_nwd_", var)) return("Weekday night")
-        if (grepl("_transit_nwe_", var)) return("Weekend night")
-        if (grepl("_transit_opwd_", var)) return("Weekday traffic off-peak")
-        if (grepl("_transit_pwd_", var)) return("Weekday traffic peak")
+      mode <- (\(x) {
+        if (grepl("_car_", var)) return("car")
+        if (grepl("_foot_", var)) return("walking")
+        if (grepl("_bicycle_", var)) return("bicycle")
+        if (grepl("_transit_opwe_", var)) return("public transit on off-peak weekend days")
+        if (grepl("_transit_pwe_", var)) return("public transit on peak weekend days")
+        if (grepl("_transit_nwd_", var)) return("public transit on weekdays at night")
+        if (grepl("_transit_nwe_", var)) return("public transit on weekends at night")
+        if (grepl("_transit_opwd_", var)) return("public transit on off-peak weekdays")
+        if (grepl("_transit_pwd_", var)) return("public transit on peak weekdays")
       })()
-      group_diff <- c(group_diff, list("Timing" = timing))
-    }
 
-    # Additional group_diff
-    val <- if (grepl("_total$", var)) "Total" else dict$title
+      time <- gsub("_", "", stringr::str_extract(var, "_\\d*_"))
 
-    if (dict$theme == "retail") {
-      group_diff <- c(group_diff, list("Retail stores type" = val))
-    }
-    if (dict$theme == "finance") {
-      group_diff <- c(group_diff, list("Finance establishment" = val))
-    }
-    if (dict$theme == "food") {
-      group_diff <- c(group_diff, list("Food industry" = val))
-    }
-    if (dict$theme == "healthcare") {
-      group_diff <- c(group_diff, list("Health care facility" = val))
-    }
-    if (dict$theme == "educational") {
-      group_diff <- c(group_diff, list("Educational establishment category" = val))
-    }
-    if (dict$theme == "cultural") {
-      group_diff <- c(group_diff, list("Cultural facility" = val))
-    }
+      var_title <- stringr::str_to_sentence(paste0(dict$title, " accessible by ", mode))
+      var_short <- stringr::str_to_sentence(dict$short)
+      explanation <- paste0(
+        "the number of ", tolower(dict$title),
+        " an average resident of the area can reach within ", time, " minutes by ", mode
+      )
+      exp_q5 <- paste0(
+        "the average resident has access to _X_ ", tolower(dict$title), " within ", time,
+        " minutes by ", mode
+      )
 
-    add_variable(
-      variables = scales_variables_modules$variables,
-      var_code = var,
-      type = "avg",
-      var_title = var_title,
-      var_short = var_short,
-      explanation = explanation,
-      exp_q5 = exp_q5,
-      group_name = group_name,
-      group_diff = group_diff,
-      parent_vec = "population",
-      theme = "Transport",
-      private = FALSE,
-      pe_include = var %in% pe_include,
-      region_values = region_values[[var]],
-      dates = with_breaks$avail_dates[[var]],
-      avail_df = data_interpolated$avail_df,
-      breaks_q3 = with_breaks$q3_breaks_table[[var]],
-      breaks_q5 = with_breaks$q5_breaks_table[[var]],
-      source = dict$source,
-      interpolated = data_interpolated$interpolated_ref,
-      rankings_chr = c("exceptionally sparse", "unusually sparse",
-                       "just about average", "unusually dense",
-                       "exceptionally dense"),
-      var_measurement = var_measurement
-    ) |>
-      (\(x) x[nrow(x), ])()
+      theme <- (\(x) {
+        if (dict$theme == "retail") return("retail stores")
+        if (dict$theme == "finance") return("finance establishments")
+        if (dict$theme == "food") return("food distributors")
+        if (dict$theme == "healthcare") return("healthcare facilities")
+        if (dict$theme == "educational") return("schools")
+        if (dict$theme == "cultural") return("cultural facilities")
+      })()
+      group_name <- paste("Access to", theme)
+      group_diff <- list(
+        "Mode of transport" = stringr::str_to_sentence(mode),
+        "Transportation time" = time
+      )
+
+      if (grepl("_transit_", var)) {
+        timing <- (\(x) {
+          if (grepl("_transit_opwe_", var)) return("Weekend traffic off-peak")
+          if (grepl("_transit_pwe_", var)) return("Weekend traffic peak")
+          if (grepl("_transit_nwd_", var)) return("Weekday night")
+          if (grepl("_transit_nwe_", var)) return("Weekend night")
+          if (grepl("_transit_opwd_", var)) return("Weekday traffic off-peak")
+          if (grepl("_transit_pwd_", var)) return("Weekday traffic peak")
+        })()
+        group_diff <- c(group_diff, list("Timing" = timing))
+      }
+
+      # Additional group_diff
+      val <- if (grepl("_total$", var)) "Total" else dict$title
+
+      if (dict$theme == "retail") {
+        group_diff <- c(group_diff, list("Retail stores type" = val))
+      }
+      if (dict$theme == "finance") {
+        group_diff <- c(group_diff, list("Finance establishment" = val))
+      }
+      if (dict$theme == "food") {
+        group_diff <- c(group_diff, list("Food industry" = val))
+      }
+      if (dict$theme == "healthcare") {
+        group_diff <- c(group_diff, list("Health care facility" = val))
+      }
+      if (dict$theme == "educational") {
+        group_diff <- c(group_diff, list("Educational establishment category" = val))
+      }
+      if (dict$theme == "cultural") {
+        group_diff <- c(group_diff, list("Cultural facility" = val))
+      }
+
+      pb()
+      add_variable(
+        variables = scales_variables_modules$variables,
+        var_code = var,
+        type = "avg",
+        var_title = var_title,
+        var_short = var_short,
+        explanation = explanation,
+        exp_q5 = exp_q5,
+        group_name = group_name,
+        group_diff = group_diff,
+        parent_vec = "population",
+        theme = "Transport",
+        private = FALSE,
+        pe_include = var %in% pe_include,
+        region_values = region_values[[var]],
+        dates = with_breaks$avail_dates[[var]],
+        avail_df = data_interpolated$avail_df,
+        breaks_q3 = with_breaks$q3_breaks_table[[var]],
+        breaks_q5 = with_breaks$q5_breaks_table[[var]],
+        source = dict$source,
+        interpolated = data_interpolated$interpolated_ref,
+        rankings_chr = c("exceptionally sparse", "unusually sparse",
+                         "just about average", "unusually dense",
+                         "exceptionally dense"),
+        var_measurement = var_measurement
+      ) |>
+        (\(x) x[nrow(x), ])()
+    })
   })
 
   variables <- rbind(scales_variables_modules$variables, Reduce(rbind, new_variables))
@@ -287,7 +293,7 @@ ba_accessibility_points <- function(scales_variables_modules,
                            c("var_code", "group_name", "group_diff")],
       main_dropdown_title = "Amenity",
       var_right = scales_variables_modules$variables$var_code[
-        scales_variables_modules$variables$source == "Canadian census" &&
+        scales_variables_modules$variables$source == "Canadian census" &
           !is.na(scales_variables_modules$variables$parent_vec)]
     )
 

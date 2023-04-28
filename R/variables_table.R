@@ -241,112 +241,118 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
                                       breaks = NULL, time_regex = "_\\d{4}$",
                                       round_closest_5 = TRUE) {
 
-  sapply(vars, \(var) {
+  progressr::with_progress({
+    pb <- progressr::progressor(length(vars))
 
-    # Grab the variable types
-    type <- unlist(types[[var]])
+    future.apply::future_sapply(vars, \(var) {
 
-    # Missing arguments depending on type
-    if (sum(type %in% c("pct", "avg", "median", "ind")) > 0 && is.null(parent_strings)) {
-      stop(paste0("A variable of type `", type, "` must have a parent string."))
-    }
-    if (sum(type %in% c("ind")) > 0 && is.null(breaks)) {
-      stop(paste0("A variable of type `", type, "` must have the breaks ",
-                  "supplied, usually the `q5_breaks_table` output of ",
-                  "`cc.buildr::calculate_breaks`."))
-    }
+      # Grab the variable types
+      type <- unlist(types[[var]])
 
-    # Iterate the count over all regions
-    region_vals <- mapply(\(region_name, region) {
+      # Missing arguments depending on type
+      if (sum(type %in% c("pct", "avg", "median", "ind")) > 0 && is.null(parent_strings)) {
+        stop(paste0("A variable of type `", type, "` must have a parent string."))
+      }
+      if (sum(type %in% c("ind")) > 0 && is.null(breaks)) {
+        stop(paste0("A variable of type `", type, "` must have the breaks ",
+                    "supplied, usually the `q5_breaks_table` output of ",
+                    "`cc.buildr::calculate_breaks`."))
+      }
 
-      # Get the names of all the scales inside a region
-      cols <- lapply(region, names)[length(region):1]
-      # Grab the first scale which has a variable + parent corresponding to ours
-      has_var <- sapply(cols, \(x) sum(grepl(paste0(var, time_regex), x)) > 0)
-      has_parent <- sapply(cols, \(x) sum(grepl(paste0(unlist(parent_strings[var]), time_regex), x)) > 0)
-      if (sum(has_var) == 0) return(data.frame())
+      # Iterate the count over all regions
+      region_vals <- mapply(\(region_name, region) {
 
-      which_df_avail <- has_var + has_parent
-      # Take the first one as it's the lowest level (more granularity in data)
-      df_name <- names(which(which_df_avail == max(which_df_avail)))[[1]]
-      df <- region[[df_name]]
-      # Get all the years at which the variable is available
-      all_var <- names(df)[grepl(paste0(var, time_regex), names(df))]
-      all_var <- all_var[!grepl("_q3$|_q5$", all_var)]
+        # Get the names of all the scales inside a region
+        cols <- lapply(region, names)[length(region):1]
+        # Grab the first scale which has a variable + parent corresponding to ours
+        has_var <- sapply(cols, \(x) sum(grepl(paste0(var, time_regex), x)) > 0)
+        has_parent <- sapply(cols, \(x) sum(grepl(paste0(unlist(parent_strings[var]), time_regex), x)) > 0)
+        if (sum(has_var) == 0) return(data.frame())
 
-      # Iterate over all years of the variable and get the right information
-      # depending on the variable type
-      out <- lapply(all_var, \(v) {
+        which_df_avail <- has_var + has_parent
+        # Take the first one as it's the lowest level (more granularity in data)
+        df_name <- names(which(which_df_avail == max(which_df_avail)))[[1]]
+        df <- region[[df_name]]
+        df <- sf::st_drop_geometry(df)
+        # Get all the years at which the variable is available
+        all_var <- names(df)[grepl(paste0(var, time_regex), names(df))]
+        all_var <- all_var[!grepl("_q3$|_q5$", all_var)]
 
-        out <- tibble::tibble(region = region_name,
-                              year = gsub(var, "", v))
-        out$year <- gsub("^_", "", out$year)
+        # Iterate over all years of the variable and get the right information
+        # depending on the variable type
+        out <- lapply(all_var, \(v) {
 
-        if ("pct" %in% type) {
-          parent_string <- parent_strings[[var]]
-          if (is.na(parent_string) | is.null(parent_string)) {
-            stop(sprintf("No parent_string found for `%s`", var))
+          out <- tibble::tibble(region = region_name,
+                                year = gsub(var, "", v))
+          out$year <- gsub("^_", "", out$year)
+
+          if ("pct" %in% type) {
+            parent_string <- parent_strings[[var]]
+            if (is.na(parent_string) | is.null(parent_string)) {
+              stop(sprintf("No parent_string found for `%s`", var))
+            }
+            parent_string_year <- paste0(parent_string, "_", out$year)
+            no_nas <- df[!is.na(df[[parent_string_year]]) &
+                           !is.na(df[[v]]), ]
+
+            out$val <- stats::weighted.mean(no_nas[[v]], no_nas[[parent_string_year]])
+            out$count <- out$val * sum(no_nas[[parent_string_year]])
+
+            # Round if necessary
+            if (round_closest_5) out$count <- round(out$count/5)*5
+
+          } else if ("avg" %in% type || "median" %in% type) {
+            parent_string <- parent_strings[[var]]
+            if (is.na(parent_string) | is.null(parent_string)) {
+              stop(sprintf("No parent_string found for `%s`", var))
+            }
+            parent_string_year <- if (out$year != "") paste0(parent_string, "_", out$year) else parent_string
+            no_nas <- df[!is.na(df[[parent_string_year]]) & !is.na(df[[v]]), ]
+
+            out$val <- stats::weighted.mean(no_nas[[v]], no_nas[[parent_string_year]])
+          } else if ("count" %in% type) {
+            out$val <- sum(df[[v]], na.rm = TRUE)
+          } else if ("ind" %in% type) {
+            parent_string <- parent_strings[[var]]
+            if (is.na(parent_string) | is.null(parent_string)) {
+              stop(sprintf("No parent_string found for `%s`", var))
+            }
+
+            brk <- breaks[[var]]
+            brk <- brk[grepl(paste0("^", region_name, "_"), brk$df), ]
+            last_df <- unique(brk$df)
+            # Grab the smallest scale that has both the var and the parent
+            last_df <- last_df[grepl(df_name, last_df)]
+            brk <- brk[brk$df == last_df, ]
+
+            # Higher than the values of the second to last bracket
+            val <- brk$var[brk$rank == 3]
+            second_to_last <- df[df[[v]] > val, ]
+
+            out$count <- sum(second_to_last[[parent_string]], na.rm = TRUE)
+            out$val <- out$count / sum(df[[parent_string]], na.rm = TRUE)
           }
-          parent_string_year <- paste0(parent_string, "_", out$year)
-          no_nas <- df[!is.na(df[[parent_string_year]]) &
-                         !is.na(df[[v]]), ]
 
-          out$val <- stats::weighted.mean(no_nas[[v]], no_nas[[parent_string_year]])
-          out$count <- out$val * sum(no_nas[[parent_string_year]])
+          # Switch NaN to NA
+          out[is.na(out)] <- NA
 
-          # Round if necessary
-          if (round_closest_5) out$count <- round(out$count/5)*5
+          return(out)
+        })
 
-        } else if ("avg" %in% type || "median" %in% type) {
-          parent_string <- parent_strings[[var]]
-          if (is.na(parent_string) | is.null(parent_string)) {
-            stop(sprintf("No parent_string found for `%s`", var))
-          }
-          parent_string_year <- if (out$year != "") paste0(parent_string, "_", out$year) else parent_string
-          no_nas <- df[!is.na(df[[parent_string_year]]) & !is.na(df[[v]]), ]
+        # Make it in one ordered dataframe
+        out <- Reduce(rbind, out)
 
-          out$val <- stats::weighted.mean(no_nas[[v]], no_nas[[parent_string_year]])
-        } else if ("count" %in% type) {
-          out$val <- sum(df[[v]], na.rm = TRUE)
-        } else if ("ind" %in% type) {
-          parent_string <- parent_strings[[var]]
-          if (is.na(parent_string) | is.null(parent_string)) {
-            stop(sprintf("No parent_string found for `%s`", var))
-          }
-
-          brk <- breaks[[var]]
-          brk <- brk[grepl(paste0("^", region_name, "_"), brk$df), ]
-          last_df <- unique(brk$df)
-          # Grab the smallest scale that has both the var and the parent
-          last_df <- last_df[grepl(df_name, last_df)]
-          brk <- brk[brk$df == last_df, ]
-
-          # Higher than the values of the second to last bracket
-          val <- brk$var[brk$rank == 3]
-          second_to_last <- df[df[[v]] > val, ]
-
-          out$count <- sum(second_to_last[[parent_string]], na.rm = TRUE)
-          out$val <- out$count / sum(df[[parent_string]], na.rm = TRUE)
-        }
-
-        # Switch NaN to NA
-        out[is.na(out)] <- NA
+        if ("year" %in% names(out))
+          out <- out[order(out$year, decreasing = TRUE), ]
 
         return(out)
-      })
 
-      # Make it in one ordered dataframe
-      out <- Reduce(rbind, out)
+      }, names(scales), scales, SIMPLIFY = FALSE)
 
-      if ("year" %in% names(out))
-        out <- out[order(out$year, decreasing = TRUE), ]
+      pb()
+      return(Reduce(rbind, region_vals))
 
-      return(out)
-
-    }, names(scales), scales, SIMPLIFY = FALSE)
-
-    return(Reduce(rbind, region_vals))
-
-  }, simplify = FALSE, USE.NAMES = TRUE)
+    }, simplify = FALSE, USE.NAMES = TRUE, future.seed = NULL)
+  })
 
 }
