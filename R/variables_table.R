@@ -65,10 +65,24 @@ append_empty_variables_table <- function(scales_consolidated) {
 #'  \item{"dollar"}{starts with a subject and ends with a verb. It's assumed it
 #'  will be followed by a dollar number. e.g. 'the average rent is 800$' where
 #'  `the average rent is` is the definition value.}
-#'  \item{"ind"}{starts with a verb and follow the absolute count of the parent
-#'  string. Uses a place holder written `_X_` which would translates to, e.g. 'medium to high'.
-#'  example: '50 households are living in areas with low potential for active living'
-#'  where the definition would be: `are living in areas with _X_ potential for active living`}
+#'  \item{"ind"}{starts with a verb and uses a place holder written `_X_` which
+#'  would translates to, e.g. 'medium to high'. example: '50 households are living
+#'  in areas with low potential for active living' where the definition would
+#'  be: `are living in areas with _X_ potential for active living`}
+#'  \item{"avg"}{starts with a subject and uses a place holder written `_X_` which
+#'  would translates to a number. example: 'the average resident has access to 30
+#'  grocery stores within 15 minutes by walk' where the definition would be:
+#'  `the average resident has access to _X_ grocery stores within 15 minutes by walk`}
+#'  \item{"sqkm"}{starts with a determinant and uses a placeholder written `_X_` which
+#'  translates to a number. example: 'the density of green alleys is 2.28 square
+#'  metres per square kilometres' where the definition would be:
+#'  `the density of green alleys is _X_ square metres per square kilometres`
+#'  }
+#'  \item{"per1k"}{starts with a determinant and uses a placeholder written `_X_` which
+#'  translates to a number. example: 'the density of green alleys is 28.7 square
+#'  metres per 1000 residents' where the definition would be:
+#'  `the density of green alleys is _X_ square metres per 1000 residents`
+#'  }
 #' }
 #' @param parent_vec <`character`> Parent vector of the variable. Used for
 #' the explore panel. Must be another entry in the variable table. E.g. for
@@ -217,7 +231,8 @@ add_variable <- function(variables, var_code, type, var_title,
 #' scales. List of two depths (region and scales).
 #' @param vars <`character`> A character vector of variable codes. Unique variable
 #' codes, no times appended.
-#' @param types <`list`> A named list of variable types (e.g., "pct", "avg", "count", "ind").
+#' @param types <`list`> A named list of variable types, one of: "`pct`", "`avg`",
+#' "`median`", "`dollar`", "`count`", "`ind`", "`sqkm`", "`per1k`".
 #' The names of the list should match the variable names in \code{vars}.
 #' @param parent_strings <`list`> A named list of parent strings. The names of the list
 #' should match the variable names in \code{vars}. The parent strings are used
@@ -240,7 +255,6 @@ add_variable <- function(variables, var_code, type, var_title,
 variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL,
                                       breaks = NULL, time_regex = "_\\d{4}$",
                                       round_closest_5 = TRUE) {
-
   progressr::with_progress({
     pb <- progressr::progressor(length(vars))
 
@@ -273,6 +287,7 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
         # Take the first one as it's the lowest level (more granularity in data)
         df_name <- names(which(which_df_avail == max(which_df_avail)))[[1]]
         df <- region[[df_name]]
+        df_sf <- df
         df <- sf::st_drop_geometry(df)
         # Get all the years at which the variable is available
         all_var <- names(df)[grepl(paste0(var, time_regex), names(df))]
@@ -301,12 +316,15 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
             # Round if necessary
             if (round_closest_5) out$count <- round(out$count/5)*5
 
-          } else if ("avg" %in% type || "median" %in% type) {
+          } else if ("avg" %in% type || "median" %in% type || "dollar" %in% type) {
             parent_string <- parent_strings[[var]]
             if (is.na(parent_string) | is.null(parent_string)) {
               stop(sprintf("No parent_string found for `%s`", var))
             }
-            parent_string_year <- if (out$year != "") paste0(parent_string, "_", out$year) else parent_string
+            parent_string_year <-
+              if (out$year != "" & !parent_string %in% c("households", "population")) {
+                paste0(parent_string, "_", out$year)
+              } else parent_string
             no_nas <- df[!is.na(df[[parent_string_year]]) & !is.na(df[[v]]), ]
 
             out$val <- stats::weighted.mean(no_nas[[v]], no_nas[[parent_string_year]])
@@ -331,6 +349,13 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
 
             out$count <- sum(second_to_last[[parent_string]], na.rm = TRUE)
             out$val <- out$count / sum(df[[parent_string]], na.rm = TRUE)
+          } else if ("sqkm" %in% type) {
+            df <- sf:::`[.sf`(df_sf, v)
+            df$area <- get_area(df)
+            out$val <- stats::weighted.mean(df[[v]], df[["area"]])
+          } else if ("per1k" %in% type) {
+            df <- df[c(v, "population")]
+            out$val <- stats::weighted.mean(df[[v]], df[["population"]])
           }
 
           # Switch NaN to NA
@@ -354,5 +379,5 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
 
     }, simplify = FALSE, USE.NAMES = TRUE, future.seed = NULL)
   })
-
 }
+

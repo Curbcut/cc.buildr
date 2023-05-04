@@ -88,7 +88,7 @@ append_empty_modules_table <- function(scales) {
 add_module <- function(modules, id, theme = "", nav_title, title_text_title,
                        title_text_main,
                        title_text_extra, metadata, dataset_info, regions = NULL,
-                       var_left = NULL, dates = NULL, main_dropdown_title = NA,
+                       var_left = NULL, dates = NULL, main_dropdown_title = NA_character_,
                        var_right = NULL) {
 
   if (is.data.frame(var_left)) {

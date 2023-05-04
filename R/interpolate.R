@@ -47,16 +47,18 @@ interpolate_fast_weighted_mean <- function(df, id_col, weight_col, value_col) {
 #' must have columns corresponding to the specified id_col and col_name.
 #' @param id_col <`character`> A string representing the name of the ID column
 #' in the input data frame.
+#' @param weight_col <`character`> A string representing the name of the weight
+#' column in the input data frame.
 #'
 #' @return A data frame with two columns: the ID column (with the same name as
 #' in the input data frame) and a column containing the summed values, named
 #' after the input col_name.
-interpolate_fast_additive_sum <- function(col_name, data, id_col) {
+interpolate_fast_additive_sum <- function(col_name, data, id_col, weight_col) {
   # Extract the necessary columns
   col_df <- data[c(id_col, col_name)]
 
   # Weight by
-  col_df[[col_name]] <- col_df[[col_name]] * data[[weight_by]]
+  col_df[[col_name]] <- col_df[[col_name]] * data[[weight_col]]
 
   # Calculate the sum for each group
   summed_data <- stats::aggregate(col_df[, col_name],

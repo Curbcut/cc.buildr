@@ -68,7 +68,7 @@ ba_accessibility_points <- function(scales_variables_modules,
   )
   # qs::qsave(ttm_data, "test_build_mtl/ttm_data.qs")
   # ttm_data <- qs::qread("test_build_mtl/ttm_data.qs")
-
+  names(ttm_data)[2:ncol(ttm_data)] <- paste0(names(ttm_data)[2:ncol(ttm_data)], "_2023")
 
   # Interpolate -------------------------------------------------------------
 
@@ -95,24 +95,26 @@ ba_accessibility_points <- function(scales_variables_modules,
     calculate_breaks(
       all_scales = data_interpolated$scales,
       vars = average_vars,
-      types = types,
-      time_regex = ""
+      types = types
     )
 
   # Calculate region values -------------------------------------------------
 
   # Parent strings
-  parent_strings <- rep(list("population"), length(average_vars))
-  names(parent_strings) <- average_vars
+  vars <- gsub("_2023$", "", average_vars)
+  parent_strings <- rep(list("population"), length(vars))
+  names(parent_strings) <- vars
+
+  types <- rep(list("avg"), length(vars))
+  names(types) <- vars
 
   # Region values
   region_values <- variables_get_region_vals(
     scales = with_breaks$scales,
-    vars = average_vars,
+    vars = vars,
     types = types,
     parent_strings = parent_strings,
     breaks = with_breaks$q5_breaks_table,
-    time_regex = "",
     round_closest_5 = FALSE)
 
 
@@ -130,9 +132,9 @@ ba_accessibility_points <- function(scales_variables_modules,
 
   progressr::with_progress({
 
-    pb <- progressr::progressor(length(average_vars))
+    pb <- progressr::progressor(length(vars))
 
-    new_variables <- future.apply::future_lapply(average_vars, \(var) {
+    new_variables <- future.apply::future_lapply(vars, \(var) {
 
       dict <- cc.data::accessibility_point_dict
       dict <- dict[sapply(dict$var, grepl, var), ]
@@ -155,12 +157,15 @@ ba_accessibility_points <- function(scales_variables_modules,
       var_short <- stringr::str_to_sentence(dict$short)
       explanation <- paste0(
         "the number of ", tolower(dict$title),
-        " an average resident of the area can reach within ", time, " minutes by ", mode
+        " an average resident can reach within ", time, " minutes by ", mode
       )
       exp_q5 <- paste0(
         "the average resident has access to _X_ ", tolower(dict$title), " within ", time,
         " minutes by ", mode
       )
+
+      # Cut timing out of the mode
+      mode <- stringr::str_extract(mode, "(^car$)|(^walking$)|(^bicycle$)|(^public transit)")
 
       theme <- (\(x) {
         if (dict$theme == "retail") return("retail stores")
@@ -189,7 +194,7 @@ ba_accessibility_points <- function(scales_variables_modules,
       }
 
       # Additional group_diff
-      val <- if (grepl("_total$", var)) "Total" else dict$title
+      val <- if (grepl("_total$", var)) "Total" else stringr::str_to_sentence(dict$title)
 
       if (dict$theme == "retail") {
         group_diff <- c(group_diff, list("Retail stores type" = val))
@@ -292,6 +297,7 @@ ba_accessibility_points <- function(scales_variables_modules,
       var_left = variables[grepl("^access_", variables$var_code),
                            c("var_code", "group_name", "group_diff")],
       main_dropdown_title = "Amenity",
+      dates = "2023",
       var_right = scales_variables_modules$variables$var_code[
         scales_variables_modules$variables$source == "Canadian census" &
           !is.na(scales_variables_modules$variables$parent_vec)]

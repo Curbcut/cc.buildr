@@ -82,11 +82,11 @@ build_and_append__name_ <- function(scales_variables_modules, crs) {
       parent_vec = "households",
       theme = "Urban life",
       private = FALSE,
-      dates = with_breaks$avail_dates[[unique_var]],
+      dates = with_breaks$avail_dates[["canale"]],
       avail_df = data_interpolated$avail_df,
-      breaks_q3 = with_breaks$q3_breaks_table[[unique_var]],
-      breaks_q5 = with_breaks$q5_breaks_table[[unique_var]],
-      region_values = region_vals[[unique_var]],
+      breaks_q3 = with_breaks$q3_breaks_table[["canale"]],
+      breaks_q5 = with_breaks$q5_breaks_table[["canale"]],
+      region_values = region_vals[["canale"]],
       source = "McGill Geo-Social Determinants of Health Research Group",
       interpolated = data_interpolated$interpolated_ref
     )
@@ -100,18 +100,23 @@ build_and_append__name_ <- function(scales_variables_modules, crs) {
   modules <- scales_variables_modules$modules
 
   modules <-
-      scales_variables_modules$modules |>
-        add_module(
-          id = "_name_",
-          theme = "Urban life",
-          nav_title = "Active living potential",
-          title_text_title = "Active living potential: the CanALE index",
-          title_text_main = paste0(),
-          title_text_extra = paste0(),
-          regions = data_interpolated$regions,
-          metadata = TRUE,
-          dataset_info = paste0()
-        )
+    scales_variables_modules$modules |>
+    add_module(
+      id = "_name_",
+      theme = "Urban life",
+      nav_title = "Active living potential",
+      title_text_title = "Active living potential: the CanALE index",
+      title_text_main = paste0(),
+      title_text_extra = paste0(),
+      regions = data_interpolated$regions,
+      metadata = TRUE,
+      dataset_info = paste0(),
+      var_left = "canale",
+      dates = with_breaks$avail_dates[["canale"]],
+      var_right = scales_variables_modules$variables$var_code[
+        scales_variables_modules$variables$source == "Canadian census" &
+          !is.na(scales_variables_modules$variables$parent_vec)]
+    )
 
 
   # Return ------------------------------------------------------------------

@@ -4,7 +4,7 @@
 \alias{interpolate_fast_additive_sum}
 \title{Fast Summation for interpolation}
 \usage{
-interpolate_fast_additive_sum(col_name, data, id_col)
+interpolate_fast_additive_sum(col_name, data, id_col, weight_col)
 }
 \arguments{
 \item{col_name}{<\code{character}> A string representing the name of the column
@@ -15,6 +15,9 @@ must have columns corresponding to the specified id_col and col_name.}
 
 \item{id_col}{<\code{character}> A string representing the name of the ID column
 in the input data frame.}
+
+\item{weight_col}{<\code{character}> A string representing the name of the weight
+column in the input data frame.}
 }
 \value{
 A data frame with two columns: the ID column (with the same name as

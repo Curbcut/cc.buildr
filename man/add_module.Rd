@@ -17,7 +17,7 @@ add_module(
   regions = NULL,
   var_left = NULL,
   dates = NULL,
-  main_dropdown_title = NA,
+  main_dropdown_title = NA_character_,
   var_right = NULL
 )
 }

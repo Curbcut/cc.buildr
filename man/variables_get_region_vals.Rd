@@ -21,7 +21,8 @@ scales. List of two depths (region and scales).}
 \item{vars}{<\code{character}> A character vector of variable codes. Unique variable
 codes, no times appended.}
 
-\item{types}{<\code{list}> A named list of variable types (e.g., "pct", "avg", "count", "ind").
+\item{types}{<\code{list}> A named list of variable types, one of: "\code{pct}", "\code{avg}",
+"\code{median}", "\code{dollar}", "\code{count}", "\code{ind}", "\code{sqkm}", "\code{per1k}".
 The names of the list should match the variable names in \code{vars}.}
 
 \item{parent_strings}{<\code{list}> A named list of parent strings. The names of the list
