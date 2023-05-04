@@ -94,7 +94,7 @@ ba_census_data <- function(scales_variables_modules,
           cc.data::census_vectors_table$var_code == u_var
         ],
         private = FALSE,
-        pe_include = TRUE,
+        pe_include = if (u_var %in% cc.data::census_vectors_table$parent_vec) FALSE else TRUE,
         dates = with_breaks$avail_dates[[u_var]],
         avail_df = census_dat$avail_df,
         breaks_q3 = with_breaks$q3_breaks_table[[u_var]],

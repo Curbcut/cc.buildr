@@ -12,9 +12,10 @@ placeex_main_card_rmd(
   lang = "en",
   tileset_prefix,
   mapbox_username = "sus-mcgill",
-  rev_geocode_from_localhost = FALSE,
+  rev_geocode_from_localhost = TRUE,
   check_bslib_version = TRUE,
-  overwrite = TRUE
+  overwrite = TRUE,
+  skip_scales = c("building", "street")
 )
 }
 \arguments{
@@ -55,6 +56,9 @@ Set \code{FALSE} to continue with the version of \code{bslib} on your system.}
 
 \item{overwrite}{<\code{logical}> Should the .html files be overwritten? Defaults
 to \code{TRUE}.}
+
+\item{skip_scales}{<\verb{character vector}> Scales for which place explorer documents
+should not be created.}
 }
 \value{
 Returns nothing if successful. All place explorer possibilities are

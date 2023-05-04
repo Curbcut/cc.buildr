@@ -629,6 +629,8 @@ placeex_main_card_final_output <- function(pe_main_card_data, region, df, select
 #' Set `FALSE` to continue with the version of `bslib` on your system.
 #' @param overwrite <`logical`> Should the .html files be overwritten? Defaults
 #' to `TRUE`.
+#' @param skip_scales <`character vector`> Scales for which place explorer documents
+#' should not be created.
 #'
 #' @return Returns nothing if successful. All place explorer possibilities are
 #' saved in the `out_folder`.
@@ -640,9 +642,10 @@ placeex_main_card_rmd <- function(scales_variables_modules,
                                   lang = "en",
                                   tileset_prefix,
                                   mapbox_username = "sus-mcgill",
-                                  rev_geocode_from_localhost = FALSE,
+                                  rev_geocode_from_localhost = TRUE,
                                   check_bslib_version = TRUE,
-                                  overwrite = TRUE) {
+                                  overwrite = TRUE,
+                                  skip_scales = c("building", "street")) {
   if (!requireNamespace("rmarkdown", quietly = TRUE)) {
     stop(
       "Package \"rmarkdown\" must be installed to use this function.",
@@ -672,7 +675,7 @@ placeex_main_card_rmd <- function(scales_variables_modules,
   all_tables <- reconstruct_all_tables(scales_variables_modules$scales)
   regions <- regions_dictionary$region[regions_dictionary$pickable]
   all_tables <- all_tables[names(all_tables) %in% regions]
-  all_tables <- lapply(all_tables, \(scales) scales[!scales %in% c("building", "street")])
+  all_tables <- lapply(all_tables, \(scales) scales[!scales %in% skip_scales])
 
   possible_scales <- mapply(\(region, scale) {
     scales <- scales_variables_modules$scales
