@@ -259,13 +259,13 @@ ba_accessibility_points <- function(scales_variables_modules,
       nav_title = "Access to amenities",
       title_text_title = "Access to amenities",
       title_text_main = paste0(
-        "The time and mode of transportation needed to reach amenities plays a ",
+        "<p>The time and mode of transportation needed to reach amenities plays a ",
         "large role in daily experiences and quality of life. Understanding acc",
         "ess to amenities by mode of transportation gives a glimpse into how di",
         "fferent areas are serviced and what that might imply for residents. "
       ),
       title_text_extra = paste0(
-        "Curbcut has calculated travel times for walking, cycling, and driving ",
+        "<p>Curbcut has calculated travel times for walking, cycling, and driving ",
         "using the Open Source Routing Machine (OSRM) and the OpenStreetMap (OS",
         "M) street network. For transit travel times, Curbcut has employed GTFS",
         " feeds and a multimodal approach, incorporating walking times derived ",

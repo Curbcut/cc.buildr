@@ -123,12 +123,12 @@ ba_census_data <- function(scales_variables_modules,
           nav_title = "Housing system",
           title_text_title = "The housing system",
           title_text_main = paste0(
-            "Housing is at the centre of our lives. Our ability to find affordable,",
+            "<p>Housing is at the centre of our lives. Our ability to find affordable,",
             " adequate, and healthy accommodations profoundly affects our life chan",
             "ces."
           ),
           title_text_extra = paste0(
-            "The datasets visualized on this page come from the Canadian Census fro",
+            "<p>The datasets visualized on this page come from the Canadian Census fro",
             "m 1996 to the present. There are a few efforts in place to better the ",
             "housing landscape from the federal and municipal governments. In Canad",
             "a, the National Housing Strategy aims to address housing needs and hou",

@@ -101,7 +101,6 @@ params:
 
 ```
 
-
 ```{r map, echo = FALSE}
 
 with_data <- params$title_card_data[sapply(params$title_card_data, \(x)  "hex_cat" %in% names(x))]
@@ -110,6 +109,7 @@ with_data <- params$title_card_data[sapply(params$title_card_data, \(x)  "hex_ca
 hexes <- c("#CA002095", "#F4A58295", "#A9A9A995", "#BAE4B395", "#31A35495")
 mean_hex <- round(mean(sapply(with_data, `[[`, "hex_cat")))
 map_col <- hexes[mean_hex]
+if (is.na(map_col)) map_col <- "#A9A9A995"
 map_col_light <- gsub("95$", "20", map_col)
 
 # Necessary for the mapdeck
@@ -193,7 +193,6 @@ plotlies <- lapply(with_data, \(ind) {
 
 ```{r themes, echo = FALSE, warning = FALSE}
 
-
 mc_df_format <- function(df) {
     if (ncol(df) > 2) {
         stop("Only two columns needed. ID and variable.")
@@ -238,131 +237,142 @@ ordinal_form <- function(x) {
 
 all_themes <- unique(params$variables$theme[params$variables$pe_include])
 
+
 contents <- lapply(all_themes, \(t) {
-  
-  vars <- params$variables$var_code[params$variables$theme == t &
-                                      params$variables$pe_include]
-  
-  # Create all the cards
-  cards <- lapply(vars, \(var) {
-scale_df <- sf::st_drop_geometry(scale_df)
-
-# Construct the variable with the most recent year
-date <- max(params$variables$dates[params$variables$var_code == var][[1]])
-v <- c(var, paste0(var, "_q3"), paste0(var, "_q5"))
-v <- if (is.na(date)) {
-  v
-} else {
-  paste(v, date, sep = "_")
-}
-type <- unlist(params$variables$type[params$variables$var_code == var])
-# If the column does not exist, return nothing
-if (!v[[1]] %in% names(scale_df)) return(NULL)
-
-# Construct the class of the variable and the data needed for the 
-# text function
-var_class <- structure(v[[1]], class = type)
-df <- sprintf("%s_%s", params$region, params$df)
-data <- scale_df[c("ID", v)]
-names(data)[2:4] <- c("var_left", "var_left_q3", "var_left_q5")
-
-# Some type need to have access to the parent string. The function in Curbcut
-# will search in the global environent if it's not able to load the `data`.
-parent_string <- variables$parent_vec[variables$var_code == var]
-if (!is.na(parent_string) & !parent_string %in% c("population", "households")) { 
-  date <- max(params$variables$dates[params$variables$var_code == parent_string][[1]])
-  parent_string <- if (is.na(date)) {
-    parent_string
-  } else {
-    paste(parent_string, date, sep = "_")
-  }
-}
-pv <- which(names(scale_df) == parent_string)
-to_assign_global_env <- scale_df[c(1:which(names(scale_df) == "households"), pv)]
-assign(df, to_assign_global_env, envir = .GlobalEnv)
-
-# Construct the text
-text <- curbcut:::explore_text_values_q5(var = var_class, region = params$region,
-                                         select_id = params$select_id, data = data,
-                                         df = df)$text
-text <- stringr::str_to_sentence(text)
-
-    if (!is.na(date)) {
-      text <- sprintf("%s. <i>(Data from %s.)</i>", text, date)
+    
+    vars <- params$variables$var_code[params$variables$theme == t &
+                                          params$variables$pe_include]
+    
+    # Create all the cards
+    cards <- lapply(vars, \(var) {
+        scale_df <- params$scale_df
+        scale_df <- sf::st_drop_geometry(scale_df)
+        
+        # Necessary so `curbcut` functions work
+        assign("variables", params$variables, envir = .GlobalEnv)
+        
+        # Construct the variable with the most recent year
+        date <- max(params$variables$dates[params$variables$var_code == var][[1]])
+        v <- c(var, paste0(var, "_q3"), paste0(var, "_q5"))
+        v <- if (is.na(date)) {
+            v
+        } else {
+            paste(v, date, sep = "_")
+        }
+        type <- unlist(params$variables$type[params$variables$var_code == var])
+        title <- params$variables$var_title[params$variables$var_code == var]
+        # If the column does not exist, return nothing
+        if (!v[[1]] %in% names(scale_df)) return(NULL)
+        
+        # Construct the class of the variable and the data needed for the 
+        # text function
+        var_class <- structure(v[[1]], class = type)
+        df <- sprintf("%s_%s", params$region, params$df)
+        data <- scale_df[c("ID", v)]
+        names(data)[2:4] <- c("var_left", "var_left_q3", "var_left_q5")
+        
+        # Some type need to have access to the parent string. The function in Curbcut
+        # will search in the global environent if it's not able to load the `data`.
+    parent_string <- variables$parent_vec[variables$var_code == var]
+    if (!is.na(parent_string) & !parent_string %in% c("population", "households")) { 
+      date <- max(params$variables$dates[params$variables$var_code == parent_string][[1]])
+      parent_string <- if (is.na(date)) {
+        parent_string
+      } else {
+        paste(parent_string, date, sep = "_")
+      }
     }
+    pv <- which(names(scale_df) == parent_string)
+    id_to_households <- 1:which(names(scale_df) == "households")
     
-    # Do what is needed for the colouring
-    out <- params$scale_df[c("ID", v)]
-    out <- sf::st_drop_geometry(out)
-    out <- mc_df_format(out[1:2])
+    to_assign_global_env <- scale_df[unique(c(id_to_households, pv))]
+    assign(df, to_assign_global_env, envir = .GlobalEnv)
     
-    percentile <- out$percentile[out$ID == params$select_id]
+    # Construct the text
+    # If the data is NA, return nothing
+    if (is.na(data$var_left[data$ID == params$select_id])) return(NULL)
+        text <- curbcut:::explore_text_values_q5(var = var_class, region = params$region,
+                                                 select_id = params$select_id, data = data,
+                                                 df = df, lang = "en")$text
+        text <- stringr::str_to_sentence(text)
+        
+        if (!is.na(date)) {
+            text <- sprintf("%s. <i>(Data from %s.)</i>", text, date)
+        }
+        
+        # Do what is needed for the colouring
+        out <- params$scale_df[c("ID", v)]
+        out <- sf::st_drop_geometry(out)
+        out <- mc_df_format(out[1:2])
+        
+        percentile <- out$percentile[out$ID == params$select_id]
+        if (is.na(percentile)) return(NULL)
+        
+        color <- (\(x) {
+            x <- abs(percentile - 0.5)
+            if (x >= 0.4) return(1)
+            if (x >= 0.3) return(2)
+            if (x >= 0.2) return(3)
+            if (x >= 0.1) return(4)
+            if (x >= 0) return(5)
+            return("no_data")
+        })()
+        
+        plot <- 
+            ggplot2::ggplot(out[1:2]) +
+            ggplot2::geom_density(ggplot2::aes(x = var), size = 0.3, color = "#48494B") +
+            ggplot2::geom_vline(ggplot2::aes(xintercept = out$var[out$ID == params$select_id]), color = "#000000", linewidth = 0.15,
+                                alpha = 1) +
+            ggplot2::theme_void(base_size = 100)
+        # Make the ggplot HTML friendly
+        tmp <- tempfile(fileext = ".png")
+        ggplot2::ggsave(plot = plot, filename = tmp, width = 110, height = 50,
+                        units = "px")
+        
+        txt <- RCurl::base64Encode(readBin(tmp, "raw", file.info(tmp)[1, "size"]), "txt")
+        myImage <- htmltools::HTML(sprintf('<img src="data:image/png;base64,%s">', txt))
+        
+        
+        list(box = bslib::value_box(
+            title = htmltools::p(title),
+            value = paste0(ordinal_form(percentile), " percentile"),
+            showcase = myImage ,
+            htmltools::p(htmltools::HTML(text)),
+            full_screen = FALSE,
+            theme_color = paste0("tab_class_", color)
+        ),
+        ranking = abs(percentile - 0.5))
+        
+    })
     
-    color <- (\(x) {
-      x <- abs(percentile - 0.5)
-      if (x >= 0.4) return(1)
-      if (x >= 0.3) return(2)
-      if (x >= 0.2) return(3)
-      if (x >= 0.1) return(4)
-      if (x >= 0) return(5)
-      return("no_data")
-    })()
+    cards <- cards[!sapply(cards, is.null)]
+    if (length(cards) == 0) return(NULL)
     
-    plot <- 
-      ggplot2::ggplot(out[1:2]) +
-      ggplot2::geom_density(ggplot2::aes(x = var), size = 0.3, color = "#48494B") +
-      ggplot2::geom_vline(ggplot2::aes(xintercept = out$var[out$ID == params$select_id]), color = "#000000", linewidth = 0.15,
-                          alpha = 1) +
-      ggplot2::theme_void(base_size = 100)
-    # Make the ggplot HTML friendly
-    tmp <- tempfile(fileext = ".png")
-    ggplot2::ggsave(plot = plot, filename = tmp, width = 110, height = 50,
-                    units = "px")
+    # Order the cards in order of relevance (highest/lowest percentile)
+    ranks <- sapply(cards, `[[`, "ranking")
+    ranking <- mean(ranks)
+    ordered_index <- order(ranks, decreasing = TRUE)
+    cards_ordered <- cards[ordered_index]
     
-    txt <- RCurl::base64Encode(readBin(tmp, "raw", file.info(tmp)[1, "size"]), "txt")
-    myImage <- htmltools::HTML(sprintf('<img src="data:image/png;base64,%s">', txt))
+    # Extract cards for main card / outliers
+    main_card_boxes_outliers <- cards_ordered[sapply(cards_ordered, `[[`, "ranking") > 0.40]
+    main_card_boxes_outliers <- lapply(main_card_boxes_outliers, `[[`, "box")
+    if (length(main_card_boxes_outliers) > 2) main_card_boxes_outliers <- main_card_boxes_outliers[1:2]
     
+    # Extract cards for main card / normal
+    main_card_boxes_normal <- cards_ordered[sapply(cards_ordered, `[[`, "ranking") < 0.10]
+    main_card_boxes_normal <- lapply(main_card_boxes_normal, `[[`, "box")
+    if (length(main_card_boxes_normal) > 2) main_card_boxes_normal <- main_card_boxes_normal[1:2]
     
-    list(box = bslib::value_box(
-      title = htmltools::p(title),
-      value = paste0(ordinal_form(percentile), " percentile"),
-      showcase = myImage ,
-      htmltools::p(htmltools::HTML(text)),
-      full_screen = FALSE,
-      theme_color = paste0("tab_class_", color)
-    ),
-    ranking = abs(percentile - 0.5))
+    # Only keep the boxes
+    cards_ordered <- lapply(cards_ordered, `[[`, "box")
     
-  })
-  
-  cards <- cards[!sapply(cards, is.null)]
-  if (length(cards) == 0) return(NULL)
-  
-  # Order the cards in order of relevance (highest/lowest percentile)
-  ranks <- sapply(cards, `[[`, "ranking")
-  ranking <- mean(ranks)
-  ordered_index <- order(ranks, decreasing = TRUE)
-  cards_ordered <- cards[ordered_index]
-  
-  # Extract cards for main card / outliers
-  main_card_boxes_outliers <- cards_ordered[sapply(cards_ordered, `[[`, "ranking") > 0.40]
-  main_card_boxes_outliers <- lapply(main_card_boxes_outliers, `[[`, "box")
-  if (length(main_card_boxes_outliers) > 2) main_card_boxes_outliers <- main_card_boxes_outliers[1:2]
-  
-  # Extract cards for main card / normal
-  main_card_boxes_normal <- cards_ordered[sapply(cards_ordered, `[[`, "ranking") < 0.10]
-  main_card_boxes_normal <- lapply(main_card_boxes_normal, `[[`, "box")
-  if (length(main_card_boxes_normal) > 2) main_card_boxes_normal <- main_card_boxes_normal[1:2]
-  
-  # Only keep the boxes
-  cards_ordered <- lapply(cards_ordered, `[[`, "box")
-  
-  # Create the layout
-  cards_ordered <- do.call(bslib::layout_column_wrap, c(list(width = 1/2), unname(cards_ordered)))
-  list(nav = bslib::nav(t, htmltools::br(), bslib::card_body_fill(cards_ordered)),
-       ranking = ranking,
-       main_card_boxes_outliers = main_card_boxes_outliers,
-       main_card_boxes_normal = main_card_boxes_normal)
+    # Create the layout
+    cards_ordered <- do.call(bslib::layout_column_wrap, c(list(width = 1/2), unname(cards_ordered)))
+    list(nav = bslib::nav(t, htmltools::br(), bslib::card_body_fill(cards_ordered)),
+         ranking = ranking,
+         main_card_boxes_outliers = main_card_boxes_outliers,
+         main_card_boxes_normal = main_card_boxes_normal)
 })
 
 contents <- contents[!sapply(contents, is.null)]
