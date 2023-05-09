@@ -18,7 +18,8 @@ add_module(
   var_left = NULL,
   dates = NULL,
   main_dropdown_title = NA_character_,
-  var_right = NULL
+  var_right = NULL,
+  suffix_zoom_levels = NA_character_
 )
 }
 \arguments{
@@ -85,6 +86,14 @@ dropdown label.}
 
 \item{var_right}{<\verb{character vector}> Character vector of variable codes that
 there should be in the 'compare' dropdown of the page.}
+
+\item{suffix_zoom_levels}{<\verb{character vector}> Add suffix to the desired zoom
+levels of the user. Example: If the user wants to view the CMA region, but the
+data of the page is only available at the CT scale maximum, we can create a
+new zoom level named \code{max_zoom_levels_CMA_max_CT} using
+\code{\link{map_zoom_levels_create_custom}} with the CT being the maximum scale.
+The value of this argument is 'max_CT' (the suffix we appended to the
+zoom level name). Defaults to \code{NA_character_} (no suffix).}
 }
 \value{
 The same \code{modules} data.frame fed, with the added row.

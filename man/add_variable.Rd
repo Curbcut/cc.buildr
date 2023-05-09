@@ -93,11 +93,24 @@ private households (denominator of the percentage) : \code{private_households}.}
 variable belongs. e.g. for the variable accessibility to public schools by bike,
 the group_name would be \code{"Accessibility to schools"}}
 
-\item{group_diff}{<\verb{named list}> A named list for when the variable is part
-of a greater group. e.g. accessibility to public schools by bike, the bigger group
-is \verb{Accessibility to schools}, and bike is a group differentiation.
-e.g. The \code{list("Mode of transport" = "By bike", "Public/Prviate" = "Public")}.
-The list can contain multiple named vectors, multiple group differentiation.}
+\item{group_diff}{<\verb{named list}> A named list is used to represent a variable
+that is part of a larger group. For example, when considering accessibility
+to public schools by bike, the larger group is Accessibility to schools, and
+the mode of transport (bike) differentiates the subgroups. The list can be
+constructed as follows: list("Mode of transport" = "By bike", "Public/Private" =
+"Public") This list may contain multiple named vectors, each representing a
+different subgroup. By default, these groups will be displayed in a dropdown
+menu. If you prefer a slider, you should include the 'slider' class to the
+corresponding list element value. The element should be a factor with properly
+ordered levels. For example, let's say you are working with the shelter cost
+to income ratio. Create a named list with a 'Shelter cost' key and a factor
+value of '>30\%', with the following levels (which is the order you want
+displayed on the slider): c('>0\%', '>30\%', '>50\%', '>80\%'). Add the 'slider'
+class to the value, so it is displayed as a slider. Example:
+list("Gender" = "Female",
+"Shelter cost to income ratio)" = structure(
+factor(">0\%", levels = c(">0\%", ">30\%", ">50\%", ">80\%")),
+class = "slider"))}
 
 \item{theme}{<\code{character}> The theme to which the variable belongs, e.g. "Housing",
 "Urban life", ...}

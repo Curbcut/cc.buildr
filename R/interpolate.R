@@ -225,13 +225,14 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
               # look if the ID columns are identical and if they are, use cbind by
               # taking out the ID column of the right table. If the ID column is not
               # identical, use the merge function.
-              merg_ <- \(x, y) {
+              merg_ <- function(x, y) {
                 x <- x[!is.na(x$ID), ]
                 y <- y[!is.na(y$ID), ]
-                if (identical(x[[2]], y[[2]])) {
-                  cbind(x, y[1])
-                } else {
-                  merge(x, y)
+                if (identical(x$ID, y$ID)) {
+                  cbind(x, y[2])
+                }
+                else {
+                  merge(x, y, by = "ID")
                 }
               }
               Reduce(merg_, summarized)
@@ -297,13 +298,14 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
                 # look if the ID columns are identical and if they are, use cbind by
                 # taking out the ID column of the right table. If the ID column is not
                 # identical, use the merge function.
-                merg_ <- \(x, y) {
+                merg_ <- function(x, y) {
                   x <- x[!is.na(x$ID), ]
                   y <- y[!is.na(y$ID), ]
-                  if (identical(x[[2]], y[[2]])) {
-                    cbind(x, y[1])
-                  } else {
-                    merge(x, y)
+                  if (identical(x$ID, y$ID)) {
+                    cbind(x, y[2])
+                  }
+                  else {
+                    merge(x, y, by = "ID")
                   }
                 }
                 Reduce(merg_, summarized)
@@ -462,13 +464,14 @@ interpolate_from_area <- function(to, from,
     # look if the ID columns are identical and if they are, use cbind by
     # taking out the ID column of the right table. If the ID column is not
     # identical, use the merge function.
-    merg_ <- \(x, y) {
+    merg_ <- function(x, y) {
       x <- x[!is.na(x$ID), ]
       y <- y[!is.na(y$ID), ]
-      if (identical(x[[2]], y[[2]])) {
-        cbind(x, y[1])
-      } else {
-        merge(x, y)
+      if (identical(x$ID, y$ID)) {
+        cbind(x, y[2])
+      }
+      else {
+        merge(x, y, by = "ID")
       }
     }
     Reduce(merg_, summarized)

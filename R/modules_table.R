@@ -25,7 +25,8 @@ append_empty_modules_table <- function(scales) {
       var_left = list(),
       dates = list(),
       main_dropdown_title = character(),
-      var_right = list()
+      var_right = list(),
+      suffix_zoom_levels = character()
     )
 
   c(scales, list(modules = modules))
@@ -65,14 +66,24 @@ append_empty_modules_table <- function(scales) {
 #' variable belongs. e.g. for the variable accessibility to public schools by bike,
 #' the group_name would be \code{"Accessibility to schools"}. This will be one of
 #' the values in the main dropdown.
-#' * group_diff <`named list`> A named list for when the variable is part
-#' of a greater group. e.g. accessibility to public schools by bike, the bigger group
-#' is `Accessibility to schools`, and bike is a group differentiation.
-#' e.g. The \code{list("Mode of transport" = "By bike", "Public/Prviate" = "Public")}.
-#' The list can contain multiple named vectors, multiple group differentiation. In the
-#' case of the example, two dropdowns will be added dynamically: Modes of transport
-#' and Public/Private, which will include all the values of the variables sharing
-#' the same `group_name`.
+#' * group_diff <`named list`> A named list is used to represent a variable
+#' that is part of a larger group. For example, when considering accessibility
+#' to public schools by bike, the larger group is Accessibility to schools, and
+#' the mode of transport (bike) differentiates the subgroups. The list can be
+#' constructed as follows: list("Mode of transport" = "By bike", "Public/Private" =
+#' "Public") This list may contain multiple named vectors, each representing a
+#' different subgroup. By default, these groups will be displayed in a dropdown
+#' menu. If you prefer a slider, you should include the 'slider' class to the
+#' corresponding list element value. The element should be a factor with properly
+#' ordered levels. For example, let's say you are working with the shelter cost
+#' to income ratio. Create a named list with a 'Shelter cost' key and a factor
+#' value of '>30%', with the following levels (which is the order you want
+#' displayed on the slider): c('>0%', '>30%', '>50%', '>80%'). Add the 'slider'
+#' class to the value, so it is displayed as a slider. Example:
+#' list("Gender" = "Female",
+#'      "Shelter cost to income ratio)" = structure(
+#'        factor(">0%", levels = c(">0%", ">30%", ">50%", ">80%")),
+#'        class = "slider"))
 #' @param dates <`numeric vector`> In the case where var_left is used, supply a umeric
 #' vector of dates. NULL if there are no dates for the variables. This will create
 #' a time slider widget on the module.
@@ -81,6 +92,13 @@ append_empty_modules_table <- function(scales) {
 #' dropdown label.
 #' @param var_right <`character vector`> Character vector of variable codes that
 #' there should be in the 'compare' dropdown of the page.
+#' @param suffix_zoom_levels <`character vector`> Add suffix to the desired zoom
+#' levels of the user. Example: If the user wants to view the CMA region, but the
+#' data of the page is only available at the CT scale maximum, we can create a
+#' new zoom level named `max_zoom_levels_CMA_max_CT` using
+#' \code{\link{map_zoom_levels_create_custom}} with the CT being the maximum scale.
+#' The value of this argument is 'max_CT' (the suffix we appended to the
+#' zoom level name). Defaults to `NA_character_` (no suffix).
 #'
 #'
 #' @return The same `modules` data.frame fed, with the added row.
@@ -89,7 +107,7 @@ add_module <- function(modules, id, theme = "", nav_title, title_text_title,
                        title_text_main,
                        title_text_extra, metadata, dataset_info, regions = NULL,
                        var_left = NULL, dates = NULL, main_dropdown_title = NA_character_,
-                       var_right = NULL) {
+                       var_right = NULL, suffix_zoom_levels = NA_character_) {
 
   if (is.data.frame(var_left)) {
     if (!all(names(var_left) == c("var_code", "group_name", "group_diff"))) {
@@ -112,7 +130,8 @@ add_module <- function(modules, id, theme = "", nav_title, title_text_title,
     var_left = list(var_left),
     dates = list(dates),
     main_dropdown_title = main_dropdown_title,
-    var_right = list(var_right)
+    var_right = list(var_right),
+    suffix_zoom_levels = suffix_zoom_levels
   )
 
 }
