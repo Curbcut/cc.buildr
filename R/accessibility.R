@@ -20,7 +20,7 @@
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
 #' @param pe_include <`character vector`> Which final variables should appear
-#' in the place explorer. Defaults to `c("access_foot_20_education_elementary", "access_foot_20_communitycentres_individual", "access_foot_15_fooddistribution_grocery", "access_car_10_healthcare_hospitals")`.
+#' in the place explorer. Defaults to `c("access_foot_20_educational_elementary", "access_foot_20_communitycentres_individual", "access_foot_15_fooddistribution_grocery", "access_car_10_healthcare_hospitals")`.
 #'
 #' @return A list containing the scales, variables, and modules tables.
 #' @export
@@ -30,7 +30,8 @@ ba_accessibility_points <- function(scales_variables_modules,
                                     traveltimes,
                                     time_intervals = which(1:60 %% 5 == 0),
                                     pe_include = c(
-                                      "access_foot_20_education_elementary",
+                                      "access_foot_20_educational_elementary",
+                                      "access_bicycle_20_educational_secondary",
                                       "access_foot_20_cultural_total",
                                       "access_foot_15_food_grocery",
                                       "access_car_10_healthcare_hospitals"

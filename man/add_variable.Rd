@@ -29,7 +29,8 @@ add_variable(
   rankings_chr = c("exceptionally low", "unusually low", "just about average",
     "unusually high", "exceptionally high"),
   var_measurement = data.frame(df = avail_df, measurement = rep("scalar",
-    length(avail_df)))
+    length(avail_df))),
+  allow_title_duplicate = FALSE
 )
 }
 \arguments{
@@ -170,6 +171,14 @@ Other example: survey responses with options like 'Strongly disagree', 'Disagree
 order or ranking is possible. Qualitative variables. Example: animal types,
 such as 'Mammal', 'Bird', 'Reptile', 'Fish'.}
 }}
+
+\item{allow_title_duplicate}{<\code{logical}> It is necessary to not have variable title
+duplicates in the same dropdown menu, as the title is what is displayed to the
+user. If there is a duplicate, the user will be selecting two variable codes
+when selection a unique dropdown choice, and it will crash the app. Defaults
+to \code{FALSE}. If you are certain the duplicated variable title will never be
+used in a dropdown (ex. it is a parent variable), then switch to \code{TRUE} at
+your own risks.}
 }
 \value{
 The same \code{variables} data.frame fed, with the added row.

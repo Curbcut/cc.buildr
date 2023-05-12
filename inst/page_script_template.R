@@ -25,6 +25,9 @@ default_region <- modules$regions[modules$id == "__id__"][[1]][1]
     # Map
     curbcut::map_UI(NS(id, id)),
 
+    # Tutorial
+    curbcut::tutorial_UI(id = shiny::NS(id, id)),
+
     # Change view (Map/Data/Place explorer)
     curbcut::panel_view_UI(id = NS(id, id)),
 
@@ -137,6 +140,12 @@ default_region <- modules$regions[modules$id == "__id__"][[1]][1]
       vars = vars,
       time = time,
       data = data)
+
+    # Tutorial
+    curbcut::tutorial_server(
+      id = id,
+      r = r
+    )
 
     # Legend
     curbcut::legend_server(

@@ -156,6 +156,13 @@ append_empty_variables_table <- function(scales_consolidated) {
 #'  order or ranking is possible. Qualitative variables. Example: animal types,
 #'  such as 'Mammal', 'Bird', 'Reptile', 'Fish'.}
 #' }
+#' @param allow_title_duplicate <`logical`> It is necessary to not have variable title
+#' duplicates in the same dropdown menu, as the title is what is displayed to the
+#' user. If there is a duplicate, the user will be selecting two variable codes
+#' when selection a unique dropdown choice, and it will crash the app. Defaults
+#' to `FALSE`. If you are certain the duplicated variable title will never be
+#' used in a dropdown (ex. it is a parent variable), then switch to `TRUE` at
+#' your own risks.
 #'
 #' @return The same `variables` data.frame fed, with the added row.
 #' @export
@@ -171,7 +178,8 @@ add_variable <- function(variables, var_code, type, var_title,
                                           "exceptionally high"),
                          var_measurement = data.frame(
                            df = avail_df,
-                           measurement = rep("scalar", length(avail_df)))) {
+                           measurement = rep("scalar", length(avail_df))),
+                         allow_title_duplicate = FALSE) {
   if (var_code %in% variables$var_code) {
     stop(paste0("`", var_code, "` is a duplicate."))
   }
@@ -180,8 +188,14 @@ add_variable <- function(variables, var_code, type, var_title,
     stop(paste0("`", var_code, "` is already a `var_code` present in the variables table."))
 
   # Necessary to not have issues with the dropdowns (unique title can't hold 2 variables)
-  if (var_title %in% variables$var_title)
-    stop(paste0("`", var_title, "` is already a `var_title` present in the variables table."))
+  if (!allow_title_duplicate) {
+    if (var_title %in% variables$var_title)
+      stop(paste0("`", var_title, "` is already a `var_title` present in the variables table. ",
+                  "If the variable is a parent variable and will never be used in the ",
+                  "dropdown along with the other variable sharing the same title, use the ",
+                  "argument `allow_title_duplicate`."))
+  }
+
 
   # If NULL is supplied, revert to the default
   if (all(is.null(rankings_chr))) {

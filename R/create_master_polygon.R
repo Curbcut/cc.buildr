@@ -74,6 +74,7 @@ create_master_polygon <- function(all_regions, crs = NULL) {
     level = "PR", geo_format = "sf",
     quiet = TRUE
   )
+  master_polygon <- sf::st_make_valid(master_polygon)
   master_polygon_centroid <- sf::st_centroid(master_polygon)
   prov_code <- sf::st_intersection(provinces, master_polygon_centroid)$GeoUID
 
