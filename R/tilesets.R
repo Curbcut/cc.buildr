@@ -928,6 +928,13 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
       call. = FALSE
     )
   }
+  
+  # Reset tilesets
+  street_tiles <- paste0(prefix, c("_street_1", "_street_2", "_street_3"))
+  lapply(street_tiles, tileset_delete_tileset_source, 
+         username = username, access_token = access_token)
+  lapply(street_tiles, tileset_delete_tileset, 
+         username = username, access_token = access_token)
 
   # Subset the street in groups
   street_1 <- street[street$rank %in% c(1, 2, 3), "ID"]
