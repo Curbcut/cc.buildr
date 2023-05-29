@@ -4,7 +4,7 @@
 \alias{save_short_tables_qs}
 \title{Save short tables as .qsm (regions regrouped)}
 \usage{
-save_short_tables_qs(data_folder = "data/", all_scales)
+save_short_tables_qs(data_folder = "data/", all_scales, skip_scales = c())
 }
 \arguments{
 \item{data_folder}{<\code{character}> Where the \code{.qsm} files should be
@@ -13,6 +13,11 @@ written to. Defaults to \verb{data/}.}
 \item{all_scales}{<\verb{named list}> A named list of sf data.frame
 containing all scales listed with their regions, normally
 \code{scales_variables_modules$scales}.}
+
+\item{skip_scales}{<\verb{character vector}> Scales to skip (not to keep as
+a short table). These scales should be saved as a sqlite database instead, if
+they are too large to be kept on memory. Defaults to an empty vector, no
+scales are skipped.}
 }
 \value{
 Returns an error or nothing if ran successfully. Every \code{region} is

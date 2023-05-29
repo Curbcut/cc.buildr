@@ -818,27 +818,30 @@ placeex_main_card_rmd <- function(scales_variables_modules,
                 scale_df$name[n]
               }
 
-            rmarkdown::render(
-              new_rmd,
-              output_file = output_file,
-              params = list(
-                title = title,
-                select_id = ID,
-                region = region,
-                df = scale_name,
-                scale_sing = paste(
-                  scale_sing,
-                  if (lan == "en") "(count)" else if (lan == "fr") "(compte)"
-                ),
-                tileset_prefix = tileset_prefix,
-                map_loc = map_loc,
-                map_zoom = map_zoom,
-                mapbox_username = mapbox_username,
-                title_card_data = title_card_data,
-                variables = variables,
-                scale_df = sf::st_drop_geometry(scale_df)
-              ), envir = new.env(), quiet = TRUE
-            )
+            tryCatch(
+              rmarkdown::render(
+                new_rmd,
+                output_file = output_file,
+                params = list(
+                  title = title,
+                  select_id = ID,
+                  region = region,
+                  df = scale_name,
+                  scale_sing = paste(
+                    scale_sing,
+                    if (lan == "en") "(count)" else if (lan == "fr") "(compte)"
+                  ),
+                  tileset_prefix = tileset_prefix,
+                  map_loc = map_loc,
+                  map_zoom = map_zoom,
+                  mapbox_username = mapbox_username,
+                  title_card_data = title_card_data,
+                  variables = variables,
+                  scale_df = sf::st_drop_geometry(scale_df)
+                ), envir = new.env(), quiet = TRUE
+              ), error = function(e) {
+                stop(sprintf("Rmarkdown render crashed at file %s", geo_sc_id))
+              })
 
             # Remove header (too heavy)
             x <- readLines(output_file)

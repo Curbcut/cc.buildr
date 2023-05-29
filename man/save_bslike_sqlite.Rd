@@ -7,7 +7,8 @@
 save_bslike_sqlite(
   scale_chr,
   path = sprintf("data/\%s.sqlite", scale_chr),
-  all_scales
+  all_scales,
+  keep_cols = c("ID", "name", "name_2", "DA_ID")
 )
 }
 \arguments{
@@ -19,6 +20,9 @@ save_bslike_sqlite(
 \item{all_scales}{<\verb{named list}> A named list of sf data.frame
 containing all scales listed with their regions, normally
 \code{scales_variables_modules$scales}.}
+
+\item{keep_cols}{<\verb{character vector}> Column names to keep in the sqlite
+database.}
 }
 \value{
 Returns an error or nothing if ran successfully. All existing \code{scale_chr}

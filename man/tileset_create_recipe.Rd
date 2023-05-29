@@ -34,7 +34,7 @@ the features in the tileset should be visible.}
 (in KiB) of the tile layer}
 
 \item{simp_zoom}{<\verb{named numeric vector}> At which zoom should the simplification
-starts taking place.}
+starts taking place. To understand simplification, visit https://docs.mapbox.com/mapbox-tiling-service/reference/#feature-simplification}
 
 \item{simp_value}{<\verb{named numeric vector}> The simplification value. The normal
 default simplification value is 4. The \code{simp_value} will take place for zoom

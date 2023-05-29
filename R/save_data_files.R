@@ -10,12 +10,14 @@
 #' @param all_scales <`named list`> A named list of sf data.frame
 #' containing all scales listed with their regions, normally
 #' `scales_variables_modules$scales`.
+#' @param keep_cols <`character vector`> Column names to keep in the sqlite
+#' database.
 #'
 #' @return Returns an error or nothing if ran successfully. All existing `scale_chr`
 #' data.frame in the fed `all_scales` are saved in the created `.sqlite`.
 #' @export
 save_bslike_sqlite <- function(scale_chr, path = sprintf("data/%s.sqlite", scale_chr),
-                               all_scales) {
+                               all_scales, keep_cols = c("ID", "name", "name_2", "DA_ID")) {
   # Save all scales in the same database
   if (file.exists(path)) unlink(path)
   scale_sql <- DBI::dbConnect(RSQLite::SQLite(), path)
@@ -29,22 +31,23 @@ save_bslike_sqlite <- function(scale_chr, path = sprintf("data/%s.sqlite", scale
         return()
       }
       geo_scale <- paste0(geo, "_", scale_chr)
-      df <- sf::st_drop_geometry(scale_df)[, c("ID", "name", "name_2", "DA_ID")]
+      df <- sf::st_drop_geometry(scale_df)
+      df <- df[keep_cols]
 
       if (geo_scale %in% DBI::dbListTables(scale_sql)) {
         DBI::dbRemoveTable(scale_sql, geo_scale)
       }
 
       DBI::dbWriteTable(scale_sql, "pre_pk_scale", df)
-      DBI::dbExecute(scale_sql, paste0(
-        "CREATE TABLE ", geo_scale,
-        " (ID VARCHAR, ",
-        "name VARCHAR, ",
-        "name_2 VARCHAR, ",
-        "DA_ID VARCHAR, ",
-        "CONSTRAINT ", scale_name, "_pk PRIMARY KEY (ID))"
-      ))
 
+      create_table <- paste0("CREATE TABLE ", geo_scale)
+      cols <- paste0(names(df), " VARCHAR,")
+      cols <- paste0(cols, collapse = " ")
+      end_cols <- paste0("CONSTRAINT ", scale_name, "_pk PRIMARY KEY (ID)")
+      collapsed <- paste0(create_table, " (", cols, " ", end_cols, ")")
+
+
+      DBI::dbExecute(scale_sql, collapsed)
       DBI::dbExecute(
         scale_sql,
         paste0(
@@ -169,11 +172,19 @@ save_all_scales_qs <- function(data_folder = "data/", all_scales, variables) {
   }, names(all_tables), all_tables)
 
   # Save the scales in the database
+  all_files <- list.files(data_folder, recursive = TRUE, full.names = TRUE)
   mapply(\(region, scales) {
     mapply(\(scale_name, tables) {
       mapply(\(table_name, table) {
         path <- sprintf("%s/%s/%s/%s.qs", data_folder,  region, scale_name, table_name)
-        qs::qsave(table, file = path)
+
+        if (path %in% all_files) {
+          old_table <- qs::qread(path)
+          if (!identical(table, old_table)) qs::qsave(table, file = path)
+        } else {
+          qs::qsave(table, file = path)
+        }
+
       }, names(tables), tables)
     }, names(scales), scales)
   }, names(qs_table_list), qs_table_list)
@@ -309,12 +320,17 @@ save_all_scales_sqlite <- function(data_folder = "data/", all_scales, variables)
 #' @param all_scales <`named list`> A named list of sf data.frame
 #' containing all scales listed with their regions, normally
 #' `scales_variables_modules$scales`.
+#' @param skip_scales <`character vector`> Scales to skip (not to keep as
+#' a short table). These scales should be saved as a sqlite database instead, if
+#' they are too large to be kept on memory. Defaults to an empty vector, no
+#' scales are skipped.
 #'
 #' @return Returns an error or nothing if ran successfully. Every `region` is
 #' its own `.qsm` file in which there are all the scales trimed down to only
 #' the columns from `ID` to `households` (NO data columns).
 #' @export
-save_short_tables_qs <- function(data_folder = "data/", all_scales) {
+save_short_tables_qs <- function(data_folder = "data/", all_scales,
+                                 skip_scales = c()) {
   mapply(\(scls, geo) {
     scls <- mapply(\(x, y) {
       d <- sf::st_drop_geometry(x)
@@ -323,6 +339,7 @@ save_short_tables_qs <- function(data_folder = "data/", all_scales) {
     }, scls, names(scls), SIMPLIFY = FALSE)
     scls <- scls[!sapply(scls, is.null)]
     if (length(scls) == 0) return(NULL)
+    scls <- scls[!names(scls) %in% skip_scales]
     names(scls) <- paste(geo, names(scls), sep = "_")
 
     for (i in seq_len(length(scls))) {
@@ -359,7 +376,7 @@ save_geometry_export <- function(data_folder = "data/", all_scales) {
     fun = \(geo = geo, scales = scales, scale_name = scale_name,
       scale_df = scale_df) {
       geo_scale <- paste(geo, scale_name, sep = "_")
-      out <- scale_df[, "ID"]
+      out <- scale_df[, grepl("ID$", names(scale_df))]
       file_link <- paste0(data_folder, "geometry_export/", geo_scale, ".qs")
       qs::qsave(out, file = file_link)
     }

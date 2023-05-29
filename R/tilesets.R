@@ -454,7 +454,35 @@ tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom,
     })
   }, all_tables, names(all_tables))
 
-  # TKTK CHECK IF ALL SCALES HAVE BEEN CORRECTLY UPLOADED
+  # Tweak buildings (unioned by DAs)
+  mapply(function(scales, geo) {
+    lapply(scales, function(scale) {
+      if (scale != "building") return(NULL)
+
+      geo_scale <- tn(geo, scale)
+      geo_scale <- paste0(geo_scale, "_DAagg")
+      df <- all_scales[[geo]][[scale]]
+      df <- df[, grepl("ID$", names(df))]
+      df <- df[, c("ID", "DA_ID")]
+      names(df) <- c("ID", "ID_color", "geometry")
+
+      # Union the buildings per DAs
+      df <- aggregate(df["geometry"], by = list(df$ID_color), \(x) {st_union(x)})
+      names(df) <- c("ID_color", "geometry")
+
+      df <- sf::st_cast(df, "MULTIPOLYGON")
+      df <- sf::st_make_valid(df)
+      df <- sf::st_transform(df, 4326)
+
+      tileset_upload_tile_source(
+        id = geo_scale,
+        df = df,
+        username = username,
+        access_token = access_token
+      )
+    })
+  }, all_tables, names(all_tables))
+
 
   # Create recipe, create tileset and publish
   maxzooms <-
@@ -475,14 +503,28 @@ tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom,
         name <- tn(geo, scale)
 
         recipe <-
-          tileset_create_recipe(
-            layer_names = name,
-            source = paste0("mapbox://tileset-source/", username, "/", name),
-            minzoom = 3,
-            maxzoom = maxzooms$maxzoom[maxzooms$scale == scale_for_dict],
-            layer_size = 2500,
-            recipe_name = name
-          )
+          if (scale == "building") {
+            tileset_create_recipe(
+              layer_names = c(paste0("building", "_DAagg"), "building"),
+              source =
+                c(building_DAagg = paste0("mapbox://tileset-source/", username, "/",
+                                          paste0(name, "_DAagg")),
+                  building = paste0("mapbox://tileset-source/", username, "/", name)),
+              minzoom = c(building_DAagg = 3, building = 12),
+              maxzoom = c(building_DAagg = 11, building = 16),
+              layer_size = c(building_DAagg = 2500, building = 2500),
+              recipe_name = name
+            )
+          } else {
+            tileset_create_recipe(
+              layer_names = name,
+              source = paste0("mapbox://tileset-source/", username, "/", name),
+              minzoom = 3,
+              maxzoom = maxzooms$maxzoom[maxzooms$scale == scale_for_dict],
+              layer_size = 2500,
+              recipe_name = name
+            )
+          }
 
         tileset_create_tileset(name,
                                recipe = recipe,
@@ -928,13 +970,6 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
       call. = FALSE
     )
   }
-  
-  # Reset tilesets
-  street_tiles <- paste0(prefix, c("_street_1", "_street_2", "_street_3"))
-  lapply(street_tiles, tileset_delete_tileset_source, 
-         username = username, access_token = access_token)
-  lapply(street_tiles, tileset_delete_tileset, 
-         username = username, access_token = access_token)
 
   # Subset the street in groups
   street_1 <- street[street$rank %in% c(1, 2, 3), "ID"]
@@ -945,6 +980,13 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
   street_1 <- sf::st_transform(street_1, 4326)
   street_2 <- sf::st_transform(street_2, 4326)
   street_3 <- sf::st_transform(street_3, 4326)
+
+  # Delete tilesets
+  ids <- paste0(prefix, "_street_", c(1:3))
+  lapply(ids, tileset_delete_tileset, username = username,
+         access_token = access_token)
+  lapply(ids, tileset_delete_tileset_source, username = username,
+         access_token = access_token)
 
   # Upload tile_source
   tileset_upload_tile_source(
@@ -962,6 +1004,19 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
   tileset_upload_tile_source_large(
     df = street_3,
     id = paste0(prefix, "_street_3"),
+    username = username,
+    access_token = access_token
+  )
+
+  # Upload an empty point
+  north_pole_coords <- c(90, 0)
+  north_pole <- sf::st_point(north_pole_coords, dim = "XY")
+  north_pole_sf <- sf::st_sf(data = tibble::tibble(name = "North Pole"),
+                             geometry = sf::st_sfc(north_pole), crs = 4326)
+
+  tileset_upload_tile_source(
+    df = north_pole_sf,
+    id = paste0(prefix, "_np"),
     username = username,
     access_token = access_token
   )
@@ -984,6 +1039,11 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
   park <- sf::st_set_agr(park, "constant")
   park <- park[park$leisure != "nature_reserve" & !is.na(park$leisure), "name"]
 
+  tileset_delete_tileset_source(
+    id = paste0(prefix, "_park"),
+    username = username,
+    access_token = access_token
+  )
   tileset_upload_tile_source(
     df = park,
     id = paste0(prefix, "_park"),
@@ -994,79 +1054,55 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
 
   # Create recipes
   # Street 1
-  recipe_street_1 <- paste0('
-{
-  "recipe": {
-    "version": 1,
-    "layers": {
-      "street": {
-        "source": "mapbox://tileset-source/', username, "/", prefix, '_street_1",
-        "minzoom": 12,
-        "maxzoom": 16,
-        "features": {
-          "simplification": [ "case",
-            [ "==", [ "zoom" ], 16 ], 1, 4
-          ]
-        }
-      }
-    }
-  },
-  "name": "', prefix, '_street_1"
-}
-')
+  source_names <- c("_street_1", "_np")
+  sources <- paste0("mapbox://tileset-source/", username, "/", prefix, source_names)
+  names(sources) <- source_names
+  minzooms <- c(9, 14)
+  names(minzooms) <- source_names
+  maxzooms <- c(13, 15)
+  names(maxzooms) <- source_names
+  recipe_street_1 <- tileset_create_recipe(
+    layer_names = source_names,
+    source = sources,
+    minzoom = minzooms,
+    maxzoom = maxzooms,
+    recipe_name = paste0(prefix, "_street_1")
+  )
 
   # Street 2
-  recipe_street_2 <- paste0('
-{
-  "recipe": {
-    "version": 1,
-    "layers": {
-      "street": {
-        "source": "mapbox://tileset-source/', username, "/", prefix, '_street_2",
-        "minzoom": 13,
-        "maxzoom": 16,
-        "features": {
-          "simplification": [ "case",
-            [ "==", [ "zoom" ], 16 ], 1, 4
-          ]
-        }
-      }
-    }
-  },
-  "name": "', prefix, '_street_2"
-}
-')
+  source_names <- c("_street_2", "_np")
+  sources <- paste0("mapbox://tileset-source/", username, "/", prefix, source_names)
+  names(sources) <- source_names
+  minzooms <- c(11, 14)
+  names(minzooms) <- source_names
+  maxzooms <- c(13, 15)
+  names(maxzooms) <- source_names
+  recipe_street_2 <- tileset_create_recipe(
+    layer_names = source_names,
+    source = sources,
+    minzoom = minzooms,
+    maxzoom = maxzooms,
+    recipe_name = paste0(prefix, "_street_2")
+  )
 
   # Street 3
-  recipe_street_3 <- paste0('
-{
-  "recipe": {
-    "version": 1,
-    "layers": {
-      "street": {
-        "source": "mapbox://tileset-source/', username, "/", prefix, '_street_3",
-        "minzoom": 14,
-        "maxzoom": 16,
-        "features": {
-          "simplification": [ "case",
-            [ "==", [ "zoom" ], 16 ], 1, 4
-          ]
-        }
-      },
-      "park": {
-        "source": "mapbox://tileset-source/', username, "/", prefix, '_park",
-        "minzoom": 14,
-        "maxzoom": 16
-      }
-    }
-  },
-  "name": "', prefix, '_street_3"
-}
-')
+  source_names <- c("_street_3", "_np")
+  sources <- paste0("mapbox://tileset-source/", username, "/", prefix, source_names)
+  names(sources) <- source_names
+  minzooms <- c(13, 14)
+  names(minzooms) <- source_names
+  maxzooms <- c(13, 15)
+  names(maxzooms) <- source_names
+  recipe_street_3 <- tileset_create_recipe(
+    layer_names = source_names,
+    source = sources,
+    minzoom = minzooms,
+    maxzoom = maxzooms,
+    recipe_name = paste0(prefix, "_street_3")
+  )
 
 
   # Publish tileset
-
   tileset_create_tileset(
     tileset = paste0(prefix, "_street_1"),
     recipe = recipe_street_1,

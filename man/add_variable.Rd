@@ -59,30 +59,35 @@ e.g. a higher 'percentage of private dwellings occupied by tenants'.}
 \item{exp_q5}{<\code{character}> String used for the explore panel explaining the
 variable. Depends on the \code{type}. The rules are:
 \itemize{
-\item{"pct"}{starts with a verb and follows the absolute count of the parent
+\item{"pct"}{Percentage. starts with a verb and follows the absolute count of the parent
 string. the string will read e.g. '50 households (3\%) are tenants' where
 \verb{are tenants} is the definition value.}
-\item{"dollar"}{starts with a subject and ends with a verb. It's assumed it
+\item{"count"}{Count. starts with a verb and follows the count string (with the
+'parent vector' which in this case is just a string). The string will
+read e.g. '50 households are tenants' where \verb{are tenants} is the definition value,
+and \code{households} is the parent vector string (at the parent_vec argument).}
+\item{"dollar"}{Currency (dollar). starts with a subject and ends with a verb. It's assumed it
 will be followed by a dollar number. e.g. 'the average rent is 800$' where
 \verb{the average rent is} is the definition value.}
-\item{"ind"}{starts with a verb and uses a place holder written \verb{_X_} which
+\item{"ind"}{Index. starts with a verb and uses a place holder written \verb{_X_} which
 would translates to, e.g. 'medium to high'. example: '50 households are living
 in areas with low potential for active living' where the definition would
 be: \verb{are living in areas with _X_ potential for active living}}
-\item{"avg"}{starts with a subject and uses a place holder written \verb{_X_} which
+\item{"avg"}{Average. starts with a subject and uses a place holder written \verb{_X_} which
 would translates to a number. example: 'the average resident has access to 30
 grocery stores within 15 minutes by walk' where the definition would be:
 \verb{the average resident has access to _X_ grocery stores within 15 minutes by walk}}
-\item{"sqkm"}{starts with a determinant and uses a placeholder written \verb{_X_} which
-translates to a number. example: 'the density of green alleys is 2.28 square
-metres per square kilometres' where the definition would be:
-\verb{the density of green alleys is _X_ square metres per square kilometres}
-}
-\item{"per1k"}{starts with a determinant and uses a placeholder written \verb{_X_} which
-translates to a number. example: 'the density of green alleys is 28.7 square
-metres per 1000 residents' where the definition would be:
-\verb{the density of green alleys is _X_ square metres per 1000 residents}
-}
+\item{"sqkm"}{X per square kilometres. starts with a determinant and uses a
+placeholder written \verb{_X_} which translates to a number. example: 'the density
+of green alleys is 2.28 square  metres per square kilometres' where the definition would be:
+\verb{the density of green alleys is _X_ square metres per square kilometres}}
+\item{"per1k"}{X per 1,000 residents. starts with a determinant and uses a
+placeholder written \verb{_X_} which translates to a number. example: 'the density
+of green alleys is 28.7 square metres per 1000 residents' where the definition would be:
+\verb{the density of green alleys is _X_ square metres per 1000 residents}}
+\item{"ppo"}{People per object. Can be a single word of the object.
+example: 'there are 4 people for every tree' where the definition of 'exp_q5'
+would be \code{tree}}
 }}
 
 \item{parent_vec}{<\code{character}> Parent vector of the variable. Used for

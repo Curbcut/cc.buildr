@@ -48,17 +48,20 @@ interpolate_fast_weighted_mean <- function(df, id_col, weight_col, value_col) {
 #' @param id_col <`character`> A string representing the name of the ID column
 #' in the input data frame.
 #' @param weight_col <`character`> A string representing the name of the weight
-#' column in the input data frame.
+#' column in the input data frame. Used only when the weight_col is using areas.
+#' Defaults to NULL.
 #'
 #' @return A data frame with two columns: the ID column (with the same name as
 #' in the input data frame) and a column containing the summed values, named
 #' after the input col_name.
-interpolate_fast_additive_sum <- function(col_name, data, id_col, weight_col) {
+interpolate_fast_additive_sum <- function(col_name, data, id_col, weight_col = NULL) {
   # Extract the necessary columns
   col_df <- data[c(id_col, col_name)]
 
   # Weight by
-  col_df[[col_name]] <- col_df[[col_name]] * data[[weight_col]]
+  if (!is.null(weight_col)) {
+    col_df[[col_name]] <- col_df[[col_name]] * data[[weight_col]]
+  }
 
   # Calculate the sum for each group
   summed_data <- stats::aggregate(col_df[, col_name],
@@ -213,7 +216,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
 
             # Calculate the sum for each column using lapply
             summarized_add <- lapply(additive_vars, interpolate_fast_additive_sum,
-                                     data = from, id_col = scale_id, weight_col = weight_by)
+                                     data = from, id_col = scale_id)
 
             # Concatenate both
             summarized <- c(summarized_avg, summarized_add)
@@ -286,7 +289,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
 
               # Calculate the sum for each column using lapply
               summarized_add <- lapply(additive_vars, interpolate_fast_additive_sum,
-                                       data = intersected, id_col = scale_id, weight_col = weight_by)
+                                       data = intersected, id_col = scale_id)
 
               # Concatenate both
               summarized <- c(summarized_avg, summarized_add)
@@ -546,7 +549,7 @@ interpolate_custom_geo <- function(data, all_scales, crs,
         data <- sf::st_transform(data, crs)
         scale_df <- sf::st_transform(scale_df, crs)
         if (mean(get_area(data), na.rm = TRUE) <=
-          mean(get_area(scale_df), na.rm = TRUE)) {
+          mean(get_area(scale_df), na.rm = TRUE) * 1.01) {
           scale_name
         } else {
           return()
