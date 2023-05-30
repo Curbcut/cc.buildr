@@ -381,6 +381,7 @@ tileset_create_recipe <- function(layer_names, source, minzoom, maxzoom,
 #' @param all_scales <`named list`> A named list of sf data.frame
 #' containing all scales listed with their regions, normally
 #' `scales_variables_modules$scales`.
+#' @param street <`sf data.frame`> All the streets in the zone under study.
 #' @param map_zoom_levels <`named list`> The previously created zoom levels
 #' using \code{\link[cc.buildr]{map_zoom_levels_create_all}} and
 #' \code{\link[cc.buildr]{map_zoom_levels_create_custom}}.
@@ -395,7 +396,7 @@ tileset_create_recipe <- function(layer_names, source, minzoom, maxzoom,
 #' @return Returns nothing if succeeds. Tilesets are created and published and
 #' ready to be used.
 #' @export
-tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom,
+tileset_upload_all <- function(all_scales, street, map_zoom_levels, tweak_max_zoom,
                                prefix, username, access_token) {
   tn <- function(geo, scale_name) paste(prefix, geo, scale_name, sep = "_")
 
@@ -418,6 +419,20 @@ tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom,
       )
     })
   }, names(all_tables), all_tables, SIMPLIFY = FALSE)
+
+  # Create a street SF to use as a difference with the choropleth
+  street$width <- ifelse(street$rank == 5, 4,
+                         ifelse(street$rank == 4, 8,
+                                15))
+
+  streets_layers <- split(street, street$width)
+  streets_layers <-
+    mapply(sf::st_buffer, streets_layers, as.numeric(names(streets_layers)),
+           SIMPLIFY = FALSE)
+  streets_layers <- Reduce(rbind, streets_layers)
+  streets_layers <- sf::st_union(streets_layers)
+  streets_layers <- sf::st_transform(streets_layers, 4326)
+  streets_layers <- sf::st_make_valid(streets_layers)
 
   # Tileset sources
   mapply(function(scales, geo) {
@@ -450,6 +465,19 @@ tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom,
                                    username = username,
                                    access_token = access_token
         )
+
+        # Addition of the clipped polygons
+        df <- sf::st_difference(df, streets_layers)
+
+        tileset_delete_tileset_source(paste0(geo_scale, "_clipped"),
+                                      username = username,
+                                      access_token = access_token
+        )
+        tileset_upload_tile_source(df,
+                                   id = paste0(geo_scale, "_clipped"),
+                                   username = username,
+                                   access_token = access_token
+        )
       }
     })
   }, all_tables, names(all_tables))
@@ -473,6 +501,13 @@ tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom,
       df <- sf::st_cast(df, "MULTIPOLYGON")
       df <- sf::st_make_valid(df)
       df <- sf::st_transform(df, 4326)
+
+      # Fresh source
+      tileset_delete_tileset_source(
+        id = geo_scale,
+        username = username,
+        access_token = access_token
+      )
 
       tileset_upload_tile_source(
         id = geo_scale,
@@ -516,12 +551,25 @@ tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom,
               recipe_name = name
             )
           } else {
+
+            source_names <- c(name, paste0(name, "_clipped"))
+            sources <- paste0("mapbox://tileset-source/", username, "/", source_names)
+            names(sources) <- source_names
+            minzooms <- c(3, 14)
+            names(minzooms) <- source_names
+
+            default_maxzoom <- maxzooms$maxzoom[maxzooms$scale == scale_for_dict]
+            new_maxzoom <- max(default_maxzoom, 14)
+            maxzooms_ <- c(13, new_maxzoom)
+            names(maxzooms_) <- source_names
+            layer_sizes <- c(2500, 2500)
+            names(layer_sizes) <- source_names
+
             tileset_create_recipe(
-              layer_names = name,
-              source = paste0("mapbox://tileset-source/", username, "/", name),
-              minzoom = 3,
-              maxzoom = maxzooms$maxzoom[maxzooms$scale == scale_for_dict],
-              layer_size = 2500,
+              layer_names = source_names,
+              source = sources,
+              minzoom = minzooms,
+              maxzoom = maxzooms_,
               recipe_name = name
             )
           }
@@ -551,26 +599,26 @@ tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom,
   }, all_tables, names(all_tables), SIMPLIFY = FALSE)
 
   # Function to calculate on autozoom when the scale starts and when it ends
-  calculate_zoom_levels <- function(zoom_levels) {
+  calculate_zoom_levels <- function(zoom_lvls) {
 
     # Initialize the output tibble
     result <- tibble::tibble(scale = character(), min_zoom = integer(),
                              max_zoom = integer())
 
     # Loop through the named numeric vector
-    for (i in seq_along(zoom_levels)) {
-      scale_name <- names(zoom_levels)[i]
-      zoom_value <- zoom_levels[i]
+    for (i in seq_along(zoom_lvls)) {
+      scale_name <- names(zoom_lvls)[i]
+      zoom_value <- zoom_lvls[i]
 
       # Calculate min zoom
       min_zoom <- ifelse(i == 1, 0, result$max_zoom[i - 1] + 1)
 
       # Calculate max zoom
       max_zoom <-
-        if (length(zoom_levels) == 1) {
+        if (length(zoom_lvls) == 1) {
           10
         } else {
-          ifelse(i == length(zoom_levels), zoom_value + 0.5, zoom_levels[i + 1] - 0.5)
+          ifelse(i == length(zoom_lvls), zoom_value + 0.5, zoom_lvls[i + 1] - 0.5)
         }
 
 
@@ -583,6 +631,9 @@ tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom,
     return(result)
   }
 
+  all_sources <- tileset_list_tile_sources(username = username,
+                                           access_token = access_token)
+  all_clipped <- all_sources$id[grepl("_clipped$", all_sources$id)]
 
   auto_zoom_recipes <-
     mapply(\(geo, zoom_levels) {
@@ -605,6 +656,49 @@ tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom,
 
         layer_sizes <-
           stats::setNames(rep(NA, length(scale_names)), scale_names)
+
+        # Add 'clipped' polygons for layers over 14, if they exist
+        touch_14th <- c(names(minzooms[minzooms >= 14]),
+                        names(maxzooms[maxzooms >= 14]),
+                        names(mzl)[length(mzl)])
+        touch_14th <- unique(touch_14th)
+
+        if (length(touch_14th) > 0) {
+
+          exist_clipped <- touch_14th[sapply(touch_14th, \(x) {
+            sum(grepl(x, all_clipped)) > 0
+          })]
+
+          if (length(exist_clipped) > 0) {
+
+            for (ec in exist_clipped) {
+              lay <- names(mzl)[sapply(paste0(names(mzl), "$"), grepl, ec)]
+              lay_c <- paste0(lay, "_clipped")
+
+              mzl <- c(mzl, new = 13.5)
+              names(mzl)[length(mzl)] <- lay_c
+              mzl <- mzl[order(mzl)]
+              mzl[names(mzl) == lay] <-  mzl[names(mzl) == lay]
+            }
+
+            # Remake the zoom levels
+            scale_names <- tn(geo, names(mzl))
+            zooms <- calculate_zoom_levels(mzl)
+            minzooms <- zooms$min_zoom
+            maxzooms <- zooms$max_zoom
+            names(minzooms) <- scale_names
+            names(maxzooms) <- scale_names
+            layer_sizes <-
+              stats::setNames(rep(NA, length(scale_names)), scale_names)
+
+            # Remake the sources
+            sources <- stats::setNames(paste0(
+              "mapbox://tileset-source/", username, "/",
+              scale_names
+            ), scale_names)
+
+          }
+        }
 
         recipe <-
           tileset_create_recipe(
@@ -657,7 +751,6 @@ tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom,
 
   return(invisible(NULL))
 }
-
 #' TKTK NOT EXPORT, NEEDS REWORK Upload a custom auto_zoom
 #'
 #' In cases where a new auto zoom needs to be created. While the normal auto-zoom
