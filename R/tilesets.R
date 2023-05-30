@@ -660,7 +660,7 @@ tileset_upload_all <- function(all_scales, street, map_zoom_levels, tweak_max_zo
         # Add 'clipped' polygons for layers over 14, if they exist
         touch_14th <- c(names(minzooms[minzooms >= 14]),
                         names(maxzooms[maxzooms >= 14]),
-                        names(mzl)[length(mzl)])
+                        names(minzooms)[length(minzooms)])
         touch_14th <- unique(touch_14th)
 
         if (length(touch_14th) > 0) {
@@ -672,7 +672,7 @@ tileset_upload_all <- function(all_scales, street, map_zoom_levels, tweak_max_zo
           if (length(exist_clipped) > 0) {
 
             for (ec in exist_clipped) {
-              lay <- names(mzl)[sapply(paste0(names(mzl), "$"), grepl, ec)]
+              lay <- names(mzl)[sapply(paste0("_", names(mzl), "$"), grepl, ec)]
               lay_c <- paste0(lay, "_clipped")
 
               mzl <- c(mzl, new = 13.5)

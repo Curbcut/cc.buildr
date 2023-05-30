@@ -6,6 +6,7 @@
 \usage{
 tileset_upload_all(
   all_scales,
+  street,
   map_zoom_levels,
   tweak_max_zoom,
   prefix,
@@ -17,6 +18,8 @@ tileset_upload_all(
 \item{all_scales}{<\verb{named list}> A named list of sf data.frame
 containing all scales listed with their regions, normally
 \code{scales_variables_modules$scales}.}
+
+\item{street}{<\verb{sf data.frame}> All the streets in the zone under study.}
 
 \item{map_zoom_levels}{<\verb{named list}> The previously created zoom levels
 using \code{\link[cc.buildr]{map_zoom_levels_create_all}} and
