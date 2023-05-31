@@ -495,7 +495,7 @@ tileset_upload_all <- function(all_scales, street, map_zoom_levels, tweak_max_zo
       names(df) <- c("ID", "ID_color", "geometry")
 
       # Union the buildings per DAs
-      df <- aggregate(df["geometry"], by = list(df$ID_color), \(x) {st_union(x)})
+      df <- stats::aggregate(df["geometry"], by = list(df$ID_color), \(x) {sf::st_union(x)})
       names(df) <- c("ID_color", "geometry")
 
       df <- sf::st_cast(df, "MULTIPOLYGON")

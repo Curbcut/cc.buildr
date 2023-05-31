@@ -498,12 +498,11 @@ interpolate_from_area <- function(to, from,
 #' @param data <`data.frame`> Containing any number of column with data,
 #' and an ID that corresponds to the source scale, e.g. \code{"DA_ID"}.
 #' @param name_interpolate_from <`character`> The name of the scale from which
-#' data has been interpolated, e.g. `DA`. It MUST be an entry in the
-#' scales_dictionary. If it is not, add an entry with at least `sing` and `plur` columns
-#' filled as it will be used to describe from which of these scales data has been
-#' interpolated from.
-#' @param scales_dictionary <`data.frame`> The scales dictionary built using
-#' \code{\link[cc.buildr]{build_census_scales}}
+#' data has been interpolated, e.g. `DA`. If it is an entry in the scales_dictionary,
+#' the entry of the `plur` column will be used as text. If it isn't, the character
+#' of `name_interpolate_from` will be used, e.g.
+#' `...has been spatially interpolated from green space polygons` where
+#' `green space polygons` would be the value of `name_interpolate_from`.
 #' @param all_scales <`named list`> A named list of scales. The first level is
 #' the geo, and the second is the scales.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
@@ -538,16 +537,7 @@ interpolate_custom_geo <- function(data, all_scales, crs,
                                    average_vars = c(),
                                    additive_vars = c(),
                                    name_interpolate_from,
-                                   scales_dictionary,
                                    construct_for = NULL) {
-
-  # Check if name_interpolate_from is in the dictionary
-  if (!name_interpolate_from %in% scales_dictionary$scale) {
-    stop(sprintf(paste0("`%s` is not present in the scales_dictionary. Add it ",
-                        "as it is used to describe from which of these scales ",
-                        "data has been interpolated from."),
-                 name_interpolate_from))
-  }
 
   ## Only interpolate for geometries bigger than the data one
   all_tables <- reconstruct_all_tables(all_scales)

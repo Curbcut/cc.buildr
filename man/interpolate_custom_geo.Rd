@@ -12,7 +12,6 @@ interpolate_custom_geo(
   average_vars = c(),
   additive_vars = c(),
   name_interpolate_from,
-  scales_dictionary,
   construct_for = NULL
 )
 }
@@ -39,13 +38,11 @@ value of a CSD would be the sum of the values of the DAs or CTs that are present
 inside the CSD.}
 
 \item{name_interpolate_from}{<\code{character}> The name of the scale from which
-data has been interpolated, e.g. \code{DA}. It MUST be an entry in the
-scales_dictionary. If it is not, add an entry with at least \code{sing} and \code{plur} columns
-filled as it will be used to describe from which of these scales data has been
-interpolated from.}
-
-\item{scales_dictionary}{<\code{data.frame}> The scales dictionary built using
-\code{\link[cc.buildr]{build_census_scales}}}
+data has been interpolated, e.g. \code{DA}. If it is an entry in the scales_dictionary,
+the entry of the \code{plur} column will be used as text. If it isn't, the character
+of \code{name_interpolate_from} will be used, e.g.
+\verb{...has been spatially interpolated from green space polygons} where
+\verb{green space polygons} would be the value of \code{name_interpolate_from}.}
 
 \item{construct_for}{<\code{list}> A list where each region is a level, and
 each of them has a vector character of scales for which the \code{data} should be
