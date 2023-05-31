@@ -2,7 +2,7 @@
 % Please edit documentation in R/interpolate.R
 \name{interpolate_custom_geo}
 \alias{interpolate_custom_geo}
-\title{Interpolate variables from a census geometry to all scales above}
+\title{Interpolate variables from any geometry to all scales bigger in area}
 \usage{
 interpolate_custom_geo(
   data,
@@ -12,6 +12,7 @@ interpolate_custom_geo(
   average_vars = c(),
   additive_vars = c(),
   name_interpolate_from,
+  scales_dictionary,
   construct_for = NULL
 )
 }
@@ -38,8 +39,13 @@ value of a CSD would be the sum of the values of the DAs or CTs that are present
 inside the CSD.}
 
 \item{name_interpolate_from}{<\code{character}> The name of the scale from which
-data has been interpolated, e.g. \code{grid}. It MUST be an entry in the
-scales_dictionary.}
+data has been interpolated, e.g. \code{DA}. It MUST be an entry in the
+scales_dictionary. If it is not, add an entry with at least \code{sing} and \code{plur} columns
+filled as it will be used to describe from which of these scales data has been
+interpolated from.}
+
+\item{scales_dictionary}{<\code{data.frame}> The scales dictionary built using
+\code{\link[cc.buildr]{build_census_scales}}}
 
 \item{construct_for}{<\code{list}> A list where each region is a level, and
 each of them has a vector character of scales for which the \code{data} should be

@@ -488,7 +488,7 @@ interpolate_from_area <- function(to, from,
   )
 }
 
-#' Interpolate variables from a census geometry to all scales above
+#' Interpolate variables from any geometry to all scales bigger in area
 #'
 #' Used to interpolate any polygons to all the used scale in the instance of
 #' Curbcut. Data is interpolated to a particular scale if the average size
@@ -498,8 +498,12 @@ interpolate_from_area <- function(to, from,
 #' @param data <`data.frame`> Containing any number of column with data,
 #' and an ID that corresponds to the source scale, e.g. \code{"DA_ID"}.
 #' @param name_interpolate_from <`character`> The name of the scale from which
-#' data has been interpolated, e.g. `grid`. It MUST be an entry in the
-#' scales_dictionary.
+#' data has been interpolated, e.g. `DA`. It MUST be an entry in the
+#' scales_dictionary. If it is not, add an entry with at least `sing` and `plur` columns
+#' filled as it will be used to describe from which of these scales data has been
+#' interpolated from.
+#' @param scales_dictionary <`data.frame`> The scales dictionary built using
+#' \code{\link[cc.buildr]{build_census_scales}}
 #' @param all_scales <`named list`> A named list of scales. The first level is
 #' the geo, and the second is the scales.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
@@ -534,7 +538,17 @@ interpolate_custom_geo <- function(data, all_scales, crs,
                                    average_vars = c(),
                                    additive_vars = c(),
                                    name_interpolate_from,
+                                   scales_dictionary,
                                    construct_for = NULL) {
+
+  # Check if name_interpolate_from is in the dictionary
+  if (!name_interpolate_from %in% scales_dictionary$scale) {
+    stop(sprintf(paste0("`%s` is not present in the scales_dictionary. Add it ",
+                        "as it is used to describe from which of these scales ",
+                        "data has been interpolated from."),
+                 name_interpolate_from))
+  }
+
   ## Only interpolate for geometries bigger than the data one
   all_tables <- reconstruct_all_tables(all_scales)
   all_tables <- all_tables[names(all_tables) %in% only_regions]

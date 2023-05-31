@@ -103,42 +103,52 @@ params:
 
 ```{r map, echo = FALSE}
 
-with_data <- params$title_card_data[sapply(params$title_card_data, \(x)  "hex_cat" %in% names(x))]
+# Which of the title cards do this ID have data for
+avail_dat <- sapply(params$title_card_data, \(x)  "hex_cat" %in% names(x))
+with_data <- params$title_card_data[avail_dat]
 
-# Decide which color for the map
+# Decide which color should the map display
 hexes <- c("#CA002095", "#F4A58295", "#A9A9A995", "#BAE4B395", "#31A35495")
 mean_hex <- round(mean(sapply(with_data, `[[`, "hex_cat")))
 map_col <- hexes[mean_hex]
 if (is.na(map_col)) map_col <- "#A9A9A995"
 map_col_light <- gsub("95$", "20", map_col)
 
-# Necessary for the mapdeck
+# Necessary for the rdeck map
 map_token <- paste0("pk.eyJ1Ijoic3VzLW1jZ2lsbCIsImEiOiJjbDBxMTcyNWwyNTl0M2",
                     "RtZzRremNxOHA3In0.V2Ah5lxy-3RZlF2QKOvIjg")
 options(rdeck.mapbox_access_token = map_token)
 map_style_building <- "mapbox://styles/sus-mcgill/cl2bwtrsp000516rwyrkt9ior"
 
-rdeck::rdeck(map_style = map_style_building, initial_view_state = rdeck::view_state(
-    center = params$map_loc, zoom = params$map_zoom), width = "100%", height = "200px", layer_selector = FALSE) |>
-    rdeck::add_mvt_layer(
-        id = "study",
-        data = rdeck::mvt_url(paste0(params$mapbox_username, ".", params$tileset_prefix, "_", params$region, "_", params$df)),
-        pickable = FALSE,
-        auto_highlight = FALSE,
-        get_fill_color = rdeck::scale_color_category(
-            col = ID,
-            palette = c(map_col_light, "#BAE4B300"),
-            unmapped_color = "#BAE4B300",
-            levels = c(params$select_id, "NA"),
-            legend = FALSE),
-        get_line_color = rdeck::scale_color_category(
-            col = ID,
-            palette = c(map_col, "#BAE4B300"),
-            unmapped_color = "#BAE4B300",
-            levels = c(params$select_id, "NA"),
-            legend = FALSE),
-        line_width_units = "pixels",
-        get_line_width = 5) |> suppressWarnings()
+# The MVT json
+mvt <- curbcut::tilejson(mapbox_username = params$mapbox_username,
+                         tileset_prefix = params$tileset_prefix,
+                         tile = paste0(params$region, "_", params$df))
+
+# Show the map
+rdeck::rdeck(map_style = map_style_building, 
+             initial_view_state = rdeck::view_state(
+               center = params$map_loc, zoom = params$map_zoom), 
+             width = "100%", height = "200px", layer_selector = FALSE) |>
+  rdeck::add_mvt_layer(
+    id = "study",
+    data = mvt,
+    pickable = FALSE,
+    auto_highlight = FALSE,
+    get_fill_color = rdeck::scale_color_category(
+      col = ID,
+      palette = c(map_col_light, "#BAE4B300"),
+      unmapped_color = "#BAE4B300",
+      levels = c(params$select_id, "NA"),
+      legend = FALSE),
+    get_line_color =   rdeck::scale_color_category(
+      col = ID,
+      palette = c(map_col, "#BAE4B300"),
+      unmapped_color = "#BAE4B300",
+      levels = c(params$select_id, "NA"),
+      legend = FALSE),
+    line_width_units = "pixels",
+    get_line_width = 5) |> suppressWarnings()
 
 ```
 
