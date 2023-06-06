@@ -686,7 +686,7 @@ placeex_main_card_rmd <- function(scales_variables_modules,
   # Get the head file -------------------------------------------------------
 
   inp <- system.file(paste0("place_explorer_rmd/pe_en.Rmd"),
-    package = "cc.buildr"
+                     package = "cc.buildr"
   )
 
   header_file <- paste0(getwd(), "/", out_folder, "header.html")
@@ -702,20 +702,20 @@ placeex_main_card_rmd <- function(scales_variables_modules,
     )
 
   rmarkdown::render(inp,
-    output_file = header_file,
-    params = list(
-      select_id = possible_scales[[1]][[1]]$ID[1],
-      region = names(possible_scales)[1],
-      df = names(possible_scales[[1]])[1],
-      scale_sing = "",
-      tileset_prefix = tileset_prefix,
-      map_loc = possible_scales[[1]][[1]]$centroid[[1]],
-      map_zoom = 10,
-      mapbox_username = mapbox_username,
-      title_card_data = title_card_data,
-      variables = variables,
-      scale_df = sf::st_drop_geometry(possible_scales[[1]][[1]])
-    ), envir = new.env(), quiet = TRUE
+                    output_file = header_file,
+                    params = list(
+                      select_id = possible_scales[[1]][[1]]$ID[1],
+                      region = names(possible_scales)[1],
+                      df = names(possible_scales[[1]])[1],
+                      scale_sing = "",
+                      tileset_prefix = tileset_prefix,
+                      map_loc = possible_scales[[1]][[1]]$centroid[[1]],
+                      map_zoom = 10,
+                      mapbox_username = mapbox_username,
+                      title_card_data = title_card_data,
+                      variables = variables,
+                      scale_df = sf::st_drop_geometry(possible_scales[[1]][[1]])
+                    ), envir = new.env(), quiet = TRUE
   )
 
   x <- readLines(header_file)
@@ -736,7 +736,7 @@ placeex_main_card_rmd <- function(scales_variables_modules,
                     sapply, nrow))) * length(lang))
     lapply(lang, \(lan) {
       inp <- system.file(paste0("place_explorer_rmd/pe_", lan, ".Rmd"),
-        package = "cc.buildr"
+                         package = "cc.buildr"
       )
 
       lapply(seq_along(possible_scales), \(region_n) {
@@ -750,21 +750,23 @@ placeex_main_card_rmd <- function(scales_variables_modules,
           scale_df <- suppressWarnings(sf::st_centroid(scale_df))
           scale_sing <-
             scales_dictionary$slider_title[scales_dictionary$scale == scale_name]
+          # If there is only one row in the scale
+          if (nrow(scale_df) <= 1) return(NULL)
 
-          future.apply::future_lapply(seq_along(scale_df$ID), \(n) {
+          future.apply::future_lapply(scale_df$ID, \(ID) {
 
             # If exists, pass
-            ID <- scale_df$ID[n]
             geo_sc_id <- paste(region, scale_name, ID, lan, sep = "_")
             output_file <- paste0(out_folder, geo_sc_id, ".html")
             if (!overwrite & output_file %in% all_files) {
-                pb()
-                return(NULL)
+              pb()
+              return(NULL)
             }
             output_file <- paste0(getwd(), "/", out_folder, geo_sc_id, ".html")
+            df <- scale_df[scale_df$ID == ID, ]
 
             # Setup all necessary input
-            map_loc <- scale_df$centroid[[n]]
+            map_loc <- df$centroid[[1]]
             title_card_data <-
               placeex_main_card_final_output(
                 pe_main_card_data = pe_main_card_data,
@@ -793,11 +795,11 @@ placeex_main_card_rmd <- function(scales_variables_modules,
             # Add title
             title <-
               # If the `name` column isn't alphabet
-              if (!grepl("[a-z|A-Z]", scale_df$name[n])) {
+              if (!grepl("[a-z|A-Z]", df$name)) {
                 name <- if (rev_geocode_from_localhost) {
-                  cc.data::rev_geocode_localhost(scale_df[n, ])
+                  cc.data::rev_geocode_localhost(df)
                 } else {
-                  cc.data::rev_geocode_OSM(scale_df[n, ])
+                  cc.data::rev_geocode_OSM(df)
                 }
 
                 if (lan == "en") {
@@ -815,7 +817,7 @@ placeex_main_card_rmd <- function(scales_variables_modules,
                   paste(sing, "autour du", name)
                 }
               } else {
-                scale_df$name[n]
+                df$name
               }
 
             tryCatch(
