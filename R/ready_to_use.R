@@ -116,6 +116,7 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
     variable_explanation = "the bikeway comfort and safety classification system",
     variable_exp_q5 = "are living in areas with _X_ cycling infrastructure comfort and safety",
     variable_theme = "Transport",
+    variable_pe_include = TRUE,
     variable_private = FALSE,
     variable_source = "Meghan Winters at Faculty of Health Sciences, Simon Fraser University",
     module_id = "canbics",
@@ -123,26 +124,25 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
     module_nav_title = "Bikeway comfort and safety",
     module_title_text_title = "Bikeway comfort and safety: the Can-BICS index",
     module_title_text_main = paste0(
-      "<p>Can-BICS, or Canadian Bikeway Comfort and Safety, is a classification ",
-      "system for cycling infrastructure in Canada. This system is based on ",
-      "three tiers that considers safety and user comfort: high-comfort bikeways, ",
-      "medium-comfort bikeways, and low-comfort bikeways."
+      "Can-BICS, or Canadian Bikeway Comfort and Safety, is a classification ",
+      "system for cycling infrastructure across Canada. This system is based ",
+      "on three tiers that considers safety and user comfort: high-, medium-,",
+      " and low-comfort bikeways. "
     ),
     module_title_text_extra = paste0(
-      "<p>The information seen in this module is based on data from CANUE. ",
-      "Can-BICS was developed by Meghan Winters, PhD, Moreno Zanotto, MSc, ",
-      "and Gregory Butler, MSc. In selecting different areas on the map, ",
-      "insights can be gained about the type and quality of cycling infrastructure. ",
-      "Understanding the spatialization of cycling ",
-      "infrastructure as classified by Can-BICS can help to highlight the ",
-      "availability and infrastructure types across the region and ",
-      "support efforts in improving bikeways. <p>For more information about ",
-      "Can-BICS visit: <a target = '_blank' href='https://www.canada.ca/en/public-health/services/",
-      "reports-publications/health-promotion-chronic-disease-prevention-canada-",
-      "research-policy-practice/vol-40-no-9-2020/canbics-classification-system-",
-      "naming-convention-cycling-infrastructure.html'>At-a-glance – The Canadi",
-      "an Bikeway Comfort and Safety (Can-BICS) Classification System: a commo",
-      "n naming convention for cycling infrastructure</a>."
+      "<p>The datasets visualized on this page come from CANUE and the 2021 C",
+      "anadian Census. Can-BICS was developed by Meghan Winters, PhD, Moreno ",
+      "Zanotto, MSc, and Gregory Butler, MSc. Understanding the spatializatio",
+      "n of cycling infrastructure as classified by Can-BICS can help to high",
+      "light the availability and infrastructure types across the Montreal re",
+      "gion and support efforts in improving bikeways. For more information a",
+      "bout Can-BICS visit: <a target = '_blank' href='https://www.canada.ca/",
+      "en/public-health/services/reports-publications/health-promotion-chroni",
+      "c-disease-prevention-canada-research-policy-practice/vol-40-no-9-2020/",
+      "canbics-classification-system-naming-convention-cycling-infrastructure",
+      ".html'>At-a-glance – The Canadian Bikeway Comfort and Safety (Can-BICS",
+      ") Classification System: a common naming convention for cycling infras",
+      "tructure</a>"
     ),
     module_metadata = TRUE,
     module_dataset_info =
@@ -154,8 +154,13 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
         "The Canadian Bikeway Comfort and Safety (Can-BICS) Classification System</a> dataset is ",
         "a geographic-based set of measures charac",
         "terizing the cycling infrastructure of Canadian communities. ",
-        "The data is provided at the dissemination area level.</p>"
-      )
+        "The data is initially provided at the dissemination area level.</p>"
+      ),
+    module_var_left = "canbics",
+    module_dates = c(2021),
+    module_var_right = scales_variables_modules$variables$var_code[
+      scales_variables_modules$variables$source == "Canadian census" &
+        !is.na(scales_variables_modules$variables$parent_vec)]
   )
 }
 

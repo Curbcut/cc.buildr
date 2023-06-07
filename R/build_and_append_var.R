@@ -118,7 +118,8 @@ ba_var <- function(data, scales_variables_modules, base_scale,
 
   # Region values -----------------------------------------------------------
 
-  parent_strings <- list(canale = weight_by)
+  parent_strings <- list(weight_by)
+  names(parent_strings) <- unique_var
 
   region_vals <-
     variables_get_region_vals(
