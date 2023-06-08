@@ -411,7 +411,7 @@ placeex_main_card_rmd <- function(scales_variables_modules,
 
   # Get the head file -------------------------------------------------------
 
-  inp <- system.file(paste0("place_explorer/pe_en.Rmd"),
+  inp <- system.file(paste0("place_explorer/pe_en_outside_app.Rmd"),
                      package = "curbcut"
   )
 
@@ -462,7 +462,7 @@ placeex_main_card_rmd <- function(scales_variables_modules,
       unlist(sapply(possible_scales,
                     sapply, nrow))) * length(lang))
     lapply(lang, \(lan) {
-      inp <- system.file(paste0("place_explorer/pe_", lan, ".Rmd"),
+      inp <- system.file(paste0("place_explorer/pe_", lan, "_outside_app.Rmd"),
                          package = "curbcut"
       )
 
