@@ -275,14 +275,14 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
     tibble::tibble(
       name = "activel",
       title = "Active living",
-      xaxis_title = "Can-ALE index",
+      xaxis_title = "Active living potential index",
       bs_icon = "activity",
       date = current_census_year,
       percent = FALSE,
       high_is_good = TRUE,
       val_digit = 0,
       text = paste0(
-        "{data_rank} in terms of active living. (Data from ",
+        "{data_rank} in terms of active living potential. (Data from ",
         "{data_date})"
       ),
       link_module = "canale",
