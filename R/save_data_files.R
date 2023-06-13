@@ -26,7 +26,7 @@ save_bslike_sqlite <- function(scale_chr, path = sprintf("data/%s.sqlite", scale
   map_over_scales(
     all_scales = all_scales,
     fun = \(geo = geo, scales = scales, scale_name = scale_name,
-            scale_df = scale_df) {
+      scale_df = scale_df) {
       if (scale_name != scale_chr) {
         return()
       }
@@ -120,7 +120,7 @@ save_all_scales_qs <- function(data_folder = "data/", all_scales, variables) {
     map_over_scales(
       all_scales = all_scales,
       fun = \(geo = geo, scales = scales, scale_name = scale_name,
-              scale_df = scale_df) {
+        scale_df = scale_df) {
         sf::st_drop_geometry(scale_df)
       }
     )
@@ -132,7 +132,7 @@ save_all_scales_qs <- function(data_folder = "data/", all_scales, variables) {
     map_over_scales(
       all_scales = all_scales_no_geo,
       fun = \(geo = geo, scales = scales, scale_name = scale_name,
-              scale_df = scale_df) {
+        scale_df = scale_df) {
         var_combinations <-
           lapply(variables$var_code, \(y) {
             vars <- names(scale_df)[grepl(y, names(scale_df))]
@@ -176,7 +176,7 @@ save_all_scales_qs <- function(data_folder = "data/", all_scales, variables) {
   mapply(\(region, scales) {
     mapply(\(scale_name, tables) {
       mapply(\(table_name, table) {
-        path <- sprintf("%s/%s/%s/%s.qs", data_folder,  region, scale_name, table_name)
+        path <- sprintf("%s/%s/%s/%s.qs", data_folder, region, scale_name, table_name)
 
         if (path %in% all_files) {
           old_table <- qs::qread(path)
@@ -184,7 +184,6 @@ save_all_scales_qs <- function(data_folder = "data/", all_scales, variables) {
         } else {
           qs::qsave(table, file = path)
         }
-
       }, names(tables), tables)
     }, names(scales), scales)
   }, names(qs_table_list), qs_table_list)
@@ -338,7 +337,9 @@ save_short_tables_qs <- function(data_folder = "data/", all_scales,
       d[, subs]
     }, scls, names(scls), SIMPLIFY = FALSE)
     scls <- scls[!sapply(scls, is.null)]
-    if (length(scls) == 0) return(NULL)
+    if (length(scls) == 0) {
+      return(NULL)
+    }
     scls <- scls[!names(scls) %in% skip_scales]
     names(scls) <- paste(geo, names(scls), sep = "_")
 
@@ -347,7 +348,7 @@ save_short_tables_qs <- function(data_folder = "data/", all_scales,
     }
 
     do.call(qs::qsavem, c(lapply(names(scls), rlang::sym),
-                          file = paste0(data_folder, geo, ".qsm")
+      file = paste0(data_folder, geo, ".qsm")
     ))
   }, all_scales, names(all_scales))
 

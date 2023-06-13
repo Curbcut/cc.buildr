@@ -160,7 +160,7 @@ accessibility_add_intervals <- function(point_per_DA,
 
 
   # Use travel times to put the point data in intervals ---------------------
-# ARE THERE SOME DAS THAT ARE CUT HERE? I'M PASSING FROM A 6.5K DAS TO 4.5'
+  # ARE THERE SOME DAS THAT ARE CUT HERE? I'M PASSING FROM A 6.5K DAS TO 4.5'
   progressr::with_progress({
     pb <- progressr::progressor(steps = sum(sapply(traveltimes, length)) + length(traveltimes))
 
@@ -201,8 +201,10 @@ accessibility_add_intervals <- function(point_per_DA,
     })
   })
 
-  ttm_data <- Reduce(\(x, y) merge(x, y, all.x = TRUE, all.y = TRUE, by = "DA_ID"),
-                     ttm_data)
+  ttm_data <- Reduce(
+    \(x, y) merge(x, y, all.x = TRUE, all.y = TRUE, by = "DA_ID"),
+    ttm_data
+  )
   # If NA values, then no amenities are available (0)
   ttm_data[is.na(ttm_data)] <- 0
 

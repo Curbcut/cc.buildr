@@ -20,8 +20,10 @@ ru_canale <- function(scales_variables_modules, region_DA_IDs, crs) {
     base_scale = "DA",
     weight_by = "households",
     crs = crs,
-    average_vars = c("canale_2001", "canale_2006", "canale_2011", "canale_2016",
-                     "canale_2021"),
+    average_vars = c(
+      "canale_2001", "canale_2006", "canale_2011", "canale_2016",
+      "canale_2021"
+    ),
     variable_var_code = "canale",
     variable_type = "ind",
     variable_var_title = "Active living potential",
@@ -79,7 +81,8 @@ ru_canale <- function(scales_variables_modules, region_DA_IDs, crs) {
     module_dates = c(2001, 2006, 2011, 2016, 2021),
     module_var_right = scales_variables_modules$variables$var_code[
       scales_variables_modules$variables$source == "Canadian census" &
-        !is.na(scales_variables_modules$variables$parent_vec)]
+        !is.na(scales_variables_modules$variables$parent_vec)
+    ]
   )
 }
 
@@ -118,7 +121,7 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
     variable_theme = "Transport",
     variable_pe_include = TRUE,
     variable_private = FALSE,
-    variable_source = "Meghan Winters at Faculty of Health Sciences, Simon Fraser University",
+    variable_source = "Meghan Winters (and her team) at Faculty of Health Sciences, Simon Fraser University",
     module_id = "canbics",
     module_theme = "Transport",
     module_nav_title = "Bikeway comfort and safety",
@@ -131,8 +134,8 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
     ),
     module_title_text_extra = paste0(
       "<p>The datasets visualized on this page come from CANUE and the 2021 C",
-      "anadian Census. Can-BICS was developed by Meghan Winters, PhD, Moreno ",
-      "Zanotto, MSc, and Gregory Butler, MSc. Understanding the spatializatio",
+      "anadian Census. Can-BICS was developed by Meghan Winters and her team.",
+      " Understanding the spatializatio",
       "n of cycling infrastructure as classified by Can-BICS can help to high",
       "light the availability and infrastructure types across the Montreal re",
       "gion and support efforts in improving bikeways. For more information a",
@@ -160,7 +163,8 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
     module_dates = c(2021),
     module_var_right = scales_variables_modules$variables$var_code[
       scales_variables_modules$variables$source == "Canadian census" &
-        !is.na(scales_variables_modules$variables$parent_vec)]
+        !is.na(scales_variables_modules$variables$parent_vec)
+    ]
   )
 }
 
@@ -190,9 +194,9 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
   # Rent ranges temporarily taken out as they are not available for the
   # Rental Univers series (parent vector)
   dimensions <-
-    c("Bedroom Type", "Year of Construction")#, "Rent Ranges")
+    c("Bedroom Type", "Year of Construction") # , "Rent Ranges")
   dimensions_short <-
-    c("bed", "year")#, "rent_range")
+    c("bed", "year") # , "rent_range")
   years <- 2010:2021
 
   # Retrieval
@@ -215,8 +219,8 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
 
           # Pivot and rename
           out <- tidyr::pivot_wider(out,
-                                    names_from = tidyr::all_of(y),
-                                    values_from = "Value"
+            names_from = tidyr::all_of(y),
+            values_from = "Value"
           )
           names(out) <- gsub("Non-Market/Unknown", "non_market", names(out))
           names(out) <- gsub(" |-", "_", tolower(names(out)))
@@ -235,9 +239,9 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
           if (approximate_name_match) {
             out$name <-
               sapply(out$name,
-                     agrep,
-                     x = scales_variables_modules$scales$cmhc$cmhczone$name,
-                     value = TRUE, USE.NAMES = FALSE
+                agrep,
+                x = scales_variables_modules$scales$cmhc$cmhczone$name,
+                value = TRUE, USE.NAMES = FALSE
               )
             if (!all(sapply(out$name, length) == 1)) {
               stop(paste0(
@@ -273,8 +277,8 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
 
           # Pivot and rename
           out <- tidyr::pivot_wider(out,
-                                    names_from = tidyr::all_of(y),
-                                    values_from = "Value"
+            names_from = tidyr::all_of(y),
+            values_from = "Value"
           )
           names(out) <- gsub("Non-Market/Unknown", "non_market", names(out))
           names(out) <- gsub(" |-", "_", tolower(names(out)))
@@ -293,9 +297,9 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
           if (approximate_name_match) {
             out$name <-
               sapply(out$name,
-                     agrep,
-                     x = scales_variables_modules$scales$cmhc$cmhczone$name,
-                     value = TRUE, USE.NAMES = FALSE
+                agrep,
+                x = scales_variables_modules$scales$cmhc$cmhczone$name,
+                value = TRUE, USE.NAMES = FALSE
               )
             if (!all(sapply(out$name, length) == 1)) {
               stop(paste0(
@@ -314,7 +318,8 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
 
   # Merge vacancy rate with rental units
   cmhc <- mapply(merge, cmhc_vac_rate, cmhc_rental_units,
-                 SIMPLIFY = FALSE)
+    SIMPLIFY = FALSE
+  )
 
   # Merge with the `sf`
   merged <-
@@ -352,18 +357,21 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
 
   # Parent strings
   parent_strings <- lapply(gsub("vac_rate", "rental_universe", unique_vars[
-    grepl("^vac_rate", unique_vars)]), c)
+    grepl("^vac_rate", unique_vars)
+  ]), c)
   names(parent_strings) <- unique_vars[grepl("^vac_rate", unique_vars)]
   parent_strings_count <- lapply(rep(NA, sum(grepl("^rental_universe", unique_vars))), c)
   names(parent_strings_count) <- unique_vars[grepl("^rental_universe", unique_vars)]
   parent_strings <- c(parent_strings, parent_strings_count)
 
   # Region values
-  region_values <- variables_get_region_vals(scales = with_breaks$scales,
-                                             vars = unique_vars,
-                                             types = types,
-                                             parent_strings = parent_strings,
-                                             breaks = with_breaks$q5_breaks_table)
+  region_values <- variables_get_region_vals(
+    scales = with_breaks$scales,
+    vars = unique_vars,
+    types = types,
+    parent_strings = parent_strings,
+    breaks = with_breaks$q5_breaks_table
+  )
 
   # Add to the variables table
   variables <-
@@ -556,11 +564,13 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
           ),
           group_name = group_name,
           group_diff = group_diff,
-          rankings_chr = c("an exceptionally low vacancy rate",
-                           "an unusually low vacancy rate",
-                           "a just about average vacancy rate",
-                           "an unusually high vacancy rate",
-                           "an exceptionally high vacancy rate")
+          rankings_chr = c(
+            "an exceptionally low vacancy rate",
+            "an unusually low vacancy rate",
+            "a just about average vacancy rate",
+            "an unusually high vacancy rate",
+            "an exceptionally high vacancy rate"
+          )
         )
 
       out[out$var_code == var, ]
@@ -728,14 +738,14 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
         )
 
       out[out$var_code == var, ]
-    })  |> (\(x) Reduce(rbind, x, init = variables))()
+    }) |> (\(x) Reduce(rbind, x, init = variables))()
 
   modules <-
     scales_variables_modules$modules |>
     add_module(
       id = "vacancyrate",
       theme = "Housing",
-      nav_title = "Vacancy",
+      nav_title = "Vacancy rate",
       title_text_title = "Vacancy rate",
       title_text_main = paste0(
         "<p>Information about vacancy rates can help define past and current trend",
@@ -753,7 +763,8 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
       main_dropdown_title = "Vacancy rate distribution",
       var_right = scales_variables_modules$variables$var_code[
         scales_variables_modules$variables$source == "Canadian census" &
-          !is.na(scales_variables_modules$variables$parent_vec)]
+          !is.na(scales_variables_modules$variables$parent_vec)
+      ]
     )
 
 

@@ -167,7 +167,9 @@ create_page_script <- function(source_file, R_folder = "R/", overwrite = FALSE,
 
   # Add all uis
   template <-
-    if (length(uis) == 0) gsub("`__widgets_UI__`,", "", template) else {
+    if (length(uis) == 0) {
+      gsub("`__widgets_UI__`,", "", template)
+    } else {
       gsub(
         "`__widgets_UI__`,",
         paste0(paste0(uis, collapse = ",\n"), ","),

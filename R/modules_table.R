@@ -108,11 +108,12 @@ add_module <- function(modules, id, theme = "", nav_title, title_text_title,
                        title_text_extra, metadata, dataset_info, regions = NULL,
                        var_left = NULL, dates = NULL, main_dropdown_title = NA_character_,
                        var_right = NULL, suffix_zoom_levels = NA_character_) {
-
   if (is.data.frame(var_left)) {
     if (!all(names(var_left) == c("var_code", "group_name", "group_diff"))) {
-      stop(paste0("The tibble given to `var_left` must have the following columns: ",
-                  paste0(c("var_code", "group_name", "group_diff"), collapse = ", ")))
+      stop(paste0(
+        "The tibble given to `var_left` must have the following columns: ",
+        paste0(c("var_code", "group_name", "group_diff"), collapse = ", ")
+      ))
     }
   }
 
@@ -133,5 +134,4 @@ add_module <- function(modules, id, theme = "", nav_title, title_text_title,
     var_right = list(var_right),
     suffix_zoom_levels = suffix_zoom_levels
   )
-
 }

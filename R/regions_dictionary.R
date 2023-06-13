@@ -46,8 +46,10 @@ regions_dictionary <- function(all_tables, region, name, to_compare,
   if (is.null(names(to_compare))) {
     stop("`to_compare_short` must be a named character vector.")
   }
-  invisible(lapply(c("region", "name", "to_compare", "to_compare_determ",
-                     "to_compare_short", "pickable"), \(x) {
+  invisible(lapply(c(
+    "region", "name", "to_compare", "to_compare_determ",
+    "to_compare_short", "pickable"
+  ), \(x) {
     if (length(get(x)) != length(all_tables)) {
       stop("length of`", x, "` is not the same as the length of `all_tables`")
     }

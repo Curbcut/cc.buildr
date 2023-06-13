@@ -30,7 +30,8 @@ Imports:
     RSQLite,
     rlang,
     stringi,
-    scales
+    scales,
+    curbcut
 Suggests:
     styler,
     osmdata,

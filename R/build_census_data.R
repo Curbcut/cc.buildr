@@ -140,7 +140,9 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
           sf::st_drop_geometry(rbind(census_data, filled_vals[[scale]]))
         } else if (scale %in% names(filled_vals)) {
           sf::st_drop_geometry(filled_vals[[scale]])
-        } else data.frame(ID = character())
+        } else {
+          data.frame(ID = character())
+        }
 
         out_df <- merge(df, all_data, by = "ID", all.x = TRUE)
 
@@ -216,20 +218,24 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
     ]
   }, simplify = FALSE, USE.NAMES = TRUE)
 
-  region_values <- variables_get_region_vals(scales = final_scales,
-                                             vars = cc.data::census_add_parent_vectors(census_vectors),
-                                             types = types,
-                                             parent_strings = parent_strings)
+  region_values <- variables_get_region_vals(
+    scales = final_scales,
+    vars = cc.data::census_add_parent_vectors(census_vectors),
+    types = types,
+    parent_strings = parent_strings
+  )
 
 
   # Keep track of scales for which census data is available ------------------
 
   avail_df <-
     map_over_scales(census_data_merged,
-                    fun = \(geo = geo, scale_name = scale_name, ...) {
-                      paste(geo, scale_name, sep = "_")
-                    }
-    ) |> unlist() |> unname()
+      fun = \(geo = geo, scale_name = scale_name, ...) {
+        paste(geo, scale_name, sep = "_")
+      }
+    ) |>
+    unlist() |>
+    unname()
 
 
   # Create interpolated references as a data.frame --------------------------

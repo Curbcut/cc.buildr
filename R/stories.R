@@ -210,7 +210,6 @@ stories_atlas_mapping <- function(stories,
 stories_knit_rmd <- function(file, css_path = here::here("www/sus.css"),
                              bandeau_location = "dev/data/stories/bandeau_img/",
                              output_dir = "www/stories/") {
-
   if (!requireNamespace("rmarkdown", quietly = TRUE)) {
     stop(
       "Package \"rmarkdown\" must be installed to use this function.",
@@ -231,9 +230,11 @@ stories_knit_rmd <- function(file, css_path = here::here("www/sus.css"),
   }
 
   # Error handling
-  if (!sum(grepl(".Rmd$", file)) == length(file)) return(
-    warning(sprintf("Skipped %s as it's not an Rmd document.", file))
-  )
+  if (!sum(grepl(".Rmd$", file)) == length(file)) {
+    return(
+      warning(sprintf("Skipped %s as it's not an Rmd document.", file))
+    )
+  }
 
   # Prep locations
   split_string <- strsplit(file, "/")[[1]]
@@ -305,7 +306,9 @@ stories_knit_all <- function(stories_location = "dev/Rmd/stories/",
                              bandeau_location = "dev/data/stories/bandeau_img/",
                              output_dir = "www/stories/") {
   all_stories <- list.files(stories_location, full.names = TRUE)
-  lapply(all_stories, stories_knit_rmd, css_path = css_path,
-         bandeau_location = bandeau_location,
-         output_dir = output_dir)
+  lapply(all_stories, stories_knit_rmd,
+    css_path = css_path,
+    bandeau_location = bandeau_location,
+    output_dir = output_dir
+  )
 }

@@ -26,11 +26,12 @@
 #' @export
 additional_scale <- function(additional_table, DA_table, ID_prefix, name_2,
                              crs) {
-
   if (!all(names(additional_table) == c("name", "geometry"))) {
     if (!all(names(additional_table) == c("ID", "name", "geometry"))) {
-      stop(paste0("`additional_table` must only have a name and a geometry ",
-                  "column, or an ID, name and geometry column."))
+      stop(paste0(
+        "`additional_table` must only have a name and a geometry ",
+        "column, or an ID, name and geometry column."
+      ))
     }
   }
 

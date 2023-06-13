@@ -9,8 +9,8 @@ calculate_breaks(
   vars,
   time_regex = "_\\\\d{4}$",
   types = NULL,
-  rank_name = c("Low", "Below average", "Average", "Above average", "High"),
-  rank_name_short = c("Low", "B. average", "Average", "A. average", "High")
+  rank_name = c("Very low", "Low", "Moderate", "High", "Very high"),
+  rank_name_short = c("Very low", "Low", "Moderate", "High", "Very high")
 )
 }
 \arguments{

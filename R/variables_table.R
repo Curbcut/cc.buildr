@@ -178,35 +178,44 @@ add_variable <- function(variables, var_code, type, var_title,
                          group_diff = list(), theme, private, pe_include = FALSE,
                          dates, avail_df, breaks_q3, breaks_q5,
                          region_values = NULL, source, interpolated,
-                         rankings_chr = c("exceptionally low", "unusually low",
-                                          "just about average", "unusually high",
-                                          "exceptionally high"),
+                         rankings_chr = c(
+                           "exceptionally low", "unusually low",
+                           "just about average", "unusually high",
+                           "exceptionally high"
+                         ),
                          var_measurement = data.frame(
                            df = avail_df,
-                           measurement = rep("scalar", length(avail_df))),
+                           measurement = rep("scalar", length(avail_df))
+                         ),
                          allow_title_duplicate = FALSE) {
   if (var_code %in% variables$var_code) {
     stop(paste0("`", var_code, "` is a duplicate."))
   }
 
-  if (var_code %in% variables$var_code)
+  if (var_code %in% variables$var_code) {
     stop(paste0("`", var_code, "` is already a `var_code` present in the variables table."))
+  }
 
   # Necessary to not have issues with the dropdowns (unique title can't hold 2 variables)
   if (!allow_title_duplicate) {
-    if (var_title %in% variables$var_title)
-      stop(paste0("`", var_title, "` is already a `var_title` present in the variables table. ",
-                  "If the variable is a parent variable and will never be used in the ",
-                  "dropdown along with the other variable sharing the same title, use the ",
-                  "argument `allow_title_duplicate`."))
+    if (var_title %in% variables$var_title) {
+      stop(paste0(
+        "`", var_title, "` is already a `var_title` present in the variables table. ",
+        "If the variable is a parent variable and will never be used in the ",
+        "dropdown along with the other variable sharing the same title, use the ",
+        "argument `allow_title_duplicate`."
+      ))
+    }
   }
 
 
   # If NULL is supplied, revert to the default
   if (all(is.null(rankings_chr))) {
-    rankings_chr <- c("exceptionally low", "unusually low",
-                      "just about average", "unusually high",
-                      "exceptionally high")
+    rankings_chr <- c(
+      "exceptionally low", "unusually low",
+      "just about average", "unusually high",
+      "exceptionally high"
+    )
   }
 
   # `var_measurement` well made
@@ -217,39 +226,43 @@ add_variable <- function(variables, var_code, type, var_title,
     stop("One or more `avail_df` is missing in the `var_measurement` data.frame.")
   }
   if (!all(var_measurement$measurement %in% c("scalar", "ordinal", "nominal"))) {
-    stop(paste0("One or more of `var_measurement$measurement` is other than ",
-                "`scalar`, `ordinal` or `nominal` (the only possible options)."))
+    stop(paste0(
+      "One or more of `var_measurement$measurement` is other than ",
+      "`scalar`, `ordinal` or `nominal` (the only possible options)."
+    ))
   }
   if (grepl("\\d{4}$", var_code)) {
-    stop(paste0("`var_code` can not finish with 4 numerics. (This string at the end ",
-                "of the variables code is reserved only to the year of the data.)"))
+    stop(paste0(
+      "`var_code` can not finish with 4 numerics. (This string at the end ",
+      "of the variables code is reserved only to the year of the data.)"
+    ))
   }
 
-    tibble::add_row(
-      variables,
-      var_code = as.character(var_code),
-      type = list(type),
-      var_title = as.character(var_title),
-      var_short = as.character(var_short),
-      explanation = as.character(explanation),
-      explanation_nodet = as.character(explanation_nodet),
-      exp_q5 = as.character(exp_q5),
-      parent_vec = as.character(parent_vec),
-      theme = as.character(theme),
-      private = as.logical(private),
-      pe_include = as.logical(pe_include),
-      source = as.character(source),
-      group_name = as.character(group_name),
-      group_diff = list(group_diff),
-      dates = list(dates),
-      avail_df = list(avail_df),
-      breaks_q3 = list(breaks_q3),
-      breaks_q5 = list(breaks_q5),
-      region_values = list(region_values),
-      interpolated = list(interpolated),
-      rankings_chr = list(rankings_chr),
-      var_measurement = list(var_measurement)
-    )
+  tibble::add_row(
+    variables,
+    var_code = as.character(var_code),
+    type = list(type),
+    var_title = as.character(var_title),
+    var_short = as.character(var_short),
+    explanation = as.character(explanation),
+    explanation_nodet = as.character(explanation_nodet),
+    exp_q5 = as.character(exp_q5),
+    parent_vec = as.character(parent_vec),
+    theme = as.character(theme),
+    private = as.logical(private),
+    pe_include = as.logical(pe_include),
+    source = as.character(source),
+    group_name = as.character(group_name),
+    group_diff = list(group_diff),
+    dates = list(dates),
+    avail_df = list(avail_df),
+    breaks_q3 = list(breaks_q3),
+    breaks_q5 = list(breaks_q5),
+    region_values = list(region_values),
+    interpolated = list(interpolated),
+    rankings_chr = list(rankings_chr),
+    var_measurement = list(var_measurement)
+  )
 }
 
 #' Get variable values for regions
@@ -287,7 +300,6 @@ add_variable <- function(variables, var_code, type, var_title,
 variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL,
                                       breaks = NULL, time_regex = "_\\d{4}$",
                                       round_closest_5 = TRUE) {
-
   # Make sure time is not in the vars
   vars <- gsub(time_regex, "", vars) |> unique()
 
@@ -295,7 +307,6 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
     pb <- progressr::progressor(length(vars))
 
     future.apply::future_sapply(vars, \(var) {
-
       # Grab the variable types
       type <- unlist(types[[var]])
 
@@ -304,20 +315,23 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
         stop(paste0("A variable of type `", type, "` must have a parent string."))
       }
       if (sum(type %in% c("ind")) > 0 && is.null(breaks)) {
-        stop(paste0("A variable of type `", type, "` must have the breaks ",
-                    "supplied, usually the `q5_breaks_table` output of ",
-                    "`cc.buildr::calculate_breaks`."))
+        stop(paste0(
+          "A variable of type `", type, "` must have the breaks ",
+          "supplied, usually the `q5_breaks_table` output of ",
+          "`cc.buildr::calculate_breaks`."
+        ))
       }
 
       # Iterate the count over all regions
       region_vals <- mapply(\(region_name, region) {
-
         # Get the names of all the scales inside a region
         cols <- lapply(region, names)[length(region):1]
         # Grab the first scale which has a variable + parent corresponding to ours
         has_var <- sapply(cols, \(x) sum(grepl(paste0(var, time_regex), x)) > 0)
         has_parent <- sapply(cols, \(x) sum(grepl(paste0(unlist(parent_strings[var]), time_regex), x)) > 0)
-        if (sum(has_var) == 0) return(data.frame())
+        if (sum(has_var) == 0) {
+          return(data.frame())
+        }
 
         which_df_avail <- has_var + has_parent
         # Take the first one as it's the lowest level (more granularity in data)
@@ -332,9 +346,10 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
         # Iterate over all years of the variable and get the right information
         # depending on the variable type
         out <- lapply(all_var, \(v) {
-
-          out <- tibble::tibble(region = region_name,
-                                year = gsub(var, "", v))
+          out <- tibble::tibble(
+            region = region_name,
+            year = gsub(var, "", v)
+          )
           out$year <- gsub("^_", "", out$year)
 
           if ("pct" %in% type) {
@@ -344,14 +359,13 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
             }
             parent_string_year <- paste0(parent_string, "_", out$year)
             no_nas <- df[!is.na(df[[parent_string_year]]) &
-                           !is.na(df[[v]]), ]
+              !is.na(df[[v]]), ]
 
             out$val <- stats::weighted.mean(no_nas[[v]], no_nas[[parent_string_year]])
             out$count <- out$val * sum(no_nas[[parent_string_year]])
 
             # Round if necessary
-            if (round_closest_5) out$count <- round(out$count/5)*5
-
+            if (round_closest_5) out$count <- round(out$count / 5) * 5
           } else if ("avg" %in% type || "median" %in% type || "dollar" %in% type) {
             parent_string <- parent_strings[[var]]
             if (is.na(parent_string) | is.null(parent_string)) {
@@ -360,7 +374,9 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
             parent_string_year <-
               if (out$year != "" & !parent_string %in% c("households", "population")) {
                 paste0(parent_string, "_", out$year)
-              } else parent_string
+              } else {
+                parent_string
+              }
             no_nas <- df[!is.na(df[[parent_string_year]]) & !is.na(df[[v]]), ]
 
             out$val <- stats::weighted.mean(no_nas[[v]], no_nas[[parent_string_year]])
@@ -407,17 +423,15 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
         # Make it in one ordered dataframe
         out <- Reduce(rbind, out)
 
-        if ("year" %in% names(out))
+        if ("year" %in% names(out)) {
           out <- out[order(out$year, decreasing = TRUE), ]
+        }
 
         return(out)
-
       }, names(scales), scales, SIMPLIFY = FALSE)
 
       pb()
       return(Reduce(rbind, region_vals))
-
     }, simplify = FALSE, USE.NAMES = TRUE, future.seed = NULL)
   })
 }
-

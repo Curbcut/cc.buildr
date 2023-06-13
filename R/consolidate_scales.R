@@ -20,8 +20,6 @@
 #' spatially filtered dataframes with updated name_2 and IDs if needed.
 #' @export
 consolidate_scales <- function(all_tables, all_scales, regions, crs) {
-
-
   ## Make sure IDs are unique ------------------------------------------------
 
   subset_ID <- sapply(all_scales, `[[`, "ID")
@@ -29,9 +27,11 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs) {
   duplicated_IDs <- sum(table(subset_ID) > 1)
 
   if (duplicated_IDs > 0) {
-    stop(paste0("`ID` aren't unique between all the scales. Curbcut makes ",
-                "multiple assumptions that IDs ARE unique accross all the ",
-                "dataframes on the plateform."))
+    stop(paste0(
+      "`ID` aren't unique between all the scales. Curbcut makes ",
+      "multiple assumptions that IDs ARE unique accross all the ",
+      "dataframes on the plateform."
+    ))
   }
 
   ## Add own ID to scales, and rename census ---------------------------------

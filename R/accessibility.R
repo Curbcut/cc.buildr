@@ -116,14 +116,16 @@ ba_accessibility_points <- function(scales_variables_modules,
     types = types,
     parent_strings = parent_strings,
     breaks = with_breaks$q5_breaks_table,
-    round_closest_5 = FALSE)
+    round_closest_5 = FALSE
+  )
 
 
   # Variable measurements ----------------------------------------------------
 
   var_measurement <- data.frame(
     df = data_interpolated$avail_df,
-    measurement = rep("scalar", length(data_interpolated$avail_df)))
+    measurement = rep("scalar", length(data_interpolated$avail_df))
+  )
 
   var_measurement$measurement[grepl("_DA$", var_measurement$df)] <-
     rep("ordinal", length(var_measurement$measurement[grepl("_DA$", var_measurement$df)]))
@@ -132,24 +134,40 @@ ba_accessibility_points <- function(scales_variables_modules,
   # Variables table ---------------------------------------------------------
 
   progressr::with_progress({
-
     pb <- progressr::progressor(length(vars))
 
     new_variables <- future.apply::future_lapply(vars, \(var) {
-
       dict <- cc.data::accessibility_point_dict
       dict <- dict[sapply(dict$var, grepl, var), ]
 
       mode <- (\(x) {
-        if (grepl("_car_", var)) return("car")
-        if (grepl("_foot_", var)) return("walking")
-        if (grepl("_bicycle_", var)) return("bicycle")
-        if (grepl("_transit_opwe_", var)) return("public transit on off-peak weekend days")
-        if (grepl("_transit_pwe_", var)) return("public transit on peak weekend days")
-        if (grepl("_transit_nwd_", var)) return("public transit on weekdays at night")
-        if (grepl("_transit_nwe_", var)) return("public transit on weekends at night")
-        if (grepl("_transit_opwd_", var)) return("public transit on off-peak weekdays")
-        if (grepl("_transit_pwd_", var)) return("public transit on peak weekdays")
+        if (grepl("_car_", var)) {
+          return("car")
+        }
+        if (grepl("_foot_", var)) {
+          return("walking")
+        }
+        if (grepl("_bicycle_", var)) {
+          return("bicycle")
+        }
+        if (grepl("_transit_opwe_", var)) {
+          return("public transit on off-peak weekend days")
+        }
+        if (grepl("_transit_pwe_", var)) {
+          return("public transit on peak weekend days")
+        }
+        if (grepl("_transit_nwd_", var)) {
+          return("public transit on weekdays at night")
+        }
+        if (grepl("_transit_nwe_", var)) {
+          return("public transit on weekends at night")
+        }
+        if (grepl("_transit_opwd_", var)) {
+          return("public transit on off-peak weekdays")
+        }
+        if (grepl("_transit_pwd_", var)) {
+          return("public transit on peak weekdays")
+        }
       })()
 
       time <- gsub("_", "", stringr::str_extract(var, "_\\d*_"))
@@ -169,12 +187,24 @@ ba_accessibility_points <- function(scales_variables_modules,
       mode <- stringr::str_extract(mode, "(^car$)|(^walking$)|(^bicycle$)|(^public transit)")
 
       theme <- (\(x) {
-        if (dict$theme == "retail") return("retail stores")
-        if (dict$theme == "finance") return("finance establishments")
-        if (dict$theme == "food") return("food distributors")
-        if (dict$theme == "healthcare") return("healthcare facilities")
-        if (dict$theme == "educational") return("schools")
-        if (dict$theme == "cultural") return("cultural facilities")
+        if (dict$theme == "retail") {
+          return("retail stores")
+        }
+        if (dict$theme == "finance") {
+          return("finance establishments")
+        }
+        if (dict$theme == "food") {
+          return("food distributors")
+        }
+        if (dict$theme == "healthcare") {
+          return("healthcare facilities")
+        }
+        if (dict$theme == "educational") {
+          return("schools")
+        }
+        if (dict$theme == "cultural") {
+          return("cultural facilities")
+        }
       })()
       group_name <- paste("Access to", theme)
       group_diff <- list(
@@ -184,12 +214,24 @@ ba_accessibility_points <- function(scales_variables_modules,
 
       if (grepl("_transit_", var)) {
         timing <- (\(x) {
-          if (grepl("_transit_opwe_", var)) return("Weekend traffic off-peak")
-          if (grepl("_transit_pwe_", var)) return("Weekend traffic peak")
-          if (grepl("_transit_nwd_", var)) return("Weekday night")
-          if (grepl("_transit_nwe_", var)) return("Weekend night")
-          if (grepl("_transit_opwd_", var)) return("Weekday traffic off-peak")
-          if (grepl("_transit_pwd_", var)) return("Weekday traffic peak")
+          if (grepl("_transit_opwe_", var)) {
+            return("Weekend traffic off-peak")
+          }
+          if (grepl("_transit_pwe_", var)) {
+            return("Weekend traffic peak")
+          }
+          if (grepl("_transit_nwd_", var)) {
+            return("Weekday night")
+          }
+          if (grepl("_transit_nwe_", var)) {
+            return("Weekend night")
+          }
+          if (grepl("_transit_opwd_", var)) {
+            return("Weekday traffic off-peak")
+          }
+          if (grepl("_transit_pwd_", var)) {
+            return("Weekday traffic peak")
+          }
         })()
         group_diff <- c(group_diff, list("Timing" = timing))
       }
@@ -238,9 +280,11 @@ ba_accessibility_points <- function(scales_variables_modules,
         breaks_q5 = with_breaks$q5_breaks_table[[var]],
         source = dict$source,
         interpolated = data_interpolated$interpolated_ref,
-        rankings_chr = c("exceptionally sparse", "unusually sparse",
-                         "just about average", "unusually dense",
-                         "exceptionally dense"),
+        rankings_chr = c(
+          "exceptionally sparse", "unusually sparse",
+          "just about average", "unusually dense",
+          "exceptionally dense"
+        ),
         var_measurement = var_measurement
       ) |>
         (\(x) x[nrow(x), ])()
@@ -295,13 +339,16 @@ ba_accessibility_points <- function(scales_variables_modules,
         "es and accessibility to amenities, providing valuable insights for urb",
         "an planning and development purposes."
       ),
-      var_left = variables[grepl("^access_", variables$var_code),
-                           c("var_code", "group_name", "group_diff")],
+      var_left = variables[
+        grepl("^access_", variables$var_code),
+        c("var_code", "group_name", "group_diff")
+      ],
       main_dropdown_title = "Amenity",
       dates = "2023",
       var_right = scales_variables_modules$variables$var_code[
         scales_variables_modules$variables$source == "Canadian census" &
-          !is.na(scales_variables_modules$variables$parent_vec)]
+          !is.na(scales_variables_modules$variables$parent_vec)
+      ]
     )
 
 

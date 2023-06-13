@@ -38,8 +38,8 @@ ba_census_data <- function(scales_variables_modules,
 
   vars <-
     sapply(unique_var,
-           \(x) paste(x, census_years, sep = "_"),
-           simplify = FALSE, USE.NAMES = FALSE
+      \(x) paste(x, census_years, sep = "_"),
+      simplify = FALSE, USE.NAMES = FALSE
     ) |> unlist()
 
 
@@ -153,8 +153,8 @@ ba_census_data <- function(scales_variables_modules,
           dates = census_years,
           main_dropdown_title = "Housing indicator",
           var_right = variables$var_code[variables$source == "Canadian census" &
-                                           variables$theme != "Housing" &
-                                           !is.na(variables$parent_vec)]
+            variables$theme != "Housing" &
+            !is.na(variables$parent_vec)]
         )
     } else {
       scales_variables_modules$modules

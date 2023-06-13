@@ -127,7 +127,8 @@ ba_var <- function(data, scales_variables_modules, base_scale,
       vars = unique_var,
       types = types,
       breaks = with_breaks$q5_breaks_table,
-      parent_strings = parent_strings)
+      parent_strings = parent_strings
+    )
 
 
   # Variables table ---------------------------------------------------------

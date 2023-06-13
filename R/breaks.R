@@ -12,7 +12,6 @@
 #' @return Returns the same data.frame as df with q3 columns appended.
 #' @export
 add_q3 <- function(df, vars, time_regex = "_\\d{4}$") {
-
   # Get all q3s arranged in a dataframe
   q3s <-
     sapply(vars, \(var) {
@@ -27,14 +26,15 @@ add_q3 <- function(df, vars, time_regex = "_\\d{4}$") {
   # Change names to get q3 between the variable name and the timeframe
   names(q3s) <- paste0(
     gsub(time_regex, "", names(q3s)), "_q3",
-    if (time_regex != "")
-    sapply(names(q3s), \(x) {
-      loc <- regexpr(time_regex, x)
-      if (loc < 0) {
-        return("")
-      }
-      substring(x, loc)
-    })
+    if (time_regex != "") {
+      sapply(names(q3s), \(x) {
+        loc <- regexpr(time_regex, x)
+        if (loc < 0) {
+          return("")
+        }
+        substring(x, loc)
+      })
+    }
   )
 
   out <- tibble::as_tibble(cbind(df, q3s))
@@ -101,21 +101,21 @@ get_breaks_q3 <- function(df, vars, time_regex = "_\\d{4}$") {
 #' @return Returns the same data.frame as df with q5 columns appended.
 #' @export
 add_q5 <- function(df, breaks, time_regex = "_\\d{4}$") {
-
   all_q5s <- lapply(names(breaks), \(var) {
-
     var_regex <- paste0("^", var, time_regex)
     df_var <- names(df)[grepl(var_regex, names(df))]
     df_var <- df_var[!grepl("_q3$|_q5$", df_var)]
 
     q5s <- lapply(df_var, \(v) {
       vals <- df[[v]]
-      if (all(is.na(vals))) return({
-        out <- tibble::tibble(var = vals)
-        time <- stringr::str_extract(v, time_regex)
-        names(out) <- paste0(var, "_q5", time)
-        out
+      if (all(is.na(vals))) {
+        return({
+          out <- tibble::tibble(var = vals)
+          time <- stringr::str_extract(v, time_regex)
+          names(out) <- paste0(var, "_q5", time)
+          out
         })
+      }
 
       brks <- breaks[[var]]
 
@@ -123,15 +123,21 @@ add_q5 <- function(df, breaks, time_regex = "_\\d{4}$") {
       # in the q5s even if they are lower/higher than the break by temporarily
       # editing the lower and higher breaks
       min_val <- min(vals, na.rm = TRUE)
-      if (is.na(brks[[1]])) brks[[1]] <- 0 else {
+      if (is.na(brks[[1]])) {
+        brks[[1]] <- 0
+      } else {
         if (min_val < brks[[1]]) brks[[1]] <- min_val
       }
       max_val <- max(vals, na.rm = TRUE)
-      if (is.na(brks[[length(brks)]])) brks[[length(brks)]] <- 0 else {
+      if (is.na(brks[[length(brks)]])) {
+        brks[[length(brks)]] <- 0
+      } else {
         if (max_val > brks[[length(brks)]]) brks[[length(brks)]] <- max_val
       }
       brks[is.na(brks)] <- 0
-      q5s <- if (all(brks == 0)) rep(0, length(vals)) else {
+      q5s <- if (all(brks == 0)) {
+        rep(0, length(vals))
+      } else {
         as.numeric(cut(vals, brks, include.lowest = TRUE))
       }
 
@@ -244,10 +250,14 @@ get_breaks_q5 <- function(df, vars, time_regex = "_\\d{4}$") {
 #' @export
 calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
                              types = NULL,
-                             rank_name = c("Low", "Below average", "Average",
-                                           "Above average", "High"),
-                             rank_name_short = c("Low", "B. average", "Average",
-                                                 "A. average", "High")) {
+                             rank_name = c(
+                               "Very low", "Low", "Moderate",
+                               "High", "Very high"
+                             ),
+                             rank_name_short = c(
+                               "Very low", "Low", "Moderate",
+                               "High", "Very high"
+                             )) {
   if (time_regex != "") {
     if (sum(sapply(vars, \(var) grepl(time_regex, var))) == 0) {
       stop(paste0(
@@ -296,9 +306,11 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
       if (all(!vars %in% names(scale_df))) {
         return(scale_df)
       }
-      add_q5(df = scale_df,
-             breaks = tables_q5[[geo]][[scale_name]],
-             time_regex = time_regex)
+      add_q5(
+        df = scale_df,
+        breaks = tables_q5[[geo]][[scale_name]],
+        time_regex = time_regex
+      )
     }
   )
 
@@ -344,20 +356,22 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
       map_over_scales(
         all_scales = tables_q5,
         fun = \(geo = geo, scale_name = scale_name, scale_df = scale_df, ...) {
-          if (nrow(scale_df) == 0) return(tibble::tibble())
-            out <- tibble::tibble(
-              df = paste(geo, scale_name, sep = "_"),
-              rank = seq_len(nrow(scale_df)) - 1,
-              var = scale_df[[var]]
-            )
+          if (nrow(scale_df) == 0) {
+            return(tibble::tibble())
+          }
+          out <- tibble::tibble(
+            df = paste(geo, scale_name, sep = "_"),
+            rank = seq_len(nrow(scale_df)) - 1,
+            var = scale_df[[var]]
+          )
 
-            # If type is `ind`, add rank_name and rank_name_short
-            if (!is.null(types) && "ind" %in% types[[var]]) {
-              out$rank_name <- c(NA, rank_name)
-              out$rank_name_short <- c(NA, rank_name_short)
-            }
+          # If type is `ind`, add rank_name and rank_name_short
+          if (!is.null(types) && "ind" %in% types[[var]]) {
+            out$rank_name <- c(NA, rank_name)
+            out$rank_name_short <- c(NA, rank_name_short)
+          }
 
-            return(out)
+          return(out)
         }
       )
     }, simplify = FALSE, USE.NAMES = TRUE)

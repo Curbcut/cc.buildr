@@ -31,7 +31,8 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
     val_digit = 0,
     text = character(),
     link_module = character(),
-    link_var = numeric()
+    link_dropdown = character(),
+    link_var_code = character()
   )
   data <- list()
 
@@ -76,9 +77,11 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
       text = paste0(
         "{data_rank} in terms of level of <a href = 'https://www.canuedata.ca/tmp/CANUE_METADATA_NO2LUR_A_YY.pdf'>NO2</a> pollution. ",
         "{higher_than_threshold}(NO2 = {pretty_data_var}, ",
-        "data from {data_date})"),
+        "data from {data_date})"
+      ),
       link_module = NA,
-      link_var = NA
+      link_dropdown = NA,
+      link_var_code = NA
     )
   dict <- rbind(dict, no2_dict)
 
@@ -137,7 +140,8 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
         "from {data_date})"
       ),
       link_module = NA,
-      link_var = NA
+      link_dropdown = NA,
+      link_var_code = NA
     )
   dict <- rbind(dict, ndvi_dict)
 
@@ -195,7 +199,8 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
         "(Data from {data_date})"
       ),
       link_module = NA,
-      link_var = NA
+      link_dropdown = NA,
+      link_var_code = NA
     )
   dict <- rbind(dict, sust_dict)
 
@@ -241,7 +246,8 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
         "ached houses. {data_rank}. (Data from {data_date})"
       ),
       link_module = "housing",
-      link_var = 11
+      link_dropdown = "housing-pimnd",
+      link_var_code = "housing_single_detached"
     )
   dict <- rbind(dict, singled_dict)
 
@@ -286,7 +292,8 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
         "{data_date})"
       ),
       link_module = "canale",
-      link_var = NA
+      link_dropdown = "canale-pimnd",
+      link_var_code = "canale"
     )
   dict <- rbind(dict, activel_dict)
 
@@ -378,11 +385,13 @@ placeex_main_card_rmd <- function(scales_variables_modules,
 
   if (check_bslib_version) {
     if (utils::packageVersion("bslib") != "9.9.9.9999") {
-      stop(paste0("Wrong version of `bslib`. Place explorer tabs won't be ",
-                  "colored according to how much of an outlier the zone is for ",
-                  "every theme. To ignore, set `check_bslib_version = FALSE`. ",
-                  "To build with colored tabs, install ",
-                  "`devtools::install_github('bdbmax/bslib')`"))
+      stop(paste0(
+        "Wrong version of `bslib`. Place explorer tabs won't be ",
+        "colored according to how much of an outlier the zone is for ",
+        "every theme. To ignore, set `check_bslib_version = FALSE`. ",
+        "To build with colored tabs, install ",
+        "`devtools::install_github('bdbmax/bslib')`"
+      ))
     }
   }
 
@@ -391,7 +400,7 @@ placeex_main_card_rmd <- function(scales_variables_modules,
 
   variables <- scales_variables_modules$variables
 
-  out_folder <-  "www/place_explorer"
+  out_folder <- "www/place_explorer"
   if (!out_folder %in% list.files("www", full.names = TRUE)) dir.create(out_folder)
   if (!grepl("/$", out_folder)) out_folder <- paste0(out_folder, "/")
 
@@ -412,7 +421,7 @@ placeex_main_card_rmd <- function(scales_variables_modules,
   # Get the head file -------------------------------------------------------
 
   inp <- system.file(paste0("place_explorer/pe_en_outside_app.Rmd"),
-                     package = "curbcut"
+    package = "curbcut"
   )
 
   header_file <- paste0(getwd(), "/", out_folder, "header.html")
@@ -429,20 +438,20 @@ placeex_main_card_rmd <- function(scales_variables_modules,
     )
 
   rmarkdown::render(inp,
-                    output_file = header_file,
-                    params = list(
-                      select_id = possible_scales[[1]][[1]]$ID[1],
-                      region = names(possible_scales)[1],
-                      df = names(possible_scales[[1]])[1],
-                      scale_sing = "",
-                      tileset_prefix = tileset_prefix,
-                      map_loc = possible_scales[[1]][[1]]$centroid[[1]],
-                      map_zoom = 10,
-                      mapbox_username = mapbox_username,
-                      title_card_data = title_card_data,
-                      variables = variables,
-                      scale_df = sf::st_drop_geometry(possible_scales[[1]][[1]])
-                    ), envir = new.env(), quiet = TRUE
+    output_file = header_file,
+    params = list(
+      select_id = possible_scales[[1]][[1]]$ID[1],
+      region = names(possible_scales)[1],
+      df = names(possible_scales[[1]])[1],
+      scale_sing = "",
+      tileset_prefix = tileset_prefix,
+      map_loc = possible_scales[[1]][[1]]$centroid[[1]],
+      map_zoom = 10,
+      mapbox_username = mapbox_username,
+      title_card_data = title_card_data,
+      variables = variables,
+      scale_df = sf::st_drop_geometry(possible_scales[[1]][[1]])
+    ), envir = new.env(), quiet = TRUE
   )
 
   x <- readLines(header_file)
@@ -459,11 +468,14 @@ placeex_main_card_rmd <- function(scales_variables_modules,
 
   progressr::with_progress({
     pb <- progressr::progressor(steps = sum(
-      unlist(sapply(possible_scales,
-                    sapply, nrow))) * length(lang))
+      unlist(sapply(
+        possible_scales,
+        sapply, nrow
+      ))
+    ) * length(lang))
     lapply(lang, \(lan) {
       inp <- system.file(paste0("place_explorer/pe_", lan, "_outside_app.Rmd"),
-                         package = "curbcut"
+        package = "curbcut"
       )
 
       lapply(seq_along(possible_scales), \(region_n) {
@@ -471,17 +483,17 @@ placeex_main_card_rmd <- function(scales_variables_modules,
         scales <- possible_scales[[region_n]]
 
         lapply(seq_along(scales), \(scale_n) {
-
           scale_name <- names(scales)[scale_n]
           scale_df <- scales[[scale_n]]
           scale_df <- suppressWarnings(sf::st_centroid(scale_df))
           scale_sing <-
             scales_dictionary$slider_title[scales_dictionary$scale == scale_name]
           # If there is only one row in the scale
-          if (nrow(scale_df) <= 1) return(NULL)
+          if (nrow(scale_df) <= 1) {
+            return(NULL)
+          }
 
           future.apply::future_lapply(scale_df$ID, \(ID) {
-
             # If exists, pass
             geo_sc_id <- paste(region, scale_name, ID, lan, sep = "_")
             output_file <- paste0(out_folder, geo_sc_id, ".html")
@@ -569,9 +581,11 @@ placeex_main_card_rmd <- function(scales_variables_modules,
                   variables = variables,
                   scale_df = sf::st_drop_geometry(scale_df)
                 ), envir = new.env(), quiet = TRUE
-              ), error = function(e) {
+              ),
+              error = function(e) {
                 stop(sprintf("Rmarkdown render crashed at file %s", geo_sc_id))
-              })
+              }
+            )
 
             # Remove header (too heavy)
             x <- readLines(output_file)

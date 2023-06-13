@@ -16,9 +16,10 @@
 #' @return Returns a named list of all basic map zoom levels.
 #' @export
 map_zoom_levels_create_all <- function(all_tables,
-                                       zoom_levels = list(first = 0, CT = 10.5,
-                                                          DA = 12.5, building = 15.5)) {
-
+                                       zoom_levels = list(
+                                         first = 0, CT = 10.5,
+                                         DA = 12.5, building = 15.5
+                                       )) {
   levels <- lapply(all_tables, \(scales) {
     out <- sapply(scales, \(s) {
       if (s == scales[[1]]) {
@@ -29,8 +30,10 @@ map_zoom_levels_create_all <- function(all_tables,
     })
     names(out) <- scales
     if (sum(sapply(out, is.null)) > 0) {
-      stop(paste0("Scale `", names(out)[sapply(out, is.null)], "` does not ",
-                  "have a zoom_levels supplied."))
+      stop(paste0(
+        "Scale `", names(out)[sapply(out, is.null)], "` does not ",
+        "have a zoom_levels supplied."
+      ))
     }
     return(out)
   })

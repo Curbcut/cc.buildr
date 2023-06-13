@@ -65,8 +65,9 @@ interpolate_fast_additive_sum <- function(col_name, data, id_col, weight_col = N
 
   # Calculate the sum for each group
   summed_data <- stats::aggregate(col_df[, col_name],
-                                  by = list(col_df[[id_col]]),
-                                  FUN = sum, na.rm = TRUE)
+    by = list(col_df[[id_col]]),
+    FUN = sum, na.rm = TRUE
+  )
 
   # Rename the columns
   colnames(summed_data) <- c("ID", col_name)
@@ -189,12 +190,11 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
         # Interpolate to other census scales
         census_interpolated <-
           mapply(\(scale_name, scale_df) {
-
             # If the scale is already the one containing data, merge and return
             if (scale_name == base_scale) {
               return(merge(scale_df, data,
-                           by = paste0(base_scale, "_ID"),
-                           all.x = TRUE
+                by = paste0(base_scale, "_ID"),
+                all.x = TRUE
               ))
             }
             # If the scale is not a census scale, do nothing
@@ -216,7 +216,8 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
 
             # Calculate the sum for each column using lapply
             summarized_add <- lapply(additive_vars, interpolate_fast_additive_sum,
-                                     data = from, id_col = scale_id)
+              data = from, id_col = scale_id
+            )
 
             # Concatenate both
             summarized <- c(summarized_avg, summarized_add)
@@ -233,8 +234,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
                 y <- y[!is.na(y$ID), ]
                 if (identical(x$ID, y$ID)) {
                   cbind(x, y[2])
-                }
-                else {
+                } else {
                   merge(x, y, by = "ID")
                 }
               }
@@ -289,7 +289,8 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
 
               # Calculate the sum for each column using lapply
               summarized_add <- lapply(additive_vars, interpolate_fast_additive_sum,
-                                       data = intersected, id_col = scale_id)
+                data = intersected, id_col = scale_id
+              )
 
               # Concatenate both
               summarized <- c(summarized_avg, summarized_add)
@@ -306,8 +307,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
                   y <- y[!is.na(y$ID), ]
                   if (identical(x$ID, y$ID)) {
                     cbind(x, y[2])
-                  }
-                  else {
+                  } else {
                     merge(x, y, by = "ID")
                   }
                 }
@@ -360,7 +360,9 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
       fun = \(geo = geo, scale_name = scale_name, ...) {
         paste(geo, scale_name, sep = "_")
       }
-    ) |> unlist() |> unname()
+    ) |>
+    unlist() |>
+    unname()
 
 
   ## Create interpolated references as a data.frame
@@ -454,8 +456,9 @@ interpolate_from_area <- function(to, from,
 
   # Calculate the sum for each column using lapply
   summarized_add <- lapply(additive_vars, interpolate_fast_additive_sum,
-                           data = intersected_table, id_col = "ID",
-                           weight_col = weight_by)
+    data = intersected_table, id_col = "ID",
+    weight_col = weight_by
+  )
 
   # Concatenate both
   summarized <- c(summarized_avg, summarized_add)
@@ -472,8 +475,7 @@ interpolate_from_area <- function(to, from,
       y <- y[!is.na(y$ID), ]
       if (identical(x$ID, y$ID)) {
         cbind(x, y[2])
-      }
-      else {
+      } else {
         merge(x, y, by = "ID")
       }
     }
@@ -538,7 +540,6 @@ interpolate_custom_geo <- function(data, all_scales, crs,
                                    additive_vars = c(),
                                    name_interpolate_from,
                                    construct_for = NULL) {
-
   ## Only interpolate for geometries bigger than the data one
   all_tables <- reconstruct_all_tables(all_scales)
   all_tables <- all_tables[names(all_tables) %in% only_regions]
@@ -618,10 +619,12 @@ interpolate_custom_geo <- function(data, all_scales, crs,
   ## Scales at which the data is available
   avail_df <-
     map_over_scales(interpolated,
-                    fun = \(geo = geo, scale_name = scale_name, ...) {
-                      paste(geo, scale_name, sep = "_")
-                    }
-    ) |> unlist() |> unname()
+      fun = \(geo = geo, scale_name = scale_name, ...) {
+        paste(geo, scale_name, sep = "_")
+      }
+    ) |>
+    unlist() |>
+    unname()
 
 
   ## Create interpolated references as a data.frame
