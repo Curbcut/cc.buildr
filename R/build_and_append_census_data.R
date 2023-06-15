@@ -145,7 +145,7 @@ ba_census_data <- function(scales_variables_modules,
           regions = census_dat$regions,
           metadata = TRUE,
           dataset_info = paste0(
-            "<p>This module presents <a href = 'https://www.statcan",
+            "<p>This page presents <a href = 'https://www.statcan",
             ".gc.ca/en/census/census-engagement/about'>housing data",
             " from the 1996 to the latest, Canadian Censuses</a></p>"
           ),
