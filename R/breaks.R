@@ -393,7 +393,8 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
   }
 
   if (is.null(breaks_base)) {
-    breaks_base <- sapply(vars, paste, simplify = FALSE, USE.NAMES = TRUE)
+    vars_unique <- unique(gsub(time_regex, "", vars))
+    breaks_base <- sapply(vars_unique, paste, simplify = FALSE, USE.NAMES = TRUE)
   }
 
   # Append q3s
