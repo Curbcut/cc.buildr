@@ -10,7 +10,9 @@ calculate_breaks(
   time_regex = "_\\\\d{4}$",
   types = NULL,
   rank_name = c("Very low", "Low", "Moderate", "High", "Very high"),
-  rank_name_short = c("Very low", "Low", "Moderate", "High", "Very high")
+  rank_name_short = c("Very low", "Low", "Moderate", "High", "Very high"),
+  breaks_base = NULL,
+  use_quintiles = FALSE
 )
 }
 \arguments{
@@ -34,6 +36,18 @@ from 1 to 5 (q5) be named. Defaults to c("Low", "Below average", "Average",
 \item{rank_name_short}{<\verb{character vector}> Same as rank_name but shorter
 to not take too much space in the legend labels. Defaults to c("Low", "B. average",
 "Average", "A. average", "High")}
+
+\item{breaks_base}{<\verb{names list}> If we want variables to use the breaks of
+another variable, we can supply a named list. The name is the variable that will
+use the breaks of the value variable. ex. in access, we want all variables of
+same theme to use the same breaks, no matter the transportation time. This
+would be how we would do the list, if we want to use the 30 minutes break as
+the basis for all the other transport time.
+\code{list(access_transit_pwd_25_food_misc_2023 = "access_transit_pwd_30_food_misc_2023", access_transit_pwd_20_food_misc_2023 = "access_transit_pwd_30_food_misc_2023", ...)}}
+
+\item{use_quintiles}{<\code{logical}> Should the breaks be pretty and constant made
+by splitting the data in 5 using the minimum and maximal value, or should we use
+a quintile approach. The latter is better suited for non-normal distributions.}
 }
 \value{
 Returns a list of length 4. The first is the same data.frame as df

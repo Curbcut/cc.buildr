@@ -4,7 +4,7 @@
 \alias{get_breaks_q5}
 \title{Get q5 break values}
 \usage{
-get_breaks_q5(df, vars, time_regex = "_\\\\d{4}$")
+get_breaks_q5(df, vars, time_regex = "_\\\\d{4}$", use_quintiles = FALSE)
 }
 \arguments{
 \item{df}{<\code{data.frame}> Contains all columns in \code{vars}.}
@@ -15,6 +15,10 @@ be calculated. Must fit with a name in \code{df}.}
 \item{time_regex}{<\code{character}> Regular expression which corresponds to
 a timeframe, placed at the end of the \code{vars} vector. e.g. \verb{_\\\\d\{4\}$} for
 years.}
+
+\item{use_quintiles}{<\code{logical}> Should the breaks be pretty and constant made
+by splitting the data in 5 using the minimum and maximal value, or should we use
+a quintile approach. The latter is better suited for non-normal distributions.}
 }
 \value{
 A data.frame where each column is a var, and the rows are the q5

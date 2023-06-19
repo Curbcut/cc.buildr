@@ -97,10 +97,17 @@ get_breaks_q3 <- function(df, vars, time_regex = "_\\d{4}$") {
 #' @param time_regex <`character`> Regular expression which corresponds to
 #' a timeframe, placed at the end of the `vars` vector. e.g. `_\\d{4}$` for
 #' years.
+#' @param breaks_base <`names list`> If we want variables to use the breaks of
+#' another variable, we can supply a named list. The name is the variable that will
+#' use the breaks of the value variable. ex. in access, we want all variables of
+#' same theme to use the same breaks, no matter the transportation time. This
+#' would be how we would do the list, if we want to use the 30 minutes break as
+#' the basis for all the other transport time.
+#' `list(access_transit_pwd_25_food_misc_2023 = "access_transit_pwd_30_food_misc_2023", access_transit_pwd_20_food_misc_2023 = "access_transit_pwd_30_food_misc_2023", ...)`
 #'
 #' @return Returns the same data.frame as df with q5 columns appended.
 #' @export
-add_q5 <- function(df, breaks, time_regex = "_\\d{4}$") {
+add_q5 <- function(df, breaks, time_regex = "_\\d{4}$", breaks_base) {
   all_q5s <- lapply(names(breaks), \(var) {
     var_regex <- paste0("^", var, time_regex)
     df_var <- names(df)[grepl(var_regex, names(df))]
@@ -117,7 +124,11 @@ add_q5 <- function(df, breaks, time_regex = "_\\d{4}$") {
         })
       }
 
-      brks <- breaks[[var]]
+      # Which breaks to use?
+      breaks_subset_var <- breaks_base[[var]]
+
+      # Grab the correct breaks
+      brks <- breaks[[breaks_subset_var]]
 
       # Attach the breaks. Make sure the lower and upper limit are included
       # in the q5s even if they are lower/higher than the break by temporarily
@@ -177,6 +188,85 @@ find_breaks_q5 <- function(min_val, max_val) {
   return(c(new_min + 0:5 * break_val))
 }
 
+#' Find pretty q5 breaks
+#'
+#' @param dist <`numeric`> Distribution (numerics) with no NAs.
+#' @param min_val <`numeric`>
+#' @param max_val <`numeric`>
+#'
+#' @return Returns a numeric vector with pretty q5 break values. It ensures that
+#' each break point is different by adjusting the rounding base dynamically
+#' based on the difference between each quantile and its predecessor. The while
+#' loop ensures that if a new break point is the same as the last one after
+#' rounding, the base for rounding will be decreased, increasing the precision
+#' until a unique break point is found. Note that this might lead to break
+#' points with a high level of precision, especially in data sets with many
+#' similar values.
+#' @export
+find_breaks_quintiles_q5 <- function(min_val, max_val, dist) {
+
+  # Take out min and max values (outliers)
+  no_outliers <- dist[dist > min_val & dist < max_val]
+  if (length(unique(no_outliers)) < 10) {
+    no_outliers <- dist
+  }
+  no_outliers <- unique(no_outliers)
+
+  # Calculate quintiles
+  q <- stats::quantile(no_outliers, probs = seq(0, 1, by = 0.2))
+
+  # Create empty breaks vector
+  breaks <- numeric(length(q))
+
+  # Initialize first break and previous_q
+  previous_q <- 0
+
+  # Loop through all the quantiles
+  for (i in 1:length(q)) {
+
+    # Check if difference between current quantile and previous one is zero
+    if (q[i] - previous_q == 0) {
+      round_base <- 1
+    } else {
+      # Determine the rounding base for each quantile difference
+      round_base <- 10^floor(log10(abs(q[i] - previous_q)))
+    }
+
+    # Create a "pretty" break ensuring it's different from the previous one
+    new_break <- round(q[i] / round_base) * round_base
+
+    # If it's the first break and it's equal to zero, do nothing.
+    # If the new break is the same as the previous one, decrease the rounding base
+    # until they are different
+    if (!(i == 1 && new_break == 0)) {
+      while (new_break %in% breaks) {
+        round_base <- round_base / 10
+        new_break <- round(q[i] / round_base) * round_base
+      }
+    }
+
+    # Assign the new break to the breaks vector
+    breaks[i] <- new_break
+    previous_q <- new_break
+  }
+
+  # Check if the first break is much closer to 0 than the second break
+  if (breaks[2] / breaks[1] > 10) {
+    breaks[1] <- 0
+  }
+
+  # If the minimum value was already 0
+  if (min_val == 0) {
+    breaks[1] <- 0
+  }
+
+  # Make sure the order is lower to higher
+  breaks <- breaks[order(breaks)]
+
+  return(unname(breaks))
+
+}
+
 #' Get q5 break values
 #'
 #' @param df <`data.frame`> Contains all columns in `vars`.
@@ -185,10 +275,13 @@ find_breaks_q5 <- function(min_val, max_val) {
 #' @param time_regex <`character`> Regular expression which corresponds to
 #' a timeframe, placed at the end of the `vars` vector. e.g. `_\\d{4}$` for
 #' years.
+#' @param use_quintiles <`logical`> Should the breaks be pretty and constant made
+#' by splitting the data in 5 using the minimum and maximal value, or should we use
+#' a quintile approach. The latter is better suited for non-normal distributions.
 #'
 #' @return A data.frame where each column is a var, and the rows are the q5
 #' @export
-get_breaks_q5 <- function(df, vars, time_regex = "_\\d{4}$") {
+get_breaks_q5 <- function(df, vars, time_regex = "_\\d{4}$", use_quintiles = FALSE) {
   # Calculate q5 only using MOST RECENT year
   unique_vars <- unique(gsub(time_regex, "", vars))
   unique_vars_regex <- paste0("^", unique_vars, time_regex)
@@ -217,7 +310,26 @@ get_breaks_q5 <- function(df, vars, time_regex = "_\\d{4}$") {
     min_val <- max(var_mean - (4 * standard_d), cat_min)
     max_val <- min(var_mean + (4 * standard_d), cat_max)
 
-    out <- tibble::tibble(var = find_breaks_q5(min_val, max_val))
+    # If use quintiles, use a different function
+    if (use_quintiles) {
+      breaks <- find_breaks_quintiles_q5(min_val, max_val, dist = as_vec)
+    } else {
+      breaks <- find_breaks_q5(min_val, max_val)
+
+      if (length(as_vec) > 3 & length(as_vec) < 500) {
+        if (stats::shapiro.test(as_vec)$statistic < 0.5) {
+          warning(sprintf(paste0("The distribution for '%s' does not seem to be a normal ",
+                                 "distribution. Consider using the `use_quintiles` ",
+                                 "argument."), u_var))
+        }
+      }
+
+    }
+
+    # IF NORMAL DISTRIBUTION
+    out <- tibble::tibble(var = breaks)
+    # IF NOT NORMAL DISTRIBUTION (SHOULD BE AN ARGUMENT TO WITH_BREAKS FUNCTION)
+    # QUINTILES!
     names(out) <- gsub(time_regex, "", u_var)
     return(out)
   }, simplify = FALSE, USE.NAMES = TRUE)
@@ -242,6 +354,16 @@ get_breaks_q5 <- function(df, vars, time_regex = "_\\d{4}$") {
 #' @param rank_name_short <`character vector`> Same as rank_name but shorter
 #' to not take too much space in the legend labels. Defaults to c("Low", "B. average",
 #' "Average", "A. average", "High")
+#' @param use_quintiles <`logical`> Should the breaks be pretty and constant made
+#' by splitting the data in 5 using the minimum and maximal value, or should we use
+#' a quintile approach. The latter is better suited for non-normal distributions.
+#' @param breaks_base <`names list`> If we want variables to use the breaks of
+#' another variable, we can supply a named list. The name is the variable that will
+#' use the breaks of the value variable. ex. in access, we want all variables of
+#' same theme to use the same breaks, no matter the transportation time. This
+#' would be how we would do the list, if we want to use the 30 minutes break as
+#' the basis for all the other transport time.
+#' `list(access_transit_pwd_25_food_misc_2023 = "access_transit_pwd_30_food_misc_2023", access_transit_pwd_20_food_misc_2023 = "access_transit_pwd_30_food_misc_2023", ...)`
 #'
 #' @return Returns a list of length 4. The first is the same data.frame as df
 #' with q3 and q5 columns appended. The second is the q3 breaks table, and the third
@@ -257,7 +379,9 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
                              rank_name_short = c(
                                "Very low", "Low", "Moderate",
                                "High", "Very high"
-                             )) {
+                             ),
+                             breaks_base = NULL,
+                             use_quintiles = FALSE) {
   if (time_regex != "") {
     if (sum(sapply(vars, \(var) grepl(time_regex, var))) == 0) {
       stop(paste0(
@@ -266,6 +390,10 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
         "argument to an empty string: `''`."
       ))
     }
+  }
+
+  if (is.null(breaks_base)) {
+    breaks_base <- sapply(vars, paste, simplify = FALSE, USE.NAMES = TRUE)
   }
 
   # Append q3s
@@ -295,7 +423,7 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
       if (all(!vars %in% names(scale_df))) {
         return(tibble::tibble())
       }
-      get_breaks_q5(scale_df, vars, time_regex)
+      get_breaks_q5(scale_df, vars, time_regex, use_quintiles = use_quintiles)
     }
   )
 
@@ -309,7 +437,8 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
       add_q5(
         df = scale_df,
         breaks = tables_q5[[geo]][[scale_name]],
-        time_regex = time_regex
+        time_regex = time_regex,
+        breaks_base = breaks_base
       )
     }
   )
@@ -359,10 +488,13 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
           if (nrow(scale_df) == 0) {
             return(tibble::tibble())
           }
+          # Which breaks to use?
+          breaks_subset_var <- breaks_base[[var]]
+
           out <- tibble::tibble(
             df = paste(geo, scale_name, sep = "_"),
             rank = seq_len(nrow(scale_df)) - 1,
-            var = scale_df[[var]]
+            var = scale_df[[breaks_subset_var]]
           )
 
           # If type is `ind`, add rank_name and rank_name_short

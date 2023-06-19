@@ -1284,6 +1284,9 @@ stories_create_tileset <- function(stories, prefix, username, access_token) {
   # Upload source
   stories <- sf::st_as_sf(stories, coords = c("lon", "lat"), crs = 4326)
   stories <- stories[c("ID", "name_id", "geometry")]
+  names(stories)[2] <- "name"
+  stories$ID <- as.character(stories$ID)
+
   tileset_upload_tile_source(
     df = stories,
     id = paste0(prefix, "_stories"),
@@ -1294,8 +1297,8 @@ stories_create_tileset <- function(stories, prefix, username, access_token) {
   # Create recipe
   stories_recipe <-
     tileset_create_recipe(
-      layer_names = "stories-stories",
-      source = "mapbox://tileset-source/sus-mcgill/stories-stories",
+      layer_names = paste0(prefix, "_stories"),
+      source = paste0("mapbox://tileset-source/sus-mcgill/", prefix, "_stories"),
       minzoom = 3,
       maxzoom = 13,
       recipe_name = paste0(prefix, "_stories")
@@ -1313,4 +1316,5 @@ stories_create_tileset <- function(stories, prefix, username, access_token) {
     username = username,
     access_token = access_token
   )
+
 }

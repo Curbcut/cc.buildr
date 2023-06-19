@@ -69,12 +69,14 @@ ba_accessibility_points <- function(scales_variables_modules,
   )
   # qs::qsave(ttm_data, "test_build_mtl/ttm_data.qs")
   # ttm_data <- qs::qread("test_build_mtl/ttm_data.qs")
+
   names(ttm_data)[2:ncol(ttm_data)] <- paste0(names(ttm_data)[2:ncol(ttm_data)], "_2023")
 
   # Interpolate -------------------------------------------------------------
 
   average_vars <- names(ttm_data)[!grepl("ID$", names(ttm_data))]
   names(ttm_data)[1] <- "DA_ID"
+
 
   data_interpolated <-
     interpolate_from_census_geo(
@@ -89,15 +91,26 @@ ba_accessibility_points <- function(scales_variables_modules,
 
   # Calculate breaks --------------------------------------------------------
 
-  types <- rep(list("avg"), length(average_vars))
-  names(types) <- average_vars
+  unique_vars <- gsub("_\\d{4}$", "", average_vars)
+
+  # Calculate breaks ONCE for 30 minutes. Use those breaks on all variables
+  breaks_base <- sapply(unique_vars, paste, simplify = FALSE, USE.NAMES = TRUE)
+  middle_val <- time_intervals[round(length(time_intervals)/2)]
+  breaks_base <- lapply(breaks_base, \(x) gsub("_\\d{2}_", sprintf("_%s_", middle_val), x))
+
+  types <- rep(list("avg"), length(unique_vars))
+  names(types) <- unique_vars
 
   with_breaks <-
     calculate_breaks(
       all_scales = data_interpolated$scales,
       vars = average_vars,
-      types = types
+      types = types,
+      use_quintiles = TRUE,
+      breaks_base = breaks_base
     )
+
+
 
   # Calculate region values -------------------------------------------------
 
