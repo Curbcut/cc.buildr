@@ -130,14 +130,14 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
       "Can-BICS, or Canadian Bikeway Comfort and Safety, is a classification ",
       "system for cycling infrastructure across Canada. This system is based ",
       "on three tiers that considers safety and user comfort: high-, medium-,",
-      " and low-comfort bikeways. "
+      " and low-comfort bikeways."
     ),
     module_title_text_extra = paste0(
       "<p>The datasets visualized on this page come from CANUE and the 2021 C",
       "anadian Census. Can-BICS was developed by Meghan Winters and her team.",
       " Understanding the spatializatio",
       "n of cycling infrastructure as classified by Can-BICS can help to high",
-      "light the availability and infrastructure types across the Montreal re",
+      "light the availability and infrastructure types across a re",
       "gion and support efforts in improving bikeways. For more information a",
       "bout Can-BICS visit: <a target = '_blank' href='https://www.canada.ca/",
       "en/public-health/services/reports-publications/health-promotion-chroni",

@@ -317,11 +317,14 @@ get_breaks_q5 <- function(df, vars, time_regex = "_\\d{4}$", use_quintiles = FAL
       breaks <- find_breaks_q5(min_val, max_val)
 
       if (length(as_vec) > 3 & length(as_vec) < 500) {
-        if (stats::shapiro.test(as_vec)$statistic < 0.5) {
-          warning(sprintf(paste0("The distribution for '%s' does not seem to be a normal ",
-                                 "distribution. Consider using the `use_quintiles` ",
-                                 "argument."), u_var))
-        }
+        tryCatch({
+          if (stats::shapiro.test(as_vec)$statistic < 0.5) {
+            warning(sprintf(paste0("The distribution for '%s' does not seem to be a normal ",
+                                   "distribution. Consider using the `use_quintiles` ",
+                                   "argument."), u_var))
+          }
+        }, error = function(e) NULL)
+
       }
 
     }
