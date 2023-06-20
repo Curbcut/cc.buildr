@@ -312,7 +312,10 @@ get_breaks_q5 <- function(df, vars, time_regex = "_\\d{4}$", use_quintiles = FAL
 
     # If use quintiles, use a different function
     if (use_quintiles) {
-      breaks <- find_breaks_quintiles_q5(min_val, max_val, dist = as_vec)
+      # If it can't work it, revert to the principal breaks function
+      breaks <-
+        tryCatch(find_breaks_quintiles_q5(min_val, max_val, dist = as_vec),
+                 error = function(e) find_breaks_q5(min_val, max_val))
     } else {
       breaks <- find_breaks_q5(min_val, max_val)
 
@@ -409,7 +412,7 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
       }
       add_q3(scale_df, vars, time_regex = time_regex)
     }
-  )
+    , with_progress = FALSE)
 
   # Get breaks
   tables_q3 <- map_over_scales(
@@ -420,7 +423,7 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
       }
       get_breaks_q3(scale_df, vars, time_regex = time_regex)
     }
-  )
+    , with_progress = FALSE)
   tables_q5 <- map_over_scales(
     all_scales = out_tables,
     fun = \(scale_df = scale_df, ...) {
@@ -429,7 +432,7 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
       }
       get_breaks_q5(scale_df, vars, time_regex, use_quintiles = use_quintiles)
     }
-  )
+    , with_progress = FALSE)
 
   # Append q5s
   out_tables <- map_over_scales(
@@ -445,7 +448,7 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
         breaks_base = breaks_base
       )
     }
-  )
+    , with_progress = FALSE)
 
   # Arrange the breaks tables
   # Unique variables
@@ -471,7 +474,7 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
           })
           Reduce(rbind, out)
         }
-      )
+        , with_progress = FALSE)
     }, simplify = FALSE, USE.NAMES = TRUE)
   q3_breaks_table <-
     sapply(q3_breaks_table, \(x) {
@@ -509,7 +512,7 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
 
           return(out)
         }
-      )
+      , with_progress = FALSE)
     }, simplify = FALSE, USE.NAMES = TRUE)
   q5_breaks_table <-
     sapply(q5_breaks_table, \(x) {

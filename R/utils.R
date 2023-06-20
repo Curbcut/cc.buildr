@@ -11,12 +11,14 @@
 #' are `geo` (names of regions), `scales` (scales data.frame), 3
 #' `scale_name` (names of scales inside a region), `scale_df` (data.frame, single
 #' scale)
+#' @param with_progress <`logical`> Should there be a progress bar? Slows things
+#' down when the function is just too fast.
 #'
 #' @return Returns the all_scales list that is fed, with the `fun` ran
 #' on all the scales.
 #' @export
-map_over_scales <- function(all_scales, fun) {
-  pb <- progressr::progressor(steps = sum(sapply(all_scales, length)))
+map_over_scales <- function(all_scales, fun, with_progress = TRUE) {
+  if (with_progress) pb <- progressr::progressor(steps = sum(sapply(all_scales, length)))
   # SO slow in parallel ? Just lets on waiting!
   mapply(\(geo, scales) {
     mapply(\(scale_name, scale_df) {
@@ -28,7 +30,7 @@ map_over_scales <- function(all_scales, fun) {
         geo = geo, scales = scales,
         scale_name = scale_name, scale_df = scale_df
       )
-      pb()
+      if (with_progress) pb()
       out
     }, names(scales), scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
   }, names(all_scales), all_scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)

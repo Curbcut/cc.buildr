@@ -4,7 +4,7 @@
 \alias{map_over_scales}
 \title{Map over the depth of the list of scales}
 \usage{
-map_over_scales(all_scales, fun)
+map_over_scales(all_scales, fun, with_progress = TRUE)
 }
 \arguments{
 \item{all_scales}{<\verb{named list}> A named list of scales. The first level is
@@ -14,6 +14,9 @@ the geo, and the second is the scales.}
 are \code{geo} (names of regions), \code{scales} (scales data.frame), 3
 \code{scale_name} (names of scales inside a region), \code{scale_df} (data.frame, single
 scale)}
+
+\item{with_progress}{<\code{logical}> Should there be a progress bar? Slows things
+down when the function is just too fast.}
 }
 \value{
 Returns the all_scales list that is fed, with the \code{fun} ran
