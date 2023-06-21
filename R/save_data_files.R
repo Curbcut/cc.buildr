@@ -178,12 +178,12 @@ save_all_scales_qs <- function(data_folder = "data/", all_scales, variables) {
       mapply(\(table_name, table) {
         path <- sprintf("%s/%s/%s/%s.qs", data_folder, region, scale_name, table_name)
 
-        if (path %in% all_files) {
-          old_table <- qs::qread(path)
-          if (!identical(table, old_table)) qs::qsave(table, file = path)
-        } else {
+        # if (path %in% all_files) {
+        #   old_table <- qs::qread(path)
+        #   if (!identical(table, old_table)) qs::qsave(table, file = path)
+        # } else {
           qs::qsave(table, file = path)
-        }
+        # }
       }, names(tables), tables)
     }, names(scales), scales)
   }, names(qs_table_list), qs_table_list)

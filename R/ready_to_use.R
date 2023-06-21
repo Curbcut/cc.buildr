@@ -197,7 +197,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
     c("Bedroom Type", "Year of Construction") # , "Rent Ranges")
   dimensions_short <-
     c("bed", "year") # , "rent_range")
-  years <- 2010:2021
+  years <- 2010:2022
 
   # Retrieval
   cmhc_vac_rate <-
