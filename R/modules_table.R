@@ -36,7 +36,7 @@ append_empty_modules_table <- function(scales) {
 #'
 #' @param modules <`data.frame`> The \code{modules} data.frame to which add a
 #' new row.
-#' @param id <`character`> The module id, e.g. `canale`
+#' @param id <`character`> The module id, e.g. `alp`
 #' @param theme <`character`> The theme in which the module should be, e.g.
 #' `Housing`, `Urban life`, `Transport`, ... If the module is not to be displayed,
 #' keep the default empty string `""`. The module will be hidden.
@@ -44,7 +44,7 @@ append_empty_modules_table <- function(scales) {
 #' to that module from the navigation bar, e.g. `Active living potential`
 #' @param title_text_title <`character`> This title text title will be used
 #' once the user is in the module, to describe what they are navigating,
-#' e.g. `Active living potential: the CanALE index`.
+#' e.g. `Active living potential`.
 #' to that module from the navigation bar, e.g. `Active living potential`
 #' @param title_text_main <`character`> The title text main paragraph is the main
 #' text used to describe the module, on the left-side panel.

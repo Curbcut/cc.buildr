@@ -13,18 +13,18 @@
 #' `scales_variables_modules` with the Can-ALE variable added, its addition
 #' in the variables table and the module table.
 #' @export
-ru_canale <- function(scales_variables_modules, region_DA_IDs, crs) {
+ru_alp <- function(scales_variables_modules, region_DA_IDs, crs) {
   ba_var(
-    data = cc.data::db_read_data(table = "canale", column_to_select = "DA_ID", IDs = region_DA_IDs, crs = crs),
+    data = cc.data::db_read_data(table = "alp", column_to_select = "DA_ID", IDs = region_DA_IDs, crs = crs),
     scales_variables_modules = scales_variables_modules,
     base_scale = "DA",
     weight_by = "households",
     crs = crs,
     average_vars = c(
-      "canale_2001", "canale_2006", "canale_2011", "canale_2016",
-      "canale_2021"
+      "alp_2001", "alp_2006", "alp_2011", "alp_2016",
+      "alp_2021"
     ),
-    variable_var_code = "canale",
+    variable_var_code = "alp",
     variable_type = "ind",
     variable_var_title = "Active living potential",
     variable_var_short = "Active living",
@@ -34,7 +34,7 @@ ru_canale <- function(scales_variables_modules, region_DA_IDs, crs) {
     variable_private = FALSE,
     variable_source = "Curbcut",
     variable_pe_include = TRUE,
-    module_id = "canale",
+    module_id = "alp",
     module_theme = "Health",
     module_nav_title = "Active living potential",
     module_title_text_title = "Active Living Potential",
@@ -77,7 +77,7 @@ ru_canale <- function(scales_variables_modules, region_DA_IDs, crs) {
       ", this percentile approach offers a balanced and nuanced understanding",
       " of an area's walkability."
     ),
-    module_var_left = "canale",
+    module_var_left = "alp",
     module_dates = c(2001, 2006, 2011, 2016, 2021),
     module_var_right = scales_variables_modules$variables$var_code[
       scales_variables_modules$variables$source == "Canadian census" &

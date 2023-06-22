@@ -288,11 +288,11 @@ scales_variables_modules <-
               crs = crs, geo_uid = cancensus_cma_code)
 ```
 
-### Can-BICS and Can-ALE
+### Can-BICS and ALP
 
 ``` r
 scales_variables_modules <-
-  ru_canale(scales_variables_modules = scales_variables_modules,
+  ru_alp(scales_variables_modules = scales_variables_modules,
             crs = crs)
 scales_variables_modules <-
   ru_canbics(scales_variables_modules = scales_variables_modules,

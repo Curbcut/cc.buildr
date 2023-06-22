@@ -14,7 +14,7 @@ placeex_main_card_data(
 }
 \arguments{
 \item{scales}{<\code{list}> Lists of spatial features dataframes with regions and
-scales filled with at minimum census and canale data. Usually is
+scales filled with at minimum census and alp data. Usually is
 \code{scales_variables_modules$scales}.}
 
 \item{DA_table}{<\verb{sf data.frame}> Tables containing all the dissemination areas

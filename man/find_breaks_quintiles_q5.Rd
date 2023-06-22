@@ -4,7 +4,7 @@
 \alias{find_breaks_quintiles_q5}
 \title{Find pretty q5 breaks}
 \usage{
-find_breaks_quintiles_q5(min_val, max_val, dist)
+find_breaks_quintiles_q5(min_val, max_val, dist, q3_q5 = "q5")
 }
 \arguments{
 \item{min_val}{<\code{numeric}>}

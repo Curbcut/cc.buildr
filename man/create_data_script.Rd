@@ -7,7 +7,7 @@
 create_data_script(name, pages_folder = "dev/data_import/")
 }
 \arguments{
-\item{name}{<\code{character}> Name of the data script to be created, e.g. \code{canale}.}
+\item{name}{<\code{character}> Name of the data script to be created, e.g. \code{alp}.}
 
 \item{pages_folder}{<\code{character}> Path to the folder where all the build and
 append data scripts are in.}

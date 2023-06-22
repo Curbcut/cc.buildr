@@ -1,6 +1,6 @@
 #' Create or edit a build and append data script
 #'
-#' @param name <`character`> Name of the data script to be created, e.g. `canale`.
+#' @param name <`character`> Name of the data script to be created, e.g. `alp`.
 #' @param pages_folder <`character`> Path to the folder where all the build and
 #' append data scripts are in.
 #'

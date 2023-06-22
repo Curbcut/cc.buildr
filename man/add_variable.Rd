@@ -38,7 +38,7 @@ add_variable(
 new row.}
 
 \item{var_code}{<\code{character}> The code used to refer to the variables, e.g.
-\code{canale}}
+\code{alp}}
 
 \item{type}{<\code{character}> The variable type. One of \code{"ind"}, \code{"pct"},
 \code{"avg"}, \code{"median"}, \code{"per1k"}, \code{"sqkm"} or \code{"count"}.}

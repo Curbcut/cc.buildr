@@ -26,7 +26,7 @@ add_module(
 \item{modules}{<\code{data.frame}> The \code{modules} data.frame to which add a
 new row.}
 
-\item{id}{<\code{character}> The module id, e.g. \code{canale}}
+\item{id}{<\code{character}> The module id, e.g. \code{alp}}
 
 \item{theme}{<\code{character}> The theme in which the module should be, e.g.
 \code{Housing}, \verb{Urban life}, \code{Transport}, ... If the module is not to be displayed,
@@ -37,7 +37,7 @@ to that module from the navigation bar, e.g. \verb{Active living potential}}
 
 \item{title_text_title}{<\code{character}> This title text title will be used
 once the user is in the module, to describe what they are navigating,
-e.g. \verb{Active living potential: the CanALE index}.
+e.g. \verb{Active living potential}.
 to that module from the navigation bar, e.g. \verb{Active living potential}}
 
 \item{title_text_main}{<\code{character}> The title text main paragraph is the main

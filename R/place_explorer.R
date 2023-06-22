@@ -1,7 +1,7 @@
 #' Produce the place explorer main card
 #'
 #' @param scales <`list`> Lists of spatial features dataframes with regions and
-#' scales filled with at minimum census and canale data. Usually is
+#' scales filled with at minimum census and alp data. Usually is
 #' `scales_variables_modules$scales`.
 #' @param DA_table <`sf data.frame`> Tables containing all the dissemination areas
 #' of the zone under study. Usually is `census_scales$DA`
@@ -291,14 +291,14 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
         "{data_rank} in terms of active living potential. (Data from ",
         "{data_date})"
       ),
-      link_module = "canale",
-      link_dropdown = "canale-pimnd",
-      link_var_code = "canale"
+      link_module = "alp",
+      link_dropdown = "alp-pimnd",
+      link_var_code = "alp"
     )
   dict <- rbind(dict, activel_dict)
 
 
-  vars <- paste0("canale_", current_census_year)
+  vars <- paste0("alp_", current_census_year)
 
   # Format correctly
   data$activel <- map_over_scales(

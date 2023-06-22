@@ -44,7 +44,7 @@ append_empty_variables_table <- function(scales_consolidated) {
 #' @param variables <`data.frame`> The \code{variables} data.frame to which add a
 #' new row.
 #' @param var_code <`character`> The code used to refer to the variables, e.g.
-#' \code{canale}
+#' \code{alp}
 #' @param type <`character`> The variable type. One of \code{"ind"}, \code{"pct"},
 #' \code{"avg"}, \code{"median"}, \code{"per1k"}, \code{"sqkm"} or \code{"count"}.
 #' @param var_title <`character`> The variable title
