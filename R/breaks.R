@@ -18,6 +18,9 @@ add_q3 <- function(df, vars, time_regex = "_\\d{4}$") {
       if (!var %in% names(df)) {
         return()
       }
+      if (all(is.na(df[[var]]))) {
+        return(df[[var]])
+      }
       dist <- df[[var]]
       dist <- dist[!is.na(dist)]
       min_val <- min(dist, na.rm = TRUE)
