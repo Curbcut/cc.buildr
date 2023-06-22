@@ -18,7 +18,14 @@ add_q3 <- function(df, vars, time_regex = "_\\d{4}$") {
       if (!var %in% names(df)) {
         return()
       }
-      rough_rank(df[[var]], 3)
+      dist <- df[[var]]
+      dist <- dist[!is.na(dist)]
+      min_val <- min(dist, na.rm = TRUE)
+      max_val <- max(dist, na.rm = TRUE)
+      q3_breaks <- find_breaks_quintiles_q5(min_val = min_val, max_val = max_val,
+                                            dist = dist, q3_q5 = "q3")
+
+      as.numeric(cut(df[[var]], q3_breaks, include.lowest = TRUE))
     }, simplify = FALSE, USE.NAMES = TRUE)
   q3s <- q3s[!sapply(q3s, is.null)]
   q3s <- tibble::as_tibble(q3s)
@@ -203,7 +210,7 @@ find_breaks_q5 <- function(min_val, max_val) {
 #' points with a high level of precision, especially in data sets with many
 #' similar values.
 #' @export
-find_breaks_quintiles_q5 <- function(min_val, max_val, dist) {
+find_breaks_quintiles_q5 <- function(min_val, max_val, dist, q3_q5 = "q5") {
 
   # Take out min and max values (outliers)
   no_outliers <- dist[dist > min_val & dist < max_val]
@@ -213,7 +220,8 @@ find_breaks_quintiles_q5 <- function(min_val, max_val, dist) {
   no_outliers <- unique(no_outliers)
 
   # Calculate quintiles
-  q <- stats::quantile(no_outliers, probs = seq(0, 1, by = 0.2))
+  by <- if (q3_q5 == "q5") 0.2 else if (q3_q5 == "q3") 0.33 else stop("`q3_q5` argument needs to be q3 or q5")
+  q <- stats::quantile(no_outliers, probs = seq(0, 1, by = by))
 
   # Create empty breaks vector
   breaks <- numeric(length(q))
@@ -512,7 +520,7 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
 
           return(out)
         }
-      , with_progress = FALSE)
+        , with_progress = FALSE)
     }, simplify = FALSE, USE.NAMES = TRUE)
   q5_breaks_table <-
     sapply(q5_breaks_table, \(x) {
