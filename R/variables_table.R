@@ -404,7 +404,7 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
           } else if ("sqkm" %in% type) {
             df <- sf:::`[.sf`(df_sf, v)
             df$area <- get_area(df)
-            out$val <- stats::weighted.mean(df[[v]], df[["area"]])
+            out$val <- stats::weighted.mean(df[[v]], df[["area"]], na.rm = TRUE)
           } else if ("per1k" %in% type) {
             df <- df[c(v, "population")]
             out$val <- stats::weighted.mean(df[[v]], df[["population"]])
