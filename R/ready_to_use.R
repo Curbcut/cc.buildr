@@ -37,7 +37,7 @@ ru_alp <- function(scales_variables_modules, region_DA_IDs, crs) {
     module_id = "alp",
     module_theme = "Health",
     module_nav_title = "Active living potential",
-    module_title_text_title = "Active Living Potential",
+    module_title_text_title = "Active living potential",
     module_title_text_main = paste0(
       "<p>The walkability of an area is influenced by both the built environment ",
       "and socio-economic factors. The Active Living Potential index ",
@@ -743,7 +743,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
   modules <-
     scales_variables_modules$modules |>
     add_module(
-      id = "vacancyrate",
+      id = "vacancy",
       theme = "Housing",
       nav_title = "Vacancy rate",
       title_text_title = "Vacancy rate",
