@@ -23,6 +23,7 @@ add_q3 <- function(df, vars, time_regex = "_\\d{4}$") {
       }
       dist <- df[[var]]
       dist <- dist[!is.na(dist)]
+      if (length(unique(dist)) == 1) return(rep(1, length(df[[var]])))
       min_val <- min(dist, na.rm = TRUE)
       max_val <- max(dist, na.rm = TRUE)
       q3_breaks <- find_breaks_quintiles_q5(min_val = min_val, max_val = max_val,
@@ -134,11 +135,28 @@ add_q5 <- function(df, breaks, time_regex = "_\\d{4}$", breaks_base) {
         })
       }
 
+      # Check for single values
+      vv <- vals[!is.na(vals)]
+      if (length(unique(vv)) == 1) return({
+        out <- tibble::tibble(var = rep(1, length(vals)))
+        time <- stringr::str_extract(v, time_regex)
+        names(out) <- paste0(var, "_q5", time)
+        out
+      })
+
       # Which breaks to use?
       breaks_subset_var <- breaks_base[[var]]
 
       # Grab the correct breaks
       brks <- breaks[[breaks_subset_var]]
+
+      # Check for single breaksvalues
+      if (length(unique(brks)) == 1) return({
+        out <- tibble::tibble(var = rep(1, length(vals)))
+        time <- stringr::str_extract(v, time_regex)
+        names(out) <- paste0(var, "_q5", time)
+        out
+      })
 
       # Attach the breaks. Make sure the lower and upper limit are included
       # in the q5s even if they are lower/higher than the break by temporarily

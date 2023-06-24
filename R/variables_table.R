@@ -359,9 +359,11 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
             }
             parent_string_year <- paste0(parent_string, "_", out$year)
             no_nas <- df[!is.na(df[[parent_string_year]]) &
-              !is.na(df[[v]]), ]
+                           !is.na(df[[v]]), ]
 
-            out$val <- stats::weighted.mean(no_nas[[v]], no_nas[[parent_string_year]])
+            out$val <- stats::weighted.mean(as.numeric(no_nas[[v]]),
+                                            as.numeric(no_nas[[parent_string_year]]),
+                                            na.rm = TRUE)
             out$count <- out$val * sum(no_nas[[parent_string_year]])
 
             # Round if necessary
@@ -379,7 +381,8 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
               }
             no_nas <- df[!is.na(df[[parent_string_year]]) & !is.na(df[[v]]), ]
 
-            out$val <- stats::weighted.mean(no_nas[[v]], no_nas[[parent_string_year]])
+            out$val <- stats::weighted.mean(as.numeric(no_nas[[v]]), as.numeric(no_nas[[parent_string_year]]),
+                                            na.rm = TRUE)
           } else if ("count" %in% type) {
             out$val <- sum(df[[v]], na.rm = TRUE)
           } else if ("ind" %in% type) {
@@ -404,10 +407,11 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
           } else if ("sqkm" %in% type) {
             df <- sf:::`[.sf`(df_sf, v)
             df$area <- get_area(df)
-            out$val <- stats::weighted.mean(df[[v]], df[["area"]], na.rm = TRUE)
+            out$val <- stats::weighted.mean(as.numeric(df[[v]]), as.numeric(df[["area"]]), na.rm = TRUE)
           } else if ("per1k" %in% type) {
             df <- df[c(v, "population")]
-            out$val <- stats::weighted.mean(df[[v]], df[["population"]])
+            out$val <- stats::weighted.mean(as.numeric(df[[v]]), as.numeric(df[["population"]]),
+                                            na.rm = TRUE)
           } else if ("ppo" %in% type) {
             df <- df[c(v, "population")]
             objects <- df[["population"]] / df[[v]]
@@ -435,3 +439,4 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
     }, simplify = FALSE, USE.NAMES = TRUE, future.seed = NULL)
   })
 }
+
