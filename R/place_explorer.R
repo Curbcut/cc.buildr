@@ -493,7 +493,7 @@ placeex_main_card_rmd <- function(scales_variables_modules,
             return(NULL)
           }
 
-          future.apply::future_lapply(scale_df$ID, \(ID) {
+          lapply(scale_df$ID, \(ID) {
             # If exists, pass
             geo_sc_id <- paste(region, scale_name, ID, lan, sep = "_")
             output_file <- paste0(out_folder, geo_sc_id, ".html")
@@ -596,7 +596,7 @@ placeex_main_card_rmd <- function(scales_variables_modules,
             writeLines(x, output_file)
 
             pb()
-          }, future.seed = NULL)
+          })
         })
       })
     })

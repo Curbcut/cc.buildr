@@ -29,6 +29,9 @@ add_q3 <- function(df, vars, time_regex = "_\\d{4}$") {
       q3_breaks <- find_breaks_quintiles_q5(min_val = min_val, max_val = max_val,
                                             dist = dist, q3_q5 = "q3")
 
+      # Expand both sides to infinity to make sure all values are in the breaks
+      q3_breaks[1] <- -Inf
+      q3_breaks[length(q3_breaks)] <- Inf
       as.numeric(cut(df[[var]], q3_breaks, include.lowest = TRUE))
     }, simplify = FALSE, USE.NAMES = TRUE)
   q3s <- q3s[!sapply(q3s, is.null)]
