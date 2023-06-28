@@ -312,3 +312,42 @@ stories_knit_all <- function(stories_location = "dev/Rmd/stories/",
     output_dir = output_dir
   )
 }
+
+#' Resize images in a directory (Mostly used for stories)
+#'
+#' This function reduces the size of images in a directory if they exceed a
+#' specified maximum size. The function works recursively and supports the
+#' .jpg, .jpeg, and .png file formats. The reduction is done by rescaling the
+#' images to 50% of their original dimensions iteratively until they fall
+#' below the maximum specified size.
+#'
+#' @param folder <`character`> A string indicating the path to the directory with
+#' images. The default is "www/stories/photos".
+#' @param max_size_in_MB <`numeric`> Value defining the maximum allowed size for
+#' the images in Megabytes (MB). Images larger than this size will be
+#' rescaled. The default is 1 MB.
+#'
+#' @return NULL. The function works by side effects, resizing the images and
+#' overwriting the original files in their original directory.
+resize_image <- function(folder = "www/stories/photos", max_size_in_MB = 1) {
+
+  all_photos <- list.files(folder, recursive = TRUE, full.names = TRUE)
+  all_photos <- all_photos[grepl("\\.jpg|\\.jpeg|\\.png|\\.JPG|\\.JPEG|\\.PNG", all_photos)]
+
+  lapply(all_photos, \(x) {
+    file_size <- file.info(x)$size / (1024 * 1024)
+
+    if (file_size < max_size_in_MB) return(NULL)
+
+    # While the file is too large, reduce the size by scaling
+    while (file_size > max_size_in_MB) {
+      image <- magick::image_read(x)
+      rescaled <- magick::image_scale(image, "50%")
+      magick::image_write(rescaled, path = x)
+
+      # Update the size
+      file_size <- file.info(x)$size / (1024 * 1024)  # Size in MB
+    }
+
+  })
+}
