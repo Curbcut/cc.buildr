@@ -1295,14 +1295,12 @@ stories_create_tileset <- function(stories, prefix, username, access_token) {
   )
 
   # Create recipe
-  stories_recipe <-
-    tileset_create_recipe(
-      layer_names = paste0(prefix, "_stories"),
-      source = paste0("mapbox://tileset-source/sus-mcgill/", prefix, "_stories"),
-      minzoom = 3,
-      maxzoom = 13,
-      recipe_name = paste0(prefix, "_stories")
-    )
+  stories_recipe <- tileset_create_recipe(
+    layer_names = paste0(prefix, "_stories"),
+    source = paste0("mapbox://tileset-source/", username, "/", prefix, "_stories"),
+    minzoom = 3,
+    maxzoom = 13,
+    recipe_name = paste0(prefix, "_stories"))
 
   # Create and publish
   tileset_create_tileset(
