@@ -381,7 +381,6 @@ tileset_create_recipe <- function(layer_names, source, minzoom, maxzoom,
 #' @param all_scales <`named list`> A named list of sf data.frame
 #' containing all scales listed with their regions, normally
 #' `scales_variables_modules$scales`.
-#' @param street <`sf data.frame`> All the streets in the zone under study.
 #' @param map_zoom_levels <`named list`> The previously created zoom levels
 #' using \code{\link[cc.buildr]{map_zoom_levels_create_all}} and
 #' \code{\link[cc.buildr]{map_zoom_levels_create_custom}}.
@@ -396,7 +395,7 @@ tileset_create_recipe <- function(layer_names, source, minzoom, maxzoom,
 #' @return Returns nothing if succeeds. Tilesets are created and published and
 #' ready to be used.
 #' @export
-tileset_upload_all <- function(all_scales, street, map_zoom_levels, tweak_max_zoom,
+tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom = NULL,
                                prefix, username, access_token) {
   tn <- function(geo, scale_name) paste(prefix, geo, scale_name, sep = "_")
 
@@ -419,23 +418,6 @@ tileset_upload_all <- function(all_scales, street, map_zoom_levels, tweak_max_zo
       )
     })
   }, names(all_tables), all_tables, SIMPLIFY = FALSE)
-
-  # Create a street SF to use as a difference with the choropleth
-  street$width <- ifelse(street$rank == 5, 4,
-    ifelse(street$rank == 4, 8,
-      15
-    )
-  )
-
-  streets_layers <- split(street, street$width)
-  streets_layers <-
-    mapply(sf::st_buffer, streets_layers, as.numeric(names(streets_layers)),
-      SIMPLIFY = FALSE
-    )
-  streets_layers <- Reduce(rbind, streets_layers)
-  streets_layers <- sf::st_union(streets_layers)
-  streets_layers <- sf::st_transform(streets_layers, 4326)
-  streets_layers <- sf::st_make_valid(streets_layers)
 
   # Tileset sources
   mapply(function(scales, geo) {
@@ -464,22 +446,9 @@ tileset_upload_all <- function(all_scales, street, map_zoom_levels, tweak_max_zo
         df <- sf::st_set_agr(df, "constant")
 
         tileset_upload_tile_source(df,
-          id = geo_scale,
-          username = username,
-          access_token = access_token
-        )
-
-        # Addition of the clipped polygons
-        df <- sf::st_difference(df, streets_layers)
-
-        tileset_delete_tileset_source(paste0(geo_scale, "_clipped"),
-          username = username,
-          access_token = access_token
-        )
-        tileset_upload_tile_source(df,
-          id = paste0(geo_scale, "_clipped"),
-          username = username,
-          access_token = access_token
+                                   id = geo_scale,
+                                   username = username,
+                                   access_token = access_token
         )
       }
     })
@@ -532,10 +501,15 @@ tileset_upload_all <- function(all_scales, street, map_zoom_levels, tweak_max_zo
       scale = c("first_level", "CT", "DA", "DB", "building"),
       maxzoom = c(11, 12, 13, 14, 16)
     )
-  addition <- tibble::tibble(
-    scale = names(tweak_max_zoom),
-    maxzoom = unlist(tweak_max_zoom)
-  )
+  addition <- if (!is.null(tweak_max_zoom)) {
+    tibble::tibble(
+      scale = names(tweak_max_zoom),
+      maxzoom = unlist(tweak_max_zoom)
+    )
+  } else {
+    tibble::tibble()
+  }
+
   maxzooms <- rbind(addition, maxzooms)
   # If there are duplicated, only keep the ones coming first in the 'tweak_max_zoom'
   maxzooms <- maxzooms[!duplicated(maxzooms$scale), ]
@@ -564,17 +538,17 @@ tileset_upload_all <- function(all_scales, street, map_zoom_levels, tweak_max_zo
               recipe_name = name
             )
           } else {
-            source_names <- c(name, paste0(name, "_clipped"))
+            source_names <- name
             sources <- paste0("mapbox://tileset-source/", username, "/", source_names)
             names(sources) <- source_names
-            minzooms <- c(3, 14)
+            minzooms <- 3
             names(minzooms) <- source_names
 
             default_maxzoom <- maxzooms$maxzoom[maxzooms$scale == scale_for_dict]
             new_maxzoom <- max(default_maxzoom, 14)
-            maxzooms_ <- c(13, new_maxzoom)
+            maxzooms_ <- new_maxzoom
             names(maxzooms_) <- source_names
-            layer_sizes <- c(2500, 2500)
+            layer_sizes <- 2500
             names(layer_sizes) <- source_names
 
             tileset_create_recipe(
@@ -587,14 +561,14 @@ tileset_upload_all <- function(all_scales, street, map_zoom_levels, tweak_max_zo
           }
 
         tileset_create_tileset(name,
-          recipe = recipe,
-          username = username,
-          access_token = access_token
+                               recipe = recipe,
+                               username = username,
+                               access_token = access_token
         )
 
         tileset_publish_tileset(name,
-          username = username,
-          access_token = access_token
+                                username = username,
+                                access_token = access_token
         )
       }, scales, seq_along(scales), SIMPLIFY = FALSE)
     }, all_tables, names(all_tables), SIMPLIFY = FALSE)
@@ -639,8 +613,8 @@ tileset_upload_all <- function(all_scales, street, map_zoom_levels, tweak_max_zo
       # Add the min and max zoom to the result tibble
       result <-
         tibble::add_row(result,
-          scale = scale_name, min_zoom = min_zoom,
-          max_zoom = max_zoom
+                        scale = scale_name, min_zoom = min_zoom,
+                        max_zoom = max_zoom
         )
     }
 
@@ -743,13 +717,13 @@ tileset_upload_all <- function(all_scales, street, map_zoom_levels, tweak_max_zo
 
         # New tileset
         tileset_create_tileset(name,
-          recipe = recipe,
-          username = username,
-          access_token = access_token
+                               recipe = recipe,
+                               username = username,
+                               access_token = access_token
         )
         tileset_publish_tileset(name,
-          username = username,
-          access_token = access_token
+                                username = username,
+                                access_token = access_token
         )
       }, names(zoom_levels), zoom_levels, SIMPLIFY = FALSE)
     }, names(map_zoom_levels), map_zoom_levels, SIMPLIFY = FALSE)
