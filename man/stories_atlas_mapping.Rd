@@ -7,7 +7,6 @@
 stories_atlas_mapping(
   stories,
   input_img_location = "dev/data/stories/main_img/",
-  output_bandeau_location = "dev/data/stories/bandeau_img/",
   output_atlas_location = "www/stories/image_atlas.png"
 )
 }
@@ -16,9 +15,6 @@ stories_atlas_mapping(
 
 \item{input_img_location}{<\code{character}> The location of the input images.
 Defaults to \code{"dev/data/stories/main_img/"}}
-
-\item{output_bandeau_location}{<\code{character}> The location to save the banner
-images. Defaults to \code{"www/stories/bandeau_img.png"}}
 
 \item{output_atlas_location}{<\code{character}> The location to save the image
 atlas. Defaults to \code{"www/stories/image_atlas.png"}}

@@ -6,8 +6,7 @@
 \usage{
 stories_knit_all(
   stories_location = "dev/Rmd/stories/",
-  css_path = here::here("www/sus.css"),
-  bandeau_location = "dev/data/stories/bandeau_img/",
+  css_path = here::here("www/styles/sus.css"),
   output_dir = "www/stories/"
 )
 }
@@ -17,11 +16,6 @@ the R Markdown story files. Default is "dev/Rmd/stories/".}
 
 \item{css_path}{<\code{character}> A character string specifying the path to the
 CSS file to be applied to the rendered HTML files. Default is "www/sus.css".}
-
-\item{bandeau_location}{<\code{character}> String specifying the path to the
-directory containing the images to be inserted below the titles. Default
-is "dev/data/stories/bandeau_img/". The bandeau image needs to already be
-created using \code{\link{stories_atlas_mapping}}}
 
 \item{output_dir}{<\code{character}> A character string specifying the directory
 where the rendered HTML files will be saved. Default is "www/stories/".}

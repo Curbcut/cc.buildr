@@ -26,7 +26,8 @@ append_empty_modules_table <- function(scales) {
       dates = list(),
       main_dropdown_title = character(),
       var_right = list(),
-      suffix_zoom_levels = character()
+      suffix_zoom_levels = character(),
+      add_advanced_controls = list()
     )
 
   c(scales, list(modules = modules))
@@ -99,6 +100,11 @@ append_empty_modules_table <- function(scales) {
 #' \code{\link{map_zoom_levels_create_custom}} with the CT being the maximum scale.
 #' The value of this argument is 'max_CT' (the suffix we appended to the
 #' zoom level name). Defaults to `NA_character_` (no suffix).
+#' @param add_advanced_controls <`character vector`> Names of additional widgets
+#' that should be placed in the 'Advanced controls' instead of with the 'Indicators'
+#' section (Names of the names list `group_diff` of the `var_left` column.). If
+#' the main dropdown should also be palced under the advanced controls, add
+#' `'mnd'` in there too.
 #'
 #'
 #' @return The same `modules` data.frame fed, with the added row.
@@ -107,7 +113,8 @@ add_module <- function(modules, id, theme = "", nav_title, title_text_title,
                        title_text_main,
                        title_text_extra, metadata, dataset_info, regions = NULL,
                        var_left = NULL, dates = NULL, main_dropdown_title = NA_character_,
-                       var_right = NULL, suffix_zoom_levels = NA_character_) {
+                       var_right = NULL, suffix_zoom_levels = NA_character_,
+                       add_advanced_controls = NULL) {
   if (is.data.frame(var_left)) {
     if (!all(names(var_left) == c("var_code", "group_name", "group_diff"))) {
       stop(paste0(
@@ -132,6 +139,7 @@ add_module <- function(modules, id, theme = "", nav_title, title_text_title,
     dates = list(dates),
     main_dropdown_title = main_dropdown_title,
     var_right = list(var_right),
-    suffix_zoom_levels = suffix_zoom_levels
+    suffix_zoom_levels = suffix_zoom_levels,
+    add_advanced_controls = add_advanced_controls
   )
 }

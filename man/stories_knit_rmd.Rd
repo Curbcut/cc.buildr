@@ -2,13 +2,11 @@
 % Please edit documentation in R/stories.R
 \name{stories_knit_rmd}
 \alias{stories_knit_rmd}
-\title{Render RMarkdown files as HTML with a custom CSS file and an inserted 'bandeau'
-image.}
+\title{Render RMarkdown files as HTML with a custom CSS file.}
 \usage{
 stories_knit_rmd(
   file,
-  css_path = here::here("www/sus.css"),
-  bandeau_location = "dev/data/stories/bandeau_img/",
+  css_path = here::here("www/styles/sus.css"),
   output_dir = "www/stories/"
 )
 }
@@ -19,11 +17,6 @@ should be have ".Rmd" extension.}
 \item{css_path}{<\code{character}> A character string specifying the path to the
 CSS file to be applied to the rendered HTML files. Default is "www/sus.css".}
 
-\item{bandeau_location}{<\code{character}> String specifying the path to the
-directory containing the images to be inserted below the titles. Default
-is "dev/data/stories/bandeau_img/". The bandeau image needs to already be
-created using \code{\link{stories_atlas_mapping}}}
-
 \item{output_dir}{<\code{character}> A character string specifying the directory
 where the rendered HTML files will be saved. Default is "www/stories/".}
 }
@@ -32,9 +25,8 @@ NULL. The function saves the rendered HTML files to the specified
 output directory.
 }
 \description{
-This function renders RMarkdown files as HTML with a custom CSS file and
-inserts a badeau image previously created with \code{\link{stories_atlas_mapping}}
-below the title. The rendered HTML files are saved to a specified directory.
+This function renders RMarkdown files as HTML with a custom CSS file. The
+rendered HTML files are saved to a specified directory.
 }
 \seealso{
 \code{\link[rmarkdown]{render}} for more details on rendering RMarkdown files.

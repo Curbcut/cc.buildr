@@ -19,7 +19,8 @@ add_module(
   dates = NULL,
   main_dropdown_title = NA_character_,
   var_right = NULL,
-  suffix_zoom_levels = NA_character_
+  suffix_zoom_levels = NA_character_,
+  add_advanced_controls = NULL
 )
 }
 \arguments{
@@ -104,6 +105,12 @@ new zoom level named \code{max_zoom_levels_CMA_max_CT} using
 \code{\link{map_zoom_levels_create_custom}} with the CT being the maximum scale.
 The value of this argument is 'max_CT' (the suffix we appended to the
 zoom level name). Defaults to \code{NA_character_} (no suffix).}
+
+\item{add_advanced_controls}{<\verb{character vector}> Names of additional widgets
+that should be placed in the 'Advanced controls' instead of with the 'Indicators'
+section (Names of the names list \code{group_diff} of the \code{var_left} column.). If
+the main dropdown should also be palced under the advanced controls, add
+\code{'mnd'} in there too.}
 }
 \value{
 The same \code{modules} data.frame fed, with the added row.
