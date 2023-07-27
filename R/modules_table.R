@@ -27,7 +27,8 @@ append_empty_modules_table <- function(scales) {
       main_dropdown_title = character(),
       var_right = list(),
       suffix_zoom_levels = character(),
-      add_advanced_controls = list()
+      add_advanced_controls = list(),
+      default_var = character()
     )
 
   c(scales, list(modules = modules))
@@ -105,6 +106,11 @@ append_empty_modules_table <- function(scales) {
 #' section (Names of the names list `group_diff` of the `var_left` column.). If
 #' the main dropdown should also be palced under the advanced controls, add
 #' `'mnd'` in there too.
+#' @param default_var <`character`> Character that represents the default variable,
+#' the first the user will see when arriving on the page. Defaults to NA for
+#' pages that do not display variables: stories, place explorer, ... For any
+#' other page, the default_var must be one of the available variable in the
+#' `var_left` column.
 #'
 #'
 #' @return The same `modules` data.frame fed, with the added row.
@@ -114,7 +120,7 @@ add_module <- function(modules, id, theme = "", nav_title, title_text_title,
                        title_text_extra, metadata, dataset_info, regions = NULL,
                        var_left = NULL, dates = NULL, main_dropdown_title = NA_character_,
                        var_right = NULL, suffix_zoom_levels = NA_character_,
-                       add_advanced_controls = NULL) {
+                       add_advanced_controls = NULL, default_var = NA) {
   if (is.data.frame(var_left)) {
     if (!all(names(var_left) == c("var_code", "group_name", "group_diff"))) {
       stop(paste0(
@@ -140,6 +146,7 @@ add_module <- function(modules, id, theme = "", nav_title, title_text_title,
     main_dropdown_title = main_dropdown_title,
     var_right = list(var_right),
     suffix_zoom_levels = suffix_zoom_levels,
-    add_advanced_controls = add_advanced_controls
+    add_advanced_controls = add_advanced_controls,
+    default_var = default_var
   )
 }

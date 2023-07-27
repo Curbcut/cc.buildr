@@ -21,6 +21,8 @@
 #' \code{32617} for Toronto.
 #' @param pe_include <`character vector`> Which final variables should appear
 #' in the place explorer. Defaults to `c("access_foot_20_educational_elementary", "access_foot_20_communitycentres_individual", "access_foot_15_fooddistribution_grocery", "access_car_10_healthcare_hospitals")`.
+#' @param default_var <`character`> The first variable the user will see when
+#' they will lang on the page. Defaults to groceries accessible within a 20 minutes walk.
 #'
 #' @return A list containing the scales, variables, and modules tables.
 #' @export
@@ -36,6 +38,7 @@ ba_accessibility_points <- function(scales_variables_modules,
                                       "access_foot_15_food_grocery",
                                       "access_car_10_healthcare_hospitals"
                                     ),
+                                    default_var = "access_foot_20_food_grocery",
                                     crs) {
   if (max(time_intervals) > 60) {
     stop(paste0(
@@ -361,7 +364,8 @@ ba_accessibility_points <- function(scales_variables_modules,
       var_right = scales_variables_modules$variables$var_code[
         scales_variables_modules$variables$source == "Canadian census" &
           !is.na(scales_variables_modules$variables$parent_vec)
-      ]
+      ],
+      default_var = default_var
     )
 
 

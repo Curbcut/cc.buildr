@@ -37,7 +37,6 @@
 #' @param module_title_text_extra <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
 #' @param module_metadata <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
 #' @param module_dataset_info <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
-#' @param module_var_left <`charater vector`> Optional. See \code{\link[cc.buildr]{add_module}}.
 #' @param module_dates <`numeric vector`> Optional. See \code{\link[cc.buildr]{add_module}}.
 #' @param module_main_dropdown_title <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
 #' @param module_var_right <`character vector`> Optional. See \code{\link[cc.buildr]{add_module}}.
@@ -63,7 +62,6 @@ ba_var <- function(data, scales_variables_modules, base_scale,
                    module_title_text_extra = NULL,
                    module_metadata = NULL,
                    module_dataset_info = NULL,
-                   module_var_left = NULL,
                    module_dates = NULL,
                    module_main_dropdown_title = NULL,
                    module_var_right = NULL) {
@@ -178,10 +176,11 @@ ba_var <- function(data, scales_variables_modules, base_scale,
           regions = data_interpolated$regions,
           metadata = module_metadata,
           dataset_info = module_dataset_info,
-          var_left = module_var_left,
+          var_left = variable_var_code,
           dates = module_dates,
           main_dropdown_title = module_main_dropdown_title,
-          var_right = module_var_right
+          var_right = module_var_right,
+          default_var = variable_var_code
         )
     } else {
       scales_variables_modules$modules

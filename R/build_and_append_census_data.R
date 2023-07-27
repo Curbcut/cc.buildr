@@ -163,7 +163,8 @@ ba_census_data <- function(scales_variables_modules,
           main_dropdown_title = NA,
           var_right = variables$var_code[variables$source == "Canadian census" &
             variables$theme != "Housing" &
-            !is.na(variables$parent_vec)]
+            !is.na(variables$parent_vec)],
+          default_var = "housing_tenant"
         )
     } else {
       scales_variables_modules$modules

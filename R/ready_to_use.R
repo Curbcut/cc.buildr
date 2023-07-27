@@ -77,7 +77,6 @@ ru_alp <- function(scales_variables_modules, region_DA_IDs, crs) {
       ", this percentile approach offers a balanced and nuanced understanding",
       " of an area's walkability."
     ),
-    module_var_left = "alp",
     module_dates = c(2001, 2006, 2011, 2016, 2021),
     module_var_right = scales_variables_modules$variables$var_code[
       scales_variables_modules$variables$source == "Canadian census" &
@@ -159,7 +158,6 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
         "terizing the cycling infrastructure of Canadian communities. ",
         "The data is initially provided at the dissemination area level.</p>"
       ),
-    module_var_left = "canbics",
     module_dates = c(2021),
     module_var_right = scales_variables_modules$variables$var_code[
       scales_variables_modules$variables$source == "Canadian census" &
@@ -764,7 +762,8 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
       var_right = scales_variables_modules$variables$var_code[
         scales_variables_modules$variables$source == "Canadian census" &
           !is.na(scales_variables_modules$variables$parent_vec)
-      ]
+      ],
+      default_var = "vac_rate_2_bec_bed"
     )
 
 
