@@ -6,7 +6,7 @@
 \usage{
 stories_knit_all(
   stories_location = "dev/Rmd/stories/",
-  css_path = here::here("www/styles/sus.css"),
+  css_path = system.file("styles", "fonts.css", package = "curbcut"),
   output_dir = "www/stories/"
 )
 }

@@ -178,7 +178,7 @@ stories_atlas_mapping <- function(stories,
 #' @seealso
 #' \code{\link[rmarkdown]{render}} for more details on rendering RMarkdown files.
 #' @export
-stories_knit_rmd <- function(file, css_path = here::here("www/styles/sus.css"),
+stories_knit_rmd <- function(file, css_path = system.file("styles", "fonts.css", package = "curbcut"),
                              output_dir = "www/stories/") {
   if (!requireNamespace("rmarkdown", quietly = TRUE)) {
     stop(
@@ -240,7 +240,7 @@ stories_knit_rmd <- function(file, css_path = here::here("www/styles/sus.css"),
 #' output of a single R Markdown story file.
 #' @export
 stories_knit_all <- function(stories_location = "dev/Rmd/stories/",
-                             css_path = here::here("www/styles/sus.css"),
+                             css_path = system.file("styles", "fonts.css", package = "curbcut"),
                              output_dir = "www/stories/") {
   all_stories <- list.files(stories_location, full.names = TRUE)
   lapply(all_stories, stories_knit_rmd,

@@ -31,7 +31,6 @@ ba_var(
   module_title_text_extra = NULL,
   module_metadata = NULL,
   module_dataset_info = NULL,
-  module_var_left = NULL,
   module_dates = NULL,
   module_main_dropdown_title = NULL,
   module_var_right = NULL
@@ -100,8 +99,6 @@ years.}
 \item{module_metadata}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 
 \item{module_dataset_info}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
-
-\item{module_var_left}{<\verb{charater vector}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 
 \item{module_dates}{<\verb{numeric vector}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 

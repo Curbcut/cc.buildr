@@ -20,7 +20,8 @@ add_module(
   main_dropdown_title = NA_character_,
   var_right = NULL,
   suffix_zoom_levels = NA_character_,
-  add_advanced_controls = NULL
+  add_advanced_controls = NULL,
+  default_var = NA
 )
 }
 \arguments{
@@ -111,6 +112,12 @@ that should be placed in the 'Advanced controls' instead of with the 'Indicators
 section (Names of the names list \code{group_diff} of the \code{var_left} column.). If
 the main dropdown should also be palced under the advanced controls, add
 \code{'mnd'} in there too.}
+
+\item{default_var}{<\code{character}> Character that represents the default variable,
+the first the user will see when arriving on the page. Defaults to NA for
+pages that do not display variables: stories, place explorer, ... For any
+other page, the default_var must be one of the available variable in the
+\code{var_left} column.}
 }
 \value{
 The same \code{modules} data.frame fed, with the added row.
