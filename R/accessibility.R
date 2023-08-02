@@ -207,10 +207,10 @@ ba_accessibility_points <- function(scales_variables_modules,
       })
       explanation <- paste0(
         "the number of ", tolower(dict$title),
-        " an average resident can reach within a ", time, "-minute ", mode_text
+        " a resident can reach within a ", time, "-minute ", mode_text
       )
       exp_q5 <- paste0(
-        "the average resident has access to _X_ ", tolower(dict$title), " within a ",
+        "a resident has access to, on average,  _X_ ", tolower(dict$title), " within a ",
         time, "-minute ", mode_text
       )
 
