@@ -28,13 +28,14 @@ interpolate_fast_weighted_mean <- function(df, id_col, weight_col, value_col) {
   })
 
   # Return the results as a data frame
-  result <- data.frame(ID = names(weighted_avgs), avg = as.vector(weighted_avgs))
+  result <- data.frame(ID = names(weighted_avgs),
+                       avg = as.vector(weighted_avgs))
   names(result)[2] <- value_col
 
   return(result)
 }
 
-#' Fast Summation for interpolation
+#' Fast Summation for Interpolation
 #'
 #' This function computes the the summation for each group within a
 #' data frame. The data frame must have columns for ID and the column to be
@@ -54,7 +55,8 @@ interpolate_fast_weighted_mean <- function(df, id_col, weight_col, value_col) {
 #' @return A data frame with two columns: the ID column (with the same name as
 #' in the input data frame) and a column containing the summed values, named
 #' after the input col_name.
-interpolate_fast_additive_sum <- function(col_name, data, id_col, weight_col = NULL) {
+interpolate_fast_additive_sum <- function(col_name, data, id_col,
+                                          weight_col = NULL) {
   # Extract the necessary columns
   col_df <- data[c(id_col, col_name)]
 
@@ -76,32 +78,35 @@ interpolate_fast_additive_sum <- function(col_name, data, id_col, weight_col = N
   return(summed_data)
 }
 
-#' Interpolate variables from a census geometry to all scales above
+#' Interpolate Variables from a Census Geometry to All Higher Scales
 #'
 #' @param data <`data.frame`> Containing any number of column with data,
 #'  and an ID that corresponds to the base scale, e.g. \code{"DA_ID"}.
-#' @param base_scale <`character`> The census scale at which the data is arranged.
+#' @param base_scale <`character`> The census scale at which the data is
+#' arranged.
 #' @param all_scales <`named list`> A named list of scales. The first level is
 #' the geo, and the second is the scales.
-#' @param weight_by <`character`> The denominator for which average variables should
-#' be interpolated. Defaults to `households`. The other options are `population` and
-#' `area`. If `area`, \code{\link[cc.buildr]{interpolate_custom_geo}} will be
-#' used.
+#' @param weight_by <`character`> The denominator for which average variables
+#' should be interpolated. Defaults to `households`. The other options are
+#' `population` and `area`. If `area`,
+#' \code{\link[cc.buildr]{interpolate_custom_geo}} will be used.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32618} for Montreal.
-#' @param existing_census_scales <`character vector`> Which are the census scales
-#' existing in the project. To detect for which scales data needs to be intersected.
-#' (The boundaries of the census geometries fit into each other, but this is not
-#' the case for the other geometries, hence the need to identify them).
-#' @param only_regions <`character vector`> All the regions for which data should
-#' be interpolated and appended. Defults to all the regions in `all_scales`.
+#' @param existing_census_scales <`character vector`> Which are the census
+#' scales existing in the project. To detect for which scales data needs to be
+#' intersected. (The boundaries of the census geometries fit into each other,
+#' but this is not the case for the other geometries, hence the need to
+#' identify them).
+#' @param only_regions <`character vector`> All the regions for which data
+#' should be interpolated and appended. Defults to all the regions in
+#' `all_scales`.
 #' @param average_vars <`character vector`> Corresponds to the column names
-#' of the variables that are to be interpolated as an average, like a percentage,
-#' a median, an index, etc. weighted by the `weight_by` argument.
+#' of the variables that are to be interpolated as an average, like a
+#' percentage, a median, an index, etc. weighted by the `weight_by` argument.
 #' @param additive_vars <`character vector`> Corresponds to the column names of
-#' the variables that are 'count' variables. In the case of this function, the output
-#' value of a CSD would be the sum of the values of the DAs or CTs that are present
-#' inside the CSD.
+#' the variables that are 'count' variables. In the case of this function, the
+#' output value of a CSD would be the sum of the values of the DAs or CTs that
+#' are present inside the CSD.
 #'
 #' @return Returns a list of length 4. The first is the same list that is fed in
 #' `all_scales`, with the columns from `data` interpolated in. The second is
@@ -211,24 +216,25 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
               col_df <- from[c(scale_id, weight_by, col_name)]
 
               # Calculate the weighted average for the current column
-              interpolate_fast_weighted_mean(col_df, scale_id, weight_by, col_name)
+              interpolate_fast_weighted_mean(col_df, scale_id, weight_by,
+                                             col_name)
             })
 
             # Calculate the sum for each column using lapply
-            summarized_add <- lapply(additive_vars, interpolate_fast_additive_sum,
-              data = from, id_col = scale_id
-            )
+            summarized_add <- lapply(additive_vars,
+                                     interpolate_fast_additive_sum,
+                                     data = from, id_col = scale_id)
 
             # Concatenate both
             summarized <- c(summarized_avg, summarized_add)
 
             # Merge all data out of the weighted averages
             out <- if (length(summarized) > 1) {
-              # Create a function to not always use 'merge', as it can be quite slow
-              # when there are many datasets. Filter out NAs from both left and right,
-              # look if the ID columns are identical and if they are, use cbind by
-              # taking out the ID column of the right table. If the ID column is not
-              # identical, use the merge function.
+              # Create a function to not always use 'merge', as it can be quite
+              # slow when there are many datasets. Filter out NAs from both left
+              # and right, look if the ID columns are identical and if they are,
+              # use cbind by taking out the ID column of the right table. If the
+              # ID column is not identical, use the merge function.
               merg_ <- function(x, y) {
                 x <- x[!is.na(x$ID), ]
                 y <- y[!is.na(y$ID), ]
@@ -248,7 +254,8 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
           }, names(scales), scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
         # Interpolate to non-census scales
-        non_census_scales <- names(scales)[!names(scales) %in% existing_census_scales]
+        non_census_scales <-
+          names(scales)[!names(scales) %in% existing_census_scales]
         if (length(non_census_scales) == 0) {
           return(census_interpolated)
         }
@@ -265,7 +272,8 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
               scale_id <- paste0(scale_name, "_ID")
               scale_df <- sf::st_transform(scale_df, crs)
               scale_df <- sf::st_set_agr(scale_df, "constant")
-              trim_df <- scale_df[, names(scale_df)[names(scale_df) != weight_by]]
+              trim_df <- scale_df[, names(scale_df)[
+                names(scale_df) != weight_by]]
               trim_base <- base[, c(data_col_names, weight_by, "area")]
 
               # Intersect and calculate area proportion
@@ -274,9 +282,10 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
                 get_area(intersected$geometry) / intersected$area
 
               # Proportion of 'weight_by' in the base scale
-              intersected$n_weight_by <- intersected[[weight_by]] * intersected$area_prop
+              intersected$n_weight_by <-
+                intersected[[weight_by]] * intersected$area_prop
 
-              # Group by ID, and calculate a weighted.mean using the weight_by argument.
+              # Group by ID, and calculate a weighted.mean using `weight_by`
               intersected <- sf::st_drop_geometry(intersected)
 
               summarized_avg <- lapply(average_vars, \(col_name) {
@@ -284,13 +293,14 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
                 col_df <- intersected[c(scale_id, weight_by, col_name)]
 
                 # Calculate the weighted average for the current column
-                interpolate_fast_weighted_mean(col_df, scale_id, weight_by, col_name)
+                interpolate_fast_weighted_mean(col_df, scale_id, weight_by,
+                                               col_name)
               })
 
               # Calculate the sum for each column using lapply
-              summarized_add <- lapply(additive_vars, interpolate_fast_additive_sum,
-                data = intersected, id_col = scale_id
-              )
+              summarized_add <- lapply(additive_vars,
+                                       interpolate_fast_additive_sum,
+                                       data = intersected, id_col = scale_id)
 
               # Concatenate both
               summarized <- c(summarized_avg, summarized_add)

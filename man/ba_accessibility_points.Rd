@@ -13,6 +13,7 @@ ba_accessibility_points(
   pe_include = c("access_foot_20_educational_elementary",
     "access_bicycle_20_educational_secondary", "access_foot_20_cultural_total",
     "access_foot_15_food_grocery", "access_car_10_healthcare_hospitals"),
+  default_var = "access_foot_20_food_grocery",
   crs
 )
 }
@@ -36,6 +37,9 @@ between origin-destination pairs. The output of
 
 \item{pe_include}{<\verb{character vector}> Which final variables should appear
 in the place explorer. Defaults to \code{c("access_foot_20_educational_elementary", "access_foot_20_communitycentres_individual", "access_foot_15_fooddistribution_grocery", "access_car_10_healthcare_hospitals")}.}
+
+\item{default_var}{<\code{character}> The first variable the user will see when
+they will lang on the page. Defaults to groceries accessible within a 20 minutes walk.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}
