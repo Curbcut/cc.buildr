@@ -9,7 +9,8 @@ stories_add_story(
   name_id,
   title,
   short_title,
-  preview,
+  preview_en,
+  preview_fr,
   themes,
   lon,
   lat
@@ -28,8 +29,12 @@ no spaces, e.g. \code{metro_evolution}.}
 \item{short_title}{<\code{character}> Shorter version of the title for places where
 there won't be lots of spaces to show longer titles, e.g. \verb{Evolution of the Metro}}
 
-\item{preview}{<\code{character}> Teaser for the story to appear elsewhere
+\item{preview_en}{<\code{character}> English teaser for the story to appear elsewhere
 in Curbcut. Usually a single sentence.}
+
+\item{preview_fr}{<\code{character}> French teaser for the story to appear elsewhere
+in Curbcut. Usually a single sentence. Can be an empty character string if the
+instance of Curbcut has no french version.}
 
 \item{themes}{<\verb{character vector}> Themes in which the story addresses, e.g.
 \code{c("Green space", "Urban transformation", "Community activism", ...)}}

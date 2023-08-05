@@ -1,14 +1,15 @@
 #' Create an empty data table for stories
 #'
 #' @return A tibble with columns \code{id}, \code{title}, \code{short_title},
-#' \code{preview}, \code{themes}, \code{lon}, and \code{lat}.
+#' \code{preview_en}, \code{preview_fr}, \code{themes}, \code{lon}, and \code{lat}.
 #' @export
 stories_empty_table <- function() {
   tibble::tibble(
     id = character(),
     title = character(),
     short_title = character(),
-    preview = character(),
+    preview_en = character(),
+    preview_fr = character(),
     themes = list(),
     lon = numeric(),
     lat = numeric()
@@ -25,8 +26,11 @@ stories_empty_table <- function() {
 #' `The Evolution of the Montreal Metro`
 #' @param short_title <`character`> Shorter version of the title for places where
 #' there won't be lots of spaces to show longer titles, e.g. `Evolution of the Metro`
-#' @param preview <`character`> Teaser for the story to appear elsewhere
+#' @param preview_en <`character`> English teaser for the story to appear elsewhere
 #' in Curbcut. Usually a single sentence.
+#' @param preview_fr <`character`> French teaser for the story to appear elsewhere
+#' in Curbcut. Usually a single sentence. Can be an empty character string if the
+#' instance of Curbcut has no french version.
 #' @param themes <`character vector`> Themes in which the story addresses, e.g.
 #' `c("Green space", "Urban transformation", "Community activism", ...)`
 #' @param lon <`numeric`> Longitude where the story should be placed on the map.
@@ -36,14 +40,15 @@ stories_empty_table <- function() {
 #'
 #' @return The same `stories` data.frame fed, with the added row.
 #' @export
-stories_add_story <- function(stories, name_id, title, short_title, preview,
-                              themes, lon, lat) {
+stories_add_story <- function(stories, name_id, title, short_title, preview_en,
+                              preview_fr, themes, lon, lat) {
   new_story <-
     tibble::tibble(
       name_id = name_id,
       title = title,
       short_title = short_title,
-      preview = preview,
+      preview_en = preview_en,
+      preview_fr = preview_fr,
       themes = list(sapply(themes, stringr::str_to_sentence,
         USE.NAMES = FALSE
       )),
@@ -58,20 +63,17 @@ stories_add_story <- function(stories, name_id, title, short_title, preview,
   return(out)
 }
 
-#' Create an image atlas and mapping for a story
+#' Create an image for every story, used on the map
 #'
 #' @param stories <`dataframe`>A data frame containing the stories.
 #' @param input_img_location <`character`> The location of the input images.
 #' Defaults to `"dev/data/stories/main_img/"`
-#' @param output_atlas_location <`character`> The location to save the image
-#' atlas. Defaults to `"www/stories/image_atlas.png"`
 #'
 #' @return A list containing the mapping for the stories. This will be an input
 #' for the stories rdeck.
 #' @export
-stories_atlas_mapping <- function(stories,
-                                  input_img_location = "dev/data/stories/main_img/",
-                                  output_atlas_location = "www/stories/image_atlas.png") {
+stories_map_images <- function(stories,
+                               input_img_location = "dev/data/stories/main_img/") {
   if (!requireNamespace("magick", quietly = TRUE)) {
     stop(
       "Package \"magick\" must be installed to use this function.",
@@ -104,7 +106,7 @@ stories_atlas_mapping <- function(stories,
     img <- magick::image_read(path)
     shadow_right <-
       magick::image_read(system.file("dropshadow.png",
-        package = "cc.buildr"
+                                     package = "cc.buildr"
       ))
 
     # Get height, width and crop longer side to match shorter side
@@ -139,27 +141,21 @@ stories_atlas_mapping <- function(stories,
     return(round_img_shadow)
   }, simplify = FALSE, USE.NAMES = TRUE)
 
-  # Construct atlas and save
-  atlas <-
-    magick::image_join(bubbles) |>
-    magick::image_append()
-  magick::image_write(atlas, output_atlas_location)
+  # Save every image as base64
+  stories$img_base64 <- sapply(bubbles, \(b) {
+    temp <- tempfile(fileext = ".png")
+    magick::image_write(b, temp)
 
-  # Construct stories mapping
-  stories_mapping <-
-    lapply(seq_along(stories$name_id), \(x) {
-      list(
-        x = (x - 1) * 100,
-        y = 0,
-        width = 100,
-        height = 100
-      )
-    })
-  names(stories_mapping) <- stories$name_id
+    # Read the JPG image as raw binary data
+    image_data <- readBin(temp, "raw", file.info(temp)$size)
 
-  # Return mapping, input for rdeck
-  return(stories_mapping)
+    # Encode the image data to base64
+    paste0("data:image/jpeg;base64,", base64enc::base64encode(image_data))
+  })
+
+  return(stories)
 }
+
 
 #' Render RMarkdown files as HTML with a custom CSS file.
 #'

@@ -8,7 +8,7 @@ stories_empty_table()
 }
 \value{
 A tibble with columns \code{id}, \code{title}, \code{short_title},
-\code{preview}, \code{themes}, \code{lon}, and \code{lat}.
+\code{preview_en}, \code{preview_fr}, \code{themes}, \code{lon}, and \code{lat}.
 }
 \description{
 Create an empty data table for stories

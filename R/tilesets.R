@@ -1257,7 +1257,7 @@ stories_create_tileset <- function(stories, prefix, username, access_token) {
 
   # Upload source
   stories <- sf::st_as_sf(stories, coords = c("lon", "lat"), crs = 4326)
-  stories[c("ID", "name_id", "short_title", "preview", "geometry")]
+  stories[c("ID", "name_id", "short_title", "preview_en", "preview_fr", "geometry")]
   names(stories)[2] <- "name"
   stories$ID <- as.character(stories$ID)
 
