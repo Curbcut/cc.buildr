@@ -1,5 +1,80 @@
 ### DYK FUNCTIONS ##############################################################
 
+#' Prepare a Variable Table for DYK Generation
+#'
+#' This function creates a table of variable combinations which serves as the
+#' input to the "Did you know" generation process.
+#'
+#' @param svm <`list`> A list, usually `scales_variables_modules`, containing
+#' the scales, modules, and variables tables.
+#' @param all_tables <`list`> A list, usually `all_tables`, containing the
+#' scales present in each region.
+#' @param n <`integer`> Optionally, an integer scalar specifying the number of
+#' rows in `svm$modules` to be used for creating the DYK variable table. The
+#' default (`NULL`) will use all rows; other values may be useful for testing.
+#'
+#' @return A data frame with six columns (`module`, `region`, `scale`, `date`,
+#' `var_left` and `var_right`), each of which is a character vector.
+#' @export
+dyk_prep <- function(svm, all_tables, n = NULL) {
+
+  modules <- if (missing(n) || is.null(n)) svm$modules else svm$modules[1:n,]
+
+  vars_dyk <-
+    modules |>
+    dplyr::select(module = id, region = regions, date = dates, var_left,
+                  var_right) |>
+    tidyr::unnest(region) |>
+    dplyr::left_join(dplyr::tibble(region = names(all_tables),
+                                   scale = all_tables), by = "region") |>
+    dplyr::relocate(scale, .after = region) |>
+    tidyr::unnest(scale) |>
+    dplyr::mutate(date = lapply(date, as.character)) |>
+    tidyr::unnest(date) |>
+    # For now, filter away modules with huge numbers of variables; eventually we
+    # should designate one variable per group to get a DYK for the whole group,
+    # which would require a "group_default" logical field. TKTK
+    dplyr::filter(!sapply(var_left, tibble::is_tibble)) |>
+    tidyr::unnest(var_left) |>
+    tidyr::unnest(var_right)
+
+  var_left_check <-
+    svm$variables |>
+    dplyr::filter(var_code %in% vars_dyk$var_left) |>
+    dplyr::select(var_left = var_code, df = avail_df, date = dates) |>
+    tidyr::unnest(date) |>
+    tidyr::unnest(df) |>
+    tidyr::separate_wider_delim(df, delim = "_", names = c("region", "scale"))
+
+  var_right_check <-
+    svm$variables |>
+    dplyr::filter(var_code %in% vars_dyk$var_right) |>
+    dplyr::select(var_right = var_code, df = avail_df, date = dates) |>
+    tidyr::unnest(date) |>
+    tidyr::unnest(df) |>
+    tidyr::separate_wider_delim(df, delim = "_", names = c("region", "scale"))
+
+  vars_dyk <-
+    vars_dyk |>
+    dplyr::semi_join(var_left_check,
+                     by = c("var_left", "region", "scale", "date")) |>
+    dplyr::semi_join(var_right_check,
+                     by = c("var_right", "region", "scale", "date")) |>
+    # Manually remove grid region. TKTK maybe eventually this should be
+    # data-driven instead of manually specified?
+    dplyr::filter(region != "grid")
+
+  vars_dyk <-
+    vars_dyk |>
+    dplyr::mutate(var_right = " ") |>
+    dplyr::distinct() |>
+    dplyr::bind_rows(vars_dyk) |>
+    dplyr::arrange(module, region, scale, date, var_left, var_right)
+
+  return(vars_dyk)
+
+}
+
 # Univariate --------------------------------------------------------------
 
 #' Generate Highest/Lowest Value DYKs
