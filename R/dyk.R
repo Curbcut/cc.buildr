@@ -22,8 +22,8 @@ dyk_prep <- function(svm, all_tables, n = NULL) {
 
   vars_dyk <-
     modules |>
-    dplyr::select(module = id, region = regions, date = dates, var_left,
-                  var_right) |>
+    dplyr::select(module = id, region = regions, var_left, var_right,
+                  date = dates) |>
     tidyr::unnest(region) |>
     dplyr::left_join(dplyr::tibble(region = names(all_tables),
                                    scale = all_tables), by = "region") |>
@@ -69,7 +69,7 @@ dyk_prep <- function(svm, all_tables, n = NULL) {
     dplyr::mutate(var_right = " ") |>
     dplyr::distinct() |>
     dplyr::bind_rows(vars_dyk) |>
-    dplyr::arrange(module, region, scale, date, var_left, var_right)
+    dplyr::arrange(module, region, scale, var_left, var_right, date)
 
   return(vars_dyk)
 
