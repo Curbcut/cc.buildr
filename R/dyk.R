@@ -77,6 +77,67 @@ dyk_prep <- function(svm, all_tables, n = NULL) {
 
 # Univariate --------------------------------------------------------------
 
+#' Create a Table of Univariate DYKs
+#'
+#' This function creates a table of univariate "Did you know" text strings.
+#'
+#' @param vars_dyk <`data.frame`> A data frame with columns `module`,
+#' `region`, `scale`, `var_left`, `var_right` and `date`, probably created with
+#' \code{\link[cc.buildr]{dyk_prep}}.
+#' @param svm <`list`> A list, usually `scales_variables_modules`, containing
+#' the scales, modules, and variables tables.
+#'
+#' @return A data frame with nine columns (the columns present in `vars_dyk`,
+#' and then additionally `dyk_type`, `dyk_text` and `dyk_value`).
+#' @export
+dyk_uni <- function(vars_dyk, svm) {
+
+  # Get highest/lowest DYKs
+  dyk_highest <- vars_dyk[vars_dyk$var_right == " ",]
+  dyk_highest_out <- dyk_uni_highest_lowest(
+    dyk_highest$var_left, dyk_highest$region, dyk_highest$scale,
+    dyk_highest$date, svm)
+  dyk_highest$highest <- dyk_highest_out$highest
+  dyk_highest$lowest <- dyk_highest_out$lowest
+  dyk_highest <- dyk_highest |>
+    tidyr::pivot_longer(c(highest, lowest), names_to = "dyk_type",
+                        values_to = "dyk_text") |>
+    dplyr::mutate(dyk_value = 0.5)
+
+  # Get change DYKs
+  dyk_change <-
+    vars_dyk |>
+    dplyr::filter(var_right == " ") |>
+    dplyr::mutate(date = "all") |>
+    dplyr::distinct()
+  dyk_change_out <- dyk_uni_change(
+    dyk_change$var_left, dyk_change$region, dyk_change$scale, svm)
+  dyk_change$dyk_text <- dyk_change_out$change_text
+  dyk_change$dyk_value <- dyk_change_out$change_val
+  dyk_change <-
+    dyk_change |>
+    dplyr::mutate(dyk_type = "change", .before = dyk_text)
+
+  # Get compare DYKs
+  dyk_compare <- vars_dyk[vars_dyk$var_right != " ",]
+  dyk_compare_out <- dyk_uni_compare(
+    dyk_compare$var_left, dyk_compare$var_right, dyk_compare$region,
+    dyk_compare$scale, dyk_compare$date, svm)
+  dyk_compare$dyk_text <- dyk_compare_out$compare_text
+  dyk_compare$dyk_value <- dyk_compare_out$compare_val
+  dyk_compare <-
+    dyk_compare |>
+    dplyr::mutate(dyk_type = "change", .before = dyk_text)
+
+  dyk <-
+    dplyr::bind_rows(dyk_highest, dyk_change, dyk_compare) |>
+    dplyr::arrange(module, region, scale, var_left, var_right, date, dyk_type)
+
+  return(dyk)
+
+}
+
+
 #' Generate Highest/Lowest Value DYKs
 #'
 #' This function creates "Did you know" text strings highlighting the highest
