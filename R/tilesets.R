@@ -522,19 +522,37 @@ tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom = NUL
 
         recipe <-
           if (scale == "building") {
+            geo_scale <- tn(geo, scale)
+            layer_names <- c(paste0(geo_scale, "_DAagg"), geo_scale)
+
             tileset_create_recipe(
-              layer_names = c(paste0("building", "_DAagg"), "building"),
-              source =
-                c(
+              layer_names = layer_names,
+              source = {
+                out <- c(
                   building_DAagg = paste0(
                     "mapbox://tileset-source/", username, "/",
                     paste0(name, "_DAagg")
                   ),
                   building = paste0("mapbox://tileset-source/", username, "/", name)
-                ),
-              minzoom = c(building_DAagg = 3, building = 12),
-              maxzoom = c(building_DAagg = 11, building = 16),
-              layer_size = c(building_DAagg = 2500, building = 2500),
+                )
+                names(out) <- layer_names
+                out
+              },
+              minzoom = {
+                out <- c(building_DAagg = 3, building = 12)
+                names(out) <- layer_names
+                out
+              },
+              maxzoom = {
+                out <- c(building_DAagg = 11, building = 16)
+                names(out) <- layer_names
+                out
+              },
+              layer_size = {
+                out <- c(building_DAagg = 2500, building = 2500)
+                names(out) <- layer_names
+                out
+              },
               recipe_name = name
             )
           } else {
@@ -606,7 +624,7 @@ tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom = NUL
         if (length(zoom_lvls) == 1) {
           10
         } else {
-          ifelse(i == length(zoom_lvls), zoom_value + 0.5, zoom_lvls[i + 1] - 0.5)
+          ifelse(i == length(zoom_lvls), zoom_value, zoom_lvls[i + 1])
         }
 
 

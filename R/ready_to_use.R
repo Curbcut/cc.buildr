@@ -115,7 +115,7 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
     variable_type = "ind",
     variable_var_title = "Can-BICS metric",
     variable_var_short = "Can-BICS",
-    variable_explanation = "the bikeway comfort and safety classification system",
+    variable_explanation = "the comfort and safety of bikeways",
     variable_exp_q5 = "are living in areas with _X_ cycling infrastructure comfort and safety",
     variable_theme = "Transport",
     variable_pe_include = TRUE,
@@ -535,7 +535,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
 
       # Include in place exporer
       pe_include <-
-        if (grepl("2_bed|2000_or_later|1500_plus", var)) TRUE else FALSE
+        if (grepl("2_bed|2000_or_later|1500_plus|vac_rate_total_bed", var)) TRUE else FALSE
 
       out <-
         add_variable(
