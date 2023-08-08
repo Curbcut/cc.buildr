@@ -352,13 +352,6 @@ dyk_uni_change <- function(var_left, region, scale, svm) {
     var_left, \(x) which(x == svm$variables$var_code),
     USE.NAMES = FALSE)]
 
-  # Increasing/decreasing
-  inc_dec <- dplyr::case_when(
-    change >= 0.2 ~ "increasing rapidly",
-    change >= 0 ~ "increasing",
-    change < -0.2 ~ "decreasing rapidly",
-    change < 0 ~ "decreasing")
-
   # Convert values
   first_val <- mapply(curbcut::convert_unit,
                       var = lapply(vars, \(x) x$var_left),
@@ -373,13 +366,28 @@ dyk_uni_change <- function(var_left, region, scale, svm) {
                      SIMPLIFY = TRUE, USE.NAMES = FALSE)
 
   change_txt <- sapply(
-    change, \(x) curbcut:::convert_unit.pct(x = x, decimal = 1))
+    change, \(x) curbcut:::convert_unit.pct(x = abs(x), decimal = 1))
+
+  # Increasing/decreasing
+  inc_dec <- dplyr::case_when(
+    change >= 0.2 ~ paste0("increased rapidly (", change_txt, ")"),
+    change >= 0.05 ~ paste0("increased ", change_txt),
+    change < -0.2 ~ paste0("decreased rapidly (", change_txt, ")"),
+    change < -0.05 ~ paste0("decreased ", change_txt),
+    change < 0.05 ~ "barely changed")
+
+  # Date range
+  current_year <- substr(Sys.Date(), 1, 4)
+  date_spread <- as.numeric(last_date) - as.numeric(first_date)
+  within_five <- as.numeric(current_year) - as.numeric(last_date) < 6
+  date_ref <- ifelse(within_five,
+                     paste0("over the last ", date_spread, " years"),
+                     paste0("over ", date_spread, " years"))
 
   # Assemble output
   change_vec <- paste0(
-    region_start, ", ", var_exp, " has been ", inc_dec, ", from ",
-    first_val, " in ", first_date, " to ", last_val, " in ", last_date,
-    ". This is a ", change_txt, " overall change.")
+    region_start, ", ", var_exp, " ", inc_dec, " ", date_ref, ". It was ",
+    first_val, " in ", first_date, " and ", last_val, " in ", last_date, ".")
 
   tibble::tibble(change_text = change_vec, change_val = change)
 
