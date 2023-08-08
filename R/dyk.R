@@ -485,7 +485,10 @@ dyk_uni_compare <- function(var_left, var_right, region, scale, date, svm) {
   compare_vec <- paste0(
     region_start, extra_date, ", ", scale_name, " with ", high_low_1, " ",
     var_exp_1, " ", freq, " ", have_had, " ", high_low_2, " ", var_exp_2, ".")
+  compare_df <- tibble::tibble(compare_text = compare_vec, compare_val = corr)
 
-  tibble::tibble(compare_text = compare_vec, compare_val = corr)
+  # Only return entries with a correlation > 0.3
+  compare_df |>
+    dplyr::filter(abs(compare_val) > 0.3)
 
 }
