@@ -247,7 +247,7 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm) {
 
   # Use max_date to decide on date handling
   extra_date <- mapply(\(x, y) ifelse(
-    y == max_date$max_date[max_date$var_left == x], "", paste0(" in ", date)),
+    y == max_date$max_date[max_date$var_left == x], "", paste0(" in ", y)),
     var_left, date, USE.NAMES = FALSE)
   is_was <- mapply(\(x, y) ifelse(
     y == max_date$max_date[max_date$var_left == x], "is", "was"),
@@ -446,10 +446,10 @@ dyk_uni_compare <- function(var_left, var_right, region, scale, date, svm) {
 
   # Frequency qualifier
   freq <- dplyr::case_when(
-    abs(corr) > 0.7 ~ "almost always have",
-    abs(corr) > 0.3 ~ "tend to have",
-    abs(corr) > 0.1 ~ "often have",
-    .default = "are equally likely to have and not to have"
+    abs(corr) > 0.7 ~ "almost always",
+    abs(corr) > 0.3 ~ "usually",
+    abs(corr) > 0.1 ~ "often",
+    .default = "sometimes"
   )
 
   # High/low
@@ -468,10 +468,23 @@ dyk_uni_compare <- function(var_left, var_right, region, scale, date, svm) {
     var_right, \(x) which(x == svm$variables$var_code),
     USE.NAMES = FALSE)]
 
+  # Get max date for each variable
+  max_date <-
+    tibble::tibble(var_left = var_left, var_right = var_right, date = date) |>
+    dplyr::summarize(max_date = max(date), .by = c(var_left, var_right))
+
+  # Use max_date to decide on date handling
+  extra_date <- mapply(\(x, y, z) ifelse(
+    z == max_date$max_date[max_date$var_left == x & max_date$var_right == y],
+    "", paste0(" in ", z)), var_left, var_right, date, USE.NAMES = FALSE)
+  have_had <- mapply(\(x, y, z) ifelse(z == max_date$max_date[
+    max_date$var_left == x & max_date$var_right == y], "have", "had"),
+    var_left, var_right, date, USE.NAMES = FALSE)
+
   # Assemble output
   compare_vec <- paste0(
-    region_start, ", ", scale_name, " with ", high_low_1, " ", var_exp_1, " ",
-    freq, " ", high_low_2, " ", var_exp_2, ".")
+    region_start, extra_date, ", ", scale_name, " with ", high_low_1, " ",
+    var_exp_1, " ", freq, " ", have_had, " ", high_low_2, " ", var_exp_2, ".")
 
   tibble::tibble(compare_text = compare_vec, compare_val = corr)
 
