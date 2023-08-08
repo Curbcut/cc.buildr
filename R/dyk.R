@@ -240,6 +240,19 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm) {
     var_left, \(x) which(x == svm$variables$var_code),
     USE.NAMES = FALSE)]
 
+  # Get max date for each variable
+  max_date <-
+    tibble::tibble(var_left = var_left, date = date) |>
+    dplyr::summarize(max_date = max(date), .by = var_left)
+
+  # Use max_date to decide on date handling
+  extra_date <- mapply(\(x, y) ifelse(
+    y == max_date$max_date[max_date$var_left == x], "", paste0(" in ", date)),
+    var_left, date, USE.NAMES = FALSE)
+  is_was <- mapply(\(x, y) ifelse(
+    y == max_date$max_date[max_date$var_left == x], "is", "was"),
+    var_left, date, USE.NAMES = FALSE)
+
   # Convert values
   highest_val <- mapply(curbcut::convert_unit,
                         var = lapply(vars, \(x) x$var_left),
@@ -267,14 +280,14 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm) {
 
   # Assemble output
   highest <- paste0(
-    region_start, ", ", highest_name, " is the ", scale_name,
-    " with the highest ", var_exp, " (", highest_val, "), followed by ",
-    second_highest_name, " (", second_highest_val, ").")
+    region_start, extra_date, ", ", highest_name, " ", is_was, " the ",
+    scale_name, " with the highest ", var_exp, " (", highest_val,
+    "), followed by ", second_highest_name, " (", second_highest_val, ").")
 
   lowest <- paste0(
-    region_start, ", ", lowest_name, " is the ", scale_name,
-    " with the lowest ", var_exp, " (", lowest_val, "), followed by ",
-    second_lowest_name, " (", second_lowest_val, ").")
+    region_start, extra_date, ", ", lowest_name, " ", is_was, " the ",
+    scale_name, " with the lowest ", var_exp, " (", lowest_val,
+    "), followed by ", second_lowest_name, " (", second_lowest_val, ").")
 
   tibble::tibble(highest = highest, lowest = lowest)
 
