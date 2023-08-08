@@ -127,7 +127,7 @@ dyk_uni <- function(vars_dyk, svm) {
   dyk_compare$dyk_value <- dyk_compare_out$compare_val
   dyk_compare <-
     dyk_compare |>
-    dplyr::mutate(dyk_type = "change", .before = dyk_text)
+    dplyr::mutate(dyk_type = "compare", .before = dyk_text)
 
   dyk <-
     dplyr::bind_rows(dyk_highest, dyk_change, dyk_compare) |>
