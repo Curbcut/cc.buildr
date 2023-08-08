@@ -108,6 +108,7 @@ dyk_uni <- function(vars_dyk, svm) {
   dyk_change <-
     vars_dyk |>
     dplyr::filter(var_right == " ") |>
+    dplyr::filter(n() > 1, .by = c(module, region, scale, var_left)) |>
     dplyr::mutate(date = "all") |>
     dplyr::distinct()
   dyk_change_out <- dyk_uni_change(
