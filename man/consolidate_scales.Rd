@@ -4,7 +4,13 @@
 \alias{consolidate_scales}
 \title{Filter spatially scales in their parent geometry}
 \usage{
-consolidate_scales(all_tables, all_scales, regions, crs)
+consolidate_scales(
+  all_tables,
+  all_scales,
+  regions,
+  crs,
+  match_with_centroids_regions
+)
 }
 \arguments{
 \item{all_tables}{<\verb{named list}> A named list of character. The names are
@@ -20,6 +26,15 @@ by \code{\link[cc.buildr]{create_master_polygon}}.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32618} for Montreal.}
+
+\item{match_with_centroids_regions}{<\verb{character vector}> As some of the scales
+now span over water, the \code{sf::st_point_on_surface} method of matching
+which scales fit in which scales above (to attach CT_ID to DAs) doesn't necessarily work.
+Centraide's zone do not span on water, and so a CT with its centroid in water
+won't get matched to a Centraide zone. The calculation is much more intensive, so
+this argument is used to bypass the new method. E.g. \code{grid} ONLY span land, and
+all bottom scales of grid fit perfectly in the upper scales. In this case,
+use \code{match_with_centroids_regions = "grid"} to speed up the process.}
 }
 \value{
 A list of the same length as there are in \code{all_tables}, containing

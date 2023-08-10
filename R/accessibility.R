@@ -236,6 +236,9 @@ ba_accessibility_points <- function(scales_variables_modules,
         if (dict$theme == "cultural") {
           return("cultural facilities")
         }
+        if (dict$theme == "recreational") {
+          return("recreational services")
+        }
       })()
       group_name <- paste("Access to", theme)
       group_diff <- list(
@@ -287,6 +290,9 @@ ba_accessibility_points <- function(scales_variables_modules,
       }
       if (dict$theme == "cultural") {
         group_diff <- c(group_diff, list("Cultural facility" = val))
+      }
+      if (dict$theme == "recreation") {
+        group_diff <- c(group_diff, list("Recreation service" = val))
       }
 
       pb()

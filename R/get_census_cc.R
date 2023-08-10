@@ -36,6 +36,12 @@ get_census_cc <- function(master_polygon, census_dataset, regions,
     use_cache = TRUE
   )
 
+  names(census_data)[names(census_data) == "GeoUID"] <- "ID"
+  # Switch for the full census geometries (with water)
+  census_data <- cc.data::census_switch_full_geo(
+    df = census_data,
+    scale_name = level)
+
   # Few corrections
   census_data <- tibble::as_tibble(census_data)
   census_data <- sf::st_as_sf(census_data)
@@ -43,14 +49,11 @@ get_census_cc <- function(master_polygon, census_dataset, regions,
 
   # Select `var_select` columns
   avail_vars <- var_select[var_select %in% names(census_data)]
-  census_data <- census_data[, c("GeoUID", avail_vars)]
+  census_data <- census_data[, c("ID", avail_vars)]
 
   # Rename `var_select` columns. Order kept due to previous selecting,
   # which ordered columns.
   names(census_data)[which(names(census_data) %in% avail_vars)] <- names(avail_vars)
-
-  # Rename GeoUID to ID
-  names(census_data)[1] <- "ID"
 
   # If the level isn't named, add ID as name
   if (!"name" %in% names(census_data)) census_data$name <- census_data$ID
@@ -66,12 +69,13 @@ get_census_cc <- function(master_polygon, census_dataset, regions,
   }
 
   # Spatial filtering
-  keep_ids <- sf::st_transform(census_data, crs)
-  keep_ids <- suppressWarnings(sf::st_point_on_surface(keep_ids))
-  master_poly_crs <- sf::st_transform(master_polygon, crs)
-  keep_ids <- sf::st_filter(keep_ids, master_poly_crs)
-  keep_ids <- keep_ids$ID
+  census_data <- spatial_filtering(
+    df = census_data,
+    crs = crs,
+    master_polygon = master_polygon,
+    ID_col = "ID",
+    area_threshold = 0.05)
 
   # Keep only the polygons part of the master_polygon
-  census_data[census_data$ID %in% keep_ids, ]
+  return(census_data)
 }

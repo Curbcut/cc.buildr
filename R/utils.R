@@ -13,27 +13,64 @@
 #' scale)
 #' @param with_progress <`logical`> Should there be a progress bar? Slows things
 #' down when the function is just too fast.
+#' @param parallel <`logical`> Should the function run in parallel. Defaults to FALSE
 #'
 #' @return Returns the all_scales list that is fed, with the `fun` ran
 #' on all the scales.
 #' @export
-map_over_scales <- function(all_scales, fun, with_progress = TRUE) {
+map_over_scales <- function(all_scales, fun, with_progress = TRUE, parallel = FALSE) {
   if (with_progress) pb <- progressr::progressor(steps = sum(sapply(all_scales, length)))
-  # SO slow in parallel ? Just lets on waiting!
-  mapply(\(geo, scales) {
-    mapply(\(scale_name, scale_df) {
-      # # Make sure the `sf` S3 method is exported for subsetting in parallel
-      # if (!missing(scale_df) && "sf" %in% class(scale_df))
-      #   scale_df <- sf::st_as_sf(scale_df)
 
-      out <- fun(
-        geo = geo, scales = scales,
-        scale_name = scale_name, scale_df = scale_df
-      )
-      if (with_progress) pb()
-      out
-    }, names(scales), scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
-  }, names(all_scales), all_scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
+  out <- if (parallel) {
+    # Extract the names of the geographical levels
+    geo_names <- names(all_scales)
+
+    # Loop over each geographical level
+    result <- lapply(seq_along(all_scales), function(i) {
+      geo <- geo_names[i]
+      scales_at_geo <- all_scales[[i]]
+
+      # Extract the names of the scales at the current geographical level
+      scale_names <- names(scales_at_geo)
+
+      # Loop over each scale at the current geographical level
+      res_at_geo <- lapply(seq_along(scales_at_geo), function(j) {
+        scale_name <- scale_names[j]
+        scale_df <- scales_at_geo[[j]]
+
+        # Apply the user-defined function to the current geographical level and scale
+        out <- fun(
+          geo = geo, scales = scales_at_geo,
+          scale_name = scale_name, scale_df = scale_df
+        )
+
+        # Update progress bar if required
+        if (with_progress) pb()
+        out
+      })
+
+      # Preserve the names of the scales at the current geographical level
+      names(res_at_geo) <- scale_names
+      res_at_geo
+    })
+
+    # Preserve the names of the geographical levels
+    names(result) <- geo_names
+    result
+  } else {
+    mapply(\(geo, scales) {
+      mapply(\(scale_name, scale_df) {
+        out <- fun(
+          geo = geo, scales = scales,
+          scale_name = scale_name, scale_df = scale_df
+        )
+        if (with_progress) pb()
+        out
+      }, names(scales), scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
+    }, names(all_scales), all_scales, SIMPLIFY = FALSE, USE.NAMES = TRUE)
+  }
+
+  return(out)
 }
 
 #' Reconstruct all_tables
@@ -157,4 +194,43 @@ merge <- function(x, y, ...) {
   merged <- tibble::as_tibble(base::merge(x, y, ...))
   if ("sf" %in% class(x) || "sf" %in% class(y)) merged <- sf::st_as_sf(merged)
   merged
+}
+
+#' Spatial filtering function to keep polygons with at least x of their area
+#' in the greater boundary.
+#'
+#' @param df <`sf data.frame`> The census data object to be transformed.
+#' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
+#' \code{32618} for Montreal.
+#' @param master_polygon <`sfc_MULTIPOLYGON`> Unioned multipolygon of the boundaries
+#' in which to keep the df features.
+#' @param ID_col <`character`> The name of the ID column to be used for filtering.
+#' Default is "ID".
+#' @param area_threshold <`numeric`> The minimum percentage of area in the master polygon.
+#' Default is 0.05, as a low percentage can be use for the fact that water can sometimes
+#' be a large part of the polygons.
+#'
+#' @return A subset of the original data frame that meets the filtering condition.
+#' @export
+spatial_filtering <- function(df, crs, master_polygon, ID_col = "ID", area_threshold = 0.05) {
+  # Transform the census data object
+  keep_ids <- sf::st_transform(df, crs)
+
+  # Calculate the area for the transformed data
+  keep_ids$area <- get_area(keep_ids)
+
+  # Transform the master polygon to the desired coordinate reference system
+  master_poly_crs <- sf::st_transform(master_polygon, crs)
+
+  # Find the intersection between the transformed data and the master polygon
+  int <- sf::st_intersection(keep_ids, master_poly_crs)
+
+  # Calculate the new area for the intersection
+  int$area_new <- get_area(int)
+
+  # Filter in only polygons that have area_threshold% of their area in the master polygon.
+  filtered_ids <- int[[ID_col]][int$area_new / int$area > area_threshold]
+
+  # Return a subset of the original data frame that meets the filtering condition
+  return(df[df[[ID_col]] %in% filtered_ids, ])
 }

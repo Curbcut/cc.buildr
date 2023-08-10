@@ -4,7 +4,7 @@
 \alias{map_over_scales}
 \title{Map over the depth of the list of scales}
 \usage{
-map_over_scales(all_scales, fun, with_progress = TRUE)
+map_over_scales(all_scales, fun, with_progress = TRUE, parallel = FALSE)
 }
 \arguments{
 \item{all_scales}{<\verb{named list}> A named list of scales. The first level is
@@ -17,6 +17,8 @@ scale)}
 
 \item{with_progress}{<\code{logical}> Should there be a progress bar? Slows things
 down when the function is just too fast.}
+
+\item{parallel}{<\code{logical}> Should the function run in parallel. Defaults to FALSE}
 }
 \value{
 Returns the all_scales list that is fed, with the \code{fun} ran
