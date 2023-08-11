@@ -5,13 +5,13 @@
 \title{Build color palettes for data visualization}
 \usage{
 build_colours(
-  left_5 = c("#C7DFCC", "#9DC6A6", "#73AE80", "#517A5A", "#2E4633"),
-  left_3 = c("#E8E8E8", "#B8D6BE", "#73AE80"),
-  right_5 = c("#C4CDE1", "#98A8CB", "#6C83B5", "#4C5C7F", "#2B3448"),
-  right_3 = c("#E8E8E8", "#B5C0DA", "#6C83B5"),
-  delta_5 = c("#C85A5A", "#E4ACAC", "#E8E8E8", "#B0D5DF", "#64ACBE"),
-  bivar = c("#E8E8E8", "#B8D6BE", "#73AE80", "#B5C0DA", "#90B2B3", "#5A9178", "#6C83B5",
-    "#567994", "#2A5A5B"),
+  left_5 = c("#C4CDE1", "#98A8CB", "#6C83B5", "#4C5C7F", "#2B3448"),
+  left_3 = c("#E8E8E8", "#B5C0DA", "#6C83B5"),
+  right_5 = c("#C7DFCC", "#9DC6A6", "#73AE80", "#517A5A", "#2E4633"),
+  right_3 = c("#E8E8E8", "#B8D6BE", "#73AE80"),
+  delta_5 = c("#6D5271", "#DCD3E2", "#E8E8E8", "#FEBD54", "#F69036"),
+  bivar = c("#E8E8E8", "#B5C0DA", "#6C83B5", "#B8D6BE", "#90B2B3", "#567994", "#73AE80",
+    "#5A9178", "#2A5A5B"),
   qual = c("#73AE80", "#6C83B5", "#5B362A", "#B58A6C", "#2A5A5B", "#AE7673"),
   col_NA = c("#B3B3BB"),
   viridis = (scales::viridis_pal())(25)
