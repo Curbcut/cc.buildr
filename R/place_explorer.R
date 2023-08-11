@@ -42,6 +42,17 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
   regions <- regions_dictionary$region[regions_dictionary$pickable]
   scales <- scales[names(scales) %in% regions]
 
+  # Which df can we show PE for?
+  avail_df <- sapply(names(scales), \(reg) {
+    scales_name <- names(scales[[reg]])
+    scales_name <- scales_name[!scales_name %in% c("street", "building")]
+    tibble::tibble(
+      region = rep(reg, length(scales_name)),
+      scale = scales_name,
+      df = sprintf("%s_%s", reg, scales_name)
+    )
+  }, simplify = FALSE, USE.NAMES = TRUE)
+  avail_df <- Reduce(rbind, avail_df)
 
   # Common functions --------------------------------------------------------
 
@@ -325,7 +336,8 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
 
   return(list(
     main_card_dict = dict,
-    main_card_data = data
+    main_card_data = data,
+    avail_df = avail_df
   ))
 }
 

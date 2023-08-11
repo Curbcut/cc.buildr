@@ -18,7 +18,7 @@ create_home_page_script <- function(pages_folder = "dev/data_import/") {
 
   # Pre-fill the file
   template <- readLines(system.file("home_page_script.R",
-                                    package = "cc.buildr"
+    package = "cc.buildr"
   ))
 
   writeLines(template, con = new_file_connection)

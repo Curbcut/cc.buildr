@@ -18,6 +18,8 @@
 #' \code{32618} for Montreal.
 #' @param format <`logical`> Indicating if the census call should be filter
 #' by the <`master_polygon`> or not.
+#' @param switch_full_geos <`logical`> Should the census geometries get switched
+#' to the full one (the one which spans over water)?
 #'
 #' @return An sf dataframe of a census scale filtered by the master polygon.
 #' @export
@@ -29,7 +31,7 @@ get_census_cc <- function(master_polygon, census_dataset, regions,
                             "population" = "Population",
                             "households" = "Households"
                           ),
-                          crs, format = TRUE) {
+                          crs, format = TRUE, switch_full_geos = FALSE) {
   census_data <- cancensus::get_census(
     dataset = census_dataset, regions = regions,
     level = level, geo_format = "sf", quiet = TRUE,
@@ -38,9 +40,12 @@ get_census_cc <- function(master_polygon, census_dataset, regions,
 
   names(census_data)[names(census_data) == "GeoUID"] <- "ID"
   # Switch for the full census geometries (with water)
-  census_data <- cc.data::census_switch_full_geo(
-    df = census_data,
-    scale_name = level)
+  if (switch_full_geos) {
+    census_data <- cc.data::census_switch_full_geo(
+      df = census_data,
+      scale_name = level
+    )
+  }
 
   # Few corrections
   census_data <- tibble::as_tibble(census_data)
@@ -74,7 +79,8 @@ get_census_cc <- function(master_polygon, census_dataset, regions,
     crs = crs,
     master_polygon = master_polygon,
     ID_col = "ID",
-    area_threshold = 0.05)
+    area_threshold = 0.05
+  )
 
   # Keep only the polygons part of the master_polygon
   return(census_data)

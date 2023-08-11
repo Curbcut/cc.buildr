@@ -12,7 +12,8 @@ get_census_cc(
   var_select = c(CTUID = "CT_UID", CSDUID = "CSD_UID", name = "name", population =
     "Population", households = "Households"),
   crs,
-  format = TRUE
+  format = TRUE,
+  switch_full_geos = FALSE
 )
 }
 \arguments{
@@ -40,6 +41,9 @@ to \code{c("CTUID" = "CT_UID", "CSDUID" = "CSD_UID", "name" = "name",
 
 \item{format}{<\code{logical}> Indicating if the census call should be filter
 by the <\code{master_polygon}> or not.}
+
+\item{switch_full_geos}{<\code{logical}> Should the census geometries get switched
+to the full one (the one which spans over water)?}
 }
 \value{
 An sf dataframe of a census scale filtered by the master polygon.

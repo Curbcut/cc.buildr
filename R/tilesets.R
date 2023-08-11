@@ -446,9 +446,9 @@ tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom = NUL
         df <- sf::st_set_agr(df, "constant")
 
         tileset_upload_tile_source(df,
-                                   id = geo_scale,
-                                   username = username,
-                                   access_token = access_token
+          id = geo_scale,
+          username = username,
+          access_token = access_token
         )
       }
     })
@@ -579,14 +579,14 @@ tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom = NUL
           }
 
         tileset_create_tileset(name,
-                               recipe = recipe,
-                               username = username,
-                               access_token = access_token
+          recipe = recipe,
+          username = username,
+          access_token = access_token
         )
 
         tileset_publish_tileset(name,
-                                username = username,
-                                access_token = access_token
+          username = username,
+          access_token = access_token
         )
       }, scales, seq_along(scales), SIMPLIFY = FALSE)
     }, all_tables, names(all_tables), SIMPLIFY = FALSE)
@@ -631,8 +631,8 @@ tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom = NUL
       # Add the min and max zoom to the result tibble
       result <-
         tibble::add_row(result,
-                        scale = scale_name, min_zoom = min_zoom,
-                        max_zoom = max_zoom
+          scale = scale_name, min_zoom = min_zoom,
+          max_zoom = max_zoom
         )
     }
 
@@ -735,13 +735,13 @@ tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom = NUL
 
         # New tileset
         tileset_create_tileset(name,
-                               recipe = recipe,
-                               username = username,
-                               access_token = access_token
+          recipe = recipe,
+          username = username,
+          access_token = access_token
         )
         tileset_publish_tileset(name,
-                                username = username,
-                                access_token = access_token
+          username = username,
+          access_token = access_token
         )
       }, names(zoom_levels), zoom_levels, SIMPLIFY = FALSE)
     }, names(map_zoom_levels), map_zoom_levels, SIMPLIFY = FALSE)
@@ -1292,7 +1292,8 @@ stories_create_tileset <- function(stories, prefix, username, access_token) {
     source = paste0("mapbox://tileset-source/", username, "/", prefix, "_stories"),
     minzoom = 3,
     maxzoom = 13,
-    recipe_name = paste0(prefix, "_stories"))
+    recipe_name = paste0(prefix, "_stories")
+  )
 
   # Create and publish
   tileset_create_tileset(
@@ -1306,5 +1307,4 @@ stories_create_tileset <- function(stories, prefix, username, access_token) {
     username = username,
     access_token = access_token
   )
-
 }

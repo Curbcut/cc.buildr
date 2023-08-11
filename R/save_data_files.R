@@ -182,7 +182,7 @@ save_all_scales_qs <- function(data_folder = "data/", all_scales, variables) {
         #   old_table <- qs::qread(path)
         #   if (!identical(table, old_table)) qs::qsave(table, file = path)
         # } else {
-          qs::qsave(table, file = path)
+        qs::qsave(table, file = path)
         # }
       }, names(tables), tables)
     }, names(scales), scales)

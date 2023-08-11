@@ -11,7 +11,8 @@ build_census_scales(
   levels = c("CSD", "CT", "DA"),
   crs,
   fill_CTs_with_CSDs = TRUE,
-  override_name_2 = list(CSD = "City")
+  override_name_2 = list(CSD = "City"),
+  switch_full_geos = FALSE
 )
 }
 \arguments{
@@ -40,6 +41,9 @@ CSDs being "City" with \code{list(CSD = "City")}, e.g. the display on Curbcut
 for CSDs would then be e.g. \verb{City of Laval}. For scales below CSD, the name
 of the CSD in which the zone is gets the CSD name as their name_2. The
 default display for a CT would then be e.g. \verb{Census tract 4620633.00 (Laval)}.}
+
+\item{switch_full_geos}{<\code{logical}> Should the census geometries get switched
+to the full one (the one which spans over water)?}
 }
 \value{
 A list of sf dataframes of census scales filtered by the master polygon,

@@ -28,7 +28,6 @@
 #' spatially filtered dataframes with updated name_2 and IDs if needed.
 #' @export
 consolidate_scales <- function(all_tables, all_scales, regions, crs, match_with_centroids_regions) {
-
   ## Make sure IDs are unique ------------------------------------------------
 
   subset_ID <- sapply(all_scales, `[[`, "ID")
@@ -89,7 +88,8 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs, match_with_
               crs = crs,
               master_polygon = unioned_geo,
               ID_col = "ID",
-              area_threshold = 0.20)
+              area_threshold = 0.20
+            )
           } else {
             # Filter spatially with the unioned geo.
             spatial_filtering(
@@ -97,7 +97,8 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs, match_with_
               crs = crs,
               master_polygon = unioned_geo,
               ID_col = "ID",
-              area_threshold = 0.01)
+              area_threshold = 0.01
+            )
           }
 
           out
@@ -112,7 +113,7 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs, match_with_
       parallel = FALSE,
       all_scales = spatially_filtered,
       fun = \(geo = geo, scales = scales,
-              scale_name = scale_name, scale_df = scale_df) {
+        scale_name = scale_name, scale_df = scale_df) {
         if (scale_name %in% c("street", "building")) {
           return(scale_df[scale_df$DA_ID %in% scales$DA$DA_ID, ])
         }
@@ -129,7 +130,7 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs, match_with_
       parallel = TRUE,
       all_scales = spatially_filtered,
       fun = \(geo = geo, scales = scales,
-              scale_name = scale_name, scale_df = scale_df) {
+        scale_name = scale_name, scale_df = scale_df) {
         if (scale_name %in% c("street", "building")) {
           # If street or building is missing an ID:
           above_levels <- names(scales)[2:(which(names(scales) == scale_name) - 1)]
@@ -166,7 +167,17 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs, match_with_
           intersections <- sf::st_intersection(x, other)
           areas <- sf::st_area(intersections)
           index <- which.max(areas)
-          sf::st_drop_geometry(other)[index, ]
+          out <- sf::st_drop_geometry(other)[index, ]
+          if (nrow(out) == 0) {
+            dist <- sf::st_distance(x, other)
+            index <- which.max(dist)
+            out <- sf::st_drop_geometry(other)[index, ]
+          }
+          if (nrow(out) == 0) {
+            out <- tibble::add_row(out, name_2 = NA, CSD_ID = NA)
+          }
+
+          out
         }
 
         top_level <- top_level[, c("name", paste0(names(scales[1]), "_ID"))]
@@ -178,11 +189,11 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs, match_with_
             suppressWarnings(sf::st_point_on_surface(df))
           merged_centroids <- sf::st_join(df_points_on_surface, top_level)
           out <- merge(sf::st_drop_geometry(merged_centroids),
-                       df[, c("ID", "geometry")],
-                       by = "ID"
+            df[, c("ID", "geometry")],
+            by = "ID"
           )
         } else {
-          which_fit <- lapply(seq_along(df$geometry), \(r) get_largest_intersection(df[r,], top_level))
+          which_fit <- lapply(seq_along(df$geometry), \(r) get_largest_intersection(df[r, ], top_level))
           which_fit <- Reduce(rbind, which_fit)
           out <- cbind(df, which_fit)
           out <- tibble::as_tibble(out)
@@ -221,7 +232,7 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs, match_with_
     map_over_scales(
       all_scales = out,
       fun = \(geo = geo, scales = scales,
-              scale_name = scale_name, scale_df = scale_df) {
+        scale_name = scale_name, scale_df = scale_df) {
         if (!scale_name %in% c("street", "building")) {
           return(scale_df)
         }

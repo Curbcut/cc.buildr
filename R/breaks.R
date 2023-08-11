@@ -23,11 +23,15 @@ add_q3 <- function(df, vars, time_regex = "_\\d{4}$") {
       }
       dist <- df[[var]]
       dist <- dist[!is.na(dist)]
-      if (length(unique(dist)) == 1) return(rep(1, length(df[[var]])))
+      if (length(unique(dist)) == 1) {
+        return(rep(1, length(df[[var]])))
+      }
       min_val <- min(dist, na.rm = TRUE)
       max_val <- max(dist, na.rm = TRUE)
-      q3_breaks <- find_breaks_quintiles_q5(min_val = min_val, max_val = max_val,
-                                            dist = dist, q3_q5 = "q3")
+      q3_breaks <- find_breaks_quintiles_q5(
+        min_val = min_val, max_val = max_val,
+        dist = dist, q3_q5 = "q3"
+      )
 
       # Expand both sides to infinity to make sure all values are in the breaks
       q3_breaks[1] <- -Inf
@@ -140,12 +144,14 @@ add_q5 <- function(df, breaks, time_regex = "_\\d{4}$", breaks_base) {
 
       # Check for single values
       vv <- vals[!is.na(vals)]
-      if (length(unique(vv)) == 1) return({
-        out <- tibble::tibble(var = rep(1, length(vals)))
-        time <- stringr::str_extract(v, time_regex)
-        names(out) <- paste0(var, "_q5", time)
-        out
-      })
+      if (length(unique(vv)) == 1) {
+        return({
+          out <- tibble::tibble(var = rep(1, length(vals)))
+          time <- stringr::str_extract(v, time_regex)
+          names(out) <- paste0(var, "_q5", time)
+          out
+        })
+      }
 
       # Which breaks to use?
       breaks_subset_var <- breaks_base[[var]]
@@ -154,12 +160,14 @@ add_q5 <- function(df, breaks, time_regex = "_\\d{4}$", breaks_base) {
       brks <- breaks[[breaks_subset_var]]
 
       # Check for single breaksvalues
-      if (length(unique(brks)) == 1) return({
-        out <- tibble::tibble(var = rep(1, length(vals)))
-        time <- stringr::str_extract(v, time_regex)
-        names(out) <- paste0(var, "_q5", time)
-        out
-      })
+      if (length(unique(brks)) == 1) {
+        return({
+          out <- tibble::tibble(var = rep(1, length(vals)))
+          time <- stringr::str_extract(v, time_regex)
+          names(out) <- paste0(var, "_q5", time)
+          out
+        })
+      }
 
       # Attach the breaks. Make sure the lower and upper limit are included
       # in the q5s even if they are lower/higher than the break by temporarily
@@ -235,7 +243,6 @@ find_breaks_q5 <- function(min_val, max_val) {
 #' similar values.
 #' @export
 find_breaks_quintiles_q5 <- function(min_val, max_val, dist, q3_q5 = "q5") {
-
   # Take out min and max values (outliers)
   no_outliers <- dist[dist > min_val & dist < max_val]
   if (length(unique(no_outliers)) < 10) {
@@ -255,7 +262,6 @@ find_breaks_quintiles_q5 <- function(min_val, max_val, dist, q3_q5 = "q5") {
 
   # Loop through all the quantiles
   for (i in 1:length(q)) {
-
     # Check if difference between current quantile and previous one is zero
     if (q[i] - previous_q == 0) {
       round_base <- 1
@@ -296,7 +302,6 @@ find_breaks_quintiles_q5 <- function(min_val, max_val, dist, q3_q5 = "q5") {
   breaks <- breaks[order(breaks)]
 
   return(unname(breaks))
-
 }
 
 #' Get q5 break values
@@ -347,21 +352,25 @@ get_breaks_q5 <- function(df, vars, time_regex = "_\\d{4}$", use_quintiles = FAL
       # If it can't work it, revert to the principal breaks function
       breaks <-
         tryCatch(find_breaks_quintiles_q5(min_val, max_val, dist = as_vec),
-                 error = function(e) find_breaks_q5(min_val, max_val))
+          error = function(e) find_breaks_q5(min_val, max_val)
+        )
     } else {
       breaks <- find_breaks_q5(min_val, max_val)
 
       if (length(as_vec) > 3 & length(as_vec) < 500) {
-        tryCatch({
-          if (stats::shapiro.test(as_vec)$statistic < 0.5) {
-            warning(sprintf(paste0("The distribution for '%s' does not seem to be a normal ",
-                                   "distribution. Consider using the `use_quintiles` ",
-                                   "argument."), u_var))
-          }
-        }, error = function(e) NULL)
-
+        tryCatch(
+          {
+            if (stats::shapiro.test(as_vec)$statistic < 0.5) {
+              warning(sprintf(paste0(
+                "The distribution for '%s' does not seem to be a normal ",
+                "distribution. Consider using the `use_quintiles` ",
+                "argument."
+              ), u_var))
+            }
+          },
+          error = function(e) NULL
+        )
       }
-
     }
 
     # IF NORMAL DISTRIBUTION
@@ -443,8 +452,9 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
         return(scale_df)
       }
       add_q3(scale_df, vars, time_regex = time_regex)
-    }
-    , with_progress = FALSE)
+    },
+    with_progress = FALSE
+  )
 
   # Get breaks
   tables_q3 <- map_over_scales(
@@ -454,8 +464,9 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
         return(tibble::tibble())
       }
       get_breaks_q3(scale_df, vars, time_regex = time_regex)
-    }
-    , with_progress = FALSE)
+    },
+    with_progress = FALSE
+  )
   tables_q5 <- map_over_scales(
     all_scales = out_tables,
     fun = \(scale_df = scale_df, ...) {
@@ -463,8 +474,9 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
         return(tibble::tibble())
       }
       get_breaks_q5(scale_df, vars, time_regex, use_quintiles = use_quintiles)
-    }
-    , with_progress = FALSE)
+    },
+    with_progress = FALSE
+  )
 
   # Append q5s
   out_tables <- map_over_scales(
@@ -479,8 +491,9 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
         time_regex = time_regex,
         breaks_base = breaks_base
       )
-    }
-    , with_progress = FALSE)
+    },
+    with_progress = FALSE
+  )
 
   # Arrange the breaks tables
   # Unique variables
@@ -505,8 +518,9 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
             )
           })
           Reduce(rbind, out)
-        }
-        , with_progress = FALSE)
+        },
+        with_progress = FALSE
+      )
     }, simplify = FALSE, USE.NAMES = TRUE)
   q3_breaks_table <-
     sapply(q3_breaks_table, \(x) {
@@ -543,8 +557,9 @@ calculate_breaks <- function(all_scales, vars, time_regex = "_\\d{4}$",
           }
 
           return(out)
-        }
-        , with_progress = FALSE)
+        },
+        with_progress = FALSE
+      )
     }, simplify = FALSE, USE.NAMES = TRUE)
   q5_breaks_table <-
     sapply(q5_breaks_table, \(x) {

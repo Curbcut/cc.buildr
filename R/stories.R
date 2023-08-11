@@ -106,7 +106,7 @@ stories_map_images <- function(stories,
     img <- magick::image_read(path)
     shadow_right <-
       magick::image_read(system.file("dropshadow.png",
-                                     package = "cc.buildr"
+        package = "cc.buildr"
       ))
 
     # Get height, width and crop longer side to match shorter side
@@ -262,14 +262,15 @@ stories_knit_all <- function(stories_location = "dev/Rmd/stories/",
 #' @return NULL. The function works by side effects, resizing the images and
 #' overwriting the original files in their original directory.
 resize_image <- function(folder = "www/stories/photos", max_size_in_MB = 1) {
-
   all_photos <- list.files(folder, recursive = TRUE, full.names = TRUE)
   all_photos <- all_photos[grepl("\\.jpg|\\.jpeg|\\.png|\\.JPG|\\.JPEG|\\.PNG", all_photos)]
 
   lapply(all_photos, \(x) {
     file_size <- file.info(x)$size / (1024 * 1024)
 
-    if (file_size < max_size_in_MB) return(NULL)
+    if (file_size < max_size_in_MB) {
+      return(NULL)
+    }
 
     # While the file is too large, reduce the size by scaling
     while (file_size > max_size_in_MB) {
@@ -278,8 +279,7 @@ resize_image <- function(folder = "www/stories/photos", max_size_in_MB = 1) {
       magick::image_write(rescaled, path = x)
 
       # Update the size
-      file_size <- file.info(x)$size / (1024 * 1024)  # Size in MB
+      file_size <- file.info(x)$size / (1024 * 1024) # Size in MB
     }
-
   })
 }

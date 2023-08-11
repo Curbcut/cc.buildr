@@ -113,11 +113,15 @@ ba_census_data <- function(scales_variables_modules,
 
   # So it works better with the explore panel
   variables$explanation_nodet[variables$var_code == "inc_median_income"] <-
-    gsub("income$", "incomes",
-         variables$explanation_nodet[variables$var_code == "inc_median_income"])
+    gsub(
+      "income$", "incomes",
+      variables$explanation_nodet[variables$var_code == "inc_median_income"]
+    )
   variables$explanation_nodet[variables$var_code == "inc_limat"] <-
-    gsub("prevalence of low income", "prevalence of low incomes",
-         variables$explanation_nodet[variables$var_code == "inc_limat"])
+    gsub(
+      "prevalence of low income", "prevalence of low incomes",
+      variables$explanation_nodet[variables$var_code == "inc_limat"]
+    )
 
 
 

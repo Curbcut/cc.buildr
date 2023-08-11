@@ -19,6 +19,8 @@
 #' for CSDs would then be e.g. `City of Laval`. For scales below CSD, the name
 #' of the CSD in which the zone is gets the CSD name as their name_2. The
 #' default display for a CT would then be e.g. `Census tract 4620633.00 (Laval)`.
+#' @param switch_full_geos <`logical`> Should the census geometries get switched
+#' to the full one (the one which spans over water)?
 #'
 #' @return A list of sf dataframes of census scales filtered by the master polygon,
 #' with the option of one CSD subdivided.
@@ -28,7 +30,8 @@ build_census_scales <- function(master_polygon,
                                 regions,
                                 levels = c("CSD", "CT", "DA"), crs,
                                 fill_CTs_with_CSDs = TRUE,
-                                override_name_2 = list(CSD = "City")) {
+                                override_name_2 = list(CSD = "City"),
+                                switch_full_geos = FALSE) {
   # Get census data with the help of cc.buildr::get_census_cc()
   census_datasets <-
     sapply(levels, \(x) {
@@ -37,7 +40,8 @@ build_census_scales <- function(master_polygon,
         census_dataset = census_dataset,
         regions = regions,
         level = x,
-        crs = crs
+        crs = crs,
+        switch_full_geos = switch_full_geos
       )
     }, simplify = FALSE, USE.NAMES = TRUE)
 
@@ -49,7 +53,7 @@ build_census_scales <- function(master_polygon,
     })
 
   # If the master polygon is bigger than a CMA, then there are gaps that need
-  # to be fill with CSDs.
+  # to be filled with CSDs.
   if (fill_CTs_with_CSDs) {
     csds <- sf::st_transform(census_datasets$CSD, crs)
     csds <- suppressWarnings(sf::st_point_on_surface(csds))
