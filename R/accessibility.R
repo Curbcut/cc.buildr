@@ -204,7 +204,7 @@ ba_accessibility_points <- function(scales_variables_modules,
         if (grepl("public transit", mode)) {
           return(gsub("public transit", "transit journey", mode))
         }
-      })
+      })()
       explanation <- paste0(
         "the number of ", tolower(dict$title),
         " a resident can reach within a ", time, "-minute ", mode_text

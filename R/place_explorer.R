@@ -160,6 +160,7 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
     column_to_select = "DA_ID",
     IDs = region_DA_IDs, crs = crs
   )
+  NDVI <- NDVI[c("DA_ID", "ndvi_2022")]
   NDVI <- merge(NDVI, DA_table, all = TRUE)
 
   # Interpolate to all possible region and scales
@@ -167,7 +168,7 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
     data = NDVI,
     all_scales = scales,
     crs = crs,
-    average_vars = "NDVI",
+    average_vars = "ndvi_2022",
     base_scale = "DA",
     weight_by = "area"
   )
