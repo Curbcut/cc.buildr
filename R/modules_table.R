@@ -146,7 +146,7 @@ add_module <- function(modules, id, theme = "", nav_title, title_text_title,
     main_dropdown_title = main_dropdown_title,
     var_right = list(var_right),
     suffix_zoom_levels = suffix_zoom_levels,
-    add_advanced_controls = add_advanced_controls,
+    add_advanced_controls = list(add_advanced_controls),
     default_var = default_var
   )
 }
