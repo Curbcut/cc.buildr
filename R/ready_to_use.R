@@ -283,8 +283,8 @@ ru_lst <- function(scales_variables_modules, region_DA_IDs, crs) {
     variable_source = "The Canadian Urban Environmental Health Research Consortium",
     module_id = "lst",
     module_theme = "Climate",
-    module_nav_title = "Land surfance temperature",
-    module_title_text_title = "Land surfance temperature",
+    module_nav_title = "Land surface temperature",
+    module_title_text_title = "Land surface temperature",
     module_title_text_main = paste0(
       "Land Surface Temperature (LST) is a crucial indicator of urban heat islands ",
       "and ecological balance within a region. LST measures the maximum mean ",
@@ -913,7 +913,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
         scales_variables_modules$variables$source == "Canadian census" &
           !is.na(scales_variables_modules$variables$parent_vec)
       ],
-      default_var = "vac_rate_2_bec_bed"
+      default_var = "vac_rate_2_bed_bed"
     )
 
 

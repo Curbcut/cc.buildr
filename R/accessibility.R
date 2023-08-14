@@ -236,7 +236,7 @@ ba_accessibility_points <- function(scales_variables_modules,
         if (dict$theme == "cultural") {
           return("cultural facilities")
         }
-        if (dict$theme == "recreational") {
+        if (dict$theme == "recreation") {
           return("recreational services")
         }
       })()

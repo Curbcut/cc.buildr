@@ -97,8 +97,8 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
   dict <- rbind(dict, no2_dict)
 
   NO2 <- cc.data::db_read_data("no2",
-    column_to_select = "DA_ID",
-    IDs = region_DA_IDs, crs = crs
+                               column_to_select = "DA_ID",
+                               IDs = region_DA_IDs, crs = crs
   )
   NO2 <- merge(NO2, DA_table, all = TRUE)
 
@@ -140,7 +140,7 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
       title = "Vegetation",
       xaxis_title = "Normalized Difference Vegetation Index",
       bs_icon = "tree",
-      date = "2019",
+      date = "2022",
       percent = TRUE,
       high_is_good = TRUE,
       val_digit = 0,
@@ -156,31 +156,14 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
     )
   dict <- rbind(dict, ndvi_dict)
 
-  NDVI <- cc.data::db_read_data("ndvi",
-    column_to_select = "DA_ID",
-    IDs = region_DA_IDs, crs = crs
-  )
-  NDVI <- NDVI[c("DA_ID", "ndvi_2022")]
-  NDVI <- merge(NDVI, DA_table, all = TRUE)
-
-  # Interpolate to all possible region and scales
-  NDVI_scales <- interpolate_from_census_geo(
-    data = NDVI,
-    all_scales = scales,
-    crs = crs,
-    average_vars = "ndvi_2022",
-    base_scale = "DA",
-    weight_by = "area"
-  )
-
   # Format correctly
   data$ndvi <- map_over_scales(
-    all_scales = NDVI_scales$scales,
+    all_scales = scales,
     fun = \(scale_df = scale_df, ...) {
-      if (!"NDVI" %in% names(scale_df)) {
+      if (!"ndvi_2022" %in% names(scale_df)) {
         return(NULL)
       }
-      out <- scale_df[c("ID", "NDVI")]
+      out <- scale_df[c("ID", "ndvi_2022")]
       out <- sf::st_drop_geometry(out)
       out <- mc_df_format(out)
       return(out)
