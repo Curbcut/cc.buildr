@@ -10,7 +10,7 @@
 #' \code{32617} for Toronto.
 #'
 #' @return A list of length 3, similar to the one fed to
-#' `scales_variables_modules` with the Can-ALE variable added, its addition
+#' `scales_variables_modules` with the ALP variable added, its addition
 #' in the variables table and the module table.
 #' @export
 ru_alp <- function(scales_variables_modules, region_DA_IDs, crs) {
@@ -159,81 +159,6 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
         "The data is initially provided at the dissemination area level.</p>"
       ),
     module_dates = c(2021),
-    module_var_right = scales_variables_modules$variables$var_code[
-      scales_variables_modules$variables$source == "Canadian census" &
-        !is.na(scales_variables_modules$variables$parent_vec)
-    ]
-  )
-}
-
-#' Add a ready to use Greenness (NDVI) data and module
-#'
-#' @param scales_variables_modules <`named list`> A list of length three.
-#' The first is all the scales, the second is the variables table, and the
-#' third is the modules table.
-#' @param region_DA_IDs <`character vector`> All the current census'
-#' DA IDs present in the region. Only those will be extracted from the database
-#' to do interpolation.
-#' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
-#' \code{32617} for Toronto.
-#'
-#' @return A list of length 3, similar to the one fed to
-#' `scales_variables_modules` with the Can-BICS variable added, its addition
-#' in the variables table and the module table.
-#' @export
-ru_ndvi <- function(scales_variables_modules, region_DA_IDs, crs) {
-  data <- cc.data::db_read_data("ndvi",
-                                column_to_select = "DA_ID",
-                                IDs = region_DA_IDs, crs = crs
-  )
-  cols <- names(data)[names(data) != "DA_ID"]
-
-  ba_var(
-    data = data,
-    scales_variables_modules = scales_variables_modules,
-    base_scale = "DA",
-    weight_by = "households",
-    crs = crs,
-    average_vars = cols,
-    variable_var_code = "ndvi",
-    variable_type = "ind",
-    variable_var_title = "Greenness",
-    variable_var_short = "Greenness",
-    variable_explanation = "the presence and intensity of vegetation",
-    variable_exp_q5 = "are living in areas with _X_ level of presence and intensity of vegetation",
-    variable_theme = "Ecology",
-    variable_pe_include = TRUE,
-    variable_private = FALSE,
-    variable_source = "The Canadian Urban Environmental Health Research Consortium",
-    module_id = "ndvi",
-    module_theme = "Ecology",
-    module_nav_title = "Greenness",
-    module_title_text_title = "Greenness",
-    module_title_text_main = paste0(
-      "The Normalized Difference Vegetation Index (NDVI) is a vital measurement ",
-      "for understanding the presence and intensity of vegetation in an area. ",
-      "Calculated from MODIS data across Canada, NDVI represents annual maximum vegetation, ",
-      "providing insights into ecological health, land cover, and the effects of human activity ",
-      "on the natural landscape."
-    ),
-    module_title_text_extra = paste0(
-      "<p>NDVI plays a significant role in various applications, including analyzing urban greenness, ",
-      "monitoring agricultural growth, and assessing wildfire risks ",
-      "It is crucial for environmental conservation, urban planning, and climate change ",
-      "mitigation. For an in-depth understanding of NDVI and its calculation methods, ",
-      "<a href='https://www.canuedata.ca/tmp/CANUE_METADATA_GRMOD_AMX_YY.pdf'",
-      " target='_blank'>click here</a>.</p>"
-
-    ),
-    module_metadata = TRUE,
-    module_dataset_info =
-      paste0(
-        "<p>The NDVI data visualized on this page comes from the Canadian Urban Environmental ",
-        "Health Research Consortium's collection. Representing vegetation intensity from 2000 ",
-        "onwards, this dataset enables a detailed study of changing vegetation ",
-        "patterns and land cover shifts</p>"
-      ),
-    module_dates = as.numeric(paste0(20, sprintf("%02d", 0:22))),
     module_var_right = scales_variables_modules$variables$var_code[
       scales_variables_modules$variables$source == "Canadian census" &
         !is.na(scales_variables_modules$variables$parent_vec)

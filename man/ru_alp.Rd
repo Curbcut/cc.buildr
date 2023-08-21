@@ -20,7 +20,7 @@ to do interpolation.}
 }
 \value{
 A list of length 3, similar to the one fed to
-\code{scales_variables_modules} with the Can-ALE variable added, its addition
+\code{scales_variables_modules} with the ALP variable added, its addition
 in the variables table and the module table.
 }
 \description{
