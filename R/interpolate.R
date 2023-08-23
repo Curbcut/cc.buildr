@@ -141,16 +141,26 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
 
   ## In the case weight_by is `area`
   if (weight_by == "area") {
-    return(interpolate_custom_geo(
-      data = data,
-      all_scales = all_scales,
-      crs = crs,
-      only_regions = only_regions,
-      average_vars = average_vars,
-      additive_vars = additive_vars,
-      name_interpolate_from = base_scale,
-      construct_for = construct_for
-    ))
+    return({
+      data_sf <- lapply(all_scales, \(sc) {
+        sc[[base_scale]]["ID"]
+      })
+      data_sf <- unique(Reduce(rbind, data_sf))
+      base_scale_id <- sprintf("%s_ID", base_scale)
+      names(data_sf)[1] <- base_scale_id
+      data_sf <- merge(data_sf, data, by = base_scale_id, all = TRUE)
+
+      interpolate_custom_geo(
+        data = data_sf,
+        all_scales = all_scales,
+        crs = crs,
+        only_regions = only_regions,
+        average_vars = average_vars,
+        additive_vars = additive_vars,
+        name_interpolate_from = base_scale,
+        construct_for = construct_for
+      )
+    })
   }
 
 

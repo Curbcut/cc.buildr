@@ -101,7 +101,7 @@ ru_alp <- function(scales_variables_modules, region_DA_IDs, crs) {
 #' in the variables table and the module table.
 #' @export
 ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
-  ba_var(
+  out <- ba_var(
     data = cc.data::db_read_data("canbics",
                                  column_to_select = "DA_ID",
                                  IDs = region_DA_IDs, crs = crs
@@ -164,6 +164,14 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
         !is.na(scales_variables_modules$variables$parent_vec)
     ]
   )
+
+  # Change DA interpolation to postal codes
+  interpolated_df <- out$variables$interpolated[out$variables$var_code == "canbics"][[1]]
+  interpolated_df$interpolated_from[grepl("_DA$", interpolated_df$df)] <- "postal codes"
+  out$variables$interpolated[out$variables$var_code == "canbics"][[1]] <- interpolated_df
+
+  # Return
+  return(out)
 }
 
 #' Add a ready to use Land Surface Temperature data and module
@@ -189,19 +197,19 @@ ru_lst <- function(scales_variables_modules, region_DA_IDs, crs) {
   cols <- names(data)[names(data) != "DA_ID"]
 
 
-  ba_var(
+  out <- ba_var(
     data = data,
     scales_variables_modules = scales_variables_modules,
     base_scale = "DA",
-    weight_by = "households",
+    weight_by = "area",
     crs = crs,
     average_vars = cols,
     variable_var_code = "lst",
-    variable_type = "ind",
+    variable_type = "avg",
     variable_var_title = "Land surface temperature",
     variable_var_short = "Land temp.",
     variable_explanation = "the areas that are hotter during the day and more likely to radiate excess heat at night",
-    variable_exp_q5 = "are living in areas with _X_ level of land surface temperature",
+    variable_exp_q5 = "the average warm-season land surface temperature is _X_ degrees celsius",
     variable_theme = "Climate",
     variable_pe_include = TRUE,
     variable_private = FALSE,
@@ -239,6 +247,14 @@ ru_lst <- function(scales_variables_modules, region_DA_IDs, crs) {
         !is.na(scales_variables_modules$variables$parent_vec)
     ]
   )
+
+  # Change DA interpolation to postal codes
+  interpolated_df <- out$variables$interpolated[out$variables$var_code == "lst"][[1]]
+  interpolated_df$interpolated_from[grepl("_DA$", interpolated_df$df)] <- "postal codes"
+  out$variables$interpolated[out$variables$var_code == "lst"][[1]] <- interpolated_df
+
+  # Return
+  return(out)
 }
 
 #' Add a ready to use Vacancy Rate data and module

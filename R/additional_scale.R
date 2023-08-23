@@ -56,11 +56,14 @@ additional_scale <- function(additional_table, DA_table, ID_prefix, name_2,
       crs = crs
     )
 
+  # Add area
+  additional_table$area <- get_area(additional_table)
+
   # Consolidate output
   additional_table$name_2 <- name_2
   additional_table <- sf::st_transform(additional_table, 4326)
   additional_table[, c(
-    "ID", "name", "name_2", "population", "households",
+    "ID", "name", "name_2", "population", "households", "area",
     "geometry"
   )]
 }

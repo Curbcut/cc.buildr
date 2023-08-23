@@ -375,7 +375,7 @@ variables_get_region_vals <- function(scales, vars, types, parent_strings = NULL
               stop(sprintf("No parent_string found for `%s`", var))
             }
             parent_string_year <-
-              if (out$year != "" & !parent_string %in% c("households", "population")) {
+              if (out$year != "" & !parent_string %in% c("households", "population", "area")) {
                 paste0(parent_string, "_", out$year)
               } else {
                 parent_string
