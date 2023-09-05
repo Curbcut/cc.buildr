@@ -15,6 +15,8 @@
 #' every scale, and then left joined to the scales in `scales_variables_modules`.
 #' @param data_output_path <`character`> String representing the directory path
 #' to store the NDVI data (default is "dev/data/ndvi/").
+#' @param years <`numeric vector`> Years for which to build the data. Defaults to
+#' `cc.data::ndvi_years()`.
 #' @param skip_scales <`character vector`> Scales to be skipped in the analysis.
 #' Already skipped scales are building and street.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
@@ -27,6 +29,7 @@
 ba_ndvi <- function(scales_variables_modules,
                     master_polygon, all_scales,
                     data_output_path = "dev/data/ndvi/",
+                    years = cc.data::ndvi_years(),
                     skip_scales, crs) {
 
   # Create the folders if they don't exist
@@ -41,7 +44,7 @@ ba_ndvi <- function(scales_variables_modules,
 
   # Get NDVI data saved on disk ---------------------------------------------
 
-  possible_ndvi_years <- cc.data::ndvi_years()
+  possible_ndvi_years <- years
 
   cc.data::ndvi_import_from_masterpolygon(master_polygon,
                                           years = possible_ndvi_years,

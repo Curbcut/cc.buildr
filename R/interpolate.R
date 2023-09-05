@@ -442,7 +442,7 @@ interpolate_from_area <- function(to, from,
   das <- sf::st_transform(das, crs)
   das <- sf::st_set_agr(das, "constant")
   # Add DA area
-  das$area <- get_area(das$geometry)
+  das$DA_area <- get_area(das$geometry)
   # Add new table area
   destination <- sf::st_transform(to, crs)
   destination <-
@@ -453,7 +453,7 @@ interpolate_from_area <- function(to, from,
   # Get proportion of area per zone
   weight_by <- "area_prop"
   intersected_table[[weight_by]] <-
-    intersected_table$new_area / intersected_table$area
+    intersected_table$new_area / intersected_table$DA_area
   intersected_table <- sf::st_drop_geometry(intersected_table)
 
   summarized_avg <- lapply(average_vars, \(col_name) {
@@ -466,8 +466,8 @@ interpolate_from_area <- function(to, from,
 
   # Calculate the sum for each column using lapply
   summarized_add <- lapply(additive_vars, interpolate_fast_additive_sum,
-    data = intersected_table, id_col = "ID",
-    weight_col = weight_by
+                           data = intersected_table, id_col = "ID",
+                           weight_col = weight_by
   )
 
   # Concatenate both
@@ -496,7 +496,7 @@ interpolate_from_area <- function(to, from,
 
   # Return
   merge(to[, names(to)[!names(to) %in% c(additive_vars, average_vars)]], out,
-    by = "ID", all = TRUE
+        by = "ID", all = TRUE
   )
 }
 

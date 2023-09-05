@@ -9,6 +9,7 @@ ba_ndvi(
   master_polygon,
   all_scales,
   data_output_path = "dev/data/ndvi/",
+  years = cc.data::ndvi_years(),
   skip_scales,
   crs
 )
@@ -27,6 +28,9 @@ every scale, and then left joined to the scales in \code{scales_variables_module
 
 \item{data_output_path}{<\code{character}> String representing the directory path
 to store the NDVI data (default is "dev/data/ndvi/").}
+
+\item{years}{<\verb{numeric vector}> Years for which to build the data. Defaults to
+\code{cc.data::ndvi_years()}.}
 
 \item{skip_scales}{<\verb{character vector}> Scales to be skipped in the analysis.
 Already skipped scales are building and street.}
