@@ -22,12 +22,13 @@
 #' won't get matched to a Centraide zone. The calculation is much more intensive, so
 #' this argument is used to bypass the new method. E.g. `grid` ONLY span land, and
 #' all bottom scales of grid fit perfectly in the upper scales. In this case,
-#' use `match_with_centroids_regions = "grid"` to speed up the process.
+#' use `match_with_centroids_regions = "grid"` to speed up the process. Defaults
+#' to NULL.
 #'
 #' @return A list of the same length as there are in \code{all_tables}, containing
 #' spatially filtered dataframes with updated name_2 and IDs if needed.
 #' @export
-consolidate_scales <- function(all_tables, all_scales, regions, crs, match_with_centroids_regions) {
+consolidate_scales <- function(all_tables, all_scales, regions, crs, match_with_centroids_regions = NULL) {
   ## Make sure IDs are unique ------------------------------------------------
 
   subset_ID <- sapply(all_scales, `[[`, "ID")

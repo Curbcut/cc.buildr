@@ -9,7 +9,7 @@ consolidate_scales(
   all_scales,
   regions,
   crs,
-  match_with_centroids_regions
+  match_with_centroids_regions = NULL
 )
 }
 \arguments{
@@ -34,7 +34,8 @@ Centraide's zone do not span on water, and so a CT with its centroid in water
 won't get matched to a Centraide zone. The calculation is much more intensive, so
 this argument is used to bypass the new method. E.g. \code{grid} ONLY span land, and
 all bottom scales of grid fit perfectly in the upper scales. In this case,
-use \code{match_with_centroids_regions = "grid"} to speed up the process.}
+use \code{match_with_centroids_regions = "grid"} to speed up the process. Defaults
+to NULL.}
 }
 \value{
 A list of the same length as there are in \code{all_tables}, containing

@@ -18,7 +18,7 @@
 #' @param years <`numeric vector`> Years for which to build the data. Defaults to
 #' `cc.data::ndvi_years()`.
 #' @param skip_scales <`character vector`> Scales to be skipped in the analysis.
-#' Already skipped scales are building and street.
+#' Already skipped scales are building and street. Defaults to NULL.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
 #'
@@ -30,7 +30,7 @@ ba_ndvi <- function(scales_variables_modules,
                     master_polygon, all_scales,
                     data_output_path = "dev/data/ndvi/",
                     years = cc.data::ndvi_years(),
-                    skip_scales, crs) {
+                    skip_scales = NULL, crs) {
 
   # Create the folders if they don't exist
   dir.create(data_output_path) |> suppressWarnings()
