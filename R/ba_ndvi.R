@@ -70,7 +70,7 @@ ba_ndvi <- function(scales_variables_modules,
       data <- Reduce(rbind, data)
 
       lapply(scales, \(scale) {
-        intersections <- sf::st_intersects(z, data)
+        intersections <- sf::st_intersects(scale, data)
         col_name <- sprintf("ndvi_%s", year)
         scale[[col_name]] <-
           sapply(intersections, \(int) mean(data$ndvi[int], na.rm = TRUE))

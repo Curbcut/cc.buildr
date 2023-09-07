@@ -121,6 +121,7 @@ build_census_scales <- function(master_polygon,
 
   # Add area
   census_datasets <- lapply(census_datasets, \(df) {
+    df <- sf::st_make_valid(df)
     df$area <- get_area(df)
     df[c(names(df)[names(df) != "geometry"], "geometry")]
   })

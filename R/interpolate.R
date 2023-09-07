@@ -148,7 +148,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
       data_sf <- unique(Reduce(rbind, data_sf))
       base_scale_id <- sprintf("%s_ID", base_scale)
       names(data_sf)[1] <- base_scale_id
-      data_sf <- merge(data_sf, data, by = base_scale_id, all = TRUE)
+      data_sf <- merge(data_sf, sf::st_drop_geometry(data), by = base_scale_id, all = TRUE)
 
       interpolate_custom_geo(
         data = data_sf,
