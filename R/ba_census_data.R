@@ -69,6 +69,12 @@ ba_census_data <- function(scales_variables_modules,
 
   variables <-
     lapply(unique_var, \(u_var) {
+
+      # Include in place explorer
+      pe_include <- if (u_var %in% cc.data::census_vectors_table$parent_vec) FALSE else TRUE
+      # Only include larger brackets of age
+      if (pe_include) pe_include <- !grepl("^age_", u_var) || u_var %in% c("age_0_14", "age_15_64", "age_65_plus")
+
       out <- add_variable(
         variables = scales_variables_modules$variables,
         var_code = u_var,
@@ -94,7 +100,7 @@ ba_census_data <- function(scales_variables_modules,
           cc.data::census_vectors_table$var_code == u_var
         ],
         private = FALSE,
-        pe_include = if (u_var %in% cc.data::census_vectors_table$parent_vec) FALSE else TRUE,
+        pe_include = pe_include,
         dates = with_breaks$avail_dates[[u_var]],
         avail_df = census_dat$avail_df,
         breaks_q3 = with_breaks$q3_breaks_table[[u_var]],
