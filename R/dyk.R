@@ -75,6 +75,7 @@ dyk_prep <- function(svm, all_tables, n = NULL) {
 
 }
 
+
 # Univariate --------------------------------------------------------------
 
 #' Create a Table of Univariate DYKs
@@ -109,14 +110,17 @@ dyk_uni <- function(vars_dyk, svm) {
     vars_dyk |>
     dplyr::filter(var_right == " ") |>
     dplyr::filter(n() > 1, .by = c(module, region, scale, var_left)) |>
+    dplyr::filter(scale == "CSD") |>
     dplyr::mutate(date = "all") |>
     dplyr::distinct()
   dyk_change_out <- dyk_uni_change(
     dyk_change$var_left, dyk_change$region, dyk_change$scale, svm)
+  dyk_change$scale <- "all"
   dyk_change$dyk_text <- dyk_change_out$change_text
   dyk_change$dyk_value <- dyk_change_out$change_val
   dyk_change <-
     dyk_change |>
+    dplyr::filter(!is.infinite(dyk_value)) |>
     dplyr::mutate(dyk_type = "change", .before = dyk_text)
 
   # Get compare DYKs
@@ -297,7 +301,7 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm) {
 }
 
 
-#' Generate Change-over-Time DYKs
+#' Generate Change-over-time DYKs
 #'
 #' This function creates "Did you know" text strings highlighting the change
 #' over time from a combination of variable, region and scale. The output is a
@@ -393,12 +397,17 @@ dyk_uni_change <- function(var_left, region, scale, svm) {
                      paste0("over the last ", date_spread, " years"),
                      paste0("over ", date_spread, " years"))
 
+  # Get weighting factor
+  change_val <- dplyr::case_when(
+    abs(change) < 0.05 ~ 1 - abs(change) ^ 0.4,
+    abs(change) >= 0.05 ~ (abs(change) * 0.5) ^ 0.4)
+
   # Assemble output
   change_vec <- paste0(
     region_start, ", ", var_exp, " ", inc_dec, " ", date_ref, ". It was ",
     first_val, " in ", first_date, " and ", last_val, " in ", last_date, ".")
 
-  tibble::tibble(change_text = change_vec, change_val = change)
+  tibble::tibble(change_text = change_vec, change_val = change_val)
 
 }
 

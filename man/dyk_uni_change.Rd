@@ -2,7 +2,7 @@
 % Please edit documentation in R/dyk.R
 \name{dyk_uni_change}
 \alias{dyk_uni_change}
-\title{Generate Change-over-Time DYKs}
+\title{Generate Change-over-time DYKs}
 \usage{
 dyk_uni_change(var_left, region, scale, svm)
 }
