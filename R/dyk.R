@@ -465,11 +465,11 @@ dyk_uni_compare <- function(var_left, var_right, region, scale, date, svm) {
 
   # High/low
   high_low_1 <- sapply(vars, \(x) curbcut::explore_text_bivar_adjective(
-    x$var_left, TRUE, TRUE, FALSE))
+    x$var_left, TRUE, TRUE, FALSE, "en"))
   high_low_2 <- mapply(\(x, y) {
     if (is.na(y)) return(NA_character_)
     curbcut::explore_text_bivar_adjective(
-      x$var_right, FALSE, y, FALSE)}, vars, positive)
+      x$var_right, FALSE, y, FALSE, "en")}, vars, positive)
 
   # Variable explanations
   var_exp_1 <- svm$variables$explanation_nodet[sapply(
