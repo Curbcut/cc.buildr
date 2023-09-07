@@ -271,7 +271,7 @@ ba_accessibility_points <- function(scales_variables_modules,
       }
 
       # Additional group_diff
-      val <- if (grepl("_total$", var)) "Total" else stringr::str_to_sentence(dict$title)
+      val <- if (grepl("_total$", var)) "All" else stringr::str_to_sentence(dict$title)
 
       if (dict$theme == "retail") {
         group_diff <- c(group_diff, list("Retail stores type" = val))
