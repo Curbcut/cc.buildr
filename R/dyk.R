@@ -342,6 +342,14 @@ dyk_uni_change <- function(var_left, region, scale, svm) {
   first_date <- sapply(values, \(x) x$year[length(x$year)])
   last_date <- sapply(values, \(x) x$year[1])
 
+  # Produce warnings for infinite values
+  inf <- is.infinite(change)
+  if (sum(inf) > 0) {
+    inf_var <- paste(unique(var_left[inf]), collapse = ", ")
+    warning(paste0("Infinite dyk_uni_change values: ", inf_var),
+            call. = FALSE)
+  }
+
   # Initial region mention
   region_start <- mapply(\(x, y) curbcut:::explore_context(
     region = x, select_id = NA, df = paste(x, y, sep = "_"), switch_DA = FALSE),
@@ -497,6 +505,6 @@ dyk_uni_compare <- function(var_left, var_right, region, scale, date, svm) {
     region_start, extra_date, ", ", scale_name, " with ", high_low_1, " ",
     var_exp_1, " ", freq, " ", have_had, " ", high_low_2, " ", var_exp_2, ".")
 
-  tibble::tibble(compare_text = compare_vec, compare_val = corr)
+  tibble::tibble(compare_text = compare_vec, compare_val = abs(corr))
 
 }
