@@ -14,16 +14,23 @@ heroku_deploy <- function(app_name) {
     stop("As of now, this function is only adapted for Windows.")
   }
 
+  # Create the UI generation object
+  modules <- qs::qread("data/modules.qs")
+  tryCatch(UIs <- curbcut:::modules_panel(modules = modules), error = function(e) {
+    stop(paste0("Calculation of modules_panel failing. Run the app in this R ",
+                "session first, so all the UI functions are ready to be ",
+                "sourced from the environment. The exact state of these UI functions ",
+                "will be the one used on the web app (to save calculation time)."))
+  })
+  qs::qsave(UIs, "data/modules_panel_calculated.qs")
+
   cancel <- readline(
     prompt =
-      paste0(
-        "Pursuing will open a terminal and terminate ",
-        "this R session. Write `ok` to proceed: "
-      )
+      "Pursuing will open a terminal and terminate this R session. Write `ok` to proceed: "
   )
 
   if (cancel != "ok") {
-    return(cat("Aborted succesfully."))
+    return(cat("Aborted successfully."))
   }
 
   cmds <- c(
@@ -31,19 +38,19 @@ heroku_deploy <- function(app_name) {
     "heroku login",
     "heroku container:login",
     paste0("heroku container:push web -a ", app_name),
-    paste0("heroku container:release web -a ", app_name)
+    paste0("heroku container:release web -a ", app_name),
+    "del data\\modules_panel_calculated.qs"
   )
 
-  tmp <- tempfile(fileext = ".ps1")
+  ps_file_path <- file.path(getwd(), "deploy_script.ps1")
 
-  paste0(cmds, collapse = "\n") |>
-    writeLines(tmp)
+  # Write commands to temporary PowerShell script
+  paste0(cmds, collapse = "\n") |> writeLines(ps_file_path)
 
-  shell(paste0(
-    "start cmd.exe @cmd /k powershell -ExecutionPolicy Bypass -File ",
-    tmp
-  ))
+  # Execute PowerShell script
+  shell(paste0("start cmd.exe @cmd /k powershell -ExecutionPolicy Bypass -File ", ps_file_path))
 
+  # Commented for debugging
   quit(save = "no")
 }
 
