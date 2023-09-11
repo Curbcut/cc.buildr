@@ -9,7 +9,7 @@
 #'
 #' @return Opens a terminal and disconnect from the current R session.
 #' @export
-heroku_deploy <- function(app_name) {
+heroku_deploy <- function(app_name, curbcut_branch = "HEAD") {
   if (Sys.info()["sysname"] != "Windows") {
     stop("As of now, this function is only adapted for Windows.")
   }
@@ -23,6 +23,12 @@ heroku_deploy <- function(app_name) {
                 "will be the one used on the web app (to save calculation time)."))
   })
   qs::qsave(UIs, "data/modules_panel_calculated.qs")
+
+  # Update packages in renv
+  renv::install(sprintf("Curbcut/curbcut@%s", curbcut_branch))
+  renv::install(sprintf("Curbcut/cc.landing", curbcut_branch))
+  renv::install(sprintf("Curbcut/cc.map", curbcut_branch))
+  renv::snapshot()
 
   cancel <- readline(
     prompt =
@@ -54,6 +60,7 @@ heroku_deploy <- function(app_name) {
   quit(save = "no")
 }
 
+
 #' Restart dyno for the provided app
 #'
 #' @param app_name <`character`> Name of the application.
@@ -67,13 +74,11 @@ heroku_restart_dyno <- function(app_name, dyno) {
     paste0("heroku restart ", dyno, " -a ", app_name)
   )
 
-  tmp <- tempfile(fileext = ".ps1")
+  ps_file_path <- file.path(getwd(), "restart_dyno_script.ps1")
 
   paste0(cmds, collapse = "\n") |>
-    writeLines(tmp)
+    writeLines(ps_file_path)
 
-  shell(paste0(
-    "start cmd.exe @cmd /k powershell -ExecutionPolicy Bypass -File ",
-    tmp
-  ))
+  shell(paste0("start cmd.exe @cmd /k powershell -ExecutionPolicy Bypass -File ", ps_file_path))
+
 }
