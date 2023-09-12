@@ -9,14 +9,14 @@
 #'
 #' @return Opens a terminal and disconnect from the current R session.
 #' @export
-heroku_deploy <- function(app_name, curbcut_branch = "HEAD") {
+heroku_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd()) {
   if (Sys.info()["sysname"] != "Windows") {
     stop("As of now, this function is only adapted for Windows.")
   }
 
   # Create the UI generation object
   modules <- qs::qread("data/modules.qs")
-  tryCatch(UIs <- curbcut:::modules_panel(modules = modules), error = function(e) {
+  tryCatch(UIs <- curbcut::modules_panel(modules = modules), error = function(e) {
     stop(paste0("Calculation of modules_panel failing. Run the app in this R ",
                 "session first, so all the UI functions are ready to be ",
                 "sourced from the environment. The exact state of these UI functions ",
@@ -32,7 +32,8 @@ heroku_deploy <- function(app_name, curbcut_branch = "HEAD") {
 
   cancel <- readline(
     prompt =
-      "Pursuing will open a terminal and terminate this R session. Write `ok` to proceed: "
+      paste0("Pursuing will open a terminal (in the next 60 seconds) and ",
+             "terminate this R session. Write `ok` to proceed: ")
   )
 
   if (cancel != "ok") {
@@ -40,7 +41,7 @@ heroku_deploy <- function(app_name, curbcut_branch = "HEAD") {
   }
 
   cmds <- c(
-    paste0("cd ", getwd()),
+    paste0("cd ", wd),
     "heroku login",
     "heroku container:login",
     paste0("heroku container:push web -a ", app_name),
@@ -48,15 +49,22 @@ heroku_deploy <- function(app_name, curbcut_branch = "HEAD") {
     "del data\\modules_panel_calculated.qs"
   )
 
-  ps_file_path <- file.path(getwd(), "deploy_script.ps1")
+  ps_file_path <- file.path(wd, "deploy_script.ps1")
 
   # Write commands to temporary PowerShell script
   paste0(cmds, collapse = "\n") |> writeLines(ps_file_path)
 
   # Execute PowerShell script
-  shell(paste0("start cmd.exe @cmd /k powershell -ExecutionPolicy Bypass -File ", ps_file_path))
+  # shell(paste0("start cmd.exe @cmd /k powershell -ExecutionPolicy Bypass -File ", ps_file_path))
 
-  # Commented for debugging
+  # Execute the script on a scheduled task. This way, we ensure the terminal opening
+  # is not a child of this R session, and closing the latter won't crash the former.
+  shell(
+    sprintf(paste0('schtasks /create /F /SC ONCE /ST %s /TN "CurbcutDeploy" ',
+                   '/TR "powershell -ExecutionPolicy Bypass -File %s"'),
+            format(Sys.time() + 60, "%H:%M"),
+            ps_file_path), wait = TRUE)
+
   quit(save = "no")
 }
 
