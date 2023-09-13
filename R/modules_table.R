@@ -19,6 +19,7 @@ append_empty_modules_table <- function(scales) {
       title_text_title = character(),
       title_text_main = character(),
       title_text_extra = character(),
+      preview = character(),
       metadata = logical(),
       dataset_info = character(),
       regions = list(),
@@ -116,10 +117,10 @@ append_empty_modules_table <- function(scales) {
 #' @return The same `modules` data.frame fed, with the added row.
 #' @export
 add_module <- function(modules, id, theme = "", nav_title, title_text_title,
-                       title_text_main,
-                       title_text_extra, metadata, dataset_info, regions = NULL,
-                       var_left = NULL, dates = NULL, main_dropdown_title = NA_character_,
-                       var_right = NULL, suffix_zoom_levels = NA_character_,
+                       title_text_main, title_text_extra, metadata, dataset_info,
+                       regions = NULL, var_left = NULL, dates = NULL,
+                       main_dropdown_title = NA_character_, var_right = NULL,
+                       suffix_zoom_levels = NA_character_,
                        add_advanced_controls = NULL, default_var = NA) {
   if (is.data.frame(var_left)) {
     if (!all(names(var_left) == c("var_code", "group_name", "group_diff"))) {

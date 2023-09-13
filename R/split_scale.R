@@ -143,7 +143,8 @@ split_scale <- function(destination, cutting_layer,
   # Add area
   destination_out$area <- get_area(destination_out)
   destination_out <- destination_out[
-    c(names(destination_out)[names(destination_out) != "geometry"], "geometry")]
+    c(names(destination_out)[names(destination_out) != "geometry"], "geometry")
+  ]
 
   # Go back to unprojected
   destination_out <- sf::st_transform(destination_out, 4326)

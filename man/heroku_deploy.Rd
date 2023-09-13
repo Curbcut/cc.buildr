@@ -4,7 +4,7 @@
 \alias{heroku_deploy}
 \title{Deploy an app in Heroku}
 \usage{
-heroku_deploy(app_name)
+heroku_deploy(app_name, curbcut_branch = "HEAD", wd = getwd())
 }
 \arguments{
 \item{app_name}{<\code{character}> Must correspond to an existing app on the

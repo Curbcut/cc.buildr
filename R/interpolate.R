@@ -466,8 +466,8 @@ interpolate_from_area <- function(to, from,
 
   # Calculate the sum for each column using lapply
   summarized_add <- lapply(additive_vars, interpolate_fast_additive_sum,
-                           data = intersected_table, id_col = "ID",
-                           weight_col = weight_by
+    data = intersected_table, id_col = "ID",
+    weight_col = weight_by
   )
 
   # Concatenate both
@@ -496,7 +496,7 @@ interpolate_from_area <- function(to, from,
 
   # Return
   merge(to[, names(to)[!names(to) %in% c(additive_vars, average_vars)]], out,
-        by = "ID", all = TRUE
+    by = "ID", all = TRUE
   )
 }
 

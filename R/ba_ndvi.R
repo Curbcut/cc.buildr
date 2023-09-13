@@ -31,7 +31,6 @@ ba_ndvi <- function(scales_variables_modules,
                     data_output_path = "dev/data/ndvi/",
                     years = cc.data::ndvi_years(),
                     skip_scales = NULL, crs) {
-
   # Create the folders if they don't exist
   dir.create(data_output_path) |> suppressWarnings()
   tmp_folder <- paste0(data_output_path, "tmp/")
@@ -47,11 +46,12 @@ ba_ndvi <- function(scales_variables_modules,
   possible_ndvi_years <- years
 
   cc.data::ndvi_import_from_masterpolygon(master_polygon,
-                                          years = possible_ndvi_years,
-                                          output_path = data_output_path,
-                                          temp_folder = tmp_folder,
-                                          overwrite = FALSE,
-                                          filter_cloudy_tiles = TRUE)
+    years = possible_ndvi_years,
+    output_path = data_output_path,
+    temp_folder = tmp_folder,
+    overwrite = FALSE,
+    filter_cloudy_tiles = TRUE
+  )
 
 
   # Add it to all the scales ------------------------------------------------
@@ -76,9 +76,7 @@ ba_ndvi <- function(scales_variables_modules,
           sapply(intersections, \(int) mean(data$ndvi[int], na.rm = TRUE))
 
         return(scale[c("ID", col_name)])
-
       })
-
     })
     names(data) <- possible_ndvi_years
     qs::qsave(data, file = sprintf("%sdata.qs", data_output_path))
@@ -105,11 +103,14 @@ ba_ndvi <- function(scales_variables_modules,
   data <- map_over_scales(
     scales_variables_modules$scales,
     fun = \(geo = geo, scales = scales, scale_df = scale_df,
-            scale_name = scale_name) {
-      if (!scale_name %in% avail_scales) return(scale_df)
+      scale_name = scale_name) {
+      if (!scale_name %in% avail_scales) {
+        return(scale_df)
+      }
       scale_df <- scale_df[!grepl("ndvi_", names(scale_df))]
       merge(scale_df, data[[scale_name]], by = "ID")
-    })
+    }
+  )
 
 
 
@@ -141,16 +142,20 @@ ba_ndvi <- function(scales_variables_modules,
   # Variables table ---------------------------------------------------------
 
   avail_df <- map_over_scales(data,
-                              fun = \(geo = geo, scales = scales, scale_df = scale_df,
-                                      scale_name = scale_name) {
-                                if (sum(grepl("ndvi", names(scale_df))) == 0)
-                                  return(NULL)
-                                sprintf("%s_%s", geo, scale_name)
-                              }) |> unlist()
+    fun = \(geo = geo, scales = scales, scale_df = scale_df,
+      scale_name = scale_name) {
+      if (sum(grepl("ndvi", names(scale_df))) == 0) {
+        return(NULL)
+      }
+      sprintf("%s_%s", geo, scale_name)
+    }
+  ) |> unlist()
   avail_df <- unname(avail_df)
 
-  interpolated <- tibble::tibble(df = avail_df,
-                                 interpolated_from = rep(FALSE, length(avail_df)))
+  interpolated <- tibble::tibble(
+    df = avail_df,
+    interpolated_from = rep(FALSE, length(avail_df))
+  )
 
 
   variables <-
@@ -172,18 +177,21 @@ ba_ndvi <- function(scales_variables_modules,
       breaks_q3 = with_breaks$q3_breaks_table$ndvi,
       breaks_q5 = with_breaks$q5_breaks_table$ndvi,
       source = "Curbcut",
-      interpolated = interpolated)
+      interpolated = interpolated
+    )
 
 
   # Modules table -----------------------------------------------------------
 
   regions <- map_over_scales(data,
-                             fun = \(geo = geo, scales = scales, scale_df = scale_df,
-                                     scale_name = scale_name) {
-                               if (sum(grepl("ndvi", names(scale_df))) == 0)
-                                 return(NULL)
-                               geo
-                             }) |> unlist()
+    fun = \(geo = geo, scales = scales, scale_df = scale_df,
+      scale_name = scale_name) {
+      if (sum(grepl("ndvi", names(scale_df))) == 0) {
+        return(NULL)
+      }
+      geo
+    }
+  ) |> unlist()
   regions <- unname(regions) |> unique()
 
 
@@ -195,7 +203,7 @@ ba_ndvi <- function(scales_variables_modules,
       nav_title = "Greenness",
       title_text_title = "Greenness",
       title_text_main = paste0(
-        "The Normalized Difference Vegetation Index (NDVI) is a vital measurement ",
+        "<p>The Normalized Difference Vegetation Index (NDVI) is a vital measurement ",
         "for understanding the presence and intensity of vegetation in an area."
       ),
       title_text_extra = paste0(
@@ -231,7 +239,8 @@ ba_ndvi <- function(scales_variables_modules,
       dates = possible_ndvi_years,
       var_right = scales_variables_modules$variables$var_code[
         scales_variables_modules$variables$source == "Canadian census" &
-          !is.na(scales_variables_modules$variables$parent_vec)],
+          !is.na(scales_variables_modules$variables$parent_vec)
+      ],
       default_var = "ndvi"
     )
 
@@ -243,5 +252,4 @@ ba_ndvi <- function(scales_variables_modules,
     variables = variables,
     modules = modules
   ))
-
 }

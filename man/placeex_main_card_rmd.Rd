@@ -11,7 +11,7 @@ placeex_main_card_rmd(
   scales_dictionary,
   lang = "en",
   tileset_prefix,
-  mapbox_username = "sus-mcgill",
+  mapbox_username = "curbcut",
   rev_geocode_from_localhost = TRUE,
   check_bslib_version = TRUE,
   overwrite = TRUE,

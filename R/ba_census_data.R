@@ -69,7 +69,6 @@ ba_census_data <- function(scales_variables_modules,
 
   variables <-
     lapply(unique_var, \(u_var) {
-
       # Include in place explorer
       pe_include <- if (u_var %in% cc.data::census_vectors_table$parent_vec) FALSE else TRUE
       # Only include larger brackets of age

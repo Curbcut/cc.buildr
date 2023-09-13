@@ -131,7 +131,7 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs, match_with_
       parallel = TRUE,
       all_scales = spatially_filtered,
       fun = \(geo = geo, scales = scales,
-              scale_name = scale_name, scale_df = scale_df) {
+        scale_name = scale_name, scale_df = scale_df) {
         if (scale_name %in% c("street", "building")) {
           # If street or building is missing an ID:
           above_levels <- names(scales)[2:(which(names(scales) == scale_name) - 1)]
@@ -193,8 +193,8 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs, match_with_
             suppressWarnings(sf::st_point_on_surface(df))
           merged_centroids <- sf::st_join(df_points_on_surface, top_level)
           out <- merge(sf::st_drop_geometry(merged_centroids),
-                       df[, c("ID", "geometry")],
-                       by = "ID"
+            df[, c("ID", "geometry")],
+            by = "ID"
           )
         } else {
           which_fit <- lapply(seq_along(df$geometry), \(r) get_largest_intersection(df[r, ], top_level))

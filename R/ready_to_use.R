@@ -103,8 +103,8 @@ ru_alp <- function(scales_variables_modules, region_DA_IDs, crs) {
 ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
   out <- ba_var(
     data = cc.data::db_read_data("canbics",
-                                 column_to_select = "DA_ID",
-                                 IDs = region_DA_IDs, crs = crs
+      column_to_select = "DA_ID",
+      IDs = region_DA_IDs, crs = crs
     ),
     scales_variables_modules = scales_variables_modules,
     base_scale = "DA",
@@ -191,8 +191,8 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
 #' @export
 ru_lst <- function(scales_variables_modules, region_DA_IDs, crs) {
   data <- cc.data::db_read_data("lst",
-                                column_to_select = "DA_ID",
-                                IDs = region_DA_IDs, crs = crs
+    column_to_select = "DA_ID",
+    IDs = region_DA_IDs, crs = crs
   )
   cols <- names(data)[names(data) != "DA_ID"]
 
@@ -221,17 +221,17 @@ ru_lst <- function(scales_variables_modules, region_DA_IDs, crs) {
     module_title_text_main = paste0(
       "Land Surface Temperature (LST) is a crucial indicator of urban heat islands ",
       "and ecological balance within a region. LST measures the maximum mean ",
-      "warm-season temperature at a specific location. This data represents the ",
+      "warm-season temperature at a specific location."
+    ),
+    module_title_text_extra = paste0(
+      "<p>This data represents the ",
       "highest mean value reported over a three-year span, helping to minimize ",
       "the impact of missing data or cloud cover. LST is instrumental ",
       "in identifying areas that are hotter during the day and more likely to radiate ",
-      "excess heat at night, contributing to urban heat phenomena."
-    ),
-    module_title_text_extra = paste0(
-      "<p>Understanding LST is essential for urban planning, health assessments, ",
+      "excess heat at night, contributing to urban heat phenomena. Understanding ",
+      "LST is essential for urban planning, health assessments, ",
       "and environmental protection. To learn more about how LST is calculated, ",
       "<a href='https://www.canuedata.ca/tmp/CANUE_METADATA_WTLST_AVA_YY.pdf' target='_blank'>click here</a>.</p>"
-
     ),
     module_metadata = TRUE,
     module_dataset_info =

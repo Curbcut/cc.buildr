@@ -17,10 +17,12 @@ heroku_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd()) {
   # Create the UI generation object
   modules <- qs::qread("data/modules.qs")
   tryCatch(UIs <- curbcut::modules_panel(modules = modules), error = function(e) {
-    stop(paste0("Calculation of modules_panel failing. Run the app in this R ",
-                "session first, so all the UI functions are ready to be ",
-                "sourced from the environment. The exact state of these UI functions ",
-                "will be the one used on the web app (to save calculation time)."))
+    stop(paste0(
+      "Calculation of modules_panel failing. Run the app in this R ",
+      "session first, so all the UI functions are ready to be ",
+      "sourced from the environment. The exact state of these UI functions ",
+      "will be the one used on the web app (to save calculation time)."
+    ))
   })
   qs::qsave(UIs, "data/modules_panel_calculated.qs")
 
@@ -32,8 +34,10 @@ heroku_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd()) {
 
   cancel <- readline(
     prompt =
-      paste0("Pursuing will open a terminal (in the next 60 seconds) and ",
-             "terminate this R session. Write `ok` to proceed: ")
+      paste0(
+        "Pursuing will open a terminal (in the next 60 seconds) and ",
+        "terminate this R session. Write `ok` to proceed: "
+      )
   )
 
   if (cancel != "ok") {
@@ -60,10 +64,16 @@ heroku_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd()) {
   # Execute the script on a scheduled task. This way, we ensure the terminal opening
   # is not a child of this R session, and closing the latter won't crash the former.
   shell(
-    sprintf(paste0('schtasks /create /F /SC ONCE /ST %s /TN "CurbcutDeploy" ',
-                   '/TR "powershell -ExecutionPolicy Bypass -File %s"'),
-            format(Sys.time() + 60, "%H:%M"),
-            ps_file_path), wait = TRUE)
+    sprintf(
+      paste0(
+        'schtasks /create /F /SC ONCE /ST %s /TN "CurbcutDeploy" ',
+        '/TR "powershell -ExecutionPolicy Bypass -File %s"'
+      ),
+      format(Sys.time() + 60, "%H:%M"),
+      ps_file_path
+    ),
+    wait = TRUE
+  )
 
   quit(save = "no")
 }
@@ -88,5 +98,4 @@ heroku_restart_dyno <- function(app_name, dyno) {
     writeLines(ps_file_path)
 
   shell(paste0("start cmd.exe @cmd /k powershell -ExecutionPolicy Bypass -File ", ps_file_path))
-
 }

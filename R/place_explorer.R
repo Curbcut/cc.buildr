@@ -97,8 +97,8 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
   dict <- rbind(dict, no2_dict)
 
   NO2 <- cc.data::db_read_data("no2",
-                               column_to_select = "DA_ID",
-                               IDs = region_DA_IDs, crs = crs
+    column_to_select = "DA_ID",
+    IDs = region_DA_IDs, crs = crs
   )
   NO2 <- merge(NO2, DA_table, all = TRUE)
 
