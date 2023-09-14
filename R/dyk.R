@@ -88,8 +88,8 @@ dyk_prep <- function(svm, all_tables, n = NULL) {
 #' @param svm <`list`> A list, usually `scales_variables_modules`, containing
 #' the scales, modules, and variables tables.
 #'
-#' @return A data frame with nine columns (the columns present in `vars_dyk`,
-#' and then additionally `dyk_type`, `dyk_text` and `dyk_value`).
+#' @return A data frame with ten columns (the columns present in `vars_dyk`,
+#' and then additionally `select_ID`, `dyk_type`, `dyk_text` and `dyk_value`).
 #' @export
 dyk_uni <- function(vars_dyk, svm) {
 
@@ -100,10 +100,15 @@ dyk_uni <- function(vars_dyk, svm) {
     dyk_highest$date, svm)
   dyk_highest$highest <- dyk_highest_out$highest
   dyk_highest$lowest <- dyk_highest_out$lowest
+  dyk_highest$highest_ID <- dyk_highest_out$highest_ID
+  dyk_highest$lowest_ID <- dyk_highest_out$lowest_ID
   dyk_highest <- dyk_highest |>
     tidyr::pivot_longer(c(highest, lowest), names_to = "dyk_type",
                         values_to = "dyk_text") |>
-    dplyr::mutate(dyk_value = 0.5)
+    dplyr::mutate(dyk_value = 0.5) |>
+    dplyr::mutate(select_ID = if_else(
+      dyk_type == "highest", highest_ID, lowest_ID), .after = date) |>
+    dplyr::select(-highest_ID, -lowest_ID)
 
   # Get change DYKs
   dyk_change <-
@@ -121,7 +126,8 @@ dyk_uni <- function(vars_dyk, svm) {
   dyk_change <-
     dyk_change |>
     dplyr::filter(!is.infinite(dyk_value)) |>
-    dplyr::mutate(dyk_type = "change", .before = dyk_text)
+    dplyr::mutate(dyk_type = "change", .before = dyk_text) |>
+    dplyr::mutate(select_ID = NA_character_, .after = date)
 
   # Get compare DYKs
   dyk_compare <- vars_dyk[vars_dyk$var_right != " ",]
@@ -134,7 +140,8 @@ dyk_uni <- function(vars_dyk, svm) {
     dyk_compare |>
     dplyr::mutate(dyk_type = "compare", .before = dyk_text) |>
     # Only keep rows with correlation > 0.3
-    dplyr::filter(abs(dyk_value) > 0.3)
+    dplyr::filter(abs(dyk_value) > 0.3) |>
+    dplyr::mutate(select_ID = NA_character_, .after = date)
 
   dyk <-
     dplyr::bind_rows(dyk_highest, dyk_change, dyk_compare) |>
@@ -162,8 +169,8 @@ dyk_uni <- function(vars_dyk, svm) {
 #' @param svm <`list`> A list, usually `scales_variables_modules`, containing
 #' the scales, modules, and variables tables.
 #'
-#' @return A data frame with two columns (`highest` and `lowest`), each of
-#' which contains a character vector of DYK outputs.
+#' @return A data frame with four columns (`highest`, `lowest`, `highest_ID`,
+#' and `lowest_ID`), each of which contains a character vector of DYK outputs.
 #' @export
 dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm) {
 
@@ -198,6 +205,12 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm) {
     tb$name[which.max(tb[[paste(var_left, date, sep = "_")]])]
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
+  # Highest ID
+  highest_ID <- mapply(\(var_left, region, scale, date) {
+    tb <- svm$scales[[region]][[scale]]
+    tb$ID[which.max(tb[[paste(var_left, date, sep = "_")]])]
+  }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
+
   # Second highest value
   second_highest_val <- mapply(\(var_left, region, scale, date) {
     tb <- svm$scales[[region]][[scale]]
@@ -224,6 +237,12 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm) {
   lowest_name <- mapply(\(var_left, region, scale, date) {
     tb <- svm$scales[[region]][[scale]]
     tb$name[which.min(tb[[paste(var_left, date, sep = "_")]])]
+  }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
+
+  # Lowest ID
+  lowest_ID <- mapply(\(var_left, region, scale, date) {
+    tb <- svm$scales[[region]][[scale]]
+    tb$ID[which.min(tb[[paste(var_left, date, sep = "_")]])]
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
   # Second lowest value
@@ -296,7 +315,8 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm) {
     scale_name, " with the lowest ", var_exp, " (", lowest_val,
     "), followed by ", second_lowest_name, " (", second_lowest_val, ").")
 
-  tibble::tibble(highest = highest, lowest = lowest)
+  tibble::tibble(highest = highest, lowest = lowest, highest_ID = highest_ID,
+                 lowest_ID = lowest_ID)
 
 }
 
@@ -517,3 +537,302 @@ dyk_uni_compare <- function(var_left, var_right, region, scale, date, svm) {
   tibble::tibble(compare_text = compare_vec, compare_val = abs(corr))
 
 }
+
+
+# Bivariate ---------------------------------------------------------------
+
+#' Generate Outlier DYKs
+#'
+#' This function creates "Did you know" text strings highlighting outlier
+#' values from a combination of left and right variables, region, scale and
+#' date. The output is a data frame containing an `outlier` column.
+#'
+#' @param var_left <character> A string representing the name of the variable
+#' for which the DYK should be calculated.
+#' @param region <`character`> A string representing the name of the region
+#' for which the DYK should be calculated.
+#' @param scale <`character`> A string representing the name of the scale
+#' for which the DYK should be calculated.
+#' @param date <`character`> A string representing the name of the date
+#' for which the DYK should be calculated.
+#' @param svm <`list`> A list, usually `scales_variables_modules`, containing
+#' the scales, modules, and variables tables.
+#'
+#' @return A data frame with two columns (`highest` and `lowest`), each of
+#' which contains a character vector of DYK outputs.
+#' @export
+dyk_bivar_outlier <- function(var_left, var_right, region, scale, date,
+                                   svm) {
+
+  # Get class
+  vars <- mapply(curbcut::vars_build,
+                 var_left = paste(var_left, date, sep = "_"),
+                 var_right = paste(var_right, date, sep = "_"),
+                 df = paste(region, scale, sep = "_"),
+                 MoreArgs = list(
+                   check_choropleth = FALSE,
+                   variables = svm$variables),
+                 SIMPLIFY = FALSE, USE.NAMES = FALSE)
+
+  # Initial region mention
+  region_start <- mapply(\(x, y) curbcut:::explore_context(
+    region = x, select_id = NA, df = paste(x, y, sep = "_"), switch_DA = FALSE),
+    x = region, y = scale, SIMPLIFY = FALSE, USE.NAMES = FALSE)
+  region_start <- sapply(region_start, \(x) curbcut::s_sentence(x$p_start))
+
+  # Scale name
+  scale_name <- scales_dictionary$plur[sapply(
+    scale, \(x) which(scales_dictionary$scale == x), USE.NAMES = FALSE)]
+
+  # Values
+  val_1 <- mapply(\(var_left, region, scale, date) {
+    tb <- svm$scales[[region]][[scale]]
+    tb[[paste(var_left, date, sep = "_")]]
+  }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = FALSE)
+  val_2 <- mapply(\(var_right, region, scale, date) {
+    tb <- svm$scales[[region]][[scale]]
+    tb[[paste(var_right, date, sep = "_")]]
+  }, var_right, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = FALSE)
+
+  # Correlation
+  corr <- mapply(cor, x = val_1, y = val_2,
+                 MoreArgs = list(use = "na.or.complete"), USE.NAMES = FALSE)
+  positive <- corr > 0
+
+  # Frequency qualifier
+  freq <- dplyr::case_when(
+    abs(corr) > 0.7 ~ "almost always",
+    abs(corr) > 0.3 ~ "usually",
+    abs(corr) > 0.1 ~ "often",
+    .default = "sometimes"
+  )
+
+  # High/low
+  high_low_1 <- sapply(vars, \(x) curbcut::explore_text_bivar_adjective(
+    x$var_left, TRUE, TRUE, FALSE, "en"))
+  high_low_2 <- mapply(\(x, y) {
+    if (is.na(y)) return(NA_character_)
+    curbcut::explore_text_bivar_adjective(
+      x$var_right, FALSE, y, FALSE, "en")}, vars, positive)
+
+  # Variable explanations
+  var_exp_1 <- svm$variables$explanation_nodet[sapply(
+    var_left, \(x) which(x == svm$variables$var_code),
+    USE.NAMES = FALSE)]
+  var_exp_2 <- svm$variables$explanation_nodet[sapply(
+    var_right, \(x) which(x == svm$variables$var_code),
+    USE.NAMES = FALSE)]
+
+  # Get max date for each variable
+  max_date <-
+    tibble::tibble(var_left = var_left, var_right = var_right, date = date) |>
+    dplyr::summarize(max_date = max(date), .by = c(var_left, var_right))
+
+  # Use max_date to decide on date handling
+  extra_date <- mapply(\(x, y, z) ifelse(
+    z == max_date$max_date[max_date$var_left == x & max_date$var_right == y],
+    "", paste0(" in ", z)), var_left, var_right, date, USE.NAMES = FALSE)
+  have_had <- mapply(\(x, y, z) ifelse(z == max_date$max_date[
+    max_date$var_left == x & max_date$var_right == y], "have", "had"),
+    var_left, var_right, date, USE.NAMES = FALSE)
+  is_was <- mapply(\(x, y, z) ifelse(z == max_date$max_date[
+    max_date$var_left == x & max_date$var_right == y], "is", "was"),
+    var_left, var_right, date, USE.NAMES = FALSE)
+
+  # Make a model to determine outliers
+  md <- mapply(\(x, y) {
+    lm(y ~ x, data = data.frame(scale(tibble(x = x, y = y))))
+    }, val_1, val_2, SIMPLIFY = FALSE, USE.NAMES = FALSE)
+
+  which_out <- lapply(md, \(x) which(abs(x$residuals) > 1, useNames = FALSE))
+
+  # Get outlier place names
+  outlier_place <- mapply(\(x, region, scale) {
+    svm$scales[[region]][[scale]]$name[x]
+    }, which_out, region, scale, USE.NAMES = FALSE, SIMPLIFY = FALSE)
+
+  # Get outlier values
+  out_val_1 <- mapply(\(x, val_1) val_1[x], which_out, val_1, USE.NAMES = FALSE,
+                      SIMPLIFY = FALSE)
+  out_val_2 <- mapply(\(x, val_2) val_2[x], which_out, val_2, USE.NAMES = FALSE,
+                      SIMPLIFY = FALSE)
+
+  # High/low
+  high_low_1 <- sapply(vars, \(x) curbcut::explore_text_bivar_adjective(
+    x$var_left, TRUE, TRUE, FALSE, "en"))
+  high_low_2 <- mapply(\(x, y) {
+    if (is.na(y)) return(NA_character_)
+    curbcut::explore_text_bivar_adjective(
+      x$var_right, FALSE, y, FALSE, "en")}, vars, positive)
+
+  # Convert values
+  out_val_1 <- mapply(curbcut::convert_unit,
+                      var = lapply(vars, \(x) x$var_left),
+                      x = out_val_1,
+                      MoreArgs = list(decimal = 1, compact = FALSE),
+                      SIMPLIFY = FALSE, USE.NAMES = FALSE)
+  out_val_2 <- mapply(curbcut::convert_unit,
+                      var = lapply(vars, \(x) x$var_right),
+                      x = out_val_2,
+                      MoreArgs = list(decimal = 1, compact = FALSE),
+                      SIMPLIFY = FALSE, USE.NAMES = FALSE)
+
+  mapply(\(region_start, extra_date, scale_name, high_low_1, var_exp_1, freq,
+           have_had, high_low_2, var_exp_2, outlier_place, is_was, out_val_1,
+           out_val_2) {
+
+    paste0(
+      region_start, extra_date, ", although ", scale_name, " with ", high_low_1,
+      " ", var_exp_1, " ", freq, " ", have_had, " ", high_low_2, " ", var_exp_2,
+      ", ", outlier_place, " ", is_was, " ", "<outlier>", " with ",
+      "<high_low_out_1>", " ", var_exp_1, " (", out_val_1, ") and ",
+      "<high_low_out_2>", " ", var_exp_2, " (", out_val_2, ").")
+
+
+  }, region_start, extra_date, scale_name, high_low_1, var_exp_1, freq,
+  have_had, high_low_2, var_exp_2, outlier_place, is_was, out_val_1, out_val_2,
+  SIMPLIFY = FALSE, USE.NAMES = FALSE)
+
+
+
+
+
+  # Assemble output
+  # outlier_vec <-
+    paste0(
+    region_start, extra_date, ", although ", scale_name, " with ", high_low_1,
+    " ", var_exp_1, " ", freq, " ", have_had, " ", high_low_2, " ", var_exp_2,
+    ", ", "<outlier_place>", " ", is_was, " ", "<outlier>", " with ",
+    "<high_low_out_1>", " ", var_exp_1, " (", "<out_val_1>", ") and ",
+    "<high_low_out_2>", " ", var_exp_2, " (", "<out_val_2>", ").")
+
+  tibble::tibble(outlier_text = outlier_vec, outlier_val = abs(sd_dif))
+
+
+  scale(tibble(x = val_1[[1]], y = val_2[[1]]))
+
+  which.max(abs(md$residuals))
+
+  val_1
+  val_2
+
+  tibble(x = abs(md[[1]]$residuals)) |>
+    ggplot(aes(x)) + geom_histogram()
+
+  val_1[[1]][51]
+  val_2[[1]][51]
+
+  # Highest value
+  highest_val <- mapply(\(var_left, region, scale, date) {
+    tb <- svm$scales[[region]][[scale]]
+    max(tb[[paste(var_left, date, sep = "_")]], na.rm = TRUE)
+  }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
+
+  # Highest name
+  highest_name <- mapply(\(var_left, region, scale, date) {
+    tb <- svm$scales[[region]][[scale]]
+    tb$name[which.max(tb[[paste(var_left, date, sep = "_")]])]
+  }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
+
+  # Second highest value
+  second_highest_val <- mapply(\(var_left, region, scale, date) {
+    tb <- svm$scales[[region]][[scale]]
+    max_val <- which.max(tb[[paste(var_left, date, sep = "_")]])
+    max(tb[[paste(var_left, date, sep = "_")]][-max_val], na.rm = TRUE)
+  }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
+
+  # Second highest name
+  second_highest_name <- mapply(\(var_left, region, scale, date) {
+    tb <- svm$scales[[region]][[scale]]
+    val_vec <- tb[[paste(var_left, date, sep = "_")]]
+    # Remove top value
+    val_vec[which.max(val_vec)] <- -Inf
+    tb$name[which.max(val_vec)]
+  }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
+
+  # Lowest value
+  lowest_val <- mapply(\(var_left, region, scale, date) {
+    tb <- svm$scales[[region]][[scale]]
+    min(tb[[paste(var_left, date, sep = "_")]], na.rm = TRUE)
+  }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
+
+  # Lowest name
+  lowest_name <- mapply(\(var_left, region, scale, date) {
+    tb <- svm$scales[[region]][[scale]]
+    tb$name[which.min(tb[[paste(var_left, date, sep = "_")]])]
+  }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
+
+  # Second lowest value
+  second_lowest_val <- mapply(\(var_left, region, scale, date) {
+    tb <- svm$scales[[region]][[scale]]
+    min_val <- which.min(tb[[paste(var_left, date, sep = "_")]])
+    min(tb[[paste(var_left, date, sep = "_")]][-min_val], na.rm = TRUE)
+  }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
+
+  # Second lowest name
+  second_lowest_name <- mapply(\(var_left, region, scale, date) {
+    tb <- svm$scales[[region]][[scale]]
+    val_vec <- tb[[paste(var_left, date, sep = "_")]]
+    # Remove bottom value
+    val_vec[which.min(val_vec)] <- Inf
+    tb$name[which.min(val_vec)]
+  }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
+
+  # Variable explanation
+  var_exp <- svm$variables$explanation_nodet[sapply(
+    var_left, \(x) which(x == svm$variables$var_code),
+    USE.NAMES = FALSE)]
+
+  # Get max date for each variable
+  max_date <-
+    tibble::tibble(var_left = var_left, date = date) |>
+    dplyr::summarize(max_date = max(date), .by = var_left)
+
+  # Use max_date to decide on date handling
+  extra_date <- mapply(\(x, y) ifelse(
+    y == max_date$max_date[max_date$var_left == x], "", paste0(" in ", y)),
+    var_left, date, USE.NAMES = FALSE)
+  is_was <- mapply(\(x, y) ifelse(
+    y == max_date$max_date[max_date$var_left == x], "is", "was"),
+    var_left, date, USE.NAMES = FALSE)
+
+  # Convert values
+  highest_val <- mapply(curbcut::convert_unit,
+                        var = lapply(vars, \(x) x$var_left),
+                        x = highest_val,
+                        MoreArgs = list(decimal = 1, compact = FALSE),
+                        SIMPLIFY = TRUE, USE.NAMES = FALSE)
+
+  second_highest_val <- mapply(curbcut::convert_unit,
+                               var = lapply(vars, \(x) x$var_left),
+                               x = second_highest_val,
+                               MoreArgs = list(decimal = 1, compact = FALSE),
+                               SIMPLIFY = TRUE, USE.NAMES = FALSE)
+
+  lowest_val <- mapply(curbcut::convert_unit,
+                       var = lapply(vars, \(x) x$var_left),
+                       x = lowest_val,
+                       MoreArgs = list(decimal = 1, compact = FALSE),
+                       SIMPLIFY = TRUE, USE.NAMES = FALSE)
+
+  second_lowest_val <- mapply(curbcut::convert_unit,
+                              var = lapply(vars, \(x) x$var_left),
+                              x = second_lowest_val,
+                              MoreArgs = list(decimal = 1, compact = FALSE),
+                              SIMPLIFY = TRUE, USE.NAMES = FALSE)
+
+  # Assemble output
+  highest <- paste0(
+    region_start, extra_date, ", ", highest_name, " ", is_was, " the ",
+    scale_name, " with the highest ", var_exp, " (", highest_val,
+    "), followed by ", second_highest_name, " (", second_highest_val, ").")
+
+  lowest <- paste0(
+    region_start, extra_date, ", ", lowest_name, " ", is_was, " the ",
+    scale_name, " with the lowest ", var_exp, " (", lowest_val,
+    "), followed by ", second_lowest_name, " (", second_lowest_val, ").")
+
+  tibble::tibble(highest = highest, lowest = lowest)
+
+}
+
