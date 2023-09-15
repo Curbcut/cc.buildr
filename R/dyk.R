@@ -36,6 +36,8 @@ dyk_prep <- function(svm, all_tables, n = NULL) {
     # which would require a "group_default" logical field. TKTK
     dplyr::filter(!sapply(var_left, tibble::is_tibble)) |>
     tidyr::unnest(var_left) |>
+    # Add a var_right = " " to each row to preserve simple univariate cases
+    mutate(var_right = lapply(var_right, \(x) c(x, " "))) |>
     tidyr::unnest(var_right)
 
   var_left_check <-
@@ -50,6 +52,11 @@ dyk_prep <- function(svm, all_tables, n = NULL) {
     svm$variables |>
     dplyr::filter(var_code %in% vars_dyk$var_right) |>
     dplyr::select(var_right = var_code, df = avail_df, date = dates) |>
+    reframe(
+      var_right = c(" ", var_right),
+      df = c(list(unique(unlist(df))), df),
+      date = c(list(as.character(min(as.numeric(unlist(date))):
+                                   max(as.numeric(unlist(date))))), date)) |>
     tidyr::unnest(date) |>
     tidyr::unnest(df) |>
     tidyr::separate_wider_delim(df, delim = "_", names = c("region", "scale"))
@@ -66,9 +73,6 @@ dyk_prep <- function(svm, all_tables, n = NULL) {
 
   vars_dyk <-
     vars_dyk |>
-    dplyr::mutate(var_right = " ") |>
-    dplyr::distinct() |>
-    dplyr::bind_rows(vars_dyk) |>
     dplyr::arrange(module, region, scale, var_left, var_right, date)
 
   return(vars_dyk)
@@ -89,26 +93,34 @@ dyk_prep <- function(svm, all_tables, n = NULL) {
 #' the scales, modules, and variables tables.
 #'
 #' @return A data frame with ten columns (the columns present in `vars_dyk`,
-#' and then additionally `select_ID`, `dyk_type`, `dyk_text` and `dyk_value`).
+#' and then additionally `select_ID`, `dyk_type`, `dyk_text` and `dyk_weight`).
 #' @export
-dyk_uni <- function(vars_dyk, svm) {
+dyk_uni <- function(vars_dyk, svm, langs, translation_df) {
+
+  # Prepare translation_df
+  assign("translation_df", value = translation_df, envir = as.environment(1))
 
   # Get highest/lowest DYKs
   dyk_highest <- vars_dyk[vars_dyk$var_right == " ",]
   dyk_highest_out <- dyk_uni_highest_lowest(
     dyk_highest$var_left, dyk_highest$region, dyk_highest$scale,
-    dyk_highest$date, svm)
-  dyk_highest$highest <- dyk_highest_out$highest
-  dyk_highest$lowest <- dyk_highest_out$lowest
-  dyk_highest$highest_ID <- dyk_highest_out$highest_ID
-  dyk_highest$lowest_ID <- dyk_highest_out$lowest_ID
+    dyk_highest$date, svm, langs)
+  dyk_highest <- dplyr::bind_cols(dyk_highest, dyk_highest_out)
+  for (i in seq_along(langs)) {
+    sel_vec <- paste0(c("highest_", "lowest_"), langs[i])
+    dyk_highest <-
+      dyk_highest |>
+      tidyr::pivot_longer(c(all_of(sel_vec)),
+                          names_to = if (i == 1) "dyk_type" else NULL,
+                          values_to = paste0("dyk_text_", langs[i]))}
   dyk_highest <- dyk_highest |>
-    tidyr::pivot_longer(c(highest, lowest), names_to = "dyk_type",
-                        values_to = "dyk_text") |>
-    dplyr::mutate(dyk_value = 0.5) |>
+    dplyr::mutate(dyk_weight = 0.5) |>
     dplyr::mutate(select_ID = if_else(
-      dyk_type == "highest", highest_ID, lowest_ID), .after = date) |>
-    dplyr::select(-highest_ID, -lowest_ID)
+      dyk_type == "highest_en", highest_ID, lowest_ID), .after = date) |>
+    dplyr::mutate(dyk_type = stringr::str_remove(
+      dyk_type, paste0("_", paste(langs, collapse = "|")))) |>
+    dplyr::select(-highest_ID, -lowest_ID) |>
+    dplyr::mutate(date = lapply(date, \(x) x))
 
   # Get change DYKs
   dyk_change <-
@@ -116,17 +128,18 @@ dyk_uni <- function(vars_dyk, svm) {
     dplyr::filter(var_right == " ") |>
     dplyr::filter(n() > 1, .by = c(module, region, scale, var_left)) |>
     dplyr::filter(scale == "CSD") |>
-    dplyr::mutate(date = "all") |>
-    dplyr::distinct()
+    dplyr::summarize(date = list(as.character(c(min(as.numeric(date)),
+                                           max(as.numeric(date))))),
+                     .by = c(module, region, scale, var_left, var_right))
   dyk_change_out <- dyk_uni_change(
     dyk_change$var_left, dyk_change$region, dyk_change$scale, svm)
-  dyk_change$scale <- "all"
-  dyk_change$dyk_text <- dyk_change_out$change_text
-  dyk_change$dyk_value <- dyk_change_out$change_val
+  dyk_change$scale <- NA_character_
+  dyk_change$dyk_text_en <- dyk_change_out$change_text
+  dyk_change$dyk_weight <- dyk_change_out$change_val
   dyk_change <-
     dyk_change |>
-    dplyr::filter(!is.infinite(dyk_value)) |>
-    dplyr::mutate(dyk_type = "change", .before = dyk_text) |>
+    dplyr::filter(!is.infinite(dyk_weight)) |>
+    dplyr::mutate(dyk_type = "change", .before = dyk_text_en) |>
     dplyr::mutate(select_ID = NA_character_, .after = date)
 
   # Get compare DYKs
@@ -134,18 +147,19 @@ dyk_uni <- function(vars_dyk, svm) {
   dyk_compare_out <- dyk_uni_compare(
     dyk_compare$var_left, dyk_compare$var_right, dyk_compare$region,
     dyk_compare$scale, dyk_compare$date, svm)
-  dyk_compare$dyk_text <- dyk_compare_out$compare_text
-  dyk_compare$dyk_value <- dyk_compare_out$compare_val
+  dyk_compare$dyk_text_en <- dyk_compare_out$compare_text
+  dyk_compare$dyk_weight <- dyk_compare_out$compare_val
   dyk_compare <-
     dyk_compare |>
-    dplyr::mutate(dyk_type = "compare", .before = dyk_text) |>
+    dplyr::mutate(dyk_type = "compare", .before = dyk_text_en) |>
     # Only keep rows with correlation > 0.3
-    dplyr::filter(abs(dyk_value) > 0.3) |>
-    dplyr::mutate(select_ID = NA_character_, .after = date)
+    dplyr::filter(abs(dyk_weight) > 0.3) |>
+    dplyr::mutate(select_ID = NA_character_, .after = date) |>
+    dplyr::mutate(date = lapply(date, \(x) x))
 
   dyk <-
     dplyr::bind_rows(dyk_highest, dyk_change, dyk_compare) |>
-    dplyr::arrange(module, region, scale, var_left, var_right, date, dyk_type)
+    dplyr::arrange(module, region, scale, var_left, var_right, dyk_type)
 
   return(dyk)
 
@@ -172,7 +186,7 @@ dyk_uni <- function(vars_dyk, svm) {
 #' @return A data frame with four columns (`highest`, `lowest`, `highest_ID`,
 #' and `lowest_ID`), each of which contains a character vector of DYK outputs.
 #' @export
-dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm) {
+dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm, langs) {
 
   # Get class
   vars <- mapply(curbcut::vars_build,
@@ -183,42 +197,45 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm) {
                    variables = svm$variables),
                  SIMPLIFY = FALSE, USE.NAMES = FALSE)
 
-  # Initial region mention
-  region_start <- mapply(\(x, y) curbcut:::explore_context(
-    region = x, select_id = NA, df = paste(x, y, sep = "_"), switch_DA = FALSE),
-    x = region, y = scale, SIMPLIFY = FALSE, USE.NAMES = FALSE)
-  region_start <- sapply(region_start, \(x) curbcut::s_sentence(x$p_start))
+  # Initial region mention (one per lang)
+  region_start <- lapply(langs, \(lang) {
+    out <- mapply(\(x, y) curbcut:::explore_context(
+    region = x, select_id = NA, df = paste(x, y, sep = "_"), switch_DA = FALSE,
+    lang = lang), x = region, y = scale, SIMPLIFY = FALSE, USE.NAMES = FALSE)
+    sapply(out, \(x) curbcut::s_sentence(x$p_start))
+  })
 
-  # Scale name
+  # Scale name (one per lang)
   scale_name <- scales_dictionary$sing[sapply(
     scale, \(x) which(scales_dictionary$scale == x), USE.NAMES = FALSE)]
+  scale_name <- lapply(langs, \(x) sapply(scale_name, curbcut::cc_t, lang = x))
 
-  # Highest value
+  # Highest value (only one)
   highest_val <- mapply(\(var_left, region, scale, date) {
     tb <- svm$scales[[region]][[scale]]
     max(tb[[paste(var_left, date, sep = "_")]], na.rm = TRUE)
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
-  # Highest name
+  # Highest name (only one)
   highest_name <- mapply(\(var_left, region, scale, date) {
     tb <- svm$scales[[region]][[scale]]
     tb$name[which.max(tb[[paste(var_left, date, sep = "_")]])]
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
-  # Highest ID
+  # Highest ID (only one)
   highest_ID <- mapply(\(var_left, region, scale, date) {
     tb <- svm$scales[[region]][[scale]]
     tb$ID[which.max(tb[[paste(var_left, date, sep = "_")]])]
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
-  # Second highest value
+  # Second highest value (only one)
   second_highest_val <- mapply(\(var_left, region, scale, date) {
     tb <- svm$scales[[region]][[scale]]
     max_val <- which.max(tb[[paste(var_left, date, sep = "_")]])
     max(tb[[paste(var_left, date, sep = "_")]][-max_val], na.rm = TRUE)
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
-  # Second highest name
+  # Second highest name (only one)
   second_highest_name <- mapply(\(var_left, region, scale, date) {
     tb <- svm$scales[[region]][[scale]]
     val_vec <- tb[[paste(var_left, date, sep = "_")]]
@@ -227,32 +244,32 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm) {
     tb$name[which.max(val_vec)]
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
-  # Lowest value
+  # Lowest value (only one)
   lowest_val <- mapply(\(var_left, region, scale, date) {
     tb <- svm$scales[[region]][[scale]]
     min(tb[[paste(var_left, date, sep = "_")]], na.rm = TRUE)
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
-  # Lowest name
+  # Lowest name (only one)
   lowest_name <- mapply(\(var_left, region, scale, date) {
     tb <- svm$scales[[region]][[scale]]
     tb$name[which.min(tb[[paste(var_left, date, sep = "_")]])]
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
-  # Lowest ID
+  # Lowest ID (only one)
   lowest_ID <- mapply(\(var_left, region, scale, date) {
     tb <- svm$scales[[region]][[scale]]
     tb$ID[which.min(tb[[paste(var_left, date, sep = "_")]])]
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
-  # Second lowest value
+  # Second lowest value (only one)
   second_lowest_val <- mapply(\(var_left, region, scale, date) {
     tb <- svm$scales[[region]][[scale]]
     min_val <- which.min(tb[[paste(var_left, date, sep = "_")]])
     min(tb[[paste(var_left, date, sep = "_")]][-min_val], na.rm = TRUE)
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
-  # Second lowest name
+  # Second lowest name (only one)
   second_lowest_name <- mapply(\(var_left, region, scale, date) {
     tb <- svm$scales[[region]][[scale]]
     val_vec <- tb[[paste(var_left, date, sep = "_")]]
@@ -261,23 +278,32 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm) {
     tb$name[which.min(val_vec)]
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
-  # Variable explanation
+  # Variable explanation (one per lang)
   var_exp <- svm$variables$explanation_nodet[sapply(
     var_left, \(x) which(x == svm$variables$var_code),
     USE.NAMES = FALSE)]
+  var_exp <- lapply(langs, \(x) sapply(var_exp, curbcut::cc_t, lang = x))
 
   # Get max date for each variable
   max_date <-
     tibble::tibble(var_left = var_left, date = date) |>
     dplyr::summarize(max_date = max(date), .by = var_left)
 
+  # Extra date (one per lang)
   # Use max_date to decide on date handling
   extra_date <- mapply(\(x, y) ifelse(
     y == max_date$max_date[max_date$var_left == x], "", paste0(" in ", y)),
     var_left, date, USE.NAMES = FALSE)
+  extra_date <- lapply(langs, \(x) {
+    if (x == "en") extra_date else str_replace(extra_date, "in", "en")})
+
+  # Is/was (one per lang)
   is_was <- mapply(\(x, y) ifelse(
     y == max_date$max_date[max_date$var_left == x], "is", "was"),
     var_left, date, USE.NAMES = FALSE)
+  is_was <- lapply(langs, \(x) {
+    if (x == "en") is_was else str_replace(str_replace(is_was, "is", "est"),
+                                           "was", "était")})
 
   # Convert values
   highest_val <- mapply(curbcut::convert_unit,
@@ -305,20 +331,65 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm) {
                               SIMPLIFY = TRUE, USE.NAMES = FALSE)
 
   # Assemble output
-  highest <- paste0(
-    region_start, extra_date, ", ", highest_name, " ", is_was, " the ",
-    scale_name, " with the highest ", var_exp, " (", highest_val,
-    "), followed by ", second_highest_name, " (", second_highest_val, ").")
+  highest <- dyk_assemble_highest(
+    region_start, extra_date, highest_name, is_was, scale_name, var_exp,
+    highest_val, second_highest_name, second_highest_val, langs)
+  lowest <- dyk_assemble_lowest(
+    region_start, extra_date, lowest_name, is_was, scale_name, var_exp,
+    lowest_val, second_lowest_name, second_lowest_val, langs)
 
-  lowest <- paste0(
-    region_start, extra_date, ", ", lowest_name, " ", is_was, " the ",
-    scale_name, " with the lowest ", var_exp, " (", lowest_val,
-    "), followed by ", second_lowest_name, " (", second_lowest_val, ").")
+  highest_df <-
+    do.call(tibble::tibble, set_names(highest, paste0("highest_", langs)))
+  lowest_df <-
+    do.call(tibble::tibble, set_names(lowest, paste0("lowest_", langs)))
 
-  tibble::tibble(highest = highest, lowest = lowest, highest_ID = highest_ID,
-                 lowest_ID = lowest_ID)
+  dplyr::bind_cols(highest_df, lowest_df) |>
+    dplyr::mutate(highest_ID = highest_ID,
+           lowest_ID = lowest_ID)
 
 }
+
+dyk_assemble_highest <- function(
+    region_start, extra_date, highest_name, is_was, scale_name, var_exp,
+    highest_val, second_highest_name, second_highest_val, langs) {
+
+  lapply(langs, \(lang) {
+
+    if (lang == "en") paste0(
+      region_start[[1]], extra_date[[1]], ", ", highest_name, " ", is_was[[1]],
+      " the ", scale_name[[1]], " with the highest ", var_exp[[1]], " (",
+      highest_val, "), followed by ", second_highest_name, " (",
+      second_highest_val, ").") else paste0(
+      region_start[[2]], extra_date[[2]], ", ", highest_name, " ", is_was[[2]],
+      " the ", scale_name[[2]], " with the highest ", var_exp[[2]], " (",
+      highest_val, "), followed by ", second_highest_name, " (",
+      second_highest_val, ").")
+
+  })
+
+}
+
+
+dyk_assemble_lowest <- function(
+    region_start, extra_date, lowest_name, is_was, scale_name, var_exp,
+    lowest_val, second_lowest_name, second_lowest_val, langs) {
+
+  lapply(langs, \(lang) {
+
+    if (lang == "en") paste0(
+      region_start[[1]], extra_date[[1]], ", ", lowest_name, " ", is_was[[1]],
+      " the ", scale_name[[1]], " with the lowest ", var_exp[[1]], " (",
+      lowest_val, "), followed by ", second_lowest_name, " (",
+      second_lowest_val, ").") else paste0(
+        region_start[[2]], extra_date[[2]], ", ", lowest_name, " ", is_was[[2]],
+        " the ", scale_name[[2]], " with the lowest ", var_exp[[2]], " (",
+        lowest_val, "), followed by ", second_lowest_name, " (",
+        second_lowest_val, ").")
+
+  })
+
+}
+
 
 
 #' Generate Change-over-time DYKs
