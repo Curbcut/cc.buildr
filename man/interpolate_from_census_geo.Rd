@@ -2,7 +2,7 @@
 % Please edit documentation in R/interpolate.R
 \name{interpolate_from_census_geo}
 \alias{interpolate_from_census_geo}
-\title{Interpolate variables from a census geometry to all scales above}
+\title{Interpolate Variables from a Census Geometry to All Higher Scales}
 \usage{
 interpolate_from_census_geo(
   data,
@@ -20,35 +20,38 @@ interpolate_from_census_geo(
 \item{data}{<\code{data.frame}> Containing any number of column with data,
 and an ID that corresponds to the base scale, e.g. \code{"DA_ID"}.}
 
-\item{base_scale}{<\code{character}> The census scale at which the data is arranged.}
+\item{base_scale}{<\code{character}> The census scale at which the data is
+arranged.}
 
 \item{all_scales}{<\verb{named list}> A named list of scales. The first level is
 the geo, and the second is the scales.}
 
-\item{weight_by}{<\code{character}> The denominator for which average variables should
-be interpolated. Defaults to \code{households}. The other options are \code{population} and
-\code{area}. If \code{area}, \code{\link[cc.buildr]{interpolate_custom_geo}} will be
-used.}
+\item{weight_by}{<\code{character}> The denominator for which average variables
+should be interpolated. Defaults to \code{households}. The other options are
+\code{population} and \code{area}. If \code{area},
+\code{\link[cc.buildr]{interpolate_custom_geo}} will be used.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32618} for Montreal.}
 
-\item{existing_census_scales}{<\verb{character vector}> Which are the census scales
-existing in the project. To detect for which scales data needs to be intersected.
-(The boundaries of the census geometries fit into each other, but this is not
-the case for the other geometries, hence the need to identify them).}
+\item{existing_census_scales}{<\verb{character vector}> Which are the census
+scales existing in the project. To detect for which scales data needs to be
+intersected. (The boundaries of the census geometries fit into each other,
+but this is not the case for the other geometries, hence the need to
+identify them).}
 
-\item{only_regions}{<\verb{character vector}> All the regions for which data should
-be interpolated and appended. Defults to all the regions in \code{all_scales}.}
+\item{only_regions}{<\verb{character vector}> All the regions for which data
+should be interpolated and appended. Defults to all the regions in
+\code{all_scales}.}
 
 \item{average_vars}{<\verb{character vector}> Corresponds to the column names
-of the variables that are to be interpolated as an average, like a percentage,
-a median, an index, etc. weighted by the \code{weight_by} argument.}
+of the variables that are to be interpolated as an average, like a
+percentage, a median, an index, etc. weighted by the \code{weight_by} argument.}
 
 \item{additive_vars}{<\verb{character vector}> Corresponds to the column names of
-the variables that are 'count' variables. In the case of this function, the output
-value of a CSD would be the sum of the values of the DAs or CTs that are present
-inside the CSD.}
+the variables that are 'count' variables. In the case of this function, the
+output value of a CSD would be the sum of the values of the DAs or CTs that
+are present inside the CSD.}
 }
 \value{
 Returns a list of length 4. The first is the same list that is fed in
@@ -62,5 +65,5 @@ argument of \code{\link[cc.buildr]{add_variable}}. The fourth is a character
 vector of all regions at which the data will be available.
 }
 \description{
-Interpolate variables from a census geometry to all scales above
+Interpolate Variables from a Census Geometry to All Higher Scales
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/interpolate.R
 \name{interpolate_fast_additive_sum}
 \alias{interpolate_fast_additive_sum}
-\title{Fast Summation for interpolation}
+\title{Fast Summation for Interpolation}
 \usage{
 interpolate_fast_additive_sum(col_name, data, id_col, weight_col = NULL)
 }
