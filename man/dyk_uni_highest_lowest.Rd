@@ -4,7 +4,15 @@
 \alias{dyk_uni_highest_lowest}
 \title{Generate Highest/Lowest Value DYKs}
 \usage{
-dyk_uni_highest_lowest(var_left, region, scale, date, svm)
+dyk_uni_highest_lowest(
+  var_left,
+  region,
+  scale,
+  date,
+  svm,
+  scales_dictionary,
+  langs
+)
 }
 \arguments{
 \item{var_left}{\if{html}{\out{<character>}} A string representing the name of the variable
@@ -21,10 +29,16 @@ for which the DYK should be calculated.}
 
 \item{svm}{<\code{list}> A list, usually \code{scales_variables_modules}, containing
 the scales, modules, and variables tables.}
+
+\item{scales_dictionary}{<\code{data.frame}> A data frame with information about
+scale names and text strings}
+
+\item{langs}{<\code{character}> A character vector specifying for which languages
+DYK strings should be produced. Allowable values are "en" and "fr".}
 }
 \value{
-A data frame with two columns (\code{highest} and \code{lowest}), each of
-which contains a character vector of DYK outputs.
+A data frame with four columns (\code{highest}, \code{lowest}, \code{highest_ID},
+and \code{lowest_ID}), each of which contains a character vector of DYK outputs.
 }
 \description{
 This function creates "Did you know" text strings highlighting the highest

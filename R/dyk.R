@@ -91,6 +91,12 @@ dyk_prep <- function(svm, all_tables, n = NULL) {
 #' \code{\link[cc.buildr]{dyk_prep}}.
 #' @param svm <`list`> A list, usually `scales_variables_modules`, containing
 #' the scales, modules, and variables tables.
+#' @param scales_dictionary <`data.frame`> A data frame with information about
+#' scale names and text strings
+#' @param langs <`character`> A character vector specifying for which languages
+#' DYK strings should be produced. Allowable values are "en" and "fr".
+#' @param translation_df <`data.frame`> A data frame with columns for each
+#' language present in the `langs` argument.
 #'
 #' @return A data frame with ten columns (the columns present in `vars_dyk`,
 #' and then additionally `select_ID`, `dyk_type`, `dyk_text` and `dyk_weight`).
@@ -182,6 +188,10 @@ dyk_uni <- function(vars_dyk, svm, scales_dictionary, langs, translation_df) {
 #' for which the DYK should be calculated.
 #' @param svm <`list`> A list, usually `scales_variables_modules`, containing
 #' the scales, modules, and variables tables.
+#' @param scales_dictionary <`data.frame`> A data frame with information about
+#' scale names and text strings
+#' @param langs <`character`> A character vector specifying for which languages
+#' DYK strings should be produced. Allowable values are "en" and "fr".
 #'
 #' @return A data frame with four columns (`highest`, `lowest`, `highest_ID`,
 #' and `lowest_ID`), each of which contains a character vector of DYK outputs.
@@ -224,10 +234,10 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm,
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
   # Highest name (only one)
-  highest_name <- mapply(\(var_left, region, scale, date) {
+  highest_name <- mapply(\(var_left, region, scale, highest_ID) {
     tb <- svm$scales[[region]][[scale]]
     tb$name[tb$ID == highest_ID]
-  }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
+  }, var_left, region, scale, highest_ID, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
   # Lowest value (only one for now)
   lowest_val <- mapply(\(var_left, region, scale, date) {
@@ -242,10 +252,10 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm,
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
   # Lowest name (only one)
-  lowest_name <- mapply(\(var_left, region, scale, date) {
+  lowest_name <- mapply(\(var_left, region, scale, lowest_ID) {
     tb <- svm$scales[[region]][[scale]]
     tb$name[tb$ID == lowest_ID]
-  }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
+  }, var_left, region, scale, lowest_ID, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
   # Name prefix (one per lang)
   name_pre <- mapply(\(highest_ID, var_left, region, scale, date) {
@@ -264,7 +274,7 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm,
   }, highest_ID, var_left, region, scale, date, USE.NAMES = FALSE,
   SIMPLIFY = TRUE)
   name_pre <- lapply(langs, \(x) sapply(name_pre, curbcut::cc_t, lang = x))
-  name_pre <- lapply(name_pre, \(x) if (x != "") paste0(x, " "))
+  name_pre <- lapply(name_pre, \(x) ifelse(x != "", paste0(x, " "), x))
 
   # Name suffix (one per lang)
   name_suf <- mapply(\(highest_ID, var_left, region, scale, date) {
@@ -280,8 +290,8 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm,
 
   }, highest_ID, var_left, region, scale, date, USE.NAMES = FALSE,
   SIMPLIFY = TRUE)
-  name_suf <- lapply(langs, \(x) if (name_suf == "") "" else paste(
-    "", if (x == "en") "in" else "en", name_suf))
+  name_suf <- lapply(langs, \(x) ifelse(name_suf != "", paste(
+    "", if (x == "en") "in" else "en", name_suf), name_suf))
 
   # Variable explanation (one per lang)
   var_exp <- svm$variables$explanation_nodet[sapply(

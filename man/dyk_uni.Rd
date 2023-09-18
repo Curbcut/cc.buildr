@@ -4,7 +4,7 @@
 \alias{dyk_uni}
 \title{Create a Table of Univariate DYKs}
 \usage{
-dyk_uni(vars_dyk, svm)
+dyk_uni(vars_dyk, svm, scales_dictionary, langs, translation_df)
 }
 \arguments{
 \item{vars_dyk}{<\code{data.frame}> A data frame with columns \code{module},
@@ -13,10 +13,19 @@ dyk_uni(vars_dyk, svm)
 
 \item{svm}{<\code{list}> A list, usually \code{scales_variables_modules}, containing
 the scales, modules, and variables tables.}
+
+\item{scales_dictionary}{<\code{data.frame}> A data frame with information about
+scale names and text strings}
+
+\item{langs}{<\code{character}> A character vector specifying for which languages
+DYK strings should be produced. Allowable values are "en" and "fr".}
+
+\item{translation_df}{<\code{data.frame}> A data frame with columns for each
+language present in the \code{langs} argument.}
 }
 \value{
-A data frame with nine columns (the columns present in \code{vars_dyk},
-and then additionally \code{dyk_type}, \code{dyk_text} and \code{dyk_value}).
+A data frame with ten columns (the columns present in \code{vars_dyk},
+and then additionally \code{select_ID}, \code{dyk_type}, \code{dyk_text} and \code{dyk_weight}).
 }
 \description{
 This function creates a table of univariate "Did you know" text strings.
