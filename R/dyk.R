@@ -152,13 +152,12 @@ dyk_uni <- function(vars_dyk, svm, scales_dictionary, langs, translation_df) {
   dyk_compare_out <- dyk_uni_compare(
     dyk_compare$var_left, dyk_compare$var_right, dyk_compare$region,
     dyk_compare$scale, dyk_compare$date, svm, langs)
-  dyk_compare$dyk_text_en <- dyk_compare_out$compare_text
-  dyk_compare$dyk_weight <- dyk_compare_out$compare_val
+  dyk_compare <- dplyr::bind_cols(dyk_compare, dyk_compare_out)
   dyk_compare <-
     dyk_compare |>
     dplyr::mutate(dyk_type = "compare", .before = dyk_text_en) |>
     # Only keep rows with correlation > 0.3
-    dplyr::filter(abs(dyk_weight) > 0.3) |>
+    dplyr::filter(abs(dyk_weight) > 0.09) |>
     dplyr::mutate(select_ID = NA_character_, .after = date) |>
     dplyr::mutate(date = lapply(date, \(x) x))
 
