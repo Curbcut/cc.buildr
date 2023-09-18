@@ -151,7 +151,7 @@ dyk_uni <- function(vars_dyk, svm, scales_dictionary, langs, translation_df) {
   dyk_compare <- vars_dyk[vars_dyk$var_right != " ",]
   dyk_compare_out <- dyk_uni_compare(
     dyk_compare$var_left, dyk_compare$var_right, dyk_compare$region,
-    dyk_compare$scale, dyk_compare$date, svm)
+    dyk_compare$scale, dyk_compare$date, svm, langs)
   dyk_compare$dyk_text_en <- dyk_compare_out$compare_text
   dyk_compare$dyk_weight <- dyk_compare_out$compare_val
   dyk_compare <-
@@ -583,7 +583,8 @@ dyk_assemble_change <- function(region_start, var_exp, inc_dec, date_ref,
 #' which contain a character vector of DYK outputs and a numeric vector of the
 #' values respectively.
 #' @export
-dyk_uni_compare <- function(var_left, var_right, region, scale, date, svm) {
+dyk_uni_compare <- function(var_left, var_right, region, scale, date, svm,
+                            langs) {
 
   # Get class
   vars <- mapply(curbcut::vars_build,
@@ -595,15 +596,19 @@ dyk_uni_compare <- function(var_left, var_right, region, scale, date, svm) {
                    variables = svm$variables),
                  SIMPLIFY = FALSE, USE.NAMES = FALSE)
 
-  # Initial region mention
-  region_start <- mapply(\(x, y) curbcut:::explore_context(
-    region = x, select_id = NA, df = paste(x, y, sep = "_"), switch_DA = FALSE),
-    x = region, y = scale, SIMPLIFY = FALSE, USE.NAMES = FALSE)
-  region_start <- sapply(region_start, \(x) curbcut::s_sentence(x$p_start))
+  # Initial region mention (one per lang)
+  region_start <- lapply(langs, \(lang) {
+    out <- mapply(\(x, y) curbcut:::explore_context(
+      region = x, select_id = NA, df = paste(x, y, sep = "_"),
+      switch_DA = FALSE, lang = lang), x = region, y = scale, SIMPLIFY = FALSE,
+      USE.NAMES = FALSE)
+    sapply(out, \(x) curbcut::s_sentence(x$p_start))
+  })
 
-  # Scale name
+  # Scale name (one per lang)
   scale_name <- scales_dictionary$plur[sapply(
     scale, \(x) which(scales_dictionary$scale == x), USE.NAMES = FALSE)]
+  scale_name <- lapply(langs, \(x) sapply(scale_name, curbcut::cc_t, lang = x))
 
   # Values
   val_1 <- mapply(\(var_left, region, scale, date) {
@@ -620,51 +625,94 @@ dyk_uni_compare <- function(var_left, var_right, region, scale, date, svm) {
                  MoreArgs = list(use = "na.or.complete"), USE.NAMES = FALSE)
   positive <- corr > 0
 
-  # Frequency qualifier
-  freq <- dplyr::case_when(
-    abs(corr) > 0.7 ~ "almost always",
-    abs(corr) > 0.3 ~ "usually",
-    abs(corr) > 0.1 ~ "often",
-    .default = "sometimes"
-  )
+  # Frequency qualifier (one per lang)
+  freq <- lapply(langs, \(x) {
 
-  # High/low
-  high_low_1 <- sapply(vars, \(x) curbcut::explore_text_bivar_adjective(
-    x$var_left, TRUE, TRUE, FALSE, "en"))
-  high_low_2 <- mapply(\(x, y) {
-    if (is.na(y)) return(NA_character_)
-    curbcut::explore_text_bivar_adjective(
-      x$var_right, FALSE, y, FALSE, "en")}, vars, positive)
+    if (x == "en") {
+      dplyr::case_when(
+        abs(corr) > 0.7 ~ "almost always",
+        abs(corr) > 0.3 ~ "usually",
+        abs(corr) > 0.1 ~ "often",
+        .default = "sometimes")
+    } else if (x == "fr") dplyr::case_when(
+      abs(corr) > 0.7 ~ "presque toujours",
+      abs(corr) > 0.3 ~ "généralement",
+      abs(corr) > 0.1 ~ "souvent",
+      .default = "parfois")
 
-  # Variable explanations
+  })
+
+  # High/low (one per lang)
+  high_low_1 <- lapply(langs, \(lang) {
+    sapply(vars, \(x) curbcut::explore_text_bivar_adjective(
+      x$var_left, TRUE, TRUE, FALSE, lang))})
+  high_low_2 <- lapply(langs, \(lang) {
+    mapply(\(x, y) {
+      if (is.na(y)) return(NA_character_)
+      curbcut::explore_text_bivar_adjective(
+        x$var_right, FALSE, y, FALSE, lang)}, vars, positive)})
+
+  # Variable explanations (one per lang)
   var_exp_1 <- svm$variables$explanation_nodet[sapply(
     var_left, \(x) which(x == svm$variables$var_code),
     USE.NAMES = FALSE)]
+  var_exp_1 <- lapply(langs, \(x) sapply(var_exp_1, curbcut::cc_t, lang = x))
   var_exp_2 <- svm$variables$explanation_nodet[sapply(
     var_right, \(x) which(x == svm$variables$var_code),
     USE.NAMES = FALSE)]
+  var_exp_2 <- lapply(langs, \(x) sapply(var_exp_2, curbcut::cc_t, lang = x))
 
   # Get max date for each variable
   max_date <-
     tibble::tibble(var_left = var_left, var_right = var_right, date = date) |>
     dplyr::summarize(max_date = max(date), .by = c(var_left, var_right))
 
-  # Use max_date to decide on date handling
-  extra_date <- mapply(\(x, y, z) ifelse(
-    z == max_date$max_date[max_date$var_left == x & max_date$var_right == y],
-    "", paste0(" in ", z)), var_left, var_right, date, USE.NAMES = FALSE)
-  have_had <- mapply(\(x, y, z) ifelse(z == max_date$max_date[
-    max_date$var_left == x & max_date$var_right == y], "have", "had"),
-    var_left, var_right, date, USE.NAMES = FALSE)
+  # Use max_date to decide on date handling (one per lang)
+  extra_date <- lapply(langs, \(lang) {
+    mapply(\(x, y, z) ifelse(
+      z == max_date$max_date[max_date$var_left == x & max_date$var_right == y],
+      "", paste0(if (lang == "en") " in " else if (lang == "fr") " en ", z)),
+      var_left, var_right, date, USE.NAMES = FALSE)})
+  have_had <- lapply(langs, \(lang) {
+    mapply(\(x, y, z) ifelse(z == max_date$max_date[
+      max_date$var_left == x & max_date$var_right == y],
+      if (lang == "en") "have" else if (lang == "fr") "ont",
+      if (lang == "en") "had" else if (lang == "fr") "ont eu"),
+      var_left, var_right, date, USE.NAMES = FALSE)})
 
   # Assemble output
-  compare_vec <- paste0(
-    region_start, extra_date, ", ", scale_name, " with ", high_low_1, " ",
-    var_exp_1, " ", freq, " ", have_had, " ", high_low_2, " ", var_exp_2, ".")
+  compare_vec <- dyk_assemble_compare(
+    region_start, extra_date, scale_name, high_low_1, var_exp_1, freq, have_had,
+    high_low_2, var_exp_2)
 
-  tibble::tibble(compare_text = compare_vec, compare_val = abs(corr))
+  compare_df <-
+    do.call(tibble::tibble, set_names(compare_vec, paste0("dyk_text_", langs)))
+
+  dplyr::mutate(compare_df, dyk_weight = abs(corr) ^ 2)
 
 }
+
+
+dyk_assemble_compare <- function(region_start, extra_date, scale_name,
+                                 high_low_1, var_exp_1, freq, have_had,
+                                 high_low_2, var_exp_2) {
+
+  lapply(langs, \(lang) {
+
+    if (lang == "en") {
+      paste0(region_start[[1]], extra_date[[1]], ", ", scale_name[[1]],
+             " with ", high_low_1[[1]], " ", var_exp_1[[1]], " ", freq[[1]],
+             " ", have_had[[1]], " ", high_low_2[[1]], " ", var_exp_2[[1]], ".")
+
+    } else if (lang == "fr") {
+      paste0(region_start[[2]], extra_date[[2]], ", ", scale_name[[2]],
+             " with ", high_low_1[[2]], " ", var_exp_1[[2]], " ", freq[[2]],
+             " ", have_had[[2]], " ", high_low_2[[2]], " ", var_exp_2[[2]], ".")
+
+    }})
+
+}
+
 
 
 # Bivariate ---------------------------------------------------------------
