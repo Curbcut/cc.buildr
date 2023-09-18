@@ -138,10 +138,9 @@ dyk_uni <- function(vars_dyk, svm, scales_dictionary, langs, translation_df) {
                                            max(as.numeric(date))))),
                      .by = c(module, region, scale, var_left, var_right))
   dyk_change_out <- dyk_uni_change(
-    dyk_change$var_left, dyk_change$region, dyk_change$scale, svm)
+    dyk_change$var_left, dyk_change$region, dyk_change$scale, svm, langs)
   dyk_change$scale <- NA_character_
-  dyk_change$dyk_text_en <- dyk_change_out$change_text
-  dyk_change$dyk_weight <- dyk_change_out$change_val
+  dyk_change <- dplyr::bind_cols(dyk_change, dyk_change_out)
   dyk_change <-
     dyk_change |>
     dplyr::filter(!is.infinite(dyk_weight)) |>
@@ -384,7 +383,7 @@ dyk_assemble_highest <- function(
              scale_name[[1]], " with the highest ", var_exp[[1]], " (",
              highest_val[[1]], ").")
 
-      } else {
+      } else if (lang == "fr") {
         paste0(region_start[[2]], extra_date[[2]], ", ", name_pre[[2]],
                highest_name, name_suf[[2]], " ", is_was[[2]], " the ",
                scale_name[[2]], " with the highest ", var_exp[[2]], " (",
@@ -405,7 +404,7 @@ dyk_assemble_lowest <- function(
              scale_name[[1]], " with the lowest ", var_exp[[1]], " (",
              lowest_val[[1]], ").")
 
-      } else {
+      } else if (lang == "fr") {
         paste0(region_start[[2]], extra_date[[2]], ", ", name_pre[[2]],
                lowest_name, name_suf[[2]], " ", is_was[[2]], " the ",
                scale_name[[2]], " with the lowest ", var_exp[[2]], " (",
@@ -413,7 +412,6 @@ dyk_assemble_lowest <- function(
       }})
 
 }
-
 
 
 #' Generate Change-over-time DYKs
@@ -435,7 +433,7 @@ dyk_assemble_lowest <- function(
 #' which contain a character vector of DYK outputs and a numeric vector of the
 #' values respectively.
 #' @export
-dyk_uni_change <- function(var_left, region, scale, svm) {
+dyk_uni_change <- function(var_left, region, scale, svm, langs) {
 
   # Get class
   vars <- mapply(curbcut::vars_build,
@@ -469,48 +467,61 @@ dyk_uni_change <- function(var_left, region, scale, svm) {
             call. = FALSE)
   }
 
-  # Initial region mention
-  region_start <- mapply(\(x, y) curbcut:::explore_context(
-    region = x, select_id = NA, df = paste(x, y, sep = "_"), switch_DA = FALSE),
-    x = region, y = scale, SIMPLIFY = FALSE, USE.NAMES = FALSE)
-  region_start <- sapply(region_start, \(x) curbcut::s_sentence(x$p_start))
+  # Initial region mention (one per lang)
+  region_start <- lapply(langs, \(lang) {
+    out <- mapply(\(x, y) curbcut:::explore_context(
+      region = x, select_id = NA, df = paste(x, y, sep = "_"),
+      switch_DA = FALSE, lang = lang), x = region, y = scale, SIMPLIFY = FALSE,
+      USE.NAMES = FALSE)
+    sapply(out, \(x) curbcut::s_sentence(x$p_start))
+  })
 
-  # Variable explanation
+  # Variable explanation (one per lang)
   var_exp <- svm$variables$explanation[sapply(
     var_left, \(x) which(x == svm$variables$var_code),
     USE.NAMES = FALSE)]
+  var_exp <- lapply(langs, \(x) sapply(var_exp, curbcut::cc_t, lang = x))
 
   # Convert values
-  first_val <- mapply(curbcut::convert_unit,
-                      var = lapply(vars, \(x) x$var_left),
-                      x = first_val,
-                      MoreArgs = list(decimal = 1, compact = FALSE),
-                      SIMPLIFY = TRUE, USE.NAMES = FALSE)
-
-  last_val <- mapply(curbcut::convert_unit,
-                     var = lapply(vars, \(x) x$var_left),
-                     x = last_val,
-                     MoreArgs = list(decimal = 1, compact = FALSE),
-                     SIMPLIFY = TRUE, USE.NAMES = FALSE)
-
+  first_val <- dyk_val_convert(vars, region, scale, first_val, svm, langs)
+  last_val <- dyk_val_convert(vars, region, scale, last_val, svm, langs)
   change_txt <- sapply(
     change, \(x) curbcut:::convert_unit.pct(x = abs(x), decimal = 1))
 
-  # Increasing/decreasing
-  inc_dec <- dplyr::case_when(
-    change >= 0.2 ~ paste0("increased rapidly (", change_txt, ")"),
-    change >= 0.05 ~ paste0("increased ", change_txt),
-    change < -0.2 ~ paste0("decreased rapidly (", change_txt, ")"),
-    change < -0.05 ~ paste0("decreased ", change_txt),
-    change < 0.05 ~ "barely changed")
+  # Increasing/decreasing (one per lang)
+  inc_dec <- lapply(langs, \(x) {
 
-  # Date range
+    if (x == "en") {
+      dplyr::case_when(
+      change >= 0.2 ~ paste0("increased rapidly (", change_txt, ")"),
+      change >= 0.05 ~ paste0("increased ", change_txt),
+      change < -0.2 ~ paste0("decreased rapidly (", change_txt, ")"),
+      change < -0.05 ~ paste0("decreased ", change_txt),
+      change < 0.05 ~ "barely changed")
+      } else if (x == "fr") dplyr::case_when(
+      change >= 0.2 ~ paste0("a augmenté rapidement (", change_txt, ")"),
+      change >= 0.05 ~ paste0("a augmenté ", change_txt),
+      change < -0.2 ~ paste0("a diminué rapidement (", change_txt, ")"),
+      change < -0.05 ~ paste0("a diminué ", change_txt),
+      change < 0.05 ~ "a à peine changé")
+
+  })
+
+  # Date range (one per lang)
   current_year <- substr(Sys.Date(), 1, 4)
   date_spread <- as.numeric(last_date) - as.numeric(first_date)
   within_five <- as.numeric(current_year) - as.numeric(last_date) < 6
-  date_ref <- ifelse(within_five,
-                     paste0("over the last ", date_spread, " years"),
-                     paste0("over ", date_spread, " years"))
+  date_ref <- lapply(langs, \(x) {
+
+    if (x == "en") {
+      ifelse(within_five,
+             paste0("over the last ", date_spread, " years"),
+             paste0("over ", date_spread, " years"))
+
+    } else if (x == "fr") ifelse(
+      within_five, paste0("au cours des ", date_spread, " dernières annés"),
+      paste0("au cours des ", date_spread, " annés"))
+  })
 
   # Get weighting factor
   change_val <- dplyr::case_when(
@@ -518,11 +529,33 @@ dyk_uni_change <- function(var_left, region, scale, svm) {
     abs(change) >= 0.05 ~ (abs(change) * 0.5) ^ 0.4)
 
   # Assemble output
-  change_vec <- paste0(
-    region_start, ", ", var_exp, " ", inc_dec, " ", date_ref, ". It was ",
-    first_val, " in ", first_date, " and ", last_val, " in ", last_date, ".")
+  change_vec <- dyk_assemble_change(region_start, var_exp, inc_dec, date_ref,
+                                    first_val, first_date, last_val, last_date)
 
-  tibble::tibble(change_text = change_vec, change_val = change_val)
+ change_df <-
+    do.call(tibble::tibble, set_names(change_vec, paste0("dyk_text_", langs)))
+
+  dplyr::mutate(change_df, dyk_weight = change_val)
+
+}
+
+
+dyk_assemble_change <- function(region_start, var_exp, inc_dec, date_ref,
+                                first_val, first_date, last_val, last_date) {
+
+  lapply(langs, \(lang) {
+
+    if (lang == "en") {
+      paste0(region_start[[1]], ", ", var_exp[[1]], " ", inc_dec[[1]], " ",
+             date_ref[[1]], ". It was ", first_val[[1]], " in ",
+             first_date, " and ", last_val[[1]], " in ", last_date, ".")
+
+    } else if (lang == "fr") {
+      paste0(region_start[[2]], ", ", var_exp[[2]], " ", inc_dec[[2]], " ",
+             date_ref[[2]], ". It was ", first_val[[2]], " in ",
+             first_date, " and ", last_val[[2]], " in ", last_date, ".")
+
+    }})
 
 }
 
