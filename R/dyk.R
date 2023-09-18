@@ -220,7 +220,7 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm,
   })
 
   # Scale name (one per lang)
-  scale_name <- scales_dictionary$sing[sapply(
+  scale_name <- scales_dictionary$sing_with_article[sapply(
     scale, \(x) which(scales_dictionary$scale == x), USE.NAMES = FALSE)]
   scale_name <- lapply(langs, \(x) sapply(scale_name, curbcut::cc_t, lang = x))
 
@@ -629,7 +629,9 @@ dyk_uni_compare <- function(var_left, var_right, region, scale, date, svm,
   # Scale name (one per lang)
   scale_name <- scales_dictionary$plur[sapply(
     scale, \(x) which(scales_dictionary$scale == x), USE.NAMES = FALSE)]
-  scale_name <- lapply(langs, \(x) sapply(scale_name, curbcut::cc_t, lang = x))
+  scale_name <- sapply(langs, \(x) sapply(scale_name, curbcut::cc_t, lang = x),
+                       simplify = FALSE, USE.NAMES = TRUE)
+  if ("fr" %in% langs) scale_name$fr <- paste0("les ", scale_name$fr)
 
   # Values
   val_1 <- mapply(\(var_left, region, scale, date) {
