@@ -15,6 +15,12 @@ census_scales_dictionary <- function(census_scales) {
         "dissemination area",
         "dissemination block"
       ),
+      sing_with_article = c(
+        "the city",
+        "the census tract",
+        "the dissemination area",
+        "the dissemination block"
+      ),
       plur = c(
         "cities",
         "census tracts",

@@ -109,8 +109,13 @@ dyk_uni <- function(vars_dyk, svm, scales_dictionary, langs, translation_df) {
   # Get highest/lowest DYKs
   dyk_highest <- vars_dyk[vars_dyk$var_right == " ",]
   dyk_highest_out <- dyk_uni_highest_lowest(
-    dyk_highest$var_left, dyk_highest$region, dyk_highest$scale,
-    dyk_highest$date, svm, scales_dictionary, langs)
+    var_left = dyk_highest$var_left,
+    region = dyk_highest$region,
+    scale = dyk_highest$scale,
+    date = dyk_highest$date,
+    svm = svm,
+    scales_dictionary = scales_dictionary,
+    langs = langs)
   dyk_highest <- dplyr::bind_cols(dyk_highest, dyk_highest_out)
   for (i in seq_along(langs)) {
     sel_vec <- paste0(c("highest_", "lowest_"), langs[i])
@@ -265,14 +270,16 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm,
 
       scales_dictionary |>
         dplyr::filter(scale == !!scale) |>
-        pull(sing)
+        pull(sing_with_article)
 
     } else ""
 
   }, highest_ID, var_left, region, scale, date, USE.NAMES = FALSE,
   SIMPLIFY = TRUE)
-  name_pre <- lapply(langs, \(x) sapply(name_pre, curbcut::cc_t, lang = x))
+  name_pre <- sapply(langs, \(x) sapply(name_pre, curbcut::cc_t, lang = x),
+                     simplify = FALSE, USE.NAMES = TRUE)
   name_pre <- lapply(name_pre, \(x) ifelse(x != "", paste0(x, " "), x))
+  name_pre$en <- gsub("^the ", "", name_pre$en)
 
   # Name suffix (one per lang)
   name_suf <- mapply(\(highest_ID, var_left, region, scale, date) {
@@ -288,8 +295,11 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm,
 
   }, highest_ID, var_left, region, scale, date, USE.NAMES = FALSE,
   SIMPLIFY = TRUE)
-  name_suf <- lapply(langs, \(x) ifelse(name_suf != "", paste(
-    "", if (x == "en") "in" else "en", name_suf), name_suf))
+  name_suf <- lapply(langs, \(x) {
+    ifelse(name_suf != "",
+           paste("", if (x == "en") sprintf("in %s", name_suf) else sprintf("(%s)", name_suf)),
+           name_suf)
+  })
 
   # Variable explanation (one per lang)
   var_exp <- svm$variables$explanation_nodet[sapply(
@@ -378,16 +388,16 @@ dyk_assemble_highest <- function(
 
     if (lang == "en") {
       paste0(region_start[[1]], extra_date[[1]], ", ", name_pre[[1]],
-             highest_name, name_suf[[1]], " ", is_was[[1]], " the ",
+             highest_name, name_suf[[1]], " ", is_was[[1]], " ",
              scale_name[[1]], " with the highest ", var_exp[[1]], " (",
              highest_val[[1]], ").")
 
-      } else if (lang == "fr") {
-        paste0(region_start[[2]], extra_date[[2]], ", ", name_pre[[2]],
-               highest_name, name_suf[[2]], " ", is_was[[2]], " the ",
-               scale_name[[2]], " with the highest ", var_exp[[2]], " (",
-               highest_val[[2]], ").")
-      }})
+    } else if (lang == "fr") {
+      paste0(region_start[[2]], extra_date[[2]], ", ", name_pre[[2]],
+             highest_name, name_suf[[2]], " ", is_was[[2]], " ",
+             scale_name[[2]], " avec le/la plus haut/e ", var_exp[[2]], " (",
+             highest_val[[2]], ").")
+    }})
 
 }
 
@@ -399,16 +409,16 @@ dyk_assemble_lowest <- function(
 
     if (lang == "en") {
       paste0(region_start[[1]], extra_date[[1]], ", ", name_pre[[1]],
-             lowest_name, name_suf[[1]], " ", is_was[[1]], " the ",
+             lowest_name, name_suf[[1]], " ", is_was[[1]], " ",
              scale_name[[1]], " with the lowest ", var_exp[[1]], " (",
              lowest_val[[1]], ").")
 
-      } else if (lang == "fr") {
-        paste0(region_start[[2]], extra_date[[2]], ", ", name_pre[[2]],
-               lowest_name, name_suf[[2]], " ", is_was[[2]], " the ",
-               scale_name[[2]], " with the lowest ", var_exp[[2]], " (",
-               lowest_val[[2]], ").")
-      }})
+    } else if (lang == "fr") {
+      paste0(region_start[[2]], extra_date[[2]], ", ", name_pre[[2]],
+             lowest_name, name_suf[[2]], " ", is_was[[2]], " ",
+             scale_name[[2]], " avec le/la plus bas/se ", var_exp[[2]], " (",
+             lowest_val[[2]], ").")
+    }})
 
 }
 
@@ -492,16 +502,16 @@ dyk_uni_change <- function(var_left, region, scale, svm, langs) {
 
     if (x == "en") {
       dplyr::case_when(
-      change >= 0.2 ~ paste0("increased rapidly (", change_txt, ")"),
-      change >= 0.05 ~ paste0("increased ", change_txt),
-      change < -0.2 ~ paste0("decreased rapidly (", change_txt, ")"),
-      change < -0.05 ~ paste0("decreased ", change_txt),
-      change < 0.05 ~ "barely changed")
-      } else if (x == "fr") dplyr::case_when(
-      change >= 0.2 ~ paste0("a augmenté rapidement (", change_txt, ")"),
-      change >= 0.05 ~ paste0("a augmenté ", change_txt),
-      change < -0.2 ~ paste0("a diminué rapidement (", change_txt, ")"),
-      change < -0.05 ~ paste0("a diminué ", change_txt),
+        change >= 0.2 ~ paste0("increased rapidly (", change_txt, ")"),
+        change >= 0.05 ~ paste0("increased ", change_txt),
+        change < -0.2 ~ paste0("decreased rapidly (", change_txt, ")"),
+        change < -0.05 ~ paste0("decreased ", change_txt),
+        change < 0.05 ~ "barely changed")
+    } else if (x == "fr") dplyr::case_when(
+      change >= 0.2 ~ paste0("a rapidement augmenté (", change_txt, ")"),
+      change >= 0.05 ~ paste0("a augmenté de ", change_txt),
+      change < -0.2 ~ paste0("a rapidement diminué (", change_txt, ")"),
+      change < -0.05 ~ paste0("a diminué de ", change_txt),
       change < 0.05 ~ "a à peine changé")
 
   })
@@ -531,7 +541,7 @@ dyk_uni_change <- function(var_left, region, scale, svm, langs) {
   change_vec <- dyk_assemble_change(region_start, var_exp, inc_dec, date_ref,
                                     first_val, first_date, last_val, last_date)
 
- change_df <-
+  change_df <-
     do.call(tibble::tibble, set_names(change_vec, paste0("dyk_text_", langs)))
 
   dplyr::mutate(change_df, dyk_weight = change_val)
@@ -545,14 +555,26 @@ dyk_assemble_change <- function(region_start, var_exp, inc_dec, date_ref,
   lapply(langs, \(lang) {
 
     if (lang == "en") {
-      paste0(region_start[[1]], ", ", var_exp[[1]], " ", inc_dec[[1]], " ",
-             date_ref[[1]], ". It was ", first_val[[1]], " in ",
-             first_date, " and ", last_val[[1]], " in ", last_date, ".")
+      first_piece <- sprintf("%s, %s %s %s.", region_start[[1]], var_exp[[1]],
+                             inc_dec[[1]], date_ref[[1]])
+      second_piece <- mapply(\(one, two, fv, fd, lv, ld) {
+        if (one == two) "" else {
+          sprintf(" It was %s in %s and %s in %s.", fv, fd, lv, ld)
+        }
+      }, first_val[[1]], last_val[[1]], first_val[[1]], first_date, last_val[[1]],
+      last_date)
+      sprintf("%s%s", first_piece, second_piece)
 
     } else if (lang == "fr") {
-      paste0(region_start[[2]], ", ", var_exp[[2]], " ", inc_dec[[2]], " ",
-             date_ref[[2]], ". It was ", first_val[[2]], " in ",
-             first_date, " and ", last_val[[2]], " in ", last_date, ".")
+      first_piece <- sprintf("%s, %s %s %s.", region_start[[2]], var_exp[[2]],
+                             inc_dec[[2]], date_ref[[2]])
+      second_piece <- mapply(\(one, two, fv, fd, lv, ld) {
+        if (one == two) "" else {
+          sprintf(" C'était %s en %s et %s en %s.", fv, fd, lv, ld)
+        }
+      }, first_val[[1]], last_val[[1]], first_val[[1]], first_date, last_val[[1]],
+      last_date)
+      sprintf("%s%s", first_piece, second_piece)
 
     }})
 
