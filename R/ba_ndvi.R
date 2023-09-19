@@ -203,16 +203,17 @@ ba_ndvi <- function(scales_variables_modules,
       nav_title = "Greenness",
       title_text_title = "Greenness",
       title_text_main = paste0(
-        "<p>The Normalized Difference Vegetation Index (NDVI) is a vital measurement ",
-        "for understanding the presence and intensity of vegetation in an area."
+        "<p>The Normalized Difference Vegetation Index (NDVI) measures the ",
+        "average amount of vegetation present in an area during the growing ",
+        "season. It is used for environmental conservation, urban planning,
+        and climate change mitigation."
       ),
       title_text_extra = paste0(
-        "<p>NDVI plays a significant role in various applications, including analyzing urban greenness, ",
-        "monitoring agricultural growth, and assessing wildfire risks ",
-        "It is crucial for environmental conservation, urban planning, and climate change ",
-        "mitigation. Calculated from Harmonized Landsat Sentinel-2 (HLS) data, ",
-        "NDVI represents average vegetation during growing season (defined as May ",
-        "1st through August 31st)."
+        "<p>NDVI plays a significant role in various applications, including ",
+        "analyzing urban greenness, monitoring agricultural growth, and ",
+        "assessing wildfire risks. Calculated from Harmonized Landsat ",
+        "Sentinel-2 (HLS) data, NDVI represents average vegetation during ",
+        "the growing season (May 1st through August 31st)."
       ),
       regions = regions,
       metadata = TRUE,
