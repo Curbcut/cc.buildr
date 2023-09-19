@@ -341,10 +341,9 @@ ba_accessibility_points <- function(scales_variables_modules,
       nav_title = "Access to amenities",
       title_text_title = "Access to amenities",
       title_text_main = paste0(
-        "<p>The time and mode of transportation needed to reach amenities plays a ",
-        "large role in daily experiences and quality of life. Understanding acc",
-        "ess to amenities by mode of transportation gives a glimpse into how di",
-        "fferent areas are serviced and what that might imply for residents. "
+        "<p>Neighbourhood accessibility is an important contributor to quality ",
+        "of life. It can be measured by how counting many amenities can be ",
+        "reached from a location for a given time and mode of transportation."
       ),
       title_text_extra = paste0(
         "<p>Curbcut has calculated travel times for walking, cycling, and driving ",
