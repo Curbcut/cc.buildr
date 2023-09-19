@@ -127,15 +127,15 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
     module_title_text_title = "Bikeway comfort and safety: the Can-BICS index",
     module_title_text_main = paste0(
       "Can-BICS, or Canadian Bikeway Comfort and Safety, is a classification ",
-      "system for cycling infrastructure across Canada. This system is based ",
-      "on three tiers that considers safety and user comfort: high-, medium-,",
-      " and low-comfort bikeways."
+      "system for rating cycling infrastructure across Canada on safety and ",
+      "user comfort."
     ),
     module_title_text_extra = paste0(
-      "<p>The datasets visualized on this page come from CANUE and the 2021 C",
-      "anadian Census. Can-BICS was developed by Meghan Winters and her team.",
-      " Understanding the spatializatio",
-      "n of cycling infrastructure as classified by Can-BICS can help to high",
+      "<p>Can-BICS rates bikeways into three tiers: high-, medium-,",
+      " and low-comfort. The datasets visualized on this page come from CANUE ",
+      "and the 2021 Canadian Census. Can-BICS was developed by Meghan Winters ",
+      "and her team. Understanding the spatialization of cycling infrastructure ",
+      "as classified by Can-BICS can help to high",
       "light the availability and infrastructure types across a re",
       "gion and support efforts in improving bikeways. For more information a",
       "bout Can-BICS visit: <a target = '_blank' href='https://www.canada.ca/",
@@ -219,13 +219,13 @@ ru_lst <- function(scales_variables_modules, region_DA_IDs, crs) {
     module_nav_title = "Land surface temperature",
     module_title_text_title = "Land surface temperature",
     module_title_text_main = paste0(
-      "Land Surface Temperature (LST) is a crucial indicator of urban heat islands ",
-      "and ecological balance within a region. LST measures the maximum mean ",
-      "warm-season temperature at a specific location."
+      "Land surface temperature measures the maximum mean warm-season ",
+      "temperature at a specific location. It is a crucial indicator of urban ",
+      "heat islands and ecological balance within a region."
     ),
     module_title_text_extra = paste0(
-      "<p>This data represents the ",
-      "highest mean value reported over a three-year span, helping to minimize ",
+      "<p>This data represents the highest mean warm-season temperature recorded ",
+      "at a location over a three-year span, helping to minimize ",
       "the impact of missing data or cloud cover. LST is instrumental ",
       "in identifying areas that are hotter during the day and more likely to radiate ",
       "excess heat at night, contributing to urban heat phenomena. Understanding ",
@@ -837,12 +837,15 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
       nav_title = "Vacancy rate",
       title_text_title = "Vacancy rate",
       title_text_main = paste0(
-        "<p>Information about vacancy rates can help define past and current trend",
-        "s in the housing market and what is needed to better provide adequate ",
-        "rental housing."
+        "<p>The rental vacancy rate measures the percentage of purpose-built ",
+        "rental apartments which are vacant and available for rent at a given ",
+        "time. Vacancy rates below 3% suggest a serious rental housing crisis."
       ),
       title_text_extra = paste0(
-        "<p>The datasets visualized on this page come from the CMHC and the 2021 Canadian Census."
+        "<p>The vacancy rate is the most important indicator of rental housing ",
+        "availability. A higher rate means more available housing, and a lower ",
+        "rate means the opposite. The datasets visualized on this page come ",
+        "from the CMHC and the 2021 Canadian Census."
       ),
       regions = "cmhc",
       metadata = TRUE,
