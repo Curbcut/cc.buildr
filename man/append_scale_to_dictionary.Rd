@@ -8,6 +8,7 @@ append_scale_to_dictionary(
   scales_dictionary,
   scale,
   sing,
+  sing_with_article,
   plur,
   slider_title,
   place_heading,

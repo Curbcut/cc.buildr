@@ -140,10 +140,14 @@ dyk_uni <- function(vars_dyk, svm, scales_dictionary, langs, translation_df) {
     dplyr::filter(n() > 1, .by = c(module, region, scale, var_left)) |>
     dplyr::filter(scale == "CSD") |>
     dplyr::summarize(date = list(as.character(c(min(as.numeric(date)),
-                                           max(as.numeric(date))))),
+                                                max(as.numeric(date))))),
                      .by = c(module, region, scale, var_left, var_right))
   dyk_change_out <- dyk_uni_change(
-    dyk_change$var_left, dyk_change$region, dyk_change$scale, svm, langs)
+    var_left = dyk_change$var_left,
+    region = dyk_change$region,
+    scale = dyk_change$scale,
+    svm = svm,
+    langs = langs)
   dyk_change$scale <- NA_character_
   dyk_change <- dplyr::bind_cols(dyk_change, dyk_change_out)
   dyk_change <-
@@ -155,8 +159,13 @@ dyk_uni <- function(vars_dyk, svm, scales_dictionary, langs, translation_df) {
   # Get compare DYKs
   dyk_compare <- vars_dyk[vars_dyk$var_right != " ",]
   dyk_compare_out <- dyk_uni_compare(
-    dyk_compare$var_left, dyk_compare$var_right, dyk_compare$region,
-    dyk_compare$scale, dyk_compare$date, svm, langs)
+    var_left = dyk_compare$var_left,
+    var_right = dyk_compare$var_right,
+    region = dyk_compare$region,
+    scale = dyk_compare$scale,
+    date = dyk_compare$date,
+    svm = svm,
+    langs = langs)
   dyk_compare <- dplyr::bind_cols(dyk_compare, dyk_compare_out)
   dyk_compare <-
     dyk_compare |>
@@ -214,8 +223,8 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm,
   # Initial region mention (one per lang)
   region_start <- lapply(langs, \(lang) {
     out <- mapply(\(x, y) curbcut:::explore_context(
-    region = x, select_id = NA, df = paste(x, y, sep = "_"), switch_DA = FALSE,
-    lang = lang), x = region, y = scale, SIMPLIFY = FALSE, USE.NAMES = FALSE)
+      region = x, select_id = NA, df = paste(x, y, sep = "_"), switch_DA = FALSE,
+      lang = lang), x = region, y = scale, SIMPLIFY = FALSE, USE.NAMES = FALSE)
     sapply(out, \(x) curbcut::s_sentence(x$p_start))
   })
 
@@ -347,7 +356,7 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm,
 
   dplyr::bind_cols(highest_df, lowest_df) |>
     dplyr::mutate(highest_ID = highest_ID,
-           lowest_ID = lowest_ID)
+                  lowest_ID = lowest_ID)
 
 }
 
@@ -700,7 +709,7 @@ dyk_uni_compare <- function(var_left, var_right, region, scale, date, svm,
     mapply(\(x, y, z) ifelse(z == max_date$max_date[
       max_date$var_left == x & max_date$var_right == y],
       if (lang == "en") "have" else if (lang == "fr") "ont",
-      if (lang == "en") "had" else if (lang == "fr") "ont eu"),
+      if (lang == "en") "had" else if (lang == "fr") "avaient"),
       var_left, var_right, date, USE.NAMES = FALSE)})
 
   # Assemble output
@@ -729,8 +738,8 @@ dyk_assemble_compare <- function(region_start, extra_date, scale_name,
 
     } else if (lang == "fr") {
       paste0(region_start[[2]], extra_date[[2]], ", ", scale_name[[2]],
-             " with ", high_low_1[[2]], " ", var_exp_1[[2]], " ", freq[[2]],
-             " ", have_had[[2]], " ", high_low_2[[2]], " ", var_exp_2[[2]], ".")
+             " avec ", high_low_1[[2]], " ", var_exp_1[[2]], " ", have_had[[2]],
+             " ", freq[[2]], " ", high_low_2[[2]], " ", var_exp_2[[2]], ".")
 
     }})
 
@@ -761,7 +770,7 @@ dyk_assemble_compare <- function(region_start, extra_date, scale_name,
 #' which contains a character vector of DYK outputs.
 #' @export
 dyk_bivar_outlier <- function(var_left, var_right, region, scale, date,
-                                   svm) {
+                              svm) {
 
   # Get class
   vars <- mapply(curbcut::vars_build,
@@ -841,14 +850,14 @@ dyk_bivar_outlier <- function(var_left, var_right, region, scale, date,
   # Make a model to determine outliers
   md <- mapply(\(x, y) {
     lm(y ~ x, data = data.frame(scale(tibble(x = x, y = y))))
-    }, val_1, val_2, SIMPLIFY = FALSE, USE.NAMES = FALSE)
+  }, val_1, val_2, SIMPLIFY = FALSE, USE.NAMES = FALSE)
 
   which_out <- lapply(md, \(x) which(abs(x$residuals) > 1, useNames = FALSE))
 
   # Get outlier place names
   outlier_place <- mapply(\(x, region, scale) {
     svm$scales[[region]][[scale]]$name[x]
-    }, which_out, region, scale, USE.NAMES = FALSE, SIMPLIFY = FALSE)
+  }, which_out, region, scale, USE.NAMES = FALSE, SIMPLIFY = FALSE)
 
   # Get outlier values
   out_val_1 <- mapply(\(x, val_1) val_1[x], which_out, val_1, USE.NAMES = FALSE,
@@ -898,7 +907,7 @@ dyk_bivar_outlier <- function(var_left, var_right, region, scale, date,
 
   # Assemble output
   # outlier_vec <-
-    paste0(
+  paste0(
     region_start, extra_date, ", although ", scale_name, " with ", high_low_1,
     " ", var_exp_1, " ", freq, " ", have_had, " ", high_low_2, " ", var_exp_2,
     ", ", "<outlier_place>", " ", is_was, " ", "<outlier>", " with ",
@@ -1034,4 +1043,3 @@ dyk_bivar_outlier <- function(var_left, var_right, region, scale, date,
   tibble::tibble(highest = highest, lowest = lowest)
 
 }
-
