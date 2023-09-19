@@ -4,7 +4,7 @@
 \alias{dyk_uni_compare}
 \title{Generate Bivariate Comparison DYKs}
 \usage{
-dyk_uni_compare(var_left, var_right, region, scale, date, svm)
+dyk_uni_compare(var_left, var_right, region, scale, date, svm, langs)
 }
 \arguments{
 \item{var_left}{\if{html}{\out{<character>}} A string representing the name of the first

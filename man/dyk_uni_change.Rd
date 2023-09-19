@@ -4,7 +4,7 @@
 \alias{dyk_uni_change}
 \title{Generate Change-over-time DYKs}
 \usage{
-dyk_uni_change(var_left, region, scale, svm)
+dyk_uni_change(var_left, region, scale, svm, langs)
 }
 \arguments{
 \item{var_left}{\if{html}{\out{<character>}} A string representing the name of the variable
