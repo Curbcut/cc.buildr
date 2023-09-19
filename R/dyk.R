@@ -18,7 +18,8 @@
 #' @export
 dyk_prep <- function(svm, all_tables, n = NULL) {
 
-  modules <- if (missing(n) || is.null(n)) svm$modules else svm$modules[1:n,]
+  modules <- svm$modules
+  if (!missing(n) && !is.null(n)) modules <- modules[1:n,]
 
   vars_dyk <-
     modules |>
@@ -55,8 +56,9 @@ dyk_prep <- function(svm, all_tables, n = NULL) {
     reframe(
       var_right = c(" ", var_right),
       df = c(list(unique(unlist(df))), df),
-      date = c(list(as.character(min(as.numeric(unlist(date))):
-                                   max(as.numeric(unlist(date))))), date)) |>
+      date = c(list(as.character(
+        min(as.numeric(unlist(date)) - 5):max(as.numeric(unlist(date)) + 5))),
+        date)) |>
     tidyr::unnest(date) |>
     tidyr::unnest(df) |>
     tidyr::separate_wider_delim(df, delim = "_", names = c("region", "scale"))
