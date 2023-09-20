@@ -164,7 +164,7 @@ ba_ndvi <- function(scales_variables_modules,
       var_code = "ndvi",
       type = "ind",
       var_title = "Vegetation",
-      var_short = "Green",
+      var_short = "Vegetation",
       explanation = "the presence and intensity of vegetation",
       exp_q5 = "are living in areas with _X_ level of presence and intensity of vegetation",
       parent_vec = "households",
@@ -205,8 +205,8 @@ ba_ndvi <- function(scales_variables_modules,
       title_text_main = paste0(
         "<p>The Normalized Difference Vegetation Index (NDVI) measures the ",
         "average amount of vegetation present in an area during the growing ",
-        "season. It is used for environmental conservation, urban planning,
-        and climate change mitigation."
+        "season. It is used for environmental conservation, urban planning, ",
+        "and climate change mitigation."
       ),
       title_text_extra = paste0(
         "<p>NDVI plays a significant role in various applications, including ",

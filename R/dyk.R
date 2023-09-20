@@ -550,7 +550,8 @@ dyk_uni_change <- function(var_left, region, scale, svm, langs) {
 
   # Assemble output
   change_vec <- dyk_assemble_change(region_start, var_exp, inc_dec, date_ref,
-                                    first_val, first_date, last_val, last_date)
+                                    first_val, first_date, last_val, last_date,
+                                    langs = langs)
 
   change_df <-
     do.call(tibble::tibble, set_names(change_vec, paste0("dyk_text_", langs)))
@@ -561,7 +562,8 @@ dyk_uni_change <- function(var_left, region, scale, svm, langs) {
 
 
 dyk_assemble_change <- function(region_start, var_exp, inc_dec, date_ref,
-                                first_val, first_date, last_val, last_date) {
+                                first_val, first_date, last_val, last_date,
+                                langs) {
 
   lapply(langs, \(lang) {
 
