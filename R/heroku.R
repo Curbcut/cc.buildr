@@ -6,12 +6,33 @@
 #'
 #' @param app_name <`character`> Must correspond to an existing app on the
 #' Heroku account that the user will login.
+#' @param curbcut_branch <`character`> Is there a specific branch of Curbcut
+#' that should be installed?
+#' @param wd <`character`> Directory of the Curbcut-city repo.
+#' @param GA <`logical`> Should google analytics be pushed with the image? Defaults
+#' to FALSE. The function will also suggest to turn it to TRUE if the app name
+#' is cc-montreal.
 #'
 #' @return Opens a terminal and disconnect from the current R session.
 #' @export
-heroku_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd()) {
+heroku_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
+                          GA = FALSE) {
   if (Sys.info()["sysname"] != "Windows") {
     stop("As of now, this function is only adapted for Windows.")
+  }
+
+  # If sending to cc-montreal, request if google analytics should be enabled
+  if (app_name == "cc-montreal" & !GA) {
+    ga_ask <- readline(
+      prompt =
+        paste0(
+          "Do you want to include google analytics to your image? Y or N"
+        )
+    )
+
+    if (ga_ask %in% c("y", "Y", "yes", "YES")) {
+      GA <- TRUE
+    }
   }
 
   # Create the UI generation object
@@ -46,13 +67,13 @@ heroku_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd()) {
 
   cmds <- c(
     paste0("cd ", wd),
-    "(Get-Content 'ui.R') -replace '# google_analytics', 'google_analytics' | Set-Content 'ui.R'",
+    if (GA) "(Get-Content 'ui.R') -replace '# google_analytics', 'google_analytics' | Set-Content 'ui.R'",
     "heroku login",
     "heroku container:login",
     paste0("heroku container:push web -a ", app_name),
     paste0("heroku container:release web -a ", app_name),
     "del data\\modules_panel_calculated.qs",
-    "(Get-Content 'ui.R') -replace 'google_analytics', '# google_analytics' | Set-Content 'ui.R'"
+    if (GA) "(Get-Content 'ui.R') -replace 'google_analytics', '# google_analytics' | Set-Content 'ui.R'"
   )
 
   ps_file_path <- file.path(wd, "deploy_script.ps1")

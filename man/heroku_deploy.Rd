@@ -4,11 +4,20 @@
 \alias{heroku_deploy}
 \title{Deploy an app in Heroku}
 \usage{
-heroku_deploy(app_name, curbcut_branch = "HEAD", wd = getwd())
+heroku_deploy(app_name, curbcut_branch = "HEAD", wd = getwd(), GA = FALSE)
 }
 \arguments{
 \item{app_name}{<\code{character}> Must correspond to an existing app on the
 Heroku account that the user will login.}
+
+\item{curbcut_branch}{<\code{character}> Is there a specific branch of Curbcut
+that should be installed?}
+
+\item{wd}{<\code{character}> Directory of the Curbcut-city repo.}
+
+\item{GA}{<\code{logical}> Should google analytics be pushed with the image? Defaults
+to FALSE. The function will also suggest to turn it to TRUE if the app name
+is cc-montreal.}
 }
 \value{
 Opens a terminal and disconnect from the current R session.
