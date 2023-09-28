@@ -719,7 +719,7 @@ dyk_uni_compare <- function(var_left, var_right, region, scale, date, svm,
   # Assemble output
   compare_vec <- dyk_assemble_compare(
     region_start, extra_date, scale_name, high_low_1, var_exp_1, freq, have_had,
-    high_low_2, var_exp_2)
+    high_low_2, var_exp_2, langs)
 
   compare_df <-
     do.call(tibble::tibble, set_names(compare_vec, paste0("dyk_text_", langs)))
@@ -731,7 +731,7 @@ dyk_uni_compare <- function(var_left, var_right, region, scale, date, svm,
 
 dyk_assemble_compare <- function(region_start, extra_date, scale_name,
                                  high_low_1, var_exp_1, freq, have_had,
-                                 high_low_2, var_exp_2) {
+                                 high_low_2, var_exp_2, langs) {
 
   lapply(langs, \(lang) {
 

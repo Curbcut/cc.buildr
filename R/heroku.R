@@ -26,7 +26,7 @@ heroku_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
     ga_ask <- readline(
       prompt =
         paste0(
-          "Do you want to include google analytics to your image? Y or N"
+          "Do you want to include google analytics to your image? Y or N: "
         )
     )
 

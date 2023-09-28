@@ -95,13 +95,19 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
 
   # Interpolate -------------------------------------------------------------
 
-  filled_vals <- cc.data::census_custom_boundaries(
-    destination = ready,
-    DA_IDs = region_DA_IDs,
-    census_vectors = census_vectors,
-    census_years = census_years,
-    crs = crs
-  )
+  # If there is nothing to fill, assign nothing
+  filled_vals <- if (length(ready) > 0) {
+    cc.data::census_custom_boundaries(
+      destination = ready,
+      DA_IDs = region_DA_IDs,
+      census_vectors = census_vectors,
+      census_years = census_years,
+      crs = crs
+    )
+  } else {
+    list()
+  }
+
 
 
   # Merge processed census data with interpolated data ----------------------
@@ -111,15 +117,79 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
 
     census_data_merged <- future.apply::future_sapply(higher_DA, \(x) {
       mapply(\(df, scale) {
-        # Get the census data for that scale
-        ids <- if (scale == "CT") {
-          ids <- df$ID[!df$ID %in% filled_vals[[scale]]$ID]
-          ids[!grepl("CSD_", ids)]
-        } else {
-          df$ID[!df$ID %in% filled_vals[[scale]]$ID]
-        }
 
-        if (length(ids) > 0 && scale %in% cc.data::census_scales) {
+        # If there are actual values to be filled with
+        if (length(filled_vals) > 0) {
+          # Get the census data for that scale
+          ids <- if (scale == "CT") {
+            ids <- df$ID[!df$ID %in% filled_vals[[scale]]$ID]
+            ids[!grepl("CSD_", ids)]
+          } else {
+            df$ID[!df$ID %in% filled_vals[[scale]]$ID]
+          }
+
+          if (length(ids) > 0 && scale %in% cc.data::census_scales) {
+            all_vectors <- cc.data::census_add_parent_vectors(census_vectors)
+
+            census_data <- cc.data::db_read_data(
+              table = paste0("processed_", scale),
+              columns = sapply(
+                census_years,
+                \(x) paste(all_vectors, x, sep = "_")
+              ),
+              IDs = ids,
+              crs = crs
+            )
+          } else {
+            census_data <- tibble::tibble()
+          }
+
+          # Bind all the data
+          all_data <- if (scale %in% cc.data::census_scales) {
+            sf::st_drop_geometry(rbind(census_data, filled_vals[[scale]]))
+          } else if (scale %in% names(filled_vals)) {
+            sf::st_drop_geometry(filled_vals[[scale]])
+          } else {
+            data.frame(ID = character())
+          }
+
+          out_df <- merge(df, all_data, by = "ID", all.x = TRUE)
+
+          if (scale == "CT") {
+            csd_ids <- df$ID[!df$ID %in% filled_vals[[scale]]$ID]
+            csd_ids <- csd_ids[grepl("CSD_", csd_ids)]
+            csd_ids <- gsub("CSD_", "", csd_ids)
+
+            if (length(csd_ids) > 0) {
+              all_vectors <- cc.data::census_add_parent_vectors(census_vectors)
+
+              csd_data <- cc.data::db_read_data(
+                table = paste0("processed_", "CSD"),
+                columns = sapply(
+                  census_years,
+                  \(x) paste(all_vectors, x, sep = "_")
+                ),
+                IDs = csd_ids,
+                crs = crs
+              ) |>
+                sf::st_drop_geometry()
+
+              ct_csds <- out_df[!out_df$ID %in% paste0("CSD_", csd_ids), ]
+              csd_data$ID <- paste0("CSD_", csd_data$ID)
+              csd_data <- merge(csd_data, out_df[, "ID"], by = "ID")
+
+              out_df <- rbind(ct_csds, csd_data)
+            } else {
+              out_df
+            }
+          }
+
+          pb()
+
+          return(out_df)
+
+          # If there are no values to fill, just grab from the db
+        } else {
           all_vectors <- cc.data::census_add_parent_vectors(census_vectors)
 
           census_data <- cc.data::db_read_data(
@@ -128,56 +198,14 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
               census_years,
               \(x) paste(all_vectors, x, sep = "_")
             ),
-            IDs = ids,
+            IDs = df$ID,
             crs = crs
           )
-        } else {
-          census_data <- tibble::tibble()
+
+          pb()
+
+          return(census_data)
         }
-
-        # Bind all the data
-        all_data <- if (scale %in% cc.data::census_scales) {
-          sf::st_drop_geometry(rbind(census_data, filled_vals[[scale]]))
-        } else if (scale %in% names(filled_vals)) {
-          sf::st_drop_geometry(filled_vals[[scale]])
-        } else {
-          data.frame(ID = character())
-        }
-
-        out_df <- merge(df, all_data, by = "ID", all.x = TRUE)
-
-        if (scale == "CT") {
-          csd_ids <- df$ID[!df$ID %in% filled_vals[[scale]]$ID]
-          csd_ids <- csd_ids[grepl("CSD_", csd_ids)]
-          csd_ids <- gsub("CSD_", "", csd_ids)
-
-          if (length(csd_ids) > 0) {
-            all_vectors <- cc.data::census_add_parent_vectors(census_vectors)
-
-            csd_data <- cc.data::db_read_data(
-              table = paste0("processed_", "CSD"),
-              columns = sapply(
-                census_years,
-                \(x) paste(all_vectors, x, sep = "_")
-              ),
-              IDs = csd_ids,
-              crs = crs
-            ) |>
-              sf::st_drop_geometry()
-
-            ct_csds <- out_df[!out_df$ID %in% paste0("CSD_", csd_ids), ]
-            csd_data$ID <- paste0("CSD_", csd_data$ID)
-            csd_data <- merge(csd_data, out_df[, "ID"], by = "ID")
-
-            out_df <- rbind(ct_csds, csd_data)
-          } else {
-            out_df
-          }
-        }
-
-        pb()
-
-        return(out_df)
       }, x, names(x), SIMPLIFY = FALSE, USE.NAMES = TRUE)
     }, simplify = FALSE, USE.NAMES = TRUE, future.seed = NULL)
   })
@@ -230,9 +258,9 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
 
   avail_df <-
     map_over_scales(census_data_merged,
-      fun = \(geo = geo, scale_name = scale_name, ...) {
-        paste(geo, scale_name, sep = "_")
-      }
+                    fun = \(geo = geo, scale_name = scale_name, ...) {
+                      paste(geo, scale_name, sep = "_")
+                    }
     ) |>
     unlist() |>
     unname()
@@ -251,17 +279,17 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
     }, simplify = FALSE, USE.NAMES = TRUE)
   interpolated_ref <-
     map_over_scales(interpolated_ref,
-      fun = \(geo = geo, scale_name = scale_name,
-        scale_df = scale_df, ...) {
-        tibble::tibble(
-          df = paste(geo, scale_name, sep = "_"),
-          interpolated_from = scale_df
-        )
-      }
+                    fun = \(geo = geo, scale_name = scale_name,
+                            scale_df = scale_df, ...) {
+                      tibble::tibble(
+                        df = paste(geo, scale_name, sep = "_"),
+                        interpolated_from = scale_df
+                      )
+                    }
     )
   interpolated_ref <-
     sapply(interpolated_ref, \(x) do.call(rbind, x),
-      simplify = FALSE, USE.NAMES = TRUE
+           simplify = FALSE, USE.NAMES = TRUE
     ) |>
     (\(x) do.call(rbind, x))()
   row.names(interpolated_ref) <- NULL

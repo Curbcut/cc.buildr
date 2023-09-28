@@ -201,6 +201,10 @@ accessibility_add_intervals <- function(point_per_DA,
     })
   })
 
+  # Remove NULL modes. Happens in places where we do not have transit information
+  ttm_data <- ttm_data[!sapply(ttm_data, is.null)]
+
+  # Bind
   ttm_data <- Reduce(
     \(x, y) merge(x, y, all.x = TRUE, all.y = TRUE, by = "DA_ID"),
     ttm_data
