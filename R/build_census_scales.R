@@ -21,6 +21,10 @@
 #' default display for a CT would then be e.g. `Census tract 4620633.00 (Laval)`.
 #' @param switch_full_geos <`logical`> Should the census geometries get switched
 #' to the full one (the one which spans over water)?
+#' @param area_threshold <`numeric`> How much of a feature should be present
+#' in the master polygon to include it in the dataset? Defaults to 0.05. In
+#' some cases, if a DA is small on the land but covers lots of water, this
+#' threshold must be taken down.
 #'
 #' @return A list of sf dataframes of census scales filtered by the master polygon,
 #' with the option of one CSD subdivided.
@@ -31,7 +35,8 @@ build_census_scales <- function(master_polygon,
                                 levels = c("CSD", "CT", "DA"), crs,
                                 fill_CTs_with_CSDs = TRUE,
                                 override_name_2 = list(CSD = "City"),
-                                switch_full_geos = FALSE) {
+                                switch_full_geos = FALSE,
+                                area_threshold = 0.05) {
   # Get census data with the help of cc.buildr::get_census_cc()
   census_datasets <-
     sapply(levels, \(x) {
@@ -41,7 +46,8 @@ build_census_scales <- function(master_polygon,
         regions = regions,
         level = x,
         crs = crs,
-        switch_full_geos = switch_full_geos
+        switch_full_geos = switch_full_geos,
+        area_threshold = area_threshold
       )
     }, simplify = FALSE, USE.NAMES = TRUE)
 

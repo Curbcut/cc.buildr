@@ -20,6 +20,10 @@
 #' by the <`master_polygon`> or not.
 #' @param switch_full_geos <`logical`> Should the census geometries get switched
 #' to the full one (the one which spans over water)?
+#' @param area_threshold <`numeric`> How much of a feature should be present
+#' in the master polygon to include it in the dataset? Defaults to 0.05. In
+#' some cases, if a DA is small on the land but covers lots of water, this
+#' threshold must be taken down.
 #'
 #' @return An sf dataframe of a census scale filtered by the master polygon.
 #' @export
@@ -31,7 +35,8 @@ get_census_cc <- function(master_polygon, census_dataset, regions,
                             "population" = "Population",
                             "households" = "Households"
                           ),
-                          crs, format = TRUE, switch_full_geos = FALSE) {
+                          crs, format = TRUE, switch_full_geos = FALSE,
+                          area_threshold = 0.05) {
   census_data <- cancensus::get_census(
     dataset = census_dataset, regions = regions,
     level = level, geo_format = "sf", quiet = TRUE,
@@ -79,7 +84,7 @@ get_census_cc <- function(master_polygon, census_dataset, regions,
     crs = crs,
     master_polygon = master_polygon,
     ID_col = "ID",
-    area_threshold = 0.05
+    area_threshold = area_threshold
   )
 
   # Keep only the polygons part of the master_polygon

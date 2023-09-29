@@ -12,7 +12,8 @@ build_census_scales(
   crs,
   fill_CTs_with_CSDs = TRUE,
   override_name_2 = list(CSD = "City"),
-  switch_full_geos = FALSE
+  switch_full_geos = FALSE,
+  area_threshold = 0.05
 )
 }
 \arguments{
@@ -44,6 +45,11 @@ default display for a CT would then be e.g. \verb{Census tract 4620633.00 (Laval
 
 \item{switch_full_geos}{<\code{logical}> Should the census geometries get switched
 to the full one (the one which spans over water)?}
+
+\item{area_threshold}{<\code{numeric}> How much of a feature should be present
+in the master polygon to include it in the dataset? Defaults to 0.05. In
+some cases, if a DA is small on the land but covers lots of water, this
+threshold must be taken down.}
 }
 \value{
 A list of sf dataframes of census scales filtered by the master polygon,

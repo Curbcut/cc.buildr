@@ -33,6 +33,15 @@ heroku_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
     if (ga_ask %in% c("y", "Y", "yes", "YES")) {
       GA <- TRUE
     }
+
+    bucket_ask <- readline(
+      prompt =
+        paste0(
+          "Do you want to add the data to the bucket `curbcut.montreal.data`? Y or N: "
+        )
+    )
+
+    bucket <- bucket_ask %in% c("y", "Y", "yes", "YES")
   }
 
   # Create the UI generation object
@@ -49,8 +58,8 @@ heroku_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
 
   # Update packages in renv
   renv::install(sprintf("Curbcut/curbcut@%s", curbcut_branch))
-  renv::install(sprintf("Curbcut/cc.landing", curbcut_branch))
-  renv::install(sprintf("Curbcut/cc.map", curbcut_branch))
+  renv::install("Curbcut/cc.landing")
+  renv::install("Curbcut/cc.map")
   renv::snapshot()
 
   cancel <- readline(
@@ -74,6 +83,7 @@ heroku_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
     paste0("heroku container:release web -a ", app_name),
     "del data\\modules_panel_calculated.qs",
     if (GA) "(Get-Content 'ui.R') -replace 'google_analytics', '# google_analytics' | Set-Content 'ui.R'"
+    if (bucket) "Rscript -e \"cc.data::bucket_write_folder('data', 'curbcut.montreal.data')\""
   )
 
   ps_file_path <- file.path(wd, "deploy_script.ps1")

@@ -13,7 +13,8 @@ get_census_cc(
     "Population", households = "Households"),
   crs,
   format = TRUE,
-  switch_full_geos = FALSE
+  switch_full_geos = FALSE,
+  area_threshold = 0.05
 )
 }
 \arguments{
@@ -44,6 +45,11 @@ by the <\code{master_polygon}> or not.}
 
 \item{switch_full_geos}{<\code{logical}> Should the census geometries get switched
 to the full one (the one which spans over water)?}
+
+\item{area_threshold}{<\code{numeric}> How much of a feature should be present
+in the master polygon to include it in the dataset? Defaults to 0.05. In
+some cases, if a DA is small on the land but covers lots of water, this
+threshold must be taken down.}
 }
 \value{
 An sf dataframe of a census scale filtered by the master polygon.
