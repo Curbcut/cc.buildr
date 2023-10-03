@@ -21,6 +21,9 @@ heroku_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
     stop("As of now, this function is only adapted for Windows.")
   }
 
+  # By default do not upload anything to a bucket
+  bucket <- FALSE
+
   # If sending to cc-montreal, request if google analytics should be enabled
   if (app_name == "cc-montreal" & !GA) {
     ga_ask <- readline(
