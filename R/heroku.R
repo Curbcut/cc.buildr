@@ -16,7 +16,7 @@
 #' @return Opens a terminal and disconnect from the current R session.
 #' @export
 heroku_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
-                          GA = FALSE) {
+                          GA = FALSE, task_name = "CurbcutDeploy") {
   if (Sys.info()["sysname"] != "Windows") {
     stop("As of now, this function is only adapted for Windows.")
   }
@@ -102,10 +102,11 @@ heroku_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
   shell(
     sprintf(
       paste0(
-        'schtasks /create /F /SC ONCE /ST %s /TN "CurbcutDeploy" ',
+        'schtasks /create /F /SC ONCE /ST %s /TN "%s" ',
         '/TR "powershell -ExecutionPolicy Bypass -File %s"'
       ),
       format(Sys.time() + 60, "%H:%M"),
+      task_name,
       ps_file_path
     ),
     wait = TRUE
