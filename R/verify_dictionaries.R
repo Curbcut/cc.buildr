@@ -29,4 +29,8 @@ verify_dictionaries <- function(all_tables, regions_dictionary,
   if (length(z) > 0) {
     stop(paste0("Missing `", z, "` in the `scales_dictionary`"))
   }
+  if (sum(grepl("_", scales_dictionary$scale)) > 0) {
+    cont <- scales_dictionary$scale[which(grepl("_", scales_dictionary$scale))]
+    stop(sprintf("`%s` contains an underscore. Remove the underscore.", cont))
+  }
 }
