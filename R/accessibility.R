@@ -17,6 +17,8 @@
 #' @param time_intervals <`numeric vector`> A vector of time intervals
 #' (in minutes) to calculate travel times for. Defaults to `c(5, 10, 15, ...,
 #' 60)`. 60 minutes is the maximum.
+#' @param scales_sequences <`list`> A list of scales sequences representing the
+#' hierarchical ordering of scales on an auto-zoom.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
 #' @param pe_include <`character vector`> Which final variables should appear
@@ -32,13 +34,14 @@ ba_accessibility_points <- function(scales_variables_modules,
                                     traveltimes,
                                     time_intervals = which(1:60 %% 5 == 0),
                                     pe_include = c(
-                                      "access_foot_20_educational_elementary",
-                                      "access_bicycle_20_educational_secondary",
-                                      "access_foot_20_cultural_total",
-                                      "access_foot_15_food_grocery",
-                                      "access_car_10_healthcare_hospitals"
+                                      "access_foot_educational_elementary",
+                                      "access_bicycle_educational_secondary",
+                                      "access_foot_cultural_total",
+                                      "access_foot_food_grocery",
+                                      "access_car_healthcare_hospitals"
                                     ),
-                                    default_var = "access_foot_20_food_grocery",
+                                    default_var = "access_foot_food_grocery",
+                                    scales_sequences,
                                     crs) {
   if (max(time_intervals) > 60) {
     stop(paste0(
@@ -80,7 +83,6 @@ ba_accessibility_points <- function(scales_variables_modules,
   average_vars <- names(ttm_data)[!grepl("ID$", names(ttm_data))]
   names(ttm_data)[1] <- "DA_ID"
 
-
   data_interpolated <-
     interpolate_from_census_geo(
       data = ttm_data,
@@ -92,67 +94,51 @@ ba_accessibility_points <- function(scales_variables_modules,
     )
 
 
-  # Calculate breaks --------------------------------------------------------
+  # Data tibble -------------------------------------------------------------
 
-  unique_vars <- gsub("_\\d{4}$", "", average_vars)
+  time_regex <- "_\\d{4}$"
+  unique_var <- gsub(time_regex, "", average_vars)
+  unique_var <- gsub("_\\d{1,2}$", "", unique_var)
+  unique_var <- unique(unique_var)
 
-  # Calculate breaks ONCE for 30 minutes. Use those breaks on all variables
-  breaks_base <- sapply(unique_vars, paste, simplify = FALSE, USE.NAMES = TRUE)
-  middle_val <- time_intervals[round(length(time_intervals) / 2)]
-  breaks_base <- lapply(breaks_base, \(x) gsub("_\\d{1,2}_", sprintf("_%s_", middle_val), x))
+  # Construct the breaks_var list (take the breaks from a 20 minutes traject)
+  breaks_var <- lapply(unique_var, paste0, "_20_2023")
+  names(breaks_var) <- unique_var
 
-  types <- rep(list("avg"), length(unique_vars))
-  names(types) <- unique_vars
-
-  with_breaks <-
-    calculate_breaks(
-      all_scales = data_interpolated$scales,
-      vars = average_vars,
-      types = types,
-      use_quintiles = TRUE,
-      breaks_base = breaks_base
-    )
+  data <- data_construct(svm_data = scales_variables_modules$data,
+                         scales_data = data_interpolated$scales,
+                         unique_var = unique_var,
+                         time_regex = time_regex,
+                         schema = list(time = gsub("^_", "", time_regex),
+                                       transportationtime = "(?<=_)\\d{1,2}(?=_)"),
+                         breaks_var = breaks_var)
 
 
+  # Types and parent vectors ------------------------------------------------
 
-  # Calculate region values -------------------------------------------------
+  parent_strings <- rep(list("population"), length(unique_var))
+  names(parent_strings) <- unique_var
 
-  # Parent strings
-  vars <- gsub("_2023$", "", average_vars)
-  parent_strings <- rep(list("population"), length(vars))
-  names(parent_strings) <- vars
-
-  types <- rep(list("avg"), length(vars))
-  names(types) <- vars
-
-  # Region values
-  region_values <- variables_get_region_vals(
-    scales = with_breaks$scales,
-    vars = vars,
-    types = types,
-    parent_strings = parent_strings,
-    breaks = with_breaks$q5_breaks_table,
-    round_closest_5 = FALSE
-  )
+  types <- rep(list("avg"), length(unique_var))
+  names(types) <- unique_var
 
 
   # Variable measurements ----------------------------------------------------
 
   var_measurement <- data.frame(
-    df = data_interpolated$avail_df,
-    measurement = rep("scalar", length(data_interpolated$avail_df))
+    scale = data_interpolated$avail_scale,
+    measurement = rep("scalar", length(data_interpolated$avail_scale))
   )
 
-  var_measurement$measurement[grepl("_DA$", var_measurement$df)] <-
-    rep("ordinal", length(var_measurement$measurement[grepl("_DA$", var_measurement$df)]))
+  var_measurement$measurement[var_measurement$scale == "DA"] <- "ordinal"
 
 
   # Variables table ---------------------------------------------------------
 
   progressr::with_progress({
-    pb <- progressr::progressor(length(vars))
+    pb <- progressr::progressor(length(unique_var))
 
-    new_variables <- future.apply::future_lapply(vars, \(var) {
+    new_variables <- future.apply::future_lapply(unique_var, \(var) {
       dict <- cc.data::accessibility_point_dict
       dict <- dict[sapply(dict$var, grepl, var), ]
 
@@ -186,7 +172,7 @@ ba_accessibility_points <- function(scales_variables_modules,
         }
       })()
 
-      time <- gsub("_", "", stringr::str_extract(var, "_\\d*_"))
+      time <- "__schema$transportationtime__"
 
       var_title <- stringr::str_to_sentence(paste0(dict$title, " accessible by ", mode))
       var_short <- stringr::str_to_sentence(dict$short)
@@ -243,7 +229,7 @@ ba_accessibility_points <- function(scales_variables_modules,
       group_name <- paste("Access to", theme)
       group_diff <- list(
         "Mode of transport" = stringr::str_to_sentence(mode),
-        "Transportation time" = time
+        "Transportation time" = time_intervals
       )
 
       if (grepl("_transit_", var)) {
@@ -310,11 +296,8 @@ ba_accessibility_points <- function(scales_variables_modules,
         theme = "Transport",
         private = FALSE,
         pe_include = var %in% pe_include,
-        region_values = region_values[[var]],
-        dates = with_breaks$avail_dates[[var]],
-        avail_df = data_interpolated$avail_df,
-        breaks_q3 = with_breaks$q3_breaks_table[[var]],
-        breaks_q5 = with_breaks$q5_breaks_table[[var]],
+        dates = "2023",
+        avail_scale = data_interpolated$avail_scale,
         source = dict$source,
         interpolated = data_interpolated$interpolated_ref,
         rankings_chr = c(
@@ -330,6 +313,11 @@ ba_accessibility_points <- function(scales_variables_modules,
 
   variables <- rbind(scales_variables_modules$variables, Reduce(rbind, new_variables))
 
+  # Possible sequences ------------------------------------------------------
+
+  avail_scale_combinations <-
+    get_avail_scale_combinations(scales_sequences = scales_sequences,
+                                 avail_scales = data_interpolated$avail_scale)
 
   # Modules table -----------------------------------------------------------
 
@@ -385,15 +373,17 @@ ba_accessibility_points <- function(scales_variables_modules,
         scales_variables_modules$variables$source == "Canadian census" &
           !is.na(scales_variables_modules$variables$parent_vec)
       ],
-      default_var = default_var
+      default_var = default_var,
+      avail_scale_combinations = avail_scale_combinations
     )
 
 
   # Return ------------------------------------------------------------------
 
   return(list(
-    scales = with_breaks$scales,
+    scales = data_interpolated$scales,
     variables = variables,
-    modules = modules
+    modules = modules,
+    data = data
   ))
 }

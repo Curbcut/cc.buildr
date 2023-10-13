@@ -84,6 +84,8 @@ heroku_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
     "heroku container:login",
     paste0("heroku container:push web -a ", app_name),
     paste0("heroku container:release web -a ", app_name),
+    # To keep every session on their own dyno (no shared temporary files)
+    paste0("heroku features:enable http-session-affinity -a ", app_name),
     "del data\\modules_panel_calculated.qs",
     if (GA) "(Get-Content 'ui.R') -replace 'google_analytics', '# google_analytics' | Set-Content 'ui.R'",
     if (bucket) "Rscript -e \"cc.data::bucket_write_folder('data', 'curbcut.montreal.data')\""

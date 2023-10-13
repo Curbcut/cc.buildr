@@ -114,10 +114,7 @@ build_census_scales <- function(master_polygon,
       if (df_name %in% names(override_name_2)) {
         df$name_2 <- override_name_2[[df_name]]
       } else {
-        csds <- sf::st_drop_geometry(census_datasets$CSD[, c("ID", "name")])
-        names(csds) <- c("CSDUID", "name_2")
-        df$name <- df$ID
-        df <- merge(df, csds, by = "CSDUID")
+        df$name_2 <- NA
       }
 
       df[, c("ID", "name", "name_2", names(df)[

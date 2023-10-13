@@ -11,6 +11,7 @@ ba_ndvi(
   data_output_path = "dev/data/ndvi/",
   years = cc.data::ndvi_years(),
   skip_scales = NULL,
+  scales_sequences,
   crs
 )
 }
@@ -34,6 +35,9 @@ to store the NDVI data (default is "dev/data/ndvi/").}
 
 \item{skip_scales}{<\verb{character vector}> Scales to be skipped in the analysis.
 Already skipped scales are building and street. Defaults to NULL.}
+
+\item{scales_sequences}{<\code{list}> A list of scales sequences representing the
+hierarchical ordering of scales on an auto-zoom.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}

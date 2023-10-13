@@ -12,19 +12,20 @@
 #'
 #' @return Returns nothing if the test passes, or errors if it doesn't.
 #' @export
-verify_dictionaries <- function(all_tables, regions_dictionary,
-                                scales_dictionary) {
-  # Verify regions first -------------------------------------------------------
-
-  regions <- names(all_tables)
-  z <- regions[!regions %in% regions_dictionary$region]
-  if (length(z) > 0) {
-    stop(paste0("Missing `", regions, "` in the `regions_dictionary`"))
-  }
+verify_dictionaries <- function(regions_dictionary,
+                                scales_dictionary,
+                                scales) {
+  # # Verify regions first -------------------------------------------------------
+  #
+  # regions <- names(all_tables)
+  # z <- regions[!regions %in% regions_dictionary$region]
+  # if (length(z) > 0) {
+  #   stop(paste0("Missing `", regions, "` in the `regions_dictionary`"))
+  # }
 
   # Verify scales second ----------------------------------------------------
 
-  scales <- unique(unlist(all_tables))
+  scales <- names(scales)
   z <- scales[!scales %in% scales_dictionary$scale]
   if (length(z) > 0) {
     stop(paste0("Missing `", z, "` in the `scales_dictionary`"))
@@ -32,5 +33,12 @@ verify_dictionaries <- function(all_tables, regions_dictionary,
   if (sum(grepl("_", scales_dictionary$scale)) > 0) {
     cont <- scales_dictionary$scale[which(grepl("_", scales_dictionary$scale))]
     stop(sprintf("`%s` contains an underscore. Remove the underscore.", cont))
+  }
+
+
+  # Verify if scales is in the regions_dictionary ---------------------------
+
+  if (!"scales" %in% names(regions_dictionary)) {
+    stop("Missing the `scales` column in the regions_dictionary.")
   }
 }

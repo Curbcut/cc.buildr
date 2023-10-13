@@ -8,6 +8,7 @@ ba_var(
   data,
   scales_variables_modules,
   base_scale,
+  scales_sequences,
   weight_by = "households",
   crs,
   additive_vars = c(),
@@ -48,6 +49,9 @@ third is the modules table.}
 \item{base_scale}{<\code{character}> The denominator for which data should be
 interpolated. Defaults to \code{households}. The other option is \code{population}.
 Directly fed to \code{\link[cc.buildr]{interpolate_from_census_geo}}}
+
+\item{scales_sequences}{<\code{list}> A list of scales sequences representing the
+hierarchical ordering of scales on an auto-zoom.}
 
 \item{weight_by}{<\code{character}> The denominator for which data should be
 interpolated. Defaults to \code{households}. The other option is \code{population}.

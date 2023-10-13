@@ -44,7 +44,7 @@ dyk_prep <- function(svm, all_tables, n = NULL) {
   var_left_check <-
     svm$variables |>
     dplyr::filter(var_code %in% vars_dyk$var_left) |>
-    dplyr::select(var_left = var_code, df = avail_df, date = dates) |>
+    dplyr::select(var_left = var_code, df = avail_scale, date = dates) |>
     tidyr::unnest(date) |>
     tidyr::unnest(df) |>
     tidyr::separate_wider_delim(df, delim = "_", names = c("region", "scale"))
@@ -52,7 +52,7 @@ dyk_prep <- function(svm, all_tables, n = NULL) {
   var_right_check <-
     svm$variables |>
     dplyr::filter(var_code %in% vars_dyk$var_right) |>
-    dplyr::select(var_right = var_code, df = avail_df, date = dates) |>
+    dplyr::select(var_right = var_code, df = avail_scale, date = dates) |>
     reframe(
       var_right = c(" ", var_right),
       df = c(list(unique(unlist(df))), df),

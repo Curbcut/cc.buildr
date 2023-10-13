@@ -19,8 +19,7 @@ interpolate_custom_geo(
 \item{data}{<\code{data.frame}> Containing any number of column with data,
 and an ID that corresponds to the source scale, e.g. \code{"DA_ID"}.}
 
-\item{all_scales}{<\verb{named list}> A named list of scales. The first level is
-the geo, and the second is the scales.}
+\item{all_scales}{<\verb{named list}> A named list of scales.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32618} for Montreal.}

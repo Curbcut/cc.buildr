@@ -11,7 +11,6 @@ interpolate_from_census_geo(
   weight_by = "households",
   crs,
   existing_census_scales = c("CSD", "CT", "DA", "DB"),
-  only_regions = names(all_scales),
   average_vars = c(),
   additive_vars = c()
 )
@@ -23,8 +22,7 @@ and an ID that corresponds to the base scale, e.g. \code{"DA_ID"}.}
 \item{base_scale}{<\code{character}> The census scale at which the data is
 arranged.}
 
-\item{all_scales}{<\verb{named list}> A named list of scales. The first level is
-the geo, and the second is the scales.}
+\item{all_scales}{<\verb{named list}> A named list of scales.}
 
 \item{weight_by}{<\code{character}> The denominator for which average variables
 should be interpolated. Defaults to \code{households}. The other options are
@@ -39,10 +37,6 @@ scales existing in the project. To detect for which scales data needs to be
 intersected. (The boundaries of the census geometries fit into each other,
 but this is not the case for the other geometries, hence the need to
 identify them).}
-
-\item{only_regions}{<\verb{character vector}> All the regions for which data
-should be interpolated and appended. Defults to all the regions in
-\code{all_scales}.}
 
 \item{average_vars}{<\verb{character vector}> Corresponds to the column names
 of the variables that are to be interpolated as an average, like a

@@ -10,10 +10,11 @@ ba_accessibility_points(
   themes = cc.data::list_accessibility_themes(),
   traveltimes,
   time_intervals = which(1:60\%\%5 == 0),
-  pe_include = c("access_foot_20_educational_elementary",
-    "access_bicycle_20_educational_secondary", "access_foot_20_cultural_total",
-    "access_foot_15_food_grocery", "access_car_10_healthcare_hospitals"),
-  default_var = "access_foot_20_food_grocery",
+  pe_include = c("access_foot_educational_elementary",
+    "access_bicycle_educational_secondary", "access_foot_cultural_total",
+    "access_foot_food_grocery", "access_car_healthcare_hospitals"),
+  default_var = "access_foot_food_grocery",
+  scales_sequences,
   crs
 )
 }
@@ -40,6 +41,9 @@ in the place explorer. Defaults to \code{c("access_foot_20_educational_elementar
 
 \item{default_var}{<\code{character}> The first variable the user will see when
 they will lang on the page. Defaults to groceries accessible within a 20 minutes walk.}
+
+\item{scales_sequences}{<\code{list}> A list of scales sequences representing the
+hierarchical ordering of scales on an auto-zoom.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}

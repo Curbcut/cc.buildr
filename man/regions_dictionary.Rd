@@ -5,8 +5,8 @@
 \title{Build the regions dictionary}
 \usage{
 regions_dictionary(
-  all_tables,
-  region,
+  all_regions,
+  region = names(all_regions),
   name,
   to_compare,
   to_compare_determ,
@@ -15,12 +15,12 @@ regions_dictionary(
 )
 }
 \arguments{
-\item{all_tables}{<\verb{named list}> Named list of regions and their scales within,
-ordered in priority.}
+\item{all_regions}{<\verb{named list}> Named list of regions. The name of every element
+is a region.}
 
 \item{region}{<\verb{vector of character}> A vector of characters used to identify
 which large geometry the user is interested in, e.g.
-\code{c("CMA", "city", "island")}.}
+\code{c("CMA", "city", "island")}. Defaults to \code{names(all_regions)}}
 
 \item{name}{<\verb{named character vector}> Named with their corresponding region value.
 Same length as the vector fed in the \code{region} argument. Used to name the region

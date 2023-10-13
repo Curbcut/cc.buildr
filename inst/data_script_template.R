@@ -83,7 +83,7 @@ build_and_append__name_ <- function(scales_variables_modules, crs) {
       theme = "Urban life",
       private = FALSE,
       dates = with_breaks$avail_dates[["alp"]],
-      avail_df = data_interpolated$avail_df,
+      avail_scale = data_interpolated$avail_scale,
       breaks_q3 = with_breaks$q3_breaks_table[["alp"]],
       breaks_q5 = with_breaks$q5_breaks_table[["alp"]],
       region_values = region_vals[["alp"]],

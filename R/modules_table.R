@@ -27,9 +27,9 @@ append_empty_modules_table <- function(scales) {
       dates = list(),
       main_dropdown_title = character(),
       var_right = list(),
-      suffix_zoom_levels = character(),
       add_advanced_controls = list(),
-      default_var = character()
+      default_var = character(),
+      avail_scale_combinations = list()
     )
 
   c(scales, list(modules = modules))
@@ -95,13 +95,6 @@ append_empty_modules_table <- function(scales) {
 #' dropdown label.
 #' @param var_right <`character vector`> Character vector of variable codes that
 #' there should be in the 'compare' dropdown of the page.
-#' @param suffix_zoom_levels <`character vector`> Add suffix to the desired zoom
-#' levels of the user. Example: If the user wants to view the CMA region, but the
-#' data of the page is only available at the CT scale maximum, we can create a
-#' new zoom level named `max_zoom_levels_CMA_max_CT` using
-#' \code{\link{map_zoom_levels_create_custom}} with the CT being the maximum scale.
-#' The value of this argument is 'max_CT' (the suffix we appended to the
-#' zoom level name). Defaults to `NA_character_` (no suffix).
 #' @param add_advanced_controls <`character vector`> Names of additional widgets
 #' that should be placed in the 'Advanced controls' instead of with the 'Indicators'
 #' section (Names of the names list `group_diff` of the `var_left` column.). If
@@ -112,6 +105,10 @@ append_empty_modules_table <- function(scales) {
 #' pages that do not display variables: stories, place explorer, ... For any
 #' other page, the default_var must be one of the available variable in the
 #' `var_left` column.
+#' @param avail_scale_combinations <`character vector`> All available scale combinations
+#' for display on the module. e.g. `c(CSD_CT_DA_building, borough_CT_DA_building ...)`.
+#' These should all represent an available tileset as an autozoom, but also individual
+#' tilesets and scales.
 #'
 #'
 #' @return The same `modules` data.frame fed, with the added row.
@@ -120,8 +117,8 @@ add_module <- function(modules, id, theme = "", nav_title, title_text_title,
                        title_text_main, title_text_extra, metadata, dataset_info,
                        regions = NULL, var_left = NULL, dates = NULL,
                        main_dropdown_title = NA_character_, var_right = NULL,
-                       suffix_zoom_levels = NA_character_,
-                       add_advanced_controls = NULL, default_var = NA) {
+                       add_advanced_controls = NULL, default_var = NA,
+                       avail_scale_combinations = NULL) {
   if (is.data.frame(var_left)) {
     if (!all(names(var_left) == c("var_code", "group_name", "group_diff"))) {
       stop(paste0(
@@ -146,8 +143,8 @@ add_module <- function(modules, id, theme = "", nav_title, title_text_title,
     dates = list(dates),
     main_dropdown_title = main_dropdown_title,
     var_right = list(var_right),
-    suffix_zoom_levels = suffix_zoom_levels,
     add_advanced_controls = list(add_advanced_controls),
-    default_var = default_var
+    default_var = default_var,
+    avail_scale_combinations = list(avail_scale_combinations)
   )
 }

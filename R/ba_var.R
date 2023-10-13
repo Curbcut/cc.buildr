@@ -6,6 +6,8 @@
 #' @param scales_variables_modules <`named list`> A list of length three.
 #' The first is all the scales, the second is the variables table, and the
 #' third is the modules table.
+#' @param scales_sequences <`list`> A list of scales sequences representing the
+#' hierarchical ordering of scales on an auto-zoom.
 #' @param base_scale <`character`> The denominator for which data should be
 #' interpolated. Defaults to `households`. The other option is `population`.
 #' Directly fed to \code{\link[cc.buildr]{interpolate_from_census_geo}}
@@ -46,6 +48,7 @@
 #' module.
 #' @export
 ba_var <- function(data, scales_variables_modules, base_scale,
+                   scales_sequences,
                    weight_by = "households", crs,
                    additive_vars = c(), average_vars = c(),
                    time_regex = "_\\d{4}$", variable_var_code,
@@ -104,32 +107,19 @@ ba_var <- function(data, scales_variables_modules, base_scale,
   names(types) <- unique_var
 
 
-  # Calculate breaks --------------------------------------------------------
+  # Data tibble -------------------------------------------------------------
 
-  with_breaks <-
-    calculate_breaks(
-      all_scales = data_interpolated$scales,
-      vars = var,
-      types = types
-    )
-
-
-  # Region values -----------------------------------------------------------
-
-  parent_strings <- list(weight_by)
-  names(parent_strings) <- unique_var
-
-  region_vals <-
-    variables_get_region_vals(
-      scales = data_interpolated$scales,
-      vars = unique_var,
-      types = types,
-      breaks = with_breaks$q5_breaks_table,
-      parent_strings = parent_strings
-    )
+  data <- data_construct(svm_data = scales_variables_modules$data,
+                         scales_data = data_interpolated$scales,
+                         unique_var = unique_var,
+                         time_regex = time_regex)
 
 
   # Variables table ---------------------------------------------------------
+
+  ## Dates at which the data is available
+  dates <- curbcut::s_extract(time_regex, var)
+  dates <- gsub("^_", "", dates)
 
   variables <-
     add_variable(
@@ -144,14 +134,18 @@ ba_var <- function(data, scales_variables_modules, base_scale,
       theme = variable_theme,
       private = variable_private,
       pe_include = variable_pe_include,
-      dates = with_breaks$avail_dates[[unique_var]],
-      avail_df = data_interpolated$avail_df,
-      breaks_q3 = with_breaks$q3_breaks_table[[unique_var]],
-      breaks_q5 = with_breaks$q5_breaks_table[[unique_var]],
-      region_values = region_vals[[unique_var]],
+      dates = dates,
+      avail_scale = data_interpolated$avail_scale,
       source = variable_source,
       interpolated = data_interpolated$interpolated_ref
     )
+
+
+  # Possible sequences ------------------------------------------------------
+
+  avail_scale_combinations <-
+    get_avail_scale_combinations(scales_sequences = scales_sequences,
+                                 avail_scales = data_interpolated$avail_scale)
 
 
   # Modules table -----------------------------------------------------------
@@ -173,14 +167,14 @@ ba_var <- function(data, scales_variables_modules, base_scale,
           title_text_title = module_title_text_title,
           title_text_main = module_title_text_main,
           title_text_extra = module_title_text_extra,
-          regions = data_interpolated$regions,
           metadata = module_metadata,
           dataset_info = module_dataset_info,
           var_left = variable_var_code,
           dates = module_dates,
           main_dropdown_title = module_main_dropdown_title,
           var_right = module_var_right,
-          default_var = variable_var_code
+          default_var = variable_var_code,
+          avail_scale_combinations = avail_scale_combinations
         )
     } else {
       scales_variables_modules$modules
@@ -190,8 +184,9 @@ ba_var <- function(data, scales_variables_modules, base_scale,
   # Return ------------------------------------------------------------------
 
   return(list(
-    scales = with_breaks$scales,
+    scales = data_interpolated$scales,
     variables = variables,
-    modules = modules
+    modules = modules,
+    data = data
   ))
 }

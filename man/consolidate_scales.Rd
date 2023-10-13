@@ -2,48 +2,32 @@
 % Please edit documentation in R/consolidate_scales.R
 \name{consolidate_scales}
 \alias{consolidate_scales}
-\title{Filter spatially scales in their parent geometry}
+\title{Consolidate Scales}
 \usage{
-consolidate_scales(
-  all_tables,
-  all_scales,
-  regions,
-  crs,
-  match_with_centroids_regions = NULL
-)
+consolidate_scales(scales_sequences, all_scales, regions, crs)
 }
 \arguments{
-\item{all_tables}{<\verb{named list}> A named list of character. The names are
-the \code{region} e.g. CMA, island, city, ... and the vectors are all the scales
-available in these geo e.g. CSD, CT, DA, building, ...}
+\item{scales_sequences}{<\code{list}> A list of scales sequences representing the
+hierarchical ordering of scales on an auto-zoom.}
 
-\item{all_scales}{<\verb{named list}> A named list containing all the dataframes
-present in the \code{all_tables} list.}
+\item{all_scales}{<\verb{named list}> A list of data frames corresponding to each
+scale.}
 
-\item{regions}{<\verb{named list}> A named list of all the unioned geometry
-(the names of \code{all_tables}). The second element of the list returned
-by \code{\link[cc.buildr]{create_master_polygon}}.}
+\item{regions}{<\verb{named list}> A list or unioned polygons of regions for which the
+consolidated data needs to be processed.}
 
-\item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
-\code{32618} for Montreal.}
-
-\item{match_with_centroids_regions}{<\verb{character vector}> As some of the scales
-now span over water, the \code{sf::st_point_on_surface} method of matching
-which scales fit in which scales above (to attach CT_ID to DAs) doesn't necessarily work.
-Centraide's zone do not span on water, and so a CT with its centroid in water
-won't get matched to a Centraide zone. The calculation is much more intensive, so
-this argument is used to bypass the new method. E.g. \code{grid} ONLY span land, and
-all bottom scales of grid fit perfectly in the upper scales. In this case,
-use \code{match_with_centroids_regions = "grid"} to speed up the process. Defaults
-to NULL.}
+\item{crs}{<\code{character}> A Coordinate Reference System.}
 }
 \value{
-A list of the same length as there are in \code{all_tables}, containing
-spatially filtered dataframes with updated name_2 and IDs if needed.
+A list containing:
+\itemize{
+\item \code{scales}: A modified list of all scales with corrected identifiers.
+\item \code{for_region_dict_scales}: A list of scale IDs for each region,
+spatially filtered based on 1\% threshold.
+}
 }
 \description{
-Necessary 1. to spatially filter scales in their parent geometry, 2. to update
-x_ID and name_2 for non-census scales, and 3. to update x_ID and name_2
-after a census scale has been split, e.g. with boroughs in the City of
-Montreal.
+This function takes all the scales and ensure uniformity. It also notes,
+using the sequences of scales, all the IDs of scales above them. It also
+calculates all the features which are part of regions.
 }

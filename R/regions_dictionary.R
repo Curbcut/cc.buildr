@@ -1,10 +1,10 @@
 #' Build the regions dictionary
 #'
-#' @param all_tables <`named list`> Named list of regions and their scales within,
-#' ordered in priority.
+#' @param all_regions <`named list`> Named list of regions. The name of every element
+#' is a region.
 #' @param region <`vector of character`> A vector of characters used to identify
 #' which large geometry the user is interested in, e.g.
-#' \code{c("CMA", "city", "island")}.
+#' \code{c("CMA", "city", "island")}. Defaults to `names(all_regions)`
 #' @param name <`named character vector`> Named with their corresponding region value.
 #' Same length as the vector fed in the `region` argument. Used to name the region
 #' when the user will want to change which large geometry they are interested in. e.g.
@@ -31,7 +31,7 @@
 #' @return Returns the same vectors fed arranged in a data.frame ordered in
 #' priorty.
 #' @export
-regions_dictionary <- function(all_tables, region, name, to_compare,
+regions_dictionary <- function(all_regions, region = names(all_regions), name, to_compare,
                                to_compare_determ, to_compare_short, pickable) {
   # Error check
   if (is.null(names(name))) {
@@ -50,17 +50,17 @@ regions_dictionary <- function(all_tables, region, name, to_compare,
     "region", "name", "to_compare", "to_compare_determ",
     "to_compare_short", "pickable"
   ), \(x) {
-    if (length(get(x)) != length(all_tables)) {
-      stop("length of`", x, "` is not the same as the length of `all_tables`")
+    if (length(get(x)) != length(all_regions)) {
+      stop("length of`", x, "` is not the same as the length of `all_regions`")
     }
   }))
 
-  region <- region[order(match(region, names(all_tables)))]
-  name <- name[order(match(names(name), names(all_tables)))]
-  to_compare <- to_compare[order(match(names(to_compare), names(all_tables)))]
-  to_compare_determ <- to_compare_determ[order(match(names(to_compare_determ), names(all_tables)))]
-  to_compare_short <- to_compare_short[order(match(names(to_compare_short), names(all_tables)))]
-  pickable <- pickable[order(match(names(pickable), names(all_tables)))]
+  region <- region[order(match(region, names(all_regions)))]
+  name <- name[order(match(names(name), names(all_regions)))]
+  to_compare <- to_compare[order(match(names(to_compare), names(all_regions)))]
+  to_compare_determ <- to_compare_determ[order(match(names(to_compare_determ), names(all_regions)))]
+  to_compare_short <- to_compare_short[order(match(names(to_compare_short), names(all_regions)))]
+  pickable <- pickable[order(match(names(pickable), names(all_regions)))]
 
 
   tibble::tibble(
@@ -72,4 +72,25 @@ regions_dictionary <- function(all_tables, region, name, to_compare,
     to_compare_short = to_compare_short,
     pickable = pickable
   )
+}
+
+
+#' Add `scales` column to the regions_dictionary
+#'
+#' @param regions_dictionary <`data.frame`> The regions dictionary built using
+#' \code{\link[cc.buildr]{regions_dictionary}}. Will be used to filter out scales
+#' for which data should not be calculated.
+#' @param region_dict_scales <`named list`> Named list of the IDs of all scales
+#' that fit within every region. One of the output of \code{\link[cc.buildr]{scales_consolidated}}
+#'
+#' @return The same `regions_dictionary` fed with the `scales` column added.
+#' @export
+regions_dictionary_add_scales <- function(regions_dictionary, region_dict_scales) {
+
+  regions_dictionary$scales <- lapply(1:nrow(regions_dictionary), c)
+  for (i in seq_along(region_dict_scales)) {
+    regions_dictionary$scales[[i]] <- region_dict_scales[[regions_dictionary$region[[i]]]]
+  }
+
+  return(regions_dictionary)
 }

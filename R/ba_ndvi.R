@@ -19,6 +19,8 @@
 #' `cc.data::ndvi_years()`.
 #' @param skip_scales <`character vector`> Scales to be skipped in the analysis.
 #' Already skipped scales are building and street. Defaults to NULL.
+#' @param scales_sequences <`list`> A list of scales sequences representing the
+#' hierarchical ordering of scales on an auto-zoom.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
 #'
@@ -30,7 +32,7 @@ ba_ndvi <- function(scales_variables_modules,
                     master_polygon, all_scales,
                     data_output_path = "dev/data/ndvi/",
                     years = cc.data::ndvi_years(),
-                    skip_scales = NULL, crs) {
+                    skip_scales = NULL, scales_sequences, crs) {
   # Create the folders if they don't exist
   dir.create(data_output_path) |> suppressWarnings()
   tmp_folder <- paste0(data_output_path, "tmp/")
@@ -38,12 +40,15 @@ ba_ndvi <- function(scales_variables_modules,
 
   # Scales to go over
   skip_scales <- c(skip_scales, "building", "street")
-  scales <- all_scales[!names(all_scales) %in% skip_scales]
+  scales <- scales_variables_modules$scales[!names(scales_variables_modules$scales) %in% skip_scales]
+  scales <- lapply(scales, `[`, "ID")
 
 
   # Get NDVI data saved on disk ---------------------------------------------
 
   possible_ndvi_years <- years
+  all_vars <- sprintf("ndvi_%s", possible_ndvi_years)
+  time_regex <- "_\\d{4}"
 
   cc.data::ndvi_import_from_masterpolygon(master_polygon,
     years = possible_ndvi_years,
@@ -93,68 +98,34 @@ ba_ndvi <- function(scales_variables_modules,
   })
   # Get all scales to one df with the multiple years
   avail_scales <- names(data[[1]])
-  data <- sapply(avail_scales, \(sc) {
+  ndvi_data <- sapply(avail_scales, \(sc) {
     out <- lapply(data, \(yr_l) {
       sf::st_drop_geometry(yr_l[[sc]])
     })
     Reduce(\(x, y) merge(x, y, by = "ID", all = TRUE), out)
   }, simplify = FALSE, USE.NAMES = TRUE)
 
-  data <- map_over_scales(
-    scales_variables_modules$scales,
-    fun = \(geo = geo, scales = scales, scale_df = scale_df,
-      scale_name = scale_name) {
-      if (!scale_name %in% avail_scales) {
-        return(scale_df)
-      }
-      scale_df <- scale_df[!grepl("ndvi_", names(scale_df))]
-      merge(scale_df, data[[scale_name]], by = "ID")
-    }
-  )
+  # Apply to our scales
+  interpolated <- mapply(\(scale_name, scale_df) {
+    if (!scale_name %in% names(data)) return(scale_df)
+    merge(scale_df, ndvi_data[[scale_name]], by = "ID")
+  }, names(scales_variables_modules$scales), scales_variables_modules$scales)
 
+  # Data tibble -------------------------------------------------------------
 
-
-  # Calculate breaks --------------------------------------------------------
-
-  all_vars <- sprintf("ndvi_%s", possible_ndvi_years)
-
-  with_breaks <-
-    calculate_breaks(
-      all_scales = data,
-      vars = all_vars,
-      types = list(ndvi = "ind"),
-      use_quintiles = TRUE
-    )
-
-
-  # Calculate region values -------------------------------------------------
-
-  region_vals <-
-    variables_get_region_vals(
-      scales = data,
-      vars = "ndvi",
-      types = list(ndvi = "ind"),
-      breaks = with_breaks$q5_breaks_table,
-      parent_strings = list(ndvi = "households")
-    )
+  data <- data_construct(svm_data = scales_variables_modules$data,
+                         scales_data = interpolated,
+                         unique_var = "ndvi",
+                         time_regex = time_regex)
 
 
   # Variables table ---------------------------------------------------------
 
-  avail_df <- map_over_scales(data,
-    fun = \(geo = geo, scales = scales, scale_df = scale_df,
-      scale_name = scale_name) {
-      if (sum(grepl("ndvi", names(scale_df))) == 0) {
-        return(NULL)
-      }
-      sprintf("%s_%s", geo, scale_name)
-    }
-  ) |> unlist()
-  avail_df <- unname(avail_df)
+  avail_scale <- names(ndvi_data)
 
-  interpolated <- tibble::tibble(
-    df = avail_df,
-    interpolated_from = rep(FALSE, length(avail_df))
+  interpolated_ref <- tibble::tibble(
+    scale = avail_scale,
+    interpolated_from = rep("rasters (30m*30m)", length(avail_scale))
   )
 
 
@@ -171,29 +142,21 @@ ba_ndvi <- function(scales_variables_modules,
       theme = "Ecology",
       private = FALSE,
       pe_include = TRUE,
-      region_values = region_vals$ndvi,
-      dates = with_breaks$avail_dates$ndvi,
-      avail_df = avail_df,
-      breaks_q3 = with_breaks$q3_breaks_table$ndvi,
-      breaks_q5 = with_breaks$q5_breaks_table$ndvi,
+      dates = possible_ndvi_years,
+      avail_scale = avail_scale,
       source = "Curbcut",
-      interpolated = interpolated
+      interpolated = interpolated_ref
     )
 
 
+  # Possible sequences ------------------------------------------------------
+
+  avail_scale_combinations <-
+    get_avail_scale_combinations(scales_sequences = scales_sequences,
+                                 avail_scales = avail_scale)
+
+
   # Modules table -----------------------------------------------------------
-
-  regions <- map_over_scales(data,
-    fun = \(geo = geo, scales = scales, scale_df = scale_df,
-      scale_name = scale_name) {
-      if (sum(grepl("ndvi", names(scale_df))) == 0) {
-        return(NULL)
-      }
-      geo
-    }
-  ) |> unlist()
-  regions <- unname(regions) |> unique()
-
 
   modules <-
     scales_variables_modules$modules |>
@@ -215,7 +178,6 @@ ba_ndvi <- function(scales_variables_modules,
         "Sentinel-2 (HLS) data, NDVI represents average vegetation during ",
         "the growing season (May 1st through August 31st)."
       ),
-      regions = regions,
       metadata = TRUE,
       dataset_info = paste0(
         "<p>The NDVI data on this page is derived from the HLSS30.v2.0 and HLSL30.v2.0 satellites, ",
@@ -242,7 +204,8 @@ ba_ndvi <- function(scales_variables_modules,
         scales_variables_modules$variables$source == "Canadian census" &
           !is.na(scales_variables_modules$variables$parent_vec)
       ],
-      default_var = "ndvi"
+      default_var = "ndvi",
+      avail_scale_combinations = avail_scale_combinations
     )
 
 
@@ -251,6 +214,7 @@ ba_ndvi <- function(scales_variables_modules,
   return(list(
     scales = with_breaks$scales,
     variables = variables,
-    modules = modules
+    modules = modules,
+    data = data
   ))
 }

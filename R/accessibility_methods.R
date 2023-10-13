@@ -162,7 +162,7 @@ accessibility_add_intervals <- function(point_per_DA,
   # Use travel times to put the point data in intervals ---------------------
   # ARE THERE SOME DAS THAT ARE CUT HERE? I'M PASSING FROM A 6.5K DAS TO 4.5'
   progressr::with_progress({
-    pb <- progressr::progressor(steps = sum(sapply(traveltimes, length)) + length(traveltimes))
+    pb <- progressr::progressor(steps = length(modes))
 
     ttm_data <- future.apply::future_lapply(modes, \(mode) {
       # Grab the right traveltimes and iterate over all DAs
@@ -186,13 +186,12 @@ accessibility_add_intervals <- function(point_per_DA,
           out <- tibble::tibble(DA_ID = DA)
 
           for (i in names(colsumed)) {
-            out[[sprintf("access_%s_%s_%s", mode, ti, i)]] <-
+            out[[sprintf("access_%s_%s_%s", mode, i, ti)]] <-
               colsumed[[i]]
           }
 
           return(out[2:ncol(out)])
         }, simplify = FALSE, USE.NAMES = FALSE)
-        pb()
         Reduce(cbind, list(tibble::tibble(DA_ID = DA), intervaled))
       })
       out <- Reduce(rbind, along_ttm)
