@@ -40,6 +40,7 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
   uniform_IDs <-
     mapply(
       \(scale_name, scale_df) {
+        print(scale_name)
         # For all column names that end with `UID`, change it to `_ID`
         if (sum(grepl("UID$", names(scale_df))) > 0) {
           names(scale_df)[grepl("UID$", names(scale_df))] <-
@@ -101,10 +102,26 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
             unlist(id_fit) |> unname()
         }
 
+        # Duplicates?
+        merged <- sf::st_drop_geometry(merged_centroids)
+        merged_split <- split(merged, merged$ID)
+        merged_split <- lapply(merged_split, \(x) {
+          x[[id_name]] <- list(x[[id_name]])
+          out <- unique(x)
+          if (nrow(out) > 1)
+            stop(sprintf(paste0("Duplicates in the %s column for table %s ",
+                                "after spatial join."), id_name, scale_name))
+          return(out)
+        })
+
+        out <- data.table::rbindlist(merged_split) |> tibble::as_tibble()
+
         # Revert to full geometry
-        out <- merge(sf::st_drop_geometry(merged_centroids),
+        out <- merge(out,
                      lower[, c("ID", "geometry")],
                      by = "ID")
+        out <- tibble::as_tibble(out)
+        out <- sf::st_as_sf(out)
 
         # Apply to the scale
         uniform_IDs[[scale_name]] <- out

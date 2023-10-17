@@ -212,7 +212,11 @@ spatial_filtering <- function(df, crs, master_polygon, ID_col = "ID", area_thres
 }
 
 get_largest_intersection <- function(x, other) {
+
   intersections <- sf::st_intersection(x, other)
+  # If it intersects nothing, return NA
+  if (nrow(intersections) == 0) return(NA)
+
   areas <- sf::st_area(intersections)
   index <- which.max(areas)
   out <- sf::st_drop_geometry(intersections)[index, names(other)[names(other) != "geometry"]]
