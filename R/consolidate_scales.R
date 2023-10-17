@@ -19,7 +19,6 @@
 #'     spatially filtered based on 1% threshold.
 #'   }
 #' @export
-
 consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
 
   ## Make sure IDs are unique ------------------------------------------------
@@ -114,6 +113,15 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
 
     }
   }
+
+
+  # Add an area column for every scale --------------------------------------
+
+  uniform_IDs <- lapply(uniform_IDs, \(x) {
+    x$area <- get_area(x)
+    x
+  })
+
 
   # Return for every region the ID of ALL scales ----------------------------
 

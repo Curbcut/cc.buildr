@@ -80,9 +80,10 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
         \(x) paste(all_vectors, x, sep = "_")
       ),
       IDs = scale_df$ID,
-      crs = crs
+      crs = crs,
+      keep_geometry = FALSE
     )
-    merge(scale_df, sf::st_drop_geometry(vals), by = "ID")
+    merge(scale_df, vals, by = "ID")
   }, names(census_scales_df), census_scales_df, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
 

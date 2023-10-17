@@ -109,8 +109,11 @@ scales_greater_than <- function(base_scale, all_scales, crs) {
     base_scale <- sf::st_transform(base_scale, crs)
     scale_df <- sf::st_transform(scale_df, crs)
 
+    # scale_df got area?
+    area <- if ("area" %in% names(scale_df)) scale_df$area else get_area(scale_df)
+
     base_dat_avg_size <- mean(get_area(base_scale), na.rm = TRUE)
-    scale_df_avg_size <- mean(get_area(scale_df), na.rm = TRUE)
+    scale_df_avg_size <- mean(area, na.rm = TRUE)
 
     base_dat_avg_size <= scale_df_avg_size * 1.01
   }, simplify = TRUE, USE.NAMES = FALSE)
@@ -550,7 +553,7 @@ interpolate_custom_geo <- function(data, all_scales, crs,
 
 
   ## Reorder all columns
-  interpolated <- lapply(all_scales, reorder_columns)
+  interpolated <- lapply(interpolated, reorder_columns)
 
 
   ## Get the CRS back to WGS 84

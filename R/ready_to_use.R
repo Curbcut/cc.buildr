@@ -458,7 +458,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
 
   # Data tibble
   data <- data_construct(svm_data = scales_variables_modules$data,
-                         scales_data = list(cmhczone = merged_to_svm),
+                         scales_data = merged_to_svm,
                          unique_var = unique_vars,
                          time_regex = time_regex)
 

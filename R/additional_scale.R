@@ -36,9 +36,9 @@ additional_scale <- function(additional_table, DA_table, ID_prefix, name_2,
   }
 
   # Interpolate DA_table to get population and households
-  das <- DA_table[, c("households", "population")]
-  das <- sf::st_transform(das, crs)
-  das <- sf::st_set_agr(das, "constant")
+  das <- DA_table[, c("ID", "households", "population")]
+  das_transformed <- sf::st_transform(das, crs)
+  das <- sf::st_set_agr(das_transformed, "constant")
 
   # Add ID to the scale
   additional_table$ID <- if (!"ID" %in% names(additional_table)) {

@@ -111,8 +111,13 @@ data_construct <- function(svm_data, scales_data, unique_var, time_regex,
       return(df)
     })
 
+    # Rename
     names(dat) <- unique_var
-    dat
+
+    # Remove NULLs
+    dat <- dat[!sapply(dat, is.null)]
+
+    return(dat)
   }, names(scales_data), scales_data, SIMPLIFY = FALSE)
 
   mapply(\(data_name, data_df) {
