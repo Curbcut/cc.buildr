@@ -40,7 +40,7 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
   uniform_IDs <-
     mapply(
       \(scale_name, scale_df) {
-        print(scale_name)
+
         # For all column names that end with `UID`, change it to `_ID`
         if (sum(grepl("UID$", names(scale_df))) > 0) {
           names(scale_df)[grepl("UID$", names(scale_df))] <-
