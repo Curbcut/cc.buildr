@@ -212,7 +212,7 @@ ba_ndvi <- function(scales_variables_modules,
   # Return ------------------------------------------------------------------
 
   return(list(
-    scales = with_breaks$scales,
+    scales = interpolated,
     variables = variables,
     modules = modules,
     data = data
