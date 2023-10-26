@@ -231,7 +231,7 @@ add_regions_to_scales_dictionary <- function(scales_dictionary, regions,
 
   # Arrange the new regions column
   if (!is.null(known_regions)) avail_regions <- c(avail_regions, known_regions)
-  scales_dictionary$region <- sapply(scales_dictionary$scale, \(scale) avail_regions[[scale]])
+  scales_dictionary$regions <- sapply(scales_dictionary$scale, \(scale) avail_regions[[scale]])
 
   return(scales_dictionary)
 }
