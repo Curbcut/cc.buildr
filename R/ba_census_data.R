@@ -46,6 +46,10 @@ ba_census_data <- function(scales_variables_modules,
       simplify = FALSE, USE.NAMES = FALSE
     ) |> unlist()
 
+  # Only keep vars for which we know there is data
+  no_data <- sapply(cc.data::census_vectors_details$vec, \(x) all(is.na(unlist(x))))
+  vars <- vars[!vars %in% cc.data::census_vectors_details$var_code[no_data]]
+
   time_regex <- "_\\d{4}$"
 
 
@@ -74,6 +78,7 @@ ba_census_data <- function(scales_variables_modules,
   variables <-
     lapply(unique_var, \(u_var) {
 
+      # THIS IS NOT TRUE. WHICH VARIABLE ISN'T AVAILABLE AT ALL DATES?
       dates <- vars[grepl(sprintf("%s%s", u_var, time_regex), vars)]
       dates <- curbcut::s_extract_all(time_regex, dates)
       dates <- gsub("^_", "", dates)
