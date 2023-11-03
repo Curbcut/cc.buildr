@@ -8,7 +8,7 @@ interpolate_custom_geo(
   data,
   all_scales,
   crs,
-  only_regions = names(all_scales),
+  only_scales = names(all_scales),
   average_vars = c(),
   additive_vars = c(),
   name_interpolate_from,
@@ -24,8 +24,8 @@ and an ID that corresponds to the source scale, e.g. \code{"DA_ID"}.}
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32618} for Montreal.}
 
-\item{only_regions}{<\verb{character vector}> All the regions for which data should
-be interpolated and appended. Defults to all the regions in \code{all_scales}.}
+\item{only_scales}{<\verb{character vector}> All the scales for which data should
+be interpolated and appended. Defults to all the scales in \code{all_scales}.}
 
 \item{average_vars}{<\verb{character vector}> Corresponds to the column names
 of the variables that are to be interpolated as an average, like a percentage,

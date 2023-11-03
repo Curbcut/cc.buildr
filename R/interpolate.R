@@ -147,6 +147,8 @@ scales_greater_than <- function(base_scale, all_scales, crs) {
 #' the variables that are 'count' variables. In the case of this function, the
 #' output value of a CSD would be the sum of the values of the DAs or CTs that
 #' are present inside the CSD.
+#' @param only_scales <`character vector`> All the scales for which data should
+#' be interpolated and appended. Defults to all the scales in `all_scales`.
 #'
 #' @return Returns a list of length 4. The first is the same list that is fed in
 #' `all_scales`, with the columns from `data` interpolated in. The second is
@@ -163,7 +165,8 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
                                         existing_census_scales =
                                           c("CSD", "CT", "DA", "DB"),
                                         average_vars = c(),
-                                        additive_vars = c()) {
+                                        additive_vars = c(),
+                                        only_scales = names(all_scales)) {
   ## Catch errors
   if (!paste0(base_scale, "_ID") %in% names(data)) {
     stop(paste0(
@@ -173,9 +176,10 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
   }
 
   ## Only interpolate for bigger geometries than the base one
-  base_scale_df <- all_scales[[base_scale]]
+  scales_inter <- all_scales[names(all_scales) %in% only_scales]
+  base_scale_df <- scales_inter[[base_scale]]
   construct_for <- scales_greater_than(base_scale = base_scale_df,
-                                       all_scales = all_scales,
+                                       all_scales = scales_inter,
                                        crs = crs)
 
   ## In the case weight_by is `area`
@@ -531,8 +535,9 @@ interpolate_custom_geo <- function(data, all_scales, crs,
 
   if (is.null(construct_for)) {
     ## Only interpolate for bigger geometries than the base one
+    scales_inter <- all_scales[names(all_scales) %in% only_scales]
     construct_for <- scales_greater_than(base_scale = data,
-                                         all_scales = all_scales,
+                                         all_scales = scales_inter,
                                          crs = crs)
   }
 

@@ -12,7 +12,8 @@ interpolate_from_census_geo(
   crs,
   existing_census_scales = c("CSD", "CT", "DA", "DB"),
   average_vars = c(),
-  additive_vars = c()
+  additive_vars = c(),
+  only_scales = names(all_scales)
 )
 }
 \arguments{
@@ -46,6 +47,9 @@ percentage, a median, an index, etc. weighted by the \code{weight_by} argument.}
 the variables that are 'count' variables. In the case of this function, the
 output value of a CSD would be the sum of the values of the DAs or CTs that
 are present inside the CSD.}
+
+\item{only_scales}{<\verb{character vector}> All the scales for which data should
+be interpolated and appended. Defults to all the scales in \code{all_scales}.}
 }
 \value{
 Returns a list of length 4. The first is the same list that is fed in
