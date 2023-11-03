@@ -497,8 +497,8 @@ interpolate_from_area <- function(to, from,
 #' @param all_scales <`named list`> A named list of scales.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32618} for Montreal.
-#' @param only_regions <`character vector`> All the regions for which data should
-#' be interpolated and appended. Defults to all the regions in `all_scales`.
+#' @param only_scales <`character vector`> All the scales for which data should
+#' be interpolated and appended. Defults to all the scales in `all_scales`.
 #' @param average_vars <`character vector`> Corresponds to the column names
 #' of the variables that are to be interpolated as an average, like a percentage,
 #' a median, an index, etc. weighted by the `weight_by` argument.
@@ -523,7 +523,7 @@ interpolate_from_area <- function(to, from,
 #' vector of all regions at which the data will be available.
 #' @export
 interpolate_custom_geo <- function(data, all_scales, crs,
-                                   only_regions = names(all_scales),
+                                   only_scales = names(all_scales),
                                    average_vars = c(),
                                    additive_vars = c(),
                                    name_interpolate_from,
@@ -531,8 +531,7 @@ interpolate_custom_geo <- function(data, all_scales, crs,
 
   if (is.null(construct_for)) {
     ## Only interpolate for bigger geometries than the base one
-    base_scale_df <- all_scales[[base_scale]]
-    construct_for <- scales_greater_than(base_scale = base_scale_df,
+    construct_for <- scales_greater_than(base_scale = data,
                                          all_scales = all_scales,
                                          crs = crs)
   }

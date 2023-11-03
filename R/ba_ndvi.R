@@ -51,28 +51,38 @@ ba_ndvi <- function(scales_variables_modules,
   time_regex <- "_\\d{4}"
 
   cc.data::ndvi_import_from_masterpolygon(master_polygon,
-    years = possible_ndvi_years,
-    output_path = data_output_path,
-    temp_folder = tmp_folder,
-    overwrite = FALSE,
-    filter_cloudy_tiles = TRUE
+                                          years = possible_ndvi_years,
+                                          output_path = data_output_path,
+                                          temp_folder = tmp_folder,
+                                          overwrite = FALSE,
+                                          filter_cloudy_tiles = TRUE
   )
 
 
   # Add it to all the scales ------------------------------------------------
 
+  scales <- lapply(scales, sf::st_transform, crs)
+  all_files <- list.files(data_output_path, recursive = TRUE, full.names = TRUE)
+
   # Is the data file already calculated?
   if (!"data.qs" %in% list.files(data_output_path)) {
-    scales <- lapply(scales, sf::st_transform, crs)
-    all_files <- list.files(data_output_path, recursive = TRUE, full.names = TRUE)
 
     data <- lapply(as.character(possible_ndvi_years), \(year) {
       # Load all the data for that year
       years_data <- all_files[grepl(sprintf("ndvi/%s", year), all_files)]
 
-      data <- lapply(years_data, qs::qread)
-      data <- lapply(data, sf::st_transform, crs)
-      data <- Reduce(rbind, data)
+      data_path <- sprintf("%s%s/data.qs", data_output_path, year)
+      exists <- all_files[grepl(data_path, all_files)]
+      if (length(exists) == 0) {
+        # Load all the data for that year
+        years_data <- all_files[grepl(sprintf("ndvi/%s", year), all_files)]
+
+        data <- lapply(years_data, qs::qread)
+        data <- lapply(data, sf::st_transform, crs)
+        data <- Reduce(rbind, data)
+        qs::qsave(data, data_path)
+      }
+      data <- qs::qread(data_path)
 
       lapply(scales, \(scale) {
         intersections <- sf::st_intersects(scale, data)
@@ -88,6 +98,35 @@ ba_ndvi <- function(scales_variables_modules,
   }
 
   data <- qs::qread(sprintf("%sdata.qs", data_output_path))
+
+  # Are there scales missing in data?
+  are_there_missing <- all(sapply(data, \(dat) {
+    !all(names(scales) %in% names(dat))
+  }))
+  if (are_there_missing) {
+    data <- mapply(\(year, dat) {
+      if (all(names(scales) %in% names(dat))) return(dat)
+      missing <- setdiff(names(scales), names(dat))
+
+      data_path <- sprintf("%s%s/data.qs", data_output_path, year)
+      data <- qs::qread(data_path)
+
+      additional_dat <- lapply(missing, \(scale_name) {
+        scale <- scales[[scale_name]]
+        intersections <- sf::st_intersects(scale, data)
+        col_name <- sprintf("ndvi_%s", year)
+        scale[[col_name]] <-
+          sapply(intersections, \(int) mean(data$ndvi[int], na.rm = TRUE))
+
+        return(scale[c("ID", col_name)])
+      })
+      names(additional_dat) <- missing
+
+      return(c(dat, additional_dat))
+    }, names(data), data, SIMPLIFY = FALSE)
+    qs::qsave(data, file = sprintf("%sdata.qs", data_output_path))
+  }
+
   # Take out geometry
   data <- lapply(data, \(yr_l) {
     lapply(yr_l, \(df) {
@@ -107,7 +146,7 @@ ba_ndvi <- function(scales_variables_modules,
 
   # Apply to our scales
   interpolated <- mapply(\(scale_name, scale_df) {
-    if (!scale_name %in% names(data)) return(scale_df)
+    if (!scale_name %in% names(ndvi_data)) return(scale_df)
     merge(scale_df, ndvi_data[[scale_name]], by = "ID")
   }, names(scales_variables_modules$scales), scales_variables_modules$scales)
 

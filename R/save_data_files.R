@@ -155,7 +155,7 @@ save_short_tables_qs <- function(data_folder = "data/", all_scales,
   mapply(\(scale_name, scale_df) {
 
     d <- sf::st_drop_geometry(scale_df)
-    subs <- grepl("ID$|^name$|^name_2$|^population$|^households$|^centroid$", names(d))
+    subs <- grepl("ID$|^name$|^name_2$|^population$|^households$|^centroid$|^area$", names(d))
     d <- d[, subs]
 
     qs::qsave(d, file = paste0(data_folder, scale_name, ".qs"))
