@@ -177,7 +177,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
 
   ## Only interpolate for bigger geometries than the base one
   scales_inter <- all_scales[names(all_scales) %in% only_scales]
-  base_scale_df <- scales_inter[[base_scale]]
+  base_scale_df <- all_scales[[base_scale]]
   construct_for <- scales_greater_than(base_scale = base_scale_df,
                                        all_scales = scales_inter,
                                        crs = crs)
@@ -194,7 +194,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
         data = data_sf,
         all_scales = all_scales,
         crs = crs,
-        only_regions = only_regions,
+        only_scales = only_scales,
         average_vars = average_vars,
         additive_vars = additive_vars,
         name_interpolate_from = base_scale,
@@ -282,7 +282,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
       # Merge to the existing data
       merge(scale_df, out, by = "ID", all.x = TRUE)
 
-    }, names(census_scales), census_scales)
+    }, names(census_scales), census_scales, SIMPLIFY = FALSE)
 
 
   # Interpolate to non-census scales

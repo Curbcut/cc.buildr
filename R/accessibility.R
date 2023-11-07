@@ -341,7 +341,6 @@ ba_accessibility_points <- function(scales_variables_modules,
         "from OSRM and the OSM street network. The amenities data has been sour",
         "ced from a combination of DMTI Spatial and OpenStreetMap."
       ),
-      regions = data_interpolated$regions,
       metadata = TRUE,
       dataset_info = paste0(
         "<p>Curbcut has developed a comprehensive methodology for calculating t",
