@@ -178,6 +178,11 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
   ## Only interpolate for bigger geometries than the base one
   scales_inter <- all_scales[names(all_scales) %in% only_scales]
   base_scale_df <- all_scales[[base_scale]]
+  # Only keep features for which we have data. This will allow interpolation for
+  # the island of Montreal, for example, where we only have data for it and not
+  # for the CMA. We will only calculate area for the DAs of the island, and it will
+  # be smaller than other scales (like grid250), allowing the latter to receive data.
+  base_scale_df <- base_scale_df[base_scale_df$ID %in% data[[paste0(base_scale, "_ID")]], ]
   construct_for <- scales_greater_than(base_scale = base_scale_df,
                                        all_scales = scales_inter,
                                        crs = crs)

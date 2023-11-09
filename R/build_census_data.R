@@ -87,16 +87,16 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
   }, names(census_scales_df), census_scales_df, SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
 
-  final_scales <- c(census_scales_df, non_census)
+  all_interpolated <- c(census_scales_df, non_census)
 
   # Re-attach missing scales
-  missing_scales <- scales_consolidated[!names(scales_consolidated) %in% names(final_scales)]
-  final_scales <- c(final_scales, missing_scales)
+  missing_scales <- scales_consolidated[!names(scales_consolidated) %in% names(all_interpolated)]
+  final_scales <- c(all_interpolated, missing_scales)
 
 
   # Keep track of scales for which census data is available ------------------
 
-  avail_scale <- names(final_scales)
+  avail_scale <- names(all_interpolated)
 
 
   # Create interpolated references as a data.frame --------------------------

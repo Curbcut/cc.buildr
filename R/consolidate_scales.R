@@ -21,6 +21,33 @@
 #' @export
 consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
 
+
+  ## DIFFERENCE BETWEEN EVERY SCALE AND DA, ONLY KEEP WHAT TOUCHES THE DAS
+  ## FOR EVERY SCALE!! (LAND)
+  ## AT INTERPOLATION STEP, REMOVE FROM ALL SCALE THE DB WITH POPULATION = 0?
+  ## MAYBE ADD A NEW GEOMETRY COLUMN??
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   ## Make sure IDs are unique ------------------------------------------------
 
   subset_ID <- sapply(all_scales, `[[`, "ID")
