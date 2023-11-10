@@ -26,6 +26,8 @@
 #' buffer:point is very high (e.g. 1:500).
 #' @param crs <`numeric`> EPSG coordinate reference system to be
 #' assigned, e.g. \code{32618} for Montreal.
+#' @param DA_carto <`sf data.frame`> The cartographic version of DAs, one of the
+#' output of \code{\link{create_master_polygon}}.
 #'
 #' @return An sf dataframes with features subdivided.
 #' @export
@@ -34,13 +36,20 @@ split_scale <- function(destination, cutting_layer,
                         destination_pct_threshold = 0.95,
                         buffer_around_cutting_layer = 100,
                         sampled_points_voronoi = buffer_around_cutting_layer * 500,
-                        crs) {
+                        crs, DA_carto) {
   # Error checking
   if (!all(names(cutting_layer) %in% c("name", "type", "geometry"))) {
     stop(paste0(
       "The `cutting_layer` must have exactly three columns: `name`,",
       "`type` and `geometry`. Look at the function documentation."
     ))
+  }
+
+  # If there is digital, make it active
+  if ("geometry_digital" %in% names(destination)) {
+    destination <- sf::st_drop_geometry(destination)
+    names(destination)[names(destination) == "geometry_digital"] <- "geometry"
+    destination <- sf::st_as_sf(destination)
   }
 
   # Transform to correct crs, and trim
@@ -63,7 +72,7 @@ split_scale <- function(destination, cutting_layer,
   intersected$dest_new_area <- cc.buildr::get_area(intersected$geometry)
   dest_ids_intersected_areas <-
     stats::aggregate(intersected$dest_new_area,
-      by = list(dest_id = intersected$dest_id), FUN = sum
+                     by = list(dest_id = intersected$dest_id), FUN = sum
     )
   names(dest_ids_intersected_areas) <- c("dest_id", "stay_area")
   removed_ids <- merge(dest_ids_intersected_areas, dest, by = "dest_id")
@@ -93,8 +102,8 @@ split_scale <- function(destination, cutting_layer,
   buffer_only <-
     suppressWarnings(sf::st_difference(new_shapes_buffered, sf::st_union(new_shapes)))
   sampled_points <- sf::st_sample(buffer_only,
-    size = sampled_points_voronoi,
-    type = "hexagonal"
+                                  size = sampled_points_voronoi,
+                                  type = "hexagonal"
   )
   voronoi <- sf::st_cast(sf::st_voronoi(sf::st_union(sampled_points)))
   voronoi_missing_slivers <-
@@ -103,8 +112,8 @@ split_scale <- function(destination, cutting_layer,
       missing_slivers
     ))
   slivers_attributed <- sf::st_join(voronoi_missing_slivers,
-    new_shapes,
-    join = sf::st_nearest_feature
+                                    new_shapes,
+                                    join = sf::st_nearest_feature
   )
   all_new_shapes <- lapply(unique(new_shapes$ID), \(x) {
     slivers <- slivers_attributed[slivers_attributed$ID == x, ]
@@ -125,6 +134,16 @@ split_scale <- function(destination, cutting_layer,
     all_new_shapes[[x]] <- NA
     sf::st_drop_geometry(all_new_shapes[, x])
   }) |> (\(x) Reduce(cbind, list(all_new_shapes, x)))()
+
+  # Digital to carto for both destination and all_new_shapes
+  all_new_shapes <- sf::st_transform(all_new_shapes, crs = crs)
+  all_new_shapes <- digital_to_cartographic(all_new_shapes, DA_carto,
+                                            crs = crs)
+  destination <- sf::st_transform(destination, crs = crs)
+  destination <- digital_to_cartographic(destination, DA_carto,
+                                         crs = crs)
+
+
   # Interpolate population and households for all new shapes
   all_new_shapes <-
     interpolate_from_area(
@@ -139,6 +158,9 @@ split_scale <- function(destination, cutting_layer,
     all_new_shapes
   )
   destination_out <- sf::st_make_valid(destination_out)
+
+  # Make sure the active geometry column is geometry
+  st_geometry(destination_out) <- "geometry"
 
   # Add area
   destination_out$area <- get_area(destination_out)

@@ -8,7 +8,8 @@ add_regions_to_scales_dictionary(
   scales_dictionary,
   regions,
   scales_consolidated,
-  known_regions = NULL
+  known_regions = NULL,
+  DA_carto
 )
 }
 \arguments{
@@ -26,12 +27,14 @@ containing all scales listed with their regions. The output of
 exactly which regions they should be assigned, useful for smaller scales requiring
 a lot of computational power. e.g. \verb{list(grid250 = c("island", "city"),  grid100 = c("island", "city")}.
 Defaults to NULL.}
+
+\item{DA_carto}{<\verb{sf data.frame}> The cartographic version of DAs, one of the
+output of \code{\link{create_master_polygon}}.}
 }
 \value{
 A modified scales_dictionary with region information added.
 }
 \description{
 This function adds region information to a given scales dictionary based on
-spatial features and known regions. It filters out water features from Open
-Street Map (OSM) and calculates the matching regions for each scale.
+spatial features and known regions.
 }

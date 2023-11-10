@@ -152,8 +152,7 @@ census_scales_dictionary <- function(census_scales) {
 #' Add regions to scales dictionary
 #'
 #' This function adds region information to a given scales dictionary based on
-#' spatial features and known regions. It filters out water features from Open
-#' Street Map (OSM) and calculates the matching regions for each scale.
+#' spatial features and known regions.
 #'
 #' @param scales_dictionary <`data.frame`> The scales dictionary built using
 #' \code{\link{build_census_scales}}.
@@ -166,31 +165,30 @@ census_scales_dictionary <- function(census_scales) {
 #' exactly which regions they should be assigned, useful for smaller scales requiring
 #' a lot of computational power. e.g. `list(grid250 = c("island", "city"),  grid100 = c("island", "city")`.
 #' Defaults to NULL.
+#' @param DA_carto <`sf data.frame`> The cartographic version of DAs, one of the
+#' output of \code{\link{create_master_polygon}}.
 #'
 #' @return A modified scales_dictionary with region information added.
 #' @export
 add_regions_to_scales_dictionary <- function(scales_dictionary, regions,
                                              scales_consolidated,
-                                             known_regions = NULL) {
+                                             known_regions = NULL, DA_carto) {
 
-  # Grab a water spatial features from OSM
-  osm_water <- osmdata::opq(bbox = sf::st_bbox(base_polygons$master_polygon),
-                            timeout = 180) |>
-    osmdata::add_osm_feature(key = "natural", value = "water") |>
-    osmdata::osmdata_sf()
-  osm_water <- osm_water$osm_multipolygons["osm_id"]
-  osm_water <- sf::st_cast(osm_water, "MULTIPOLYGON")
-  osm_water <- sf::st_make_valid(osm_water)
-  osm_water <- sf::st_union(osm_water)
-  osm_water <- sf::st_make_valid(osm_water)
+  # Digital to cartographic
+  regions <- lapply(regions, \(reg) {
+    # Transform to the specified CRS
+    reg <- sf::st_transform(reg, crs = crs)
+    DA_carto <- sf::st_transform(DA_carto, crs = crs)
 
-  # So scales are equivalent to the regions (which sometimes spans over water),
-  # grab only the difference between the region and water.
-  regions_water_diff <- lapply(regions, sf::st_difference, osm_water)
-  regions_water_diff <- lapply(regions_water_diff, sf::st_make_valid)
-  regions_water_diff <- lapply(regions_water_diff, sf::st_simplify, dTolerance = 100)
-  regions_area <- sapply(regions_water_diff, sf::st_area)
+    # Find the intersection of 'scale' and 'DA_carto'
+    cartographic <- sf::st_intersection(reg, DA_carto)
+    cartographic <- sf::st_cast(cartographic, "MULTIPOLYGON")
 
+    return(cartographic)
+  })
+
+  # Grab region area
+  regions_area <- sapply(regions, sf::st_area)
 
   # For every scales, extract the matching region
   scales_to_match <-
@@ -202,13 +200,10 @@ add_regions_to_scales_dictionary <- function(scales_dictionary, regions,
 
     # Union all the scale features
     scale_df_unioned <- sf::st_union(scale_df)
-    # Remove the water from the scale features
-    scale_df_unioned <- sf::st_difference(scale_df_unioned, osm_water)
     scale_df_unioned <- sf::st_make_valid(scale_df_unioned)
-    # Simplify the scale features
-    scale_df_unioned <- sf::st_simplify(scale_df_unioned, dTolerance = 100)
+    scale_df_unioned <- sf::st_transform(scale_df_unioned, crs = crs)
 
-    area_after_intersection <- sapply(regions_water_diff, \(reg) {
+    area_after_intersection <- sapply(regions, \(reg) {
       intersected <- sf::st_intersection(reg, scale_df_unioned)
       intersected <- sf::st_make_valid(intersected)
       area <- sum(sf::st_area(intersected) |> as.vector())

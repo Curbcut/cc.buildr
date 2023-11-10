@@ -21,9 +21,6 @@
 #' @export
 consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
 
-
-  ## DIFFERENCE BETWEEN EVERY SCALE AND DA, ONLY KEEP WHAT TOUCHES THE DAS
-  ## FOR EVERY SCALE!! (LAND)
   ## AT INTERPOLATION STEP, REMOVE FROM ALL SCALE THE DB WITH POPULATION = 0?
   ## MAYBE ADD A NEW GEOMETRY COLUMN??
 
@@ -87,7 +84,7 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
 
   # Add all *_ID ------------------------------------------------------------
 
-  uniform_IDs <- lapply(uniform_IDs, sf::st_transform, crs)
+  scales <- lapply(uniform_IDs, sf::st_transform, crs)
 
   for (seq in scales_sequences) {
     for (scale_name in seq) {
@@ -97,7 +94,7 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
       if (scale_name %in% c("street", "building")) next
 
       # Grab the `df` in which to add the *_ID
-      lower <- uniform_IDs[[scale_name]]
+      lower <- scales[[scale_name]]
 
       # Get which scales the _ID should be added to
       higher <- seq[1:(which(scale_name == seq) - 1)]
@@ -105,7 +102,7 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
       # Loop over all the higher scale to apply the *_ID
       for (hi in higher) {
         # If the *_ID is already present, skip!
-        hi_df <- uniform_IDs[[hi]]
+        hi_df <- scales[[hi]]
         id_name <- sprintf("%s_ID", hi)
         if (id_name %in% names(lower)) next
 
@@ -121,7 +118,7 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
         missing <- merged_centroids[is.na(merged_centroids[[id_name]]), ]
         if (nrow(missing) > 0) {
           id_fit <- sapply(seq_along(missing$geometry),
-                           \(r) get_largest_intersection(missing[r, ], hi_df),
+                           \(r) cc.buildr:::get_largest_intersection(missing[r, ], hi_df),
                            simplify = TRUE, USE.NAMES = FALSE)
 
           # Add to the missing *_ID the ID of the largest intersection
@@ -131,6 +128,7 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
 
         # Duplicates?
         merged <- sf::st_drop_geometry(merged_centroids)
+        merged <- merged[!grepl("geometry", names(merged))]
         merged_split <- split(merged, merged$ID)
         merged_split <- lapply(merged_split, \(x) {
           x[[id_name]] <- list(x[[id_name]])
@@ -144,14 +142,15 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
         out <- data.table::rbindlist(merged_split) |> tibble::as_tibble()
 
         # Revert to full geometry
+        lower_cols <- c("ID", "geometry", "geometry_digital")
         out <- merge(out,
-                     lower[, c("ID", "geometry")],
+                     lower[, names(lower) %in% lower_cols],
                      by = "ID")
         out <- tibble::as_tibble(out)
         out <- sf::st_as_sf(out)
 
         # Apply to the scale
-        uniform_IDs[[scale_name]] <- out
+        scales[[scale_name]] <- out
 
       }
 
@@ -161,7 +160,7 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
 
   # Add an area column for every scale --------------------------------------
 
-  uniform_IDs <- lapply(uniform_IDs, \(x) {
+  scales <- lapply(scales, \(x) {
     x$area <- get_area(x)
     x
   })
@@ -172,16 +171,15 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
   out_for_dict <- future.apply::future_lapply(regions, \(region) {
     # Take out too small scales, like street and building which would make this function
     # last for hours.
-    take_out_small <- all_scales[!names(all_scales) %in% c("street", "building")]
+    take_out_small <- scales[!names(scales) %in% c("street", "building")]
 
     # Spatialy filter scales that have 10% of their content inside of x region.
     ids <- lapply(take_out_small, \(scale_df) {
 
       region <- sf::st_transform(region, crs)
-      df <- sf::st_transform(scale_df, crs)
 
       spatial_filtering(
-        df = df,
+        df = scale_df,
         crs = crs,
         master_polygon = region,
         ID_col = "ID",
@@ -199,7 +197,7 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
 
   ## Get the CRS back to WGS 84 ---------------------------------------------
 
-  out <- lapply(uniform_IDs, sf::st_transform, 4326)
+  out <- lapply(scales, sf::st_transform, 4326)
 
 
   ## Post-processing (make sure all geometry types are right) ---------------
