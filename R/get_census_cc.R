@@ -18,8 +18,8 @@
 #' \code{32618} for Montreal.
 #' @param format <`logical`> Indicating if the census call should be filter
 #' by the <`master_polygon`> or not.
-#' @param switch_full_geos <`logical`> Should the census geometries get switched
-#' to the full one (the one which spans over water)?
+#' @param cartographic <`logical`> Should the census geometries get switched
+#' to the cartographic one (the one which spans over water)?
 #' @param area_threshold <`numeric`> How much of a feature should be present
 #' in the master polygon to include it in the dataset? Defaults to 0.05. In
 #' some cases, if a DA is small on the land but covers lots of water, this
@@ -35,7 +35,7 @@ get_census_cc <- function(master_polygon, census_dataset, regions,
                             "population" = "Population",
                             "households" = "Households"
                           ),
-                          crs, format = TRUE, switch_full_geos = FALSE,
+                          crs, format = TRUE, cartographic = FALSE,
                           area_threshold = 0.05) {
   census_data <- cancensus::get_census(
     dataset = census_dataset, regions = regions,
@@ -45,7 +45,7 @@ get_census_cc <- function(master_polygon, census_dataset, regions,
 
   names(census_data)[names(census_data) == "GeoUID"] <- "ID"
   # Switch for the full census geometries (with water)
-  if (switch_full_geos) {
+  if (!cartographic) {
     census_data <- cc.data::census_switch_full_geo(
       df = census_data,
       scale_name = level

@@ -106,9 +106,9 @@ reorder_columns <- function(scale_df) {
     mandatory_start, all_ids,
     other
   )]
-  rest <- rest[!rest %in% c("popw_centroids_coords", "centroid", "geometry")]
+  rest <- rest[!rest %in% c("popw_centroids_coords", "centroid", "geometry", "geometry_digital")]
   last <- names(scale_df)[
-    names(scale_df) %in% c("popw_centroids_coords", "centroid", "geometry")
+    names(scale_df) %in% c("popw_centroids_coords", "centroid", "geometry", "geometry_digital")
   ]
 
   out <- scale_df[, c(mandatory_start, all_ids, other, rest, last)]
@@ -167,8 +167,28 @@ rough_rank <- function(x, n) {
 #' @return Merged tibbles as a tibble and keep sf class if was present
 #' @export
 merge <- function(x, y, ...) {
+  gd_in_x <- "geometry_digital" %in% names(x)
+  gd_in_y <- "geometry_digital" %in% names(y)
+
+  if (gd_in_x) {
+    x_geometry_digital <- x$geometry_digital
+    x <- x[names(x) != "geometry_digital"]
+  }
+  if (gd_in_y) {
+    y_geometry_digital <- y$geometry_digital
+    y <- y[names(y) != "geometry_digital"]
+  }
+
   merged <- tibble::as_tibble(base::merge(x, y, ...))
   if ("sf" %in% class(x) || "sf" %in% class(y)) merged <- sf::st_as_sf(merged)
+
+  if (gd_in_x) {
+    merged$geometry_digital <- x_geometry_digital
+  }
+  if (gd_in_y) {
+    merged$geometry_digital <- y_geometry_digital
+  }
+
   merged
 }
 

@@ -10,10 +10,10 @@ build_census_scales(
   regions,
   levels = c("CSD", "CT", "DA"),
   crs,
-  fill_CTs_with_CSDs = TRUE,
+  fill_CTs_with_CSDs = FALSE,
   override_name_2 = list(CSD = "City"),
-  switch_full_geos = FALSE,
-  area_threshold = 0.05
+  area_threshold = 0.05,
+  DA_carto = NULL
 )
 }
 \arguments{
@@ -43,13 +43,14 @@ for CSDs would then be e.g. \verb{City of Laval}. For scales below CSD, the name
 of the CSD in which the zone is gets the CSD name as their name_2. The
 default display for a CT would then be e.g. \verb{Census tract 4620633.00 (Laval)}.}
 
-\item{switch_full_geos}{<\code{logical}> Should the census geometries get switched
-to the full one (the one which spans over water)?}
-
 \item{area_threshold}{<\code{numeric}> How much of a feature should be present
 in the master polygon to include it in the dataset? Defaults to 0.05. In
 some cases, if a DA is small on the land but covers lots of water, this
 threshold must be taken down.}
+
+\item{DA_carto}{<\verb{sf data.frame}> The cartographic version of DAs, one of the
+output of \code{\link{create_master_polygon}}. Defaults to NULL, if we do not
+want to cut}
 }
 \value{
 A list of sf dataframes of census scales filtered by the master polygon,

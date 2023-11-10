@@ -174,7 +174,7 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
     # last for hours.
     take_out_small <- all_scales[!names(all_scales) %in% c("street", "building")]
 
-    # Spatialy filter scales that have 1% of their content inside of x region.
+    # Spatialy filter scales that have 10% of their content inside of x region.
     ids <- lapply(take_out_small, \(scale_df) {
 
       region <- sf::st_transform(region, crs)
@@ -185,7 +185,7 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
         crs = crs,
         master_polygon = region,
         ID_col = "ID",
-        area_threshold = 0.01
+        area_threshold = 0.1
       )$ID
     })
 

@@ -20,10 +20,11 @@ is derived from the centroid of all the regions through a simple mathematical
 approach.}
 }
 \value{
-The output is a named list of length 4: The master polygon,
-all the individual regions present in \code{all_regions}, the crs, and the
+The output is a named list of length 5: The master polygon,
+all the individual regions present in \code{all_regions}, the crs, the
 \code{regions} argument to \code{\link[cancensus]{get_census}} of the province
-in which the centroid of the master polygon falls.
+in which the centroid of the master polygon falls, and the carographic
+DA version.
 }
 \description{
 Create master polygon

@@ -11,10 +11,12 @@
 #' is derived from the centroid of all the regions through a simple mathematical
 #' approach.
 #'
-#' @return The output is a named list of length 4: The master polygon,
-#' all the individual regions present in \code{all_regions}, the crs, and the
+#' @return The output is a named list of length 5: The master polygon,
+#' all the individual regions present in \code{all_regions}, the crs, the
 #' `regions` argument to \code{\link[cancensus]{get_census}} of the province
-#' in which the centroid of the master polygon falls.
+#' in which the centroid of the master polygon falls, and the carographic
+#' DA version.
+#'
 #' @export
 create_master_polygon <- function(all_regions, crs = NULL) {
   # Download or retrieve the geo sf -----------------------------------------
@@ -78,12 +80,29 @@ create_master_polygon <- function(all_regions, crs = NULL) {
   prov_code <- sf::st_intersection(provinces, master_polygon_centroid)$GeoUID
 
 
+  # Get cartogrtaphic DA ----------------------------------------------------
+
+  DA_carto <- get_census_cc(
+    master_polygon = master_polygon,
+    census_dataset = cc.buildr::current_census,
+    regions = list(PR = prov_code),
+    level = "DA",
+    crs = crs,
+    cartographic = TRUE,
+    area_threshold = 0.05
+  )
+
+  DA_carto <- sf::st_transform(DA_carto, crs)
+  DA_carto <- sf::st_union(DA_carto)
+
+
   # Return ------------------------------------------------------------------
 
   return(list(
     master_polygon = master_polygon,
     regions = regions,
     crs = crs,
-    province_cancensus_code = list(PR = prov_code)
+    province_cancensus_code = list(PR = prov_code),
+    DA_carto = DA_carto
   ))
 }

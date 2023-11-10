@@ -4,7 +4,7 @@
 \alias{additional_scale}
 \title{Add a scale}
 \usage{
-additional_scale(additional_table, DA_table, ID_prefix, name_2, crs)
+additional_scale(additional_table, DA_table, ID_prefix, name_2, crs, DA_carto)
 }
 \arguments{
 \item{additional_table}{<\verb{sf data.frame}> An sf data.frame of two or three columns:
@@ -26,6 +26,9 @@ be e.g. \verb{\{name_2\} of \{name\}}, or \verb{Ward of Davenport}.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}
+
+\item{DA_carto}{<\verb{sf data.frame}> The cartographic version of DAs, one of the
+output of \code{\link{create_master_polygon}}.}
 }
 \value{
 An sf data.frame with population and households interpolated from

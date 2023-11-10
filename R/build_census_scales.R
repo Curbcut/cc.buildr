@@ -19,12 +19,13 @@
 #' for CSDs would then be e.g. `City of Laval`. For scales below CSD, the name
 #' of the CSD in which the zone is gets the CSD name as their name_2. The
 #' default display for a CT would then be e.g. `Census tract 4620633.00 (Laval)`.
-#' @param switch_full_geos <`logical`> Should the census geometries get switched
-#' to the full one (the one which spans over water)?
 #' @param area_threshold <`numeric`> How much of a feature should be present
 #' in the master polygon to include it in the dataset? Defaults to 0.05. In
 #' some cases, if a DA is small on the land but covers lots of water, this
 #' threshold must be taken down.
+#' @param DA_carto <`sf data.frame`> The cartographic version of DAs, one of the
+#' output of \code{\link{create_master_polygon}}. Defaults to NULL, if we do not
+#' want to cut
 #'
 #' @return A list of sf dataframes of census scales filtered by the master polygon,
 #' with the option of one CSD subdivided.
@@ -33,10 +34,10 @@ build_census_scales <- function(master_polygon,
                                 census_dataset = cc.buildr::current_census,
                                 regions,
                                 levels = c("CSD", "CT", "DA"), crs,
-                                fill_CTs_with_CSDs = TRUE,
+                                fill_CTs_with_CSDs = FALSE,
                                 override_name_2 = list(CSD = "City"),
-                                switch_full_geos = FALSE,
-                                area_threshold = 0.05) {
+                                area_threshold = 0.05,
+                                DA_carto = NULL) {
   # Get census data with the help of cc.buildr::get_census_cc()
   census_datasets <-
     sapply(levels, \(x) {
@@ -46,7 +47,7 @@ build_census_scales <- function(master_polygon,
         regions = regions,
         level = x,
         crs = crs,
-        switch_full_geos = switch_full_geos,
+        cartographic = FALSE,
         area_threshold = area_threshold
       )
     }, simplify = FALSE, USE.NAMES = TRUE)
@@ -120,7 +121,14 @@ build_census_scales <- function(master_polygon,
       df[, c("ID", "name", "name_2", names(df)[
         !names(df) %in% c("ID", "name", "name_2")
       ])]
-    }, census_datasets, names(census_datasets))
+    }, census_datasets, names(census_datasets), SIMPLIFY = FALSE)
+
+  # Cut using cartographic DA
+  if (!is.null(DA_carto)) {
+    sf::st_transform(DA_carto, crs = crs)
+    census_datasets <- lapply(census_datasets, digital_to_cartographic,
+                              DA_carto = DA_carto, crs = crs)
+  }
 
   # Add area
   census_datasets <- lapply(census_datasets, \(df) {

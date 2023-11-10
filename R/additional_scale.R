@@ -19,13 +19,15 @@
 #' be e.g. `{name_2} of {name}`, or `Ward of Davenport`.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
+#' @param DA_carto <`sf data.frame`> The cartographic version of DAs, one of the
+#' output of \code{\link{create_master_polygon}}.
 #'
 #' @return An sf data.frame with population and households interpolated from
 #' the \code{DA_table}, containing all columns necessary to import on the
 #' platform.
 #' @export
 additional_scale <- function(additional_table, DA_table, ID_prefix, name_2,
-                             crs) {
+                             crs, DA_carto) {
   if (!all(names(additional_table) == c("name", "geometry"))) {
     if (!all(names(additional_table) == c("ID", "name", "geometry"))) {
       stop(paste0(
@@ -34,6 +36,10 @@ additional_scale <- function(additional_table, DA_table, ID_prefix, name_2,
       ))
     }
   }
+
+  additional_table <- sf::st_transform(additional_table, crs = crs)
+  additional_table <- digital_to_cartographic(additional_table, DA_carto,
+                                              crs = crs)
 
   # Interpolate DA_table to get population and households
   das <- DA_table[, c("ID", "households", "population")]
@@ -64,6 +70,6 @@ additional_scale <- function(additional_table, DA_table, ID_prefix, name_2,
   additional_table <- sf::st_transform(additional_table, 4326)
   additional_table[, c(
     "ID", "name", "name_2", "population", "households", "area",
-    "geometry"
+    "geometry", "geometry_digital"
   )]
 }
