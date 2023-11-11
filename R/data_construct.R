@@ -34,6 +34,26 @@ data_construct <- function(svm_data, scales_data, unique_var, time_regex,
                            schema = list(time = gsub("^_", "", time_regex)),
                            breaks_var = NULL) {
 
+  # If time_regex does not end with an dollar sign, flag it.
+  if (!grepl("\\$$", time_regex)) {
+    warning(paste0(
+      "Location of `time` in the variables needs to be at the end of the vari",
+      "able string, e.g. `alp_2001`. `time_regex` needs to end with a dollar ",
+      "sign, indicating the location of time at the end of the string. It has",
+      " been automatically added to the `time_regex` input."
+    ))
+    time_regex <- sprintf("%s$", time_regex)
+  }
+  # If time_regex does not start with an underscore, flag it
+  if (!grepl("^_", time_regex)) {
+    warning(paste0(
+      "Location of `time` in the variables needs to be separated by an underscore",
+      ", e.g. `alp_2001`. It has been automatically added to the `time_regex` input."
+    ))
+    time_regex <- sprintf("_%s", time_regex)
+  }
+
+
   trimed <- mapply(\(scale_name, scale_df) {
     dat <- lapply(unique_var, \(v) {
 

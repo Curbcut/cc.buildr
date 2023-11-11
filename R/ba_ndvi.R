@@ -48,7 +48,7 @@ ba_ndvi <- function(scales_variables_modules,
 
   possible_ndvi_years <- years
   all_vars <- sprintf("ndvi_%s", possible_ndvi_years)
-  time_regex <- "_\\d{4}"
+  time_regex <- "_\\d{4}$"
 
   cc.data::ndvi_import_from_masterpolygon(master_polygon,
                                           years = possible_ndvi_years,
