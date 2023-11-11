@@ -215,7 +215,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
 
   # Get the base scale and clean up columns
   base <-
-    merge(all_scales[[base_scale]], data, by = paste0(base_scale, "_ID"))
+    merge(all_scales[[base_scale]], data, by = paste0(base_scale, "_ID"), all.x = TRUE)
   base <- sf::st_transform(base, crs)
   base$area <- get_area(base$geometry)
   base <- sf::st_set_agr(base, "constant")

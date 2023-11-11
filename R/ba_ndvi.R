@@ -147,7 +147,7 @@ ba_ndvi <- function(scales_variables_modules,
   # Apply to our scales
   interpolated <- mapply(\(scale_name, scale_df) {
     if (!scale_name %in% names(ndvi_data)) return(scale_df)
-    merge(scale_df, ndvi_data[[scale_name]], by = "ID")
+    merge(scale_df, ndvi_data[[scale_name]], by = "ID", all.x = TRUE)
   }, names(scales_variables_modules$scales), scales_variables_modules$scales)
 
   # Data tibble -------------------------------------------------------------
