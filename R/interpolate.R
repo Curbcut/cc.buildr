@@ -484,7 +484,7 @@ interpolate_from_area <- function(to, from,
 
   # Return
   merge(to[, names(to)[!names(to) %in% c(additive_vars, average_vars)]], out,
-    by = "ID", all = TRUE
+    by = "ID", all.x = TRUE
   )
 }
 

@@ -166,27 +166,37 @@ rough_rank <- function(x, n) {
 #'
 #' @return Merged tibbles as a tibble and keep sf class if was present
 #' @export
-merge <- function(x, y, ...) {
-  gd_in_x <- "geometry_digital" %in% names(x)
-  gd_in_y <- "geometry_digital" %in% names(y)
+merge <- function(x, y, by = intersect(names(x), names(y)), by.x = by,
+                  by.y = by, ...) {
 
-  if (gd_in_x) {
-    x_geometry_digital <- x$geometry_digital
-    x <- x[names(x) != "geometry_digital"]
+  # Store 'geometry_digital' from 'x' and 'y' along with keys for joining later
+  if ("geometry_digital" %in% names(x)) {
+    x_geometry_digital <- x[, c("geometry_digital", by.x)]
+    x_geometry_digital <- sf::st_drop_geometry(x_geometry_digital)
+    x <- x[setdiff(names(x), "geometry_digital")]
   }
-  if (gd_in_y) {
-    y_geometry_digital <- y$geometry_digital
-    y <- y[names(y) != "geometry_digital"]
+  if ("geometry_digital" %in% names(y)) {
+    y_geometry_digital <- y[, c("geometry_digital", by.y)]
+    y_geometry_digital <- sf::st_drop_geometry(y_geometry_digital)
+    y <- y[setdiff(names(y), "geometry_digital")]
   }
 
-  merged <- tibble::as_tibble(base::merge(x, y, ...))
-  if ("sf" %in% class(x) || "sf" %in% class(y)) merged <- sf::st_as_sf(merged)
+  # Merge 'x' and 'y' using base merge function
+  merged <- base::merge(x, y, by.x = by.x, by.y = by.y, ...)
 
-  if (gd_in_x) {
-    merged$geometry_digital <- x_geometry_digital
+  if (exists("x_geometry_digital")) {
+    merged <- dplyr::left_join(merged, x_geometry_digital, by = by.x)
   }
-  if (gd_in_y) {
-    merged$geometry_digital <- y_geometry_digital
+  if (exists("y_geometry_digital") && !exists("x_geometry_digital")) { # Avoid overwriting 'x' geometry
+    merged <- dplyr::left_join(merged, y_geometry_digital, by = by.y)
+  }
+
+  # As tibble
+  merged <- tibble::as_tibble(merged)
+
+  # If 'sf' class should be preserved, convert back to 'sf' object
+  if ("sf" %in% class(x) || "sf" %in% class(y)) {
+    merged <- sf::st_as_sf(merged)
   }
 
   merged

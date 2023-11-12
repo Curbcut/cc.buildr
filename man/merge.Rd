@@ -4,7 +4,7 @@
 \alias{merge}
 \title{Merge two tibbles and keep the output a tibble}
 \usage{
-merge(x, y, ...)
+merge(x, y, by = intersect(names(x), names(y)), by.x = by, by.y = by, ...)
 }
 \arguments{
 \item{x}{<\code{data.frame}> data frame, or object to be coerced to one.}
