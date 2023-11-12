@@ -160,10 +160,15 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
 
   # Add an area column for every scale --------------------------------------
 
-  scales <- lapply(scales, \(x) {
-    x$area <- get_area(x)
-    x
-  })
+  scales <- mapply(
+    \(scale_name, scale_df) {
+      if (scale_name %in% c("street", "building")) {
+        return(scale_df)
+      }
+      scale_df$area <- get_area(scale_df)
+      scale_df
+    }, names(scales), scales,
+    SIMPLIFY = FALSE)
 
 
   # Return for every region the ID of ALL scales ----------------------------

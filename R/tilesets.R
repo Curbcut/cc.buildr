@@ -391,12 +391,32 @@ tileset_create_recipe <- function(layer_names, source, minzoom, maxzoom,
 #' created and published tileset. Should correspond to the Curbcut city, e.g. `mtl`.
 #' @param username <`character`> Mapbox account username.
 #' @param access_token <`character`> Private access token to the Mapbox account.
+#' @param no_reset <`character vector`> Which scale should not be re-uploaded?
+#' If boundaries change and new tilesets are necessary, potentially buildings would
+#' not be re-uploaded as it's costly and they don't change. Defaults to NULL for
+#' resetting all scales.
 #'
 #' @return Returns nothing if succeeds. Tilesets are created and published and
 #' ready to be used.
 #' @export
 tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom = NULL,
-                               prefix, username, access_token) {
+                               prefix, username, access_token, no_reset = NULL) {
+
+  # Remove from all scales the scales we shouldn't reset the tileset for
+  if (!is.null(no_reset)) {
+    all_scales <- all_scales[!names(all_scales) %in% no_reset]
+  }
+
+  # Switch the geometry for digital
+  all_scales <- lapply(all_scales, \(scale_df) {
+    # If there is no digital geometry, return raw
+    if (!"geometry_digital" %in% names(scale_df)) return(scale_df)
+
+    # Switch the geometry to the digital one
+    scale_df <- sf::st_drop_geometry(scale_df)
+    names(scale_df)[names(scale_df) == "geometry_digital"] <- "geometry"
+    sf::st_as_sf(scale_df)
+  })
 
   # Reset
   mapply(\(scale_name, scale_df) {
