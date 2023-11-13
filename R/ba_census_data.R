@@ -12,11 +12,9 @@
 #' variables explained.
 #' @param census_years <`character vector`> Years for which the census data
 #' should be added to the scales. Defaults to \code{\link[cc.data]{census_years}}
-#' @param skip_scale_interpolation <`character vector`> Scales for which census
-#' data should not be interpolated (e.g. very small scales like 25m grid cells.).
-#' In those cases, census data won't be interpolated and appended. Defaults to
-#' NULL to interpolate to everything. The interpolation function will detect
-#' scales smaller than DAs and automatically won't do interpolation for them.
+#' @param scales_to_interpolate <`character vector`> Scales for which census
+#' data should be interpolated (e.g. very small scales like 25m grid cells should be excluded.).
+#' Defaults to all the scales except building and street.
 #' @param scales_sequences <`list`> A list of scales sequences representing the
 #' hierarchical ordering of scales on an auto-zoom.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
@@ -32,7 +30,11 @@ ba_census_data <- function(scales_variables_modules,
                            region_DA_IDs,
                            census_vectors = cc.data::census_vectors,
                            census_years = cc.data::census_years,
-                           skip_scale_interpolation = NULL,
+                           scales_to_interpolate = {
+                             names(scales_variables_modules$scales)[
+                               !names(scales_variables_modules$scales) %in% c("building", "street")
+                             ]
+                           },
                            scales_sequences,
                            crs,
                            housing_module = TRUE) {
@@ -61,7 +63,7 @@ ba_census_data <- function(scales_variables_modules,
     census_vectors = census_vectors,
     census_years = census_years,
     crs = crs,
-    skip_scale_interpolation = skip_scale_interpolation
+    scales_to_interpolate = scales_to_interpolate
   )
 
 

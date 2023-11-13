@@ -148,7 +148,7 @@ scales_greater_than <- function(base_scale, all_scales, crs) {
 #' output value of a CSD would be the sum of the values of the DAs or CTs that
 #' are present inside the CSD.
 #' @param only_scales <`character vector`> All the scales for which data should
-#' be interpolated and appended. Defults to all the scales in `all_scales`.
+#' be interpolated and appended. Defults to using \code{\link{scales_greater_than}}.
 #'
 #' @return Returns a list of length 4. The first is the same list that is fed in
 #' `all_scales`, with the columns from `data` interpolated in. The second is
@@ -166,7 +166,12 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
                                           c("CSD", "CT", "DA", "DB"),
                                         average_vars = c(),
                                         additive_vars = c(),
-                                        only_scales = names(all_scales)) {
+                                        only_scales = scales_greater_than(
+                                          base_scale = all_scales[[base_scale]][
+                                            all_scales[[base_scale]]$ID %in% data[[
+                                              paste0(base_scale, "_ID")]], ],
+                                          all_scales = all_scales,
+                                          crs = crs)) {
   ## Catch errors
   if (!paste0(base_scale, "_ID") %in% names(data)) {
     stop(paste0(
@@ -176,16 +181,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
   }
 
   ## Only interpolate for bigger geometries than the base one
-  scales_inter <- all_scales[names(all_scales) %in% only_scales]
-  base_scale_df <- all_scales[[base_scale]]
-  # Only keep features for which we have data. This will allow interpolation for
-  # the island of Montreal, for example, where we only have data for it and not
-  # for the CMA. We will only calculate area for the DAs of the island, and it will
-  # be smaller than other scales (like grid250), allowing the latter to receive data.
-  base_scale_df <- base_scale_df[base_scale_df$ID %in% data[[paste0(base_scale, "_ID")]], ]
-  construct_for <- scales_greater_than(base_scale = base_scale_df,
-                                       all_scales = scales_inter,
-                                       crs = crs)
+  construct_for <- only_scales
 
   ## In the case weight_by is `area`
   if (weight_by == "area") {

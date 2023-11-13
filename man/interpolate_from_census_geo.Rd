@@ -13,7 +13,9 @@ interpolate_from_census_geo(
   existing_census_scales = c("CSD", "CT", "DA", "DB"),
   average_vars = c(),
   additive_vars = c(),
-  only_scales = names(all_scales)
+  only_scales = scales_greater_than(base_scale =
+    all_scales[[base_scale]][all_scales[[base_scale]]$ID \%in\% data[[paste0(base_scale,
+    "_ID")]], ], all_scales = all_scales, crs = crs)
 )
 }
 \arguments{
@@ -49,7 +51,7 @@ output value of a CSD would be the sum of the values of the DAs or CTs that
 are present inside the CSD.}
 
 \item{only_scales}{<\verb{character vector}> All the scales for which data should
-be interpolated and appended. Defults to all the scales in \code{all_scales}.}
+be interpolated and appended. Defults to using \code{\link{scales_greater_than}}.}
 }
 \value{
 Returns a list of length 4. The first is the same list that is fed in

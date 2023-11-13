@@ -9,7 +9,11 @@ ba_census_data(
   region_DA_IDs,
   census_vectors = cc.data::census_vectors,
   census_years = cc.data::census_years,
-  skip_scale_interpolation = NULL,
+  scales_to_interpolate = {
+    
+    names(scales_variables_modules$scales)[!names(scales_variables_modules$scales) \%in\%
+    c("building", "street")]
+ },
   scales_sequences,
   crs,
   housing_module = TRUE
@@ -32,11 +36,9 @@ variables explained.}
 \item{census_years}{<\verb{character vector}> Years for which the census data
 should be added to the scales. Defaults to \code{\link[cc.data]{census_years}}}
 
-\item{skip_scale_interpolation}{<\verb{character vector}> Scales for which census
-data should not be interpolated (e.g. very small scales like 25m grid cells.).
-In those cases, census data won't be interpolated and appended. Defaults to
-NULL to interpolate to everything. The interpolation function will detect
-scales smaller than DAs and automatically won't do interpolation for them.}
+\item{scales_to_interpolate}{<\verb{character vector}> Scales for which census
+data should be interpolated (e.g. very small scales like 25m grid cells should be excluded.).
+Defaults to all the scales except building and street.}
 
 \item{scales_sequences}{<\code{list}> A list of scales sequences representing the
 hierarchical ordering of scales on an auto-zoom.}

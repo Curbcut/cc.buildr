@@ -16,10 +16,9 @@
 #' \code{32617} for Toronto.
 #' @param census_scales <`character vector`> Vector of all the census scales for
 #' which we have data in the database.
-#' @param skip_scale_interpolation <`character vector`> Scales for which census
-#' data should not be interpolated (e.g. very small scales like 25m grid cells.).
-#' In those cases, census data won't be interpolated and appended. Defaults to
-#' NULL to interpolate to everything.
+#' @param scales_to_interpolate <`character vector`> Scales for which census
+#' data should be interpolated (e.g. very small scales like 25m grid cells should be excluded.).
+#' Defaults to using \code{\link{scales_greater_than}}.
 #'
 #' @return Returns a list of length 4. The first is the possible scales for which
 #' census data can be added in scales_consolidated. The second is a
@@ -33,14 +32,14 @@
 build_census_data <- function(scales_consolidated, region_DA_IDs,
                               census_vectors, census_years, crs,
                               census_scales = cc.data::census_scales,
-                              skip_scale_interpolation = NULL) {
+                              scales_to_interpolate = scales_greater_than(
+                                base_scale = scales_consolidated$DA,
+                                all_scales = scales_consolidated,
+                                crs = crs)) {
 
   # Filter out scales smaller than DAs --------------------------------------
 
-  higher_DA <- scales_greater_than(base_scale = scales_consolidated$DA,
-                                   all_scales = scales_consolidated,
-                                   crs = crs)
-  higher_DA <- scales_consolidated[names(scales_consolidated) %in% higher_DA]
+  higher_DA <- scales_consolidated[names(scales_consolidated) %in% scales_to_interpolate]
 
 
   # Interpolate for scales that are not census scales -----------------------
