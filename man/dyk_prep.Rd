@@ -4,14 +4,13 @@
 \alias{dyk_prep}
 \title{Prepare a Variable Table for DYK Generation}
 \usage{
-dyk_prep(svm, all_tables, n = NULL)
+dyk_prep(svm, scales_dictionary, n = NULL)
 }
 \arguments{
 \item{svm}{<\code{list}> A list, usually \code{scales_variables_modules}, containing
 the scales, modules, and variables tables.}
 
-\item{all_tables}{<\code{list}> A list, usually \code{all_tables}, containing the
-scales present in each region.}
+\item{scales_dictionary}{<\code{tibble}> scales_dictionary}
 
 \item{n}{<\code{integer}> Optionally, an integer scalar specifying the number of
 rows in \code{svm$modules} to be used for creating the DYK variable table. The

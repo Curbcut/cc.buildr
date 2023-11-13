@@ -52,6 +52,9 @@ get_census_cc <- function(master_polygon, census_dataset, regions,
     )
   }
 
+  # Adjust the `name` column for CTs
+  if (level == "CT") census_data$name <- census_data$ID
+
   # Few corrections
   census_data <- tibble::as_tibble(census_data)
   census_data <- sf::st_as_sf(census_data)

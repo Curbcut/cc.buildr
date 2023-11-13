@@ -109,7 +109,7 @@ ba_accessibility_points <- function(scales_variables_modules,
                          scales_data = data_interpolated$scales,
                          unique_var = unique_var,
                          time_regex = time_regex,
-                         schema = list(time = gsub("^_", "", time_regex),
+                         schema = list(time = time_regex,
                                        transportationtime = "(?<=_)\\d{1,2}(?=_)"),
                          breaks_var = breaks_var)
 
