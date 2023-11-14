@@ -29,7 +29,8 @@ append_empty_modules_table <- function(scales) {
       var_right = list(),
       add_advanced_controls = list(),
       default_var = character(),
-      avail_scale_combinations = list()
+      avail_scale_combinations = list(),
+      additional_schemas = list()
     )
 
   c(scales, list(modules = modules))
@@ -109,6 +110,13 @@ append_empty_modules_table <- function(scales) {
 #' for display on the module. e.g. `c(CSD_CT_DA_building, borough_CT_DA_building ...)`.
 #' These should all represent an available tileset as an autozoom, but also individual
 #' tilesets and scales.
+#' @param additional_schemas <`character vector`> Which widgets are part of the
+#' data schema? e.g. for `access`, every access data has, in its schema,
+#' `schema$transportationtime = "_\\d{1,2}_"`. As every variable has, as a widget,
+#' `"Transport time"`. The value of this widget does not result in a loading of
+#' a new `data`, but instead is necessary to subset which column of `data` is
+#' the one under study. `additional_schemas` would then be `"transportationtime"`.
+#' Defaults to NULL.
 #'
 #'
 #' @return The same `modules` data.frame fed, with the added row.
@@ -118,7 +126,7 @@ add_module <- function(modules, id, theme = "", nav_title, title_text_title,
                        regions = NULL, var_left = NULL, dates = NULL,
                        main_dropdown_title = NA_character_, var_right = NULL,
                        add_advanced_controls = NULL, default_var = NA,
-                       avail_scale_combinations = NULL) {
+                       avail_scale_combinations = NULL, additional_schemas = NULL) {
   if (is.data.frame(var_left)) {
     if (!all(names(var_left) == c("var_code", "group_name", "group_diff"))) {
       stop(paste0(
@@ -145,6 +153,7 @@ add_module <- function(modules, id, theme = "", nav_title, title_text_title,
     var_right = list(var_right),
     add_advanced_controls = list(add_advanced_controls),
     default_var = default_var,
-    avail_scale_combinations = list(avail_scale_combinations)
+    avail_scale_combinations = list(avail_scale_combinations),
+    additional_schemas = list(additional_schemas)
   )
 }

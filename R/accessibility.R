@@ -110,7 +110,7 @@ ba_accessibility_points <- function(scales_variables_modules,
                          unique_var = unique_var,
                          time_regex = time_regex,
                          schema = list(time = time_regex,
-                                       transportationtime = "(?<=_)\\d{1,2}(?=_)"),
+                                       transportationtime = "_\\d{1,2}_"),
                          breaks_var = breaks_var)
 
 
@@ -373,7 +373,8 @@ ba_accessibility_points <- function(scales_variables_modules,
           !is.na(scales_variables_modules$variables$parent_vec)
       ],
       default_var = default_var,
-      avail_scale_combinations = avail_scale_combinations
+      avail_scale_combinations = avail_scale_combinations,
+      additional_schemas = "transportationtime"
     )
 
 

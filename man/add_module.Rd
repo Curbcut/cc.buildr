@@ -21,7 +21,8 @@ add_module(
   var_right = NULL,
   add_advanced_controls = NULL,
   default_var = NA,
-  avail_scale_combinations = NULL
+  avail_scale_combinations = NULL,
+  additional_schemas = NULL
 )
 }
 \arguments{
@@ -115,6 +116,14 @@ other page, the default_var must be one of the available variable in the
 for display on the module. e.g. \verb{c(CSD_CT_DA_building, borough_CT_DA_building ...)}.
 These should all represent an available tileset as an autozoom, but also individual
 tilesets and scales.}
+
+\item{additional_schemas}{<\verb{character vector}> Which widgets are part of the
+data schema? e.g. for \code{access}, every access data has, in its schema,
+\code{schema$transportationtime = "_\\\\d{1,2}_"}. As every variable has, as a widget,
+\code{"Transport time"}. The value of this widget does not result in a loading of
+a new \code{data}, but instead is necessary to subset which column of \code{data} is
+the one under study. \code{additional_schemas} would then be \code{"transportationtime"}.
+Defaults to NULL.}
 }
 \value{
 The same \code{modules} data.frame fed, with the added row.
