@@ -115,8 +115,8 @@ append_empty_modules_table <- function(scales) {
 #' `schema$transportationtime = "_\\d{1,2}_"`. As every variable has, as a widget,
 #' `"Transport time"`. The value of this widget does not result in a loading of
 #' a new `data`, but instead is necessary to subset which column of `data` is
-#' the one under study. `additional_schemas` would then be `"transportationtime"`.
-#' Defaults to NULL.
+#' the one under study. `additional_schemas` needs to, by itself, be a valid
+#' schema, ex. `list(transportationtime = 20)`. Defaults to NULL.
 #'
 #'
 #' @return The same `modules` data.frame fed, with the added row.

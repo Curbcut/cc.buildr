@@ -110,7 +110,7 @@ ba_accessibility_points <- function(scales_variables_modules,
                          unique_var = unique_var,
                          time_regex = time_regex,
                          schema = list(time = time_regex,
-                                       transportationtime = "_\\d{1,2}_"),
+                                       transportationtime = "_\\d{1,2}"),
                          breaks_var = breaks_var)
 
 
@@ -172,7 +172,7 @@ ba_accessibility_points <- function(scales_variables_modules,
         }
       })()
 
-      time <- "__schema$transportationtime__"
+      time <- "__transportationtime__"
 
       var_title <- stringr::str_to_sentence(paste0(dict$title, " accessible by ", mode))
       var_short <- stringr::str_to_sentence(dict$short)
@@ -196,7 +196,7 @@ ba_accessibility_points <- function(scales_variables_modules,
         " a resident can reach within a ", time, "-minute ", mode_text
       )
       exp_q5 <- paste0(
-        "a resident has access to, on average,  _X_ ", tolower(dict$title), " within a ",
+        "a resident has access to, on average, _X_ ", tolower(dict$title), " within a ",
         time, "-minute ", mode_text
       )
 
@@ -374,7 +374,7 @@ ba_accessibility_points <- function(scales_variables_modules,
       ],
       default_var = default_var,
       avail_scale_combinations = avail_scale_combinations,
-      additional_schemas = "transportationtime"
+      additional_schemas = list(transportationtime = 20)
     )
 
 

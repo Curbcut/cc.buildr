@@ -50,13 +50,17 @@ ba_ndvi <- function(scales_variables_modules,
   all_vars <- sprintf("ndvi_%s", possible_ndvi_years)
   time_regex <- "_\\d{4}$"
 
-  cc.data::ndvi_import_from_masterpolygon(master_polygon,
-                                          years = possible_ndvi_years,
-                                          output_path = data_output_path,
-                                          temp_folder = tmp_folder,
-                                          overwrite = FALSE,
-                                          filter_cloudy_tiles = TRUE
-  )
+  # Should data be reimported? Not if `data.qs` already exists!
+  if (!"data.qs" %in% list.files(data_output_path)) {
+    cc.data::ndvi_import_from_masterpolygon(master_polygon,
+                                            years = possible_ndvi_years,
+                                            output_path = data_output_path,
+                                            temp_folder = tmp_folder,
+                                            overwrite = FALSE,
+                                            filter_cloudy_tiles = TRUE
+    )
+  }
+
 
 
   # Add it to all the scales ------------------------------------------------
