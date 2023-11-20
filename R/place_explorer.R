@@ -382,7 +382,7 @@ placeex_main_card_final_output <- function(region, scale, scale_df, select_id, l
     if (is.null(z)) {
       return(list(
         row_title = dict$title,
-        percentile = cc_t("No data.", lang = lang),
+        percentile = curbcut::cc_t("No data.", lang = lang),
         bs_icon = dict$bs_icon
       ))
     }
@@ -391,7 +391,7 @@ placeex_main_card_final_output <- function(region, scale, scale_df, select_id, l
     if (x == "no2") {
       higher_than_threshold <-
         if (z$pretty_data_var > 53) {
-          cc_t("Its value is higher than the WHO's guideline value of 53. ",
+          curbcut::cc_t("Its value is higher than the WHO's guideline value of 53. ",
                lang = lang
           )
         } else {
@@ -465,7 +465,10 @@ placeex_main_card_prep_output_en <- function(data, dict, region, scale, select_i
 
   # Get data value
   data_s <- data[data$ID == select_id, ]
-  if (nrow(data_s) == 0) return(NULL)
+
+  if (length(data_s) == 0) return(NULL)
+  if (is.data.frame(data_s) && nrow(data_s) == 0) return(NULL)
+
   if ({
     length(data_s$var) == 0
   } | {
@@ -616,12 +619,12 @@ placeex_main_card_prep_output_fr <- function(data, dict, region, scale, select_i
   # Setup --------------------------------------------------------------------
 
   df_scale <- "La zone"
-  df_scales <- cc_t(scales_dictionary$plur[scales_dictionary$scale == scale],
+  df_scales <- curbcut::cc_t(scales_dictionary$plur[scales_dictionary$scale == scale],
                     lang = "fr"
   )
 
   # To what it compares
-  to_compare <- cc_t(regions_dictionary$to_compare[regions_dictionary$region == region],
+  to_compare <- curbcut::cc_t(regions_dictionary$to_compare[regions_dictionary$region == region],
                      lang = "fr"
   )
 
@@ -630,6 +633,10 @@ placeex_main_card_prep_output_fr <- function(data, dict, region, scale, select_i
 
   # Get data value
   data_s <- data[data$ID == select_id, ]
+
+  if (length(data_s) == 0) return(NULL)
+  if (is.data.frame(data_s) && nrow(data_s) == 0) return(NULL)
+
   if ({
     length(data_s$var) == 0
   } | {
@@ -894,10 +901,6 @@ placeex_main_card_rmd <- function(scales_variables_modules,
 
   all_files <- list.files(out_folder, full.names = TRUE)
 
-  sum(sapply(regions, \(reg) {
-    sum(sapply(scales_dictionary$regions, \(x) reg %in% x))
-  }))
-
   progressr::with_progress({
     pb <- progressr::progressor(steps = sum(sapply(regions, \(reg) {
       sum(sapply(scales_dictionary$regions, \(x) reg %in% x))
@@ -907,14 +910,12 @@ placeex_main_card_rmd <- function(scales_variables_modules,
         package = "cc.buildr"
       )
 
-      future.apply::future_lapply(seq_along(regions), \(region_n) {
-        region <- regions[region_n]
+      future.apply::future_lapply(regions, \(region) {
 
         scales <- scales_dictionary$scale[sapply(scales_dictionary$regions, \(x) region %in% x)]
 
-        lapply(seq_along(scales), \(scale_n) {
-          scale <- names(all_scales)[scale_n]
-          scale_df <- all_scales[[scale_n]]
+        lapply(scales, \(scale) {
+          scale_df <- all_scales[[scale]]
           scale_df <- suppressWarnings(sf::st_centroid(scale_df))
 
           # FILTER DF USING REGION!
