@@ -15,7 +15,9 @@ placeex_main_card_rmd(
   rev_geocode_from_localhost = TRUE,
   check_bslib_version = TRUE,
   overwrite = TRUE,
-  skip_scales = c("building", "street")
+  skip_scales = c("building", "street"),
+  scales_sequences,
+  data_path
 )
 }
 \arguments{

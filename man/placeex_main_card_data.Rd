@@ -9,7 +9,9 @@ placeex_main_card_data(
   DA_table,
   region_DA_IDs,
   crs,
-  regions_dictionary
+  regions_dictionary,
+  ignore_scales = c("building", "street"),
+  region_
 )
 }
 \arguments{

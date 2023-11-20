@@ -17,7 +17,8 @@
 #' and scales for data values.
 #' @export
 placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
-                                   regions_dictionary) {
+                                   regions_dictionary, ignore_scales = c("building", "street"),
+                                   region_) {
   # Init --------------------------------------------------------------------
 
   dict <- tibble::tibble(
@@ -39,20 +40,27 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
   DA_table <- DA_table["ID"]
   names(DA_table)[1] <- "DA_ID"
   current_census_year <- gsub("CA", "20", cc.buildr::current_census)
-  regions <- regions_dictionary$region[regions_dictionary$pickable]
-  scales <- scales[names(scales) %in% regions]
 
-  # Which df can we show PE for?
-  avail_scale <- sapply(names(scales), \(reg) {
-    scales_name <- names(scales[[reg]])
-    scales_name <- scales_name[!scales_name %in% c("street", "building")]
-    tibble::tibble(
-      region = rep(reg, length(scales_name)),
-      scale = scales_name,
-      df = sprintf("%s_%s", reg, scales_name)
-    )
-  }, simplify = FALSE, USE.NAMES = TRUE)
-  avail_scale <- Reduce(rbind, avail_scale)
+  # Which scales can we show PE for?
+  # ignore_scales <- c(ignore_scales, "grd250", "grd100", "grd50", "grd25")
+  scales <- scales[!names(scales) %in% ignore_scales]
+
+
+  # Filter regions ----------------------------------------------------------
+
+  regions <- regions_dictionary$region[regions_dictionary$pickable]
+
+  all_scales <- lapply(regions, \(reg) {
+    reg_db <- regions_dictionary$scales[regions_dictionary$region == reg][[1]]
+    out <- lapply(names(scales), \(scale_name) {
+      scale_df <- scales[[scale_name]]
+      scale_df[scale_df$ID %in% reg_db[[scale_name]], ]
+    })
+    names(out) <- names(scales)
+    out
+  })
+  names(all_scales) <- regions
+
 
   # Common functions --------------------------------------------------------
 
@@ -97,8 +105,8 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
   dict <- rbind(dict, no2_dict)
 
   NO2 <- cc.data::db_read_data("no2",
-    column_to_select = "DA_ID",
-    IDs = region_DA_IDs, crs = crs
+                               column_to_select = "DA_ID",
+                               IDs = region_DA_IDs, crs = crs
   )
   NO2 <- merge(NO2, DA_table, all = TRUE)
 
@@ -110,16 +118,21 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
     average_vars = "NO2",
     base_scale = "DA",
     weight_by = "area"
-  )
+  )$scales
 
   # Format correctly
   data$no2 <- map_over_scales(
-    all_scales = NO2_scales$scales,
-    fun = \(scale_df = scale_df, ...) {
-      if (!"NO2" %in% names(scale_df)) {
+    all_scales = all_scales,
+    fun = \(scale_df = scale_df, scale_name = scale_name, geo = geo, ...) {
+      no2 <- NO2_scales[[scale_name]]
+
+      if (!"NO2" %in% names(no2)) {
         return(NULL)
       }
-      out <- scale_df[c("ID", "NO2")]
+
+      out <- no2[c("ID", "NO2")]
+      out <- sf::st_drop_geometry(out)
+      out <- merge(scale_df, out, by = "ID", all.x = TRUE)[c("ID", "NO2")]
       out <- sf::st_drop_geometry(out)
       out <- mc_df_format(out)
       return(out)
@@ -158,7 +171,7 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
 
   # Format correctly
   data$ndvi <- map_over_scales(
-    all_scales = scales,
+    all_scales = all_scales,
     fun = \(scale_df = scale_df, ...) {
       if (!"ndvi_2022" %in% names(scale_df)) {
         return(NULL)
@@ -169,6 +182,7 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
       return(out)
     }
   )
+
   # Remove empty lists
   data$ndvi <- lapply(data$ndvi, \(x) {
     x[!sapply(x, is.null)]
@@ -204,7 +218,7 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
 
   # Format correctly
   data$sust <- map_over_scales(
-    all_scales = scales,
+    all_scales = all_scales,
     fun = \(scale_df = scale_df, ...) {
       if (all(!vars %in% names(scale_df))) {
         return(NULL)
@@ -251,7 +265,7 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
 
   # Format correctly
   data$singled <- map_over_scales(
-    all_scales = scales,
+    all_scales = all_scales,
     fun = \(scale_df = scale_df, ...) {
       if (all(!vars %in% names(scale_df))) {
         return(NULL)
@@ -297,7 +311,7 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
 
   # Format correctly
   data$activel <- map_over_scales(
-    all_scales = scales,
+    all_scales = all_scales,
     fun = \(scale_df = scale_df, ...) {
       if (all(!vars %in% names(scale_df))) {
         return(NULL)
@@ -320,10 +334,429 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
 
   return(list(
     main_card_dict = dict,
-    main_card_data = data,
-    avail_scale = avail_scale
+    main_card_data = data
   ))
 }
+
+#' Final function for the place explorer main card
+#'
+#' @param pe_main_card_data <`list`> Place explorer data for the maincard. Usually
+#' the output of \code{\link[cc.buildr]{placeex_main_card_data}} saved in the
+#' data folder.
+#' @param region <`character`> Region under study, e.g. `CMA`.
+#' @param scale <`character`> Scale under study, e.g. `DA`.
+#' @param select_id <`character`> Selected identifier for the selected combinasion
+#' of `region` and `df`.
+#' @param lang <`character`> Language that should be used to produce the main card
+#' output. There need to be a function `placeex_main_card_prep_output_x` available
+#' in that language. `en` or `fr`.
+#' @param regions_dictionary <`data.frame`> The regions dictionary built using
+#' \code{\link[cc.buildr]{regions_dictionary}}. Will be used to filter out scales
+#' for which data should not be calculated.
+#' @param scales_dictionary <`data.frame`> The scales dictionary built using
+#' \code{\link[cc.buildr]{build_census_scales}}
+#'
+#' @return Returns a list of all the main card variables and how the selected
+#' id compares in its dataset.
+#' @export
+placeex_main_card_final_output <- function(region, scale, scale_df, select_id, lang = "en",
+                                           pe_main_card_data, scales_dictionary,
+                                           regions_dictionary) {
+  ## Generate output grid ---------------------------------------------------
+
+  to_grid <- lapply(pe_main_card_data$main_card_dict$name, \(x) {
+    data <- pe_main_card_data$main_card_data[[x]][[region]][[scale]]
+    dict <- pe_main_card_data$main_card_dict[pe_main_card_data$main_card_dict$name == x, ]
+
+    fun <- sprintf("placeex_main_card_prep_output_%s", lang)
+    z <- do.call(fun, list(
+      data = data,
+      dict = dict,
+      region = region,
+      scale = scale,
+      select_id = select_id,
+      regions_dictionary = regions_dictionary,
+      scales_dictionary = scales_dictionary
+    ))
+
+    if (is.null(z)) {
+      return(list(
+        row_title = dict$title,
+        percentile = cc_t("No data.", lang = lang),
+        bs_icon = dict$bs_icon
+      ))
+    }
+
+    # Exception - additional text for no2 if over the threshold of 53 ppm
+    if (x == "no2") {
+      higher_than_threshold <-
+        if (z$pretty_data_var > 53) {
+          cc_t("Its value is higher than the WHO's guideline value of 53. ",
+               lang = lang
+          )
+        } else {
+          ""
+        }
+    }
+
+    # To use with glue_safe instead of glue
+    data_rank <- z$data_rank
+    pretty_data_var <- z$pretty_data_var
+    data_date <- z$data_date
+
+    # Assign translation_df to the global environment if it's not present,
+    # so cc_t works.
+    if (!exists("translation_df"))
+      assign("translation_df", curbcut::cc_translation_df, envir = .GlobalEnv)
+
+    list(
+      row_title = curbcut::cc_t(dict$title, lang = lang),
+      percentile = z$percentile,
+      text = glue::glue_safe(curbcut::cc_t(dict$text, lang = lang)),
+      hex_cat = z$hex_cat,
+      bs_icon = dict$bs_icon,
+      xaxis_title = curbcut::cc_t(dict$xaxis_title, lang = lang),
+      data = data,
+      link_module = dict$link_module,
+      link_dropdown = dict$link_dropdown,
+      link_var_code = dict$link_var_code
+    )
+  })
+
+  names(to_grid) <- pe_main_card_data$main_card_dict$name
+
+  to_grid[sapply(to_grid, is.null)] <- NULL
+
+  to_grid
+}
+
+#' Prepare data for a title card (english)
+#'
+#' This function prepares data for a title card for a specific region and indicator.
+#' It returns information about the data value, data date, data rank and color.
+#'
+#' @param data <`list`> Contains data about the indicator in its region
+#' and scale, e.g. `pe_main_card$main_card_data$no2$CMA$CSD`.
+#' @param dict <`data.frame`> Row from the dictionary for the data
+#' (title, text, etc.), e.g.
+#' `pe_main_card$main_card_dict[pe_main_card$main_card_dict$name == "no2", ]`.
+#' @param region <`character`> The geographic region.
+#' @param scale <`data.frame`> The scale, e.g. `DA`, `CT`, ...
+#' @param select_id <`character`> The ID of the selected area.
+#' @param scales_dictionary <`data.frame`> The scales dictionary built using
+#' \code{\link[cc.buildr]{build_census_scales}}
+#' @param regions_dictionary <`data.frame`> A dictionary containing information
+#' about the regions.
+#'
+#' @return A list of information about the data, including the data value,
+#' data date, data rank (in text), and color category (1-5).
+placeex_main_card_prep_output_en <- function(data, dict, region, scale, select_id,
+                                             regions_dictionary, scales_dictionary) {
+  # Setup --------------------------------------------------------------------
+
+  df_scale <- paste("The", scales_dictionary$sing[scales_dictionary$scale == scale])
+  df_scales <- scales_dictionary$plur[scales_dictionary$scale == scale]
+
+  # To what it compares
+  to_compare <- regions_dictionary$to_compare[regions_dictionary$region == region]
+
+  # Prepare list to store all data
+  info <- list()
+
+  # Get data value
+  data_s <- data[data$ID == select_id, ]
+  if (nrow(data_s) == 0) return(NULL)
+  if ({
+    length(data_s$var) == 0
+  } | {
+    is.na(data_s$var)
+  }) {
+    return(NULL)
+  }
+
+
+  # pretty_data_var ---------------------------------------------------------
+
+  info$pretty_data_var <- if (dict$percent) {
+    scales::percent(data_s$var)
+  } else {
+    round(data_s$var, digits = dict$val_digit)
+  }
+
+
+  # Data date ---------------------------------------------------------------
+
+  info$data_date <- dict$date
+
+
+  # Data rank ---------------------------------------------------------------
+
+  info$data_rank <-
+    # If the dataset is small
+    if (nrow(data) < 40) {
+      # How many non-na entries in the dataset
+      df_row <- sum(!is.na(data$var))
+      # If high is good, then last rank means 1st. Inverse!
+      data_rank <- if (dict$high_is_good) df_row - data_s$rank + 1 else data_s$rank
+
+      ordinal <- (\(x) {
+        # if ranks in the bottom third
+        if (data_rank > (2 / 3 * df_row)) {
+          rk <- ordinal_form(x = data_rank, lang = "en")
+          return({
+            glue::glue_safe("relatively low at {rk}")
+          })
+        }
+        # if ranks in the second third
+        if (data_rank > (1 / 3 * df_row)) {
+          return(ordinal_form(x = data_rank, lang = "en"))
+        }
+        # else
+        rk <- ordinal_form(x = data_rank, lang = "en")
+        return(glue::glue_safe("{rk} best"))
+      })()
+
+      glue::glue_safe("It ranks {ordinal} {to_compare}")
+
+
+      # If the dataset is large
+    } else {
+      (\(x) {
+        if (data_s$percentile > 0.75) {
+          return({
+            paste0(
+              glue::glue_safe("{df_scale} ranks in the top "),
+              if (abs(data_s$percentile - 1) < 0.01) {
+                "1%"
+              } else {
+                scales::percent(abs(data_s$percentile - 1))
+              }
+            )
+          })
+        }
+
+        if (data_s$percentile < 0.25) {
+          return({
+            paste0(
+              glue::glue_safe("{df_scale} ranks in the bottom "),
+              if (data_s$percentile < 1) "1%" else scales::percent(data_s$percentile)
+            )
+          })
+        }
+
+        pretty_perc <- scales::percent(data_s$percentile)
+
+        if (dict$high_is_good) {
+          glue::glue_safe(
+            "Its value is worse than {pretty_perc} ",
+            "of {df_scales} {to_compare}"
+          )
+        } else {
+          glue::glue_safe(
+            "Its value is higher than {pretty_perc} ",
+            "of {df_scales} {to_compare}"
+          )
+        }
+      })()
+    }
+
+
+  # Colour ------------------------------------------------------------------
+
+  colours_which <- c(0.1, 0.3, 0.5, 0.7, 0.9)
+  if (!dict$high_is_good) colours_which <- rev(colours_which)
+
+  info$hex_cat <- which.min(abs(colours_which - data_s$percentile))
+
+  # In case it's higher than the threshold of 53 for Air Quality
+  if (dict$name == "no2" && data_s$var >= 53) info$hex_cat <- 1
+
+
+  # Percentile --------------------------------------------------------------
+
+  info$percentile <-
+    if (data_s$percentile > 0.50) {
+      per <- scales::percent(abs(data_s$percentile - 1))
+      if (per == "0%") per <- "1%"
+      paste0(glue::glue_safe("Top {per}"))
+    } else {
+      per <- scales::percent(abs(data_s$percentile))
+      if (per == "0%") per <- "1%"
+      paste0(glue::glue_safe("Bottom {per}"))
+    }
+
+
+  # Return ------------------------------------------------------------------
+
+  return(info)
+}
+
+#' Prepare data for a title card (french)
+#'
+#' This function prepares data for a title card for a specific region and indicator.
+#' It returns information about the data value, data date, data rank and color.
+#'
+#' @param data <`list`> Contains data about the indicator in its region
+#' and scale, e.g. `pe_main_card$main_card_data$no2$CMA$CSD`.
+#' @param dict <`data.frame`> Row from the dictionary for the data
+#' (title, text, etc.), e.g.
+#' `pe_main_card$main_card_dict[pe_main_card$main_card_dict$name == "no2", ]`.
+#' @param region <`character`> The geographic region.
+#' @param scale <`data.frame`> The scale, e.g. `DA`, `CT`, ...
+#' @param select_id <`character`> The ID of the selected area.
+#' @param scales_dictionary <`data.frame`> The scales dictionary built using
+#' \code{\link[cc.buildr]{build_census_scales}}
+#' @param regions_dictionary <`data.frame`> A dictionary containing information
+#' about the regions.
+#'
+#' @return A list of information about the data, including the data value,
+#' data date, data rank (in text), and color category (1-5).
+placeex_main_card_prep_output_fr <- function(data, dict, region, scale, select_id,
+                                             regions_dictionary, scales_dictionary) {
+  # Setup --------------------------------------------------------------------
+
+  df_scale <- "La zone"
+  df_scales <- cc_t(scales_dictionary$plur[scales_dictionary$scale == scale],
+                    lang = "fr"
+  )
+
+  # To what it compares
+  to_compare <- cc_t(regions_dictionary$to_compare[regions_dictionary$region == region],
+                     lang = "fr"
+  )
+
+  # Prepare list to store all data
+  info <- list()
+
+  # Get data value
+  data_s <- data[data$ID == select_id, ]
+  if ({
+    length(data_s$var) == 0
+  } | {
+    is.na(data_s$var)
+  }) {
+    return(NULL)
+  }
+
+
+  # pretty_data_var ---------------------------------------------------------
+
+  info$pretty_data_var <- if (dict$percent) {
+    scales::percent(data_s$var)
+  } else {
+    round(data_s$var, digits = dict$val_digit)
+  }
+
+
+  # Data date ---------------------------------------------------------------
+
+  info$data_date <- dict$date
+
+
+  # Data rank ---------------------------------------------------------------
+
+  info$data_rank <-
+    # If the dataset is small
+    if (nrow(data) < 40) {
+      # How many non-na entries in the dataset
+      df_row <- sum(!is.na(data$var))
+      # If high is good, then last rank means 1st. Inverse!
+      data_rank <- if (dict$high_is_good) df_row - data_s$rank + 1 else data_s$rank
+
+      ordinal <- (\(x) {
+        # if ranks in the bottom third
+        if (data_rank > (2 / 3 * df_row)) {
+          rk <- ordinal_form(x = data_rank, lang = "fr")
+          return({
+            glue::glue_safe("relativement bas \u00e0  {rk}")
+          })
+        }
+        # if ranks in the second third
+        if (data_rank > (1 / 3 * df_row)) {
+          return(ordinal_form(x = data_rank, lang = "fr"))
+        }
+        # else
+        rk <- ordinal_form(x = data_rank, lang = "fr")
+        if (rk == "premier") {
+          return(glue::glue_safe("premier"))
+        }
+        return(glue::glue_safe("{rk} meilleure"))
+      })()
+
+      glue::glue_safe("Elle se classe {ordinal} {to_compare}")
+
+
+      # If the dataset is large
+    } else {
+      (\(x) {
+        if (data_s$percentile > 0.75) {
+          return({
+            paste0(
+              glue::glue_safe("{df_scale} se classe parmis les "),
+              if (abs(data_s$percentile - 1) < 0.01) {
+                "1%"
+              } else {
+                scales::percent(abs(data_s$percentile - 1))
+              }, " plus \u00e9lev\u00e9s"
+            )
+          })
+        }
+
+        if (data_s$percentile < 0.25) {
+          return({
+            paste0(
+              glue::glue_safe("{df_scale} se classe parmis les "),
+              if (data_s$percentile < 1) "1%" else scales::percent(data_s$percentile),
+              " plus faibles"
+            )
+          })
+        }
+
+        pretty_perc <- scales::percent(data_s$percentile)
+
+        if (dict$high_is_good) {
+          glue::glue_safe(
+            "Sa valeur est inf\u00e9rieure \u00e0 celle de {pretty_perc} des {df_scales} {to_compare}"
+          )
+        } else {
+          glue::glue_safe(
+            "Sa valeur est sup\u00e9rieure \u00e0 celle de {pretty_perc} des {df_scales} {to_compare}"
+          )
+        }
+      })()
+    }
+
+
+  # Colour ------------------------------------------------------------------
+
+  colours_which <- c(0.1, 0.3, 0.5, 0.7, 0.9)
+  if (!dict$high_is_good) colours_which <- rev(colours_which)
+
+  info$hex_cat <- which.min(abs(colours_which - data_s$percentile))
+
+  # In case it's higher than the threshold of 53 for Air Quality
+  if (dict$name == "no2" && data_s$var >= 53) info$hex_cat <- 1
+
+
+  # Percentile --------------------------------------------------------------
+
+  info$percentile <-
+    if (data_s$percentile > 0.50) {
+      per <- scales::percent(abs(data_s$percentile - 1))
+      if (per == "0%") per <- "1%"
+      paste0(glue::glue_safe("{per} plus haut"))
+    } else {
+      per <- scales::percent(abs(data_s$percentile))
+      if (per == "0%") per <- "1%"
+      paste0(glue::glue_safe("{per} plus bas"))
+    }
+
+
+  # Return ------------------------------------------------------------------
+
+  return(info)
+}
+
 
 #' Pre-process all the possible Rmds
 #'
@@ -371,7 +804,9 @@ placeex_main_card_rmd <- function(scales_variables_modules,
                                   rev_geocode_from_localhost = TRUE,
                                   check_bslib_version = TRUE,
                                   overwrite = TRUE,
-                                  skip_scales = c("building", "street")) {
+                                  skip_scales = c("building", "street"),
+                                  scales_sequences,
+                                  data_path) {
   if (!requireNamespace("rmarkdown", quietly = TRUE)) {
     stop(
       "Package \"rmarkdown\" must be installed to use this function.",
@@ -400,34 +835,30 @@ placeex_main_card_rmd <- function(scales_variables_modules,
   if (!out_folder %in% list.files("www", full.names = TRUE)) dir.create(out_folder)
   if (!grepl("/$", out_folder)) out_folder <- paste0(out_folder, "/")
 
-  all_tables <- reconstruct_all_tables(scales_variables_modules$scales)
   regions <- regions_dictionary$region[regions_dictionary$pickable]
-  all_tables <- all_tables[names(all_tables) %in% regions]
-  all_tables <- lapply(all_tables, \(scales) scales[!scales %in% skip_scales])
-
-  possible_scales <- mapply(\(region, scale) {
-    scales <- scales_variables_modules$scales
-    scales[[region]][names(scales[[region]]) %in% scale]
-  }, names(all_tables), all_tables, SIMPLIFY = FALSE)
+  all_scales <- scales_variables_modules$scales[
+    !names(scales_variables_modules$scales) %in% skip_scales]
 
   # Only pre-process the first scale now.
-  possible_scales <-
-    sapply(possible_scales, \(x) x[1], USE.NAMES = FALSE, simplify = FALSE)
+  possible_scales <- unique(sapply(scales_sequences, `[[`, 1))
+  all_scales <- all_scales[names(all_scales) %in% possible_scales]
+  all_scales <- all_scales[!names(all_scales) %in% skip_scales]
 
   # Get the head file -------------------------------------------------------
 
-  inp <- system.file(paste0("place_explorer/pe_en_outside_app.Rmd"),
-    package = "curbcut"
+  inp <- system.file(paste0("place_explorer/pe_en.Rmd"),
+    package = "cc.buildr"
   )
 
   header_file <- paste0(getwd(), "/", out_folder, "header.html")
 
   title_card_data <-
-    curbcut::placeex_main_card_final_output(
+    placeex_main_card_final_output(
       pe_main_card_data = pe_main_card_data,
-      region = names(possible_scales)[1],
-      df = names(possible_scales[[1]])[1],
-      select_id = possible_scales[[1]][[1]]$ID[1],
+      region = regions[[1]],
+      scale = names(all_scales)[[1]],
+      scale_df = all_scales[[1]],
+      select_id = all_scales[[1]]$ID[1],
       lang = "en",
       scales_dictionary = scales_dictionary,
       regions_dictionary = regions_dictionary
@@ -436,17 +867,18 @@ placeex_main_card_rmd <- function(scales_variables_modules,
   rmarkdown::render(inp,
     output_file = header_file,
     params = list(
-      select_id = possible_scales[[1]][[1]]$ID[1],
-      region = names(possible_scales)[1],
-      df = names(possible_scales[[1]])[1],
+      select_id = all_scales[[1]]$ID[1],
+      region = regions[[1]],
+      scale = names(all_scales)[[1]],
       scale_sing = "",
       tileset_prefix = tileset_prefix,
-      map_loc = possible_scales[[1]][[1]]$centroid[[1]],
+      map_loc = all_scales[[1]]$centroid[[1]],
       map_zoom = 10,
       mapbox_username = mapbox_username,
       title_card_data = title_card_data,
       variables = variables,
-      scale_df = sf::st_drop_geometry(possible_scales[[1]][[1]])
+      scale_df = sf::st_drop_geometry(all_scales[[1]]),
+      data_path = data_path
     ), envir = new.env(), quiet = TRUE
   )
 
@@ -462,36 +894,44 @@ placeex_main_card_rmd <- function(scales_variables_modules,
 
   all_files <- list.files(out_folder, full.names = TRUE)
 
+  sum(sapply(regions, \(reg) {
+    sum(sapply(scales_dictionary$regions, \(x) reg %in% x))
+  }))
+
   progressr::with_progress({
-    pb <- progressr::progressor(steps = sum(
-      unlist(sapply(
-        possible_scales,
-        sapply, nrow
-      ))
-    ) * length(lang))
+    pb <- progressr::progressor(steps = sum(sapply(regions, \(reg) {
+      sum(sapply(scales_dictionary$regions, \(x) reg %in% x))
+    })) * length(lang))
     lapply(lang, \(lan) {
-      inp <- system.file(paste0("place_explorer/pe_", lan, "_outside_app.Rmd"),
-        package = "curbcut"
+      inp <- system.file(paste0("place_explorer/pe_", lan, ".Rmd"),
+        package = "cc.buildr"
       )
 
-      lapply(seq_along(possible_scales), \(region_n) {
-        region <- names(possible_scales)[region_n]
-        scales <- possible_scales[[region_n]]
+      future.apply::future_lapply(seq_along(regions), \(region_n) {
+        region <- regions[region_n]
+
+        scales <- scales_dictionary$scale[sapply(scales_dictionary$regions, \(x) region %in% x)]
 
         lapply(seq_along(scales), \(scale_n) {
-          scale_name <- names(scales)[scale_n]
-          scale_df <- scales[[scale_n]]
+          scale <- names(all_scales)[scale_n]
+          scale_df <- all_scales[[scale_n]]
           scale_df <- suppressWarnings(sf::st_centroid(scale_df))
+
+          # FILTER DF USING REGION!
+          r_scales <- regions_dictionary$scales[regions_dictionary$region == region][[1]]
+          scale_df <- scale_df[scale_df$ID %in% r_scales[[scale]], ]
+
           scale_sing <-
-            scales_dictionary$slider_title[scales_dictionary$scale == scale_name]
+            scales_dictionary$slider_title[scales_dictionary$scale == scale]
           # If there is only one row in the scale
           if (nrow(scale_df) <= 1) {
             return(NULL)
           }
 
           lapply(scale_df$ID, \(ID) {
+
             # If exists, pass
-            geo_sc_id <- paste(region, scale_name, ID, lan, sep = "_")
+            geo_sc_id <- paste(region, scale, ID, lan, sep = "_")
             output_file <- paste0(out_folder, geo_sc_id, ".html")
             if (!overwrite & output_file %in% all_files) {
               pb()
@@ -499,13 +939,14 @@ placeex_main_card_rmd <- function(scales_variables_modules,
             }
             output_file <- paste0(getwd(), "/", out_folder, geo_sc_id, ".html")
             df <- scale_df[scale_df$ID == ID, ]
+            if (nrow(df) == 0) return(NULL)
 
             # Setup all necessary input
             map_loc <- df$centroid[[1]]
             title_card_data <-
-              curbcut::placeex_main_card_final_output(
+              placeex_main_card_final_output(
                 region = region,
-                df = scale_name,
+                scale = scale,
                 select_id = ID,
                 lang = lan,
                 pe_main_card_data = pe_main_card_data,
@@ -513,14 +954,14 @@ placeex_main_card_rmd <- function(scales_variables_modules,
                 regions_dictionary = regions_dictionary
               )
             map_zoom <- (\(x) {
-              if (scale_name == "CT") {
+              if (scale == "CT") {
                 return(11)
               }
-              if (scale_name == "DA") {
+              if (scale == "DA") {
                 return(13)
               }
               # For first level
-              return(10)
+              return(9.9)
             })()
 
             # Setup temporary .kmit.md files to not have names crashing on
@@ -539,13 +980,13 @@ placeex_main_card_rmd <- function(scales_variables_modules,
                 }
 
                 if (lan == "en") {
-                  sing <- scales_dictionary$sing[scales_dictionary$scale == scale_name]
+                  sing <- scales_dictionary$sing[scales_dictionary$scale == scale]
                   paste("The", sing, "around", name)
                 } else if (lan == "fr") {
                   sing <-
-                    if (scale_name == "CT") {
+                    if (scale == "CT") {
                       "Le secteur de recensement"
-                    } else if (scale_name == "DA") {
+                    } else if (scale == "DA") {
                       "L'aire de diffusion"
                     } else {
                       "La zone"
@@ -564,7 +1005,7 @@ placeex_main_card_rmd <- function(scales_variables_modules,
                   title = title,
                   select_id = ID,
                   region = region,
-                  df = scale_name,
+                  scale = scale,
                   scale_sing = paste(
                     scale_sing,
                     if (lan == "en") "(count)" else if (lan == "fr") "(compte)"
@@ -575,11 +1016,12 @@ placeex_main_card_rmd <- function(scales_variables_modules,
                   mapbox_username = mapbox_username,
                   title_card_data = title_card_data,
                   variables = variables,
-                  scale_df = sf::st_drop_geometry(scale_df)
+                  scale_df = sf::st_drop_geometry(scale_df),
+                  data_path = data_path
                 ), envir = new.env(), quiet = TRUE
               ),
               error = function(e) {
-                stop(sprintf("Rmarkdown render crashed at file %s", geo_sc_id))
+                stop(sprintf("Rmarkdown render crashed at file %s.\n%s", geo_sc_id, e))
               }
             )
 
@@ -591,8 +1033,8 @@ placeex_main_card_rmd <- function(scales_variables_modules,
               }]
             writeLines(x, output_file)
 
-            pb()
           })
+          pb()
         })
       })
     })
