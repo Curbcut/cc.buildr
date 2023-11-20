@@ -502,17 +502,17 @@ placeex_main_card_prep_output_en <- function(data, dict, region, scale, select_i
       ordinal <- (\(x) {
         # if ranks in the bottom third
         if (data_rank > (2 / 3 * df_row)) {
-          rk <- ordinal_form(x = data_rank, lang = "en")
+          rk <- curbcut::ordinal_form(x = data_rank, lang = "en")
           return({
             glue::glue_safe("relatively low at {rk}")
           })
         }
         # if ranks in the second third
         if (data_rank > (1 / 3 * df_row)) {
-          return(ordinal_form(x = data_rank, lang = "en"))
+          return(curbcut::ordinal_form(x = data_rank, lang = "en"))
         }
         # else
-        rk <- ordinal_form(x = data_rank, lang = "en")
+        rk <- curbcut::ordinal_form(x = data_rank, lang = "en")
         return(glue::glue_safe("{rk} best"))
       })()
 
@@ -666,17 +666,17 @@ placeex_main_card_prep_output_fr <- function(data, dict, region, scale, select_i
       ordinal <- (\(x) {
         # if ranks in the bottom third
         if (data_rank > (2 / 3 * df_row)) {
-          rk <- ordinal_form(x = data_rank, lang = "fr")
+          rk <- curbcut::ordinal_form(x = data_rank, lang = "fr")
           return({
             glue::glue_safe("relativement bas \u00e0  {rk}")
           })
         }
         # if ranks in the second third
         if (data_rank > (1 / 3 * df_row)) {
-          return(ordinal_form(x = data_rank, lang = "fr"))
+          return(curbcut::ordinal_form(x = data_rank, lang = "fr"))
         }
         # else
-        rk <- ordinal_form(x = data_rank, lang = "fr")
+        rk <- curbcut::ordinal_form(x = data_rank, lang = "fr")
         if (rk == "premier") {
           return(glue::glue_safe("premier"))
         }
