@@ -215,7 +215,7 @@ mc_df_format <- function(df) {
   return(df)
 }
 
-curbcut::ordinal_form <- function(x) {
+ordinal_form <- function(x) {
   
   x <- round(x*100)
   
