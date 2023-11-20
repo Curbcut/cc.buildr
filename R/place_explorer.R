@@ -913,6 +913,7 @@ placeex_main_card_rmd <- function(scales_variables_modules,
       future.apply::future_lapply(regions, \(region) {
 
         scales <- scales_dictionary$scale[sapply(scales_dictionary$regions, \(x) region %in% x)]
+        scales <- scales[scales %in% names(all_scales)]
 
         lapply(scales, \(scale) {
           scale_df <- all_scales[[scale]]
