@@ -115,7 +115,7 @@ dyk_prep <- function(svm, scales_dictionary, n = NULL) {
 #' @return A data frame with ten columns (the columns present in `vars_dyk`,
 #' and then additionally `select_ID`, `dyk_type`, `dyk_text` and `dyk_weight`).
 #' @export
-dyk_uni <- function(vars_dyk, svm, scales_dictionary, langs, translation_df) {
+dyk_uni <- function(vars_dyk, svm, scales_dictionary, langs, translation_df = NULL) {
 
   # Prepare translation_df
   assign("translation_df", value = translation_df, envir = as.environment(1))
