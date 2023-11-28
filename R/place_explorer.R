@@ -764,6 +764,47 @@ placeex_main_card_prep_output_fr <- function(data, dict, region, scale, select_i
   return(info)
 }
 
+#' Generate a Mapbox Tile JSON
+#'
+#' Given a Mapbox username, tileset prefix, and tile name, this function
+#' generates a Mapbox Tile JSON using \code{\link[rdeck]{tile_json}}. If the
+#' specified tile is not found, a warning message is displayed and NULL is
+#' returned. This prevents the app from crashing.
+#'
+#' @param mapbox_username <`character`> string representing the Mapbox username.
+#' @param tileset_prefix <`character`> Prefix attached to every tileset. Should
+#' correspond to the Curbcut city, e.g. `mtl`.
+#' @param tile <`character`> The tile name to be fetched.
+#' @param return_error <`logical`> Print the error if the tileset isn't found.
+#'
+#' @return A JSON list if succesfull. If missing tile, returns NULL preventing
+#' the app from crashing. If the tile is missing and it's a _building tile,
+#' grab the first region of the regions_dictionary and show buildings for those.
+#'
+#' @export
+tilejson <- function(mapbox_username, tileset_prefix, tile, return_error = FALSE) {
+  # urltools is necessary for tile_json use
+  requireNamespace("urltools", quietly = TRUE)
+  tile_link <- paste0(mapbox_username, ".", tileset_prefix, "_", tile)
+  out <- tryCatch(
+    suppressWarnings(rdeck::tile_json(tile_link)),
+    error = function(e) {
+      if (curbcut::is_scale_in("building", tile)) {
+        regions_dictionary <- curbcut::get_from_globalenv("regions_dictionary")
+        base_building_tile <-
+          sprintf(
+            "%s.%s_%s_building", mapbox_username, tileset_prefix,
+            regions_dictionary$region[1]
+          )
+        rdeck::tile_json(base_building_tile)
+      } else {
+        if (return_error) print(e)
+        return(NULL)
+      }
+    }
+  )
+  return(out)
+}
 
 #' Pre-process all the possible Rmds
 #'

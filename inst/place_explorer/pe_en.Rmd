@@ -118,7 +118,7 @@ options(rdeck.mapbox_access_token = map_token)
 map_style_building <- "mapbox://styles/curbcut/cljkciic3002h01qveq5z1wrp"
 
 # The MVT json
-mvt <- curbcut::tilejson(mapbox_username = params$mapbox_username,
+mvt <- tilejson(mapbox_username = params$mapbox_username,
                          tileset_prefix = params$tileset_prefix,
                          tile = params$scale)
 
