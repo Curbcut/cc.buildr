@@ -28,12 +28,17 @@ create_master_polygon <- function(all_regions, crs = NULL) {
       } else if (!is.list(x)) {
         sf::read_sf(x)
       } else {
-        cancensus::get_census(cc.buildr::current_census,
-          regions = x,
-          # DA for a better spatial coverage
-          level = "DA",
-          geo_format = "sf",
-          quiet = TRUE
+        out <- cancensus::get_census(cc.buildr::current_census,
+                                     regions = x,
+                                     # DA for a better spatial coverage
+                                     level = names(x),
+                                     geo_format = "sf",
+                                     quiet = TRUE
+        )
+        names(out)[names(out) == "GeoUID"] <- "ID"
+        cc.data::census_switch_full_geo(
+          df = out,
+          scale_name = names(x)
         )
       }
       z <- sf::st_union(z)
@@ -71,9 +76,9 @@ create_master_polygon <- function(all_regions, crs = NULL) {
   # Get region from Cancensus -----------------------------------------------
 
   provinces <- cancensus::get_census(cc.buildr::current_census,
-    regions = list(C = 01),
-    level = "PR", geo_format = "sf",
-    quiet = TRUE
+                                     regions = list(C = 01),
+                                     level = "PR", geo_format = "sf",
+                                     quiet = TRUE
   )
   master_polygon <- sf::st_make_valid(master_polygon)
   master_polygon_centroid <- sf::st_centroid(master_polygon)
