@@ -241,6 +241,8 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
       # Preparation
       scale_id <- paste0(scale_name, "_ID")
       from <- sf::st_drop_geometry(base)
+      # If a column has been made a list (unwanted through consolidate_scale)
+      from[[scale_id]] <- unlist(from[[scale_id]])
 
       summarized_avg <- lapply(average_vars, \(col_name) {
         # Extract the necessary columns
@@ -450,8 +452,8 @@ interpolate_from_area <- function(to, from,
 
   # Calculate the sum for each column using lapply
   summarized_add <- lapply(additive_vars, interpolate_fast_additive_sum,
-    data = intersected_table, id_col = "ID",
-    weight_col = weight_by
+                           data = intersected_table, id_col = "ID",
+                           weight_col = weight_by
   )
 
   # Concatenate both
@@ -480,7 +482,7 @@ interpolate_from_area <- function(to, from,
 
   # Return
   merge(to[, names(to)[!names(to) %in% c(additive_vars, average_vars)]], out,
-    by = "ID", all.x = TRUE
+        by = "ID", all.x = TRUE
   )
 }
 

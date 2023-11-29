@@ -4,7 +4,7 @@
 \alias{save_all_scales_qs}
 \title{Save all scale tables in QS format}
 \usage{
-save_all_scales_qs(data_folder = "data/", svm_data)
+save_all_scales_qs(data_folder = "data/", svm)
 }
 \arguments{
 \item{data_folder}{<\code{character}> Where the \code{.qs} files should be

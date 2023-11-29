@@ -104,7 +104,8 @@ save_streets_sqlite <- function(scale_chr = "street", all_scales) {
 #'
 #' @return An invisible NULL value.
 #' @export
-save_all_scales_qs <- function(data_folder = "data/", svm_data) {
+save_all_scales_qs <- function(data_folder = "data/", svm) {
+  svm_data <- svm$data
 
   mapply(\(scale_name, data_list) {
     # Construct the folder path for the scale
@@ -123,6 +124,53 @@ save_all_scales_qs <- function(data_folder = "data/", svm_data) {
       qs::qsave(data, file = file)
 
     }, names(data_list), data_list)
+
+    # Population and households parent vectors are necessary even for scales
+    # without census data
+    if (!"c_population" %in% names(data_list)) {
+      data_name <- "c_population"
+      dat <- svm$scales[[scale_name]]
+      if (!"population" %in% names(dat)) return()
+      dat <- dat[c("ID", "population")]
+      census_year <- cc.data::census_years
+      census_year <- census_year[length(census_year)]
+      names(dat)[2] <- sprintf("%s_%s", data_name, census_year)
+      dat <- sf::st_drop_geometry(dat)
+
+      # Add the schema regexes
+      attr(dat, "schema") <- list(time = "_\\d{4}$")
+
+      # Construct the file path for the table
+      file <- sprintf("%s%s.qs", folder, data_name)
+
+      # Save the table
+      qs::qsave(dat, file = file)
+    }
+    if (!"private_households" %in% names(data_list)) {
+      data_name <- "private_households"
+      dat <- svm$scales[[scale_name]]
+      if (!"households" %in% names(dat)) return()
+      dat <- dat[c("ID", "households")]
+      census_year <- cc.data::census_years
+      census_year <- census_year[length(census_year)]
+      names(dat)[2] <- sprintf("%s_%s", data_name, census_year)
+      dat <- sf::st_drop_geometry(dat)
+
+      # Add the schema regexes
+      attr(dat, "schema") <- list(time = "_\\d{4}$")
+
+      # Construct the file path for the table
+      file <- sprintf("%s%s.qs", folder, data_name)
+
+      # Save the table
+      qs::qsave(dat, file = file)
+    }
+
+    # Keep a 'dictionary' of all available files
+    all_files <- list.files(folder)
+    all_files <- gsub(".qs$", "", all_files)
+    qs::qsave(all_files, sprintf("%s%s_files.qs", data_folder, scale_name))
+
   }, names(svm_data), svm_data)
 
   return(invisible(NULL))
