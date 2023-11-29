@@ -31,7 +31,7 @@
 #' are not adequate, the function stops with an error.
 #' @export
 data_construct <- function(svm_data, scales_data, unique_var, time_regex,
-                           schema = list(time = gsub("^_", "", time_regex)),
+                           schema = list(time = time_regex),
                            breaks_var = NULL) {
 
   # If time_regex does not end with an dollar sign, flag it.

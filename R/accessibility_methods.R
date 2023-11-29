@@ -145,6 +145,7 @@ accessibility_get_travel_times <- function(modes = c(
 #' of \code{\link[cc.buildr]{accessibility_get_travel_times}}.
 #' @param time_intervals A vector with the time intervals to use (in
 #' minutes). Defaults to `c(5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60)`.
+#' @param DA_DB <`character`> Which of DA or DB should be used to calculate accessibility.
 #'
 #' @return A dataframe containing the number of accessible amenities per
 #' DA in different time intervals, for different modes of transport.
@@ -153,7 +154,8 @@ accessibility_get_travel_times <- function(modes = c(
 accessibility_add_intervals <- function(point_per_DA,
                                         region_DA_IDs = region_DA_IDs,
                                         traveltimes,
-                                        time_intervals = which(1:60 %% 5 == 0)) {
+                                        time_intervals = which(1:60 %% 5 == 0),
+                                        DA_DB = "DA") {
   # Prepare data to feed to the iterations ----------------------------------
 
   modes <- names(traveltimes)
@@ -168,18 +170,20 @@ accessibility_add_intervals <- function(point_per_DA,
       # Grab the right traveltimes and iterate over all DAs
       ttm <- traveltimes[[mode]]
       along_ttm <- lapply(seq_along(ttm), \(x) {
+        id <- sprintf("%s_ID", DA_DB)
         # Grab the DA ID from the ttm name
         DA <- gsub(".*_(?=\\d)", "", names(ttm)[[x]], perl = TRUE)
         tt <- ttm[[x]]
+        names(tt) <- c(id, "duration")
         # Add self
-        tt <- rbind(tibble::tibble(DA_ID = DA, duration = 0), tt)
+        tt <- rbind(tibble::tibble(!!id := DA, duration = 0), tt)
 
         # Calculate the amount of amenities accessible in every time intervals
         intervaled <- sapply(as.character(time_intervals), \(ti) {
           z <- tt[tt$duration <= as.numeric(ti), ]
 
           accessible <-
-            point_per_DA[point_per_DA$DA_ID %in% z$DA_ID, 2:ncol(point_per_DA)]
+            point_per_DA[point_per_DA[[id]] %in% z[[id]], 2:ncol(point_per_DA)]
 
           colsumed <- colSums(accessible)
 
@@ -192,7 +196,7 @@ accessibility_add_intervals <- function(point_per_DA,
 
           return(out[2:ncol(out)])
         }, simplify = FALSE, USE.NAMES = FALSE)
-        Reduce(cbind, list(tibble::tibble(DA_ID = DA), intervaled))
+        Reduce(cbind, list(tibble::tibble(!!id := DA), intervaled))
       })
       out <- Reduce(rbind, along_ttm)
       pb()
@@ -205,7 +209,7 @@ accessibility_add_intervals <- function(point_per_DA,
 
   # Bind
   ttm_data <- Reduce(
-    \(x, y) merge(x, y, all.x = TRUE, all.y = TRUE, by = "DA_ID"),
+    \(x, y) merge(x, y, all.x = TRUE, all.y = TRUE, by = sprintf("%s_ID", DA_DB)),
     ttm_data
   )
   # If NA values, then no amenities are available (0)

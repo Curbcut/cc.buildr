@@ -9,7 +9,7 @@ data_construct(
   scales_data,
   unique_var,
   time_regex,
-  schema = list(time = gsub("^_", "", time_regex)),
+  schema = list(time = time_regex),
   breaks_var = NULL
 )
 }

@@ -6,7 +6,7 @@
 \usage{
 ba_accessibility_points(
   scales_variables_modules,
-  region_DA_IDs,
+  region_DA_or_DB_IDs,
   themes = cc.data::list_accessibility_themes(),
   traveltimes,
   time_intervals = which(1:60\%\%5 == 0),
@@ -15,7 +15,8 @@ ba_accessibility_points(
     "access_foot_food_grocery", "access_car_healthcare_hospitals"),
   default_var = "access_foot_food_grocery",
   scales_sequences,
-  crs
+  crs,
+  DA_DB = "DA"
 )
 }
 \arguments{
@@ -23,8 +24,8 @@ ba_accessibility_points(
 The first is all the scales, the second is the variables table, and the
 third is the modules table.}
 
-\item{region_DA_IDs}{<\verb{character vector}> All the current census'
-DA IDs present in the region. Only those will be extracted from the database.}
+\item{region_DA_or_DB_IDs}{<\verb{character vector}> All the current census'
+DA/DB IDs present in the region. Only those will be extracted from the database.}
 
 \item{themes}{<\verb{character vector}> All pre-processed themes to import.
 Defaults to everything: \code{cc.data::accessibility_themes}}
@@ -47,6 +48,8 @@ hierarchical ordering of scales on an auto-zoom.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}
+
+\item{DA_DB}{<\code{character}> Which of DA or DB should be used to calculate accessibility.}
 }
 \value{
 A list containing the scales, variables, and modules tables.

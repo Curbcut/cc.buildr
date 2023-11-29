@@ -67,7 +67,8 @@ create_master_polygon <- function(all_regions, crs = NULL) {
     sapply(regions, sf::st_transform, crs, simplify = FALSE, USE.NAMES = TRUE)
   master_polygon <- Reduce(sf::st_union, regions_crs)
   master_polygon <- master_polygon[
-    sf::st_geometry_type(master_polygon) == "MULTIPOLYGON"
+    sf::st_geometry_type(master_polygon) == "MULTIPOLYGON" |
+      sf::st_geometry_type(master_polygon) == "POLYGON"
   ]
   master_polygon <- sf::st_make_valid(master_polygon)
   master_polygon <- sf::st_transform(master_polygon, 4326)

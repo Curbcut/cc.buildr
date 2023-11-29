@@ -7,8 +7,8 @@
 #' @param scales_variables_modules <`named list`> A list of length three.
 #' The first is all the scales, the second is the variables table, and the
 #' third is the modules table.
-#' @param region_DA_IDs <`character vector`> All the current census'
-#' DA IDs present in the region. Only those will be extracted from the database.
+#' @param region_DA_or_DB_IDs <`character vector`> All the current census'
+#' DA/DB IDs present in the region. Only those will be extracted from the database.
 #' @param themes <`character vector`> All pre-processed themes to import.
 #' Defaults to everything: `cc.data::accessibility_themes`
 #' @param traveltimes <`named list`>A list of matrices containing travel times
@@ -25,11 +25,12 @@
 #' in the place explorer. Defaults to `c("access_foot_20_educational_elementary", "access_foot_20_communitycentres_individual", "access_foot_15_fooddistribution_grocery", "access_car_10_healthcare_hospitals")`.
 #' @param default_var <`character`> The first variable the user will see when
 #' they will lang on the page. Defaults to groceries accessible within a 20 minutes walk.
+#' @param DA_DB <`character`> Which of DA or DB should be used to calculate accessibility.
 #'
 #' @return A list containing the scales, variables, and modules tables.
 #' @export
 ba_accessibility_points <- function(scales_variables_modules,
-                                    region_DA_IDs,
+                                    region_DA_or_DB_IDs,
                                     themes = cc.data::list_accessibility_themes(),
                                     traveltimes,
                                     time_intervals = which(1:60 %% 5 == 0),
@@ -42,7 +43,8 @@ ba_accessibility_points <- function(scales_variables_modules,
                                     ),
                                     default_var = "access_foot_food_grocery",
                                     scales_sequences,
-                                    crs) {
+                                    crs,
+                                    DA_DB = "DA") {
   if (max(time_intervals) > 60) {
     stop(paste0(
       "The maximum time interval available in the travel time ",
@@ -57,10 +59,10 @@ ba_accessibility_points <- function(scales_variables_modules,
   vars <- dict$var[dict$theme %in% themes]
 
   point_per_DA <- cc.data::db_read_data(
-    table = "accessibility_point_DA",
+    table = sprintf("accessibility_point_%s", DA_DB),
     columns = vars,
-    column_to_select = "DA_ID",
-    IDs = region_DA_IDs,
+    column_to_select = sprintf("%s_ID", DA_DB),
+    IDs = region_DA_or_DB_IDs,
     crs = crs
   )
 
@@ -69,9 +71,10 @@ ba_accessibility_points <- function(scales_variables_modules,
 
   ttm_data <- accessibility_add_intervals(
     point_per_DA = point_per_DA,
-    region_DA_IDs = region_DA_IDs,
+    region_DA_IDs = region_DA_or_DB_IDs,
     traveltimes = traveltimes,
-    time_intervals = time_intervals
+    time_intervals = time_intervals,
+    DA_DB = DA_DB
   )
   # qs::qsave(ttm_data, "test_build_mtl/ttm_data.qs")
   # ttm_data <- qs::qread("test_build_mtl/ttm_data.qs")
@@ -81,12 +84,12 @@ ba_accessibility_points <- function(scales_variables_modules,
   # Interpolate -------------------------------------------------------------
 
   average_vars <- names(ttm_data)[!grepl("ID$", names(ttm_data))]
-  names(ttm_data)[1] <- "DA_ID"
+  names(ttm_data)[1] <- sprintf("%s_ID", DA_DB)
 
   data_interpolated <-
     interpolate_from_census_geo(
       data = ttm_data,
-      base_scale = "DA",
+      base_scale = DA_DB,
       all_scales = scales_variables_modules$scales,
       weight_by = "population",
       crs = crs,
@@ -130,7 +133,7 @@ ba_accessibility_points <- function(scales_variables_modules,
     measurement = rep("scalar", length(data_interpolated$avail_scale))
   )
 
-  var_measurement$measurement[var_measurement$scale == "DA"] <- "ordinal"
+  var_measurement$measurement[var_measurement$scale == DA_DB] <- "ordinal"
 
 
   # Variables table ---------------------------------------------------------
