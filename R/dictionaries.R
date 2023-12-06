@@ -142,6 +142,12 @@ census_scales_dictionary <- function(census_scales) {
         "Census tract {name}",
         "Dissemination area {name}",
         "Dissemination block {name}"
+      ),
+      subtext = c(
+        "Census units (Census subdivisions)",
+        "Census units",
+        "Census units",
+        "Census units",
       )
     )
 

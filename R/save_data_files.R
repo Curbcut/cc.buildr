@@ -199,6 +199,9 @@ save_short_tables_qs <- function(data_folder = "data/", all_scales,
   # Remove the scales to skip
   scales <- all_scales[!names(all_scales) %in% skip_scales]
 
+  # Create the scales_png folder
+  suppressWarnings(dir.create(sprintf("%sscales_png", data_folder)))
+
   # For each scale, drop the geometry and save the table
   mapply(\(scale_name, scale_df) {
 
@@ -207,6 +210,13 @@ save_short_tables_qs <- function(data_folder = "data/", all_scales,
     d <- d[, subs]
 
     qs::qsave(d, file = paste0(data_folder, scale_name, ".qs"))
+
+    # # Save plot PNG
+    # plot <- ggplot2::ggplot(scale_df["geometry"]) +
+    #   ggplot2::geom_sf(fill = "#98A8CB", color = "white") +
+    #   ggplot2::theme_void()
+    # ggplot2::ggsave(sprintf("%sscales_png/%s_plot.png", data_folder, scale_name),
+    #                 plot = plot, width = 4.86, height = 4.86)
   }, names(scales), scales)
 
   return(invisible(NULL))

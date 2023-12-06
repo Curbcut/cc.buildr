@@ -12,7 +12,8 @@ append_scale_to_dictionary(
   plur,
   slider_title,
   place_heading,
-  place_name
+  place_name,
+  subtext
 )
 }
 \arguments{
@@ -34,6 +35,9 @@ for "City of Laval" -> \code{"City of {name}"}.}
 \item{place_name}{<\code{character}> The place name on a selection as the first
 string of the dynamically generated text in the explore panel. e.g. for
 "Laval has a population of ..." -> \code{"{name}"}.}
+
+\item{subtext}{<\code{character}> Further quick and simple explanation of the scale
+which will be placed in the scale dropdown. e.g. for \code{city}, \verb{Census scale (Census subdivision)}.}
 }
 \value{
 The \code{scale_dictionary} data.frame that is fed with the

@@ -12,6 +12,8 @@
 #' @param place_name <`character`> The place name on a selection as the first
 #' string of the dynamically generated text in the explore panel. e.g. for
 #' "Laval has a population of ..." -> \code{"{name}"}.
+#' @param subtext <`character`> Further quick and simple explanation of the scale
+#' which will be placed in the scale dropdown. e.g. for `city`, `Census scale (Census subdivision)`.
 #'
 #' @return The \code{scale_dictionary} data.frame that is fed with the
 #' additional row.
@@ -19,10 +21,10 @@
 append_scale_to_dictionary <- function(scales_dictionary, scale, sing,
                                        sing_with_article, plur,
                                        slider_title, place_heading,
-                                       place_name) {
+                                       place_name, subtext) {
   # Add a new row
   scales_dictionary[nrow(scales_dictionary) + 1, ] <-
-    list(scale, sing, sing_with_article, plur, slider_title, place_heading, place_name)
+    list(scale, sing, sing_with_article, plur, slider_title, place_heading, place_name, subtext)
 
   scales_dictionary
 }
