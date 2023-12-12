@@ -525,7 +525,8 @@ tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom = NUL
         source = sources,
         minzoom = minzooms,
         maxzoom = maxzooms_,
-        recipe_name = source_names
+        recipe_name = source_names,
+        layer_sizes = layer_sizes
       )
 
       tileset_create_tileset(source_names,

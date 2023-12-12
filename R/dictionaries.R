@@ -147,7 +147,7 @@ census_scales_dictionary <- function(census_scales) {
         "Census units (Census subdivisions)",
         "Census units",
         "Census units",
-        "Census units",
+        "Census units"
       )
     )
 
