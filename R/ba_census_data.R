@@ -21,6 +21,8 @@
 #' \code{32617} for Toronto.
 #' @param housing_module <`logical`> Should a housing module be added to
 #' the list of modules.
+#' @param age_module <`logical`> Should an age module be added to
+#' the list of modules.
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with census variable added, their addition
@@ -37,7 +39,8 @@ ba_census_data <- function(scales_variables_modules,
                            },
                            scales_sequences,
                            crs,
-                           housing_module = TRUE) {
+                           housing_module = TRUE,
+                           age_module = TRUE) {
   # Declare all variables from the census -----------------------------------
 
   unique_var <- cc.data::census_add_parent_vectors(census_vectors)
@@ -199,12 +202,21 @@ ba_census_data <- function(scales_variables_modules,
     }
 
 
+  # Age page and data formatting --------------------------------------------
+
+  svm <-
+    list(
+      scales = census_dat$scales,
+      variables = variables,
+      modules = modules,
+      data = data
+    )
+  if (age_module) {
+    svm <- ba_age(scales_variables_modules = svm, scales_sequences = scales_sequences)
+  }
+
+
   # Return ------------------------------------------------------------------
 
-  return(list(
-    scales = census_dat$scales,
-    variables = variables,
-    modules = modules,
-    data = data
-  ))
+  return(svm)
 }

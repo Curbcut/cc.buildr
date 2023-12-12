@@ -16,7 +16,8 @@ ba_census_data(
  },
   scales_sequences,
   crs,
-  housing_module = TRUE
+  housing_module = TRUE,
+  age_module = TRUE
 )
 }
 \arguments{
@@ -47,6 +48,9 @@ hierarchical ordering of scales on an auto-zoom.}
 \code{32617} for Toronto.}
 
 \item{housing_module}{<\code{logical}> Should a housing module be added to
+the list of modules.}
+
+\item{age_module}{<\code{logical}> Should an age module be added to
 the list of modules.}
 }
 \value{
