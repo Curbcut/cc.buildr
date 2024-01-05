@@ -33,7 +33,7 @@
 build_census_scales <- function(master_polygon,
                                 census_dataset = cc.buildr::current_census,
                                 regions,
-                                levels = c("CSD", "CT", "DA"), crs,
+                                levels = c("CSD", "CT", "DA", "DB"), crs,
                                 fill_CTs_with_CSDs = FALSE,
                                 override_name_2 = list(CSD = "City"),
                                 area_threshold = 0.05,
@@ -125,7 +125,6 @@ build_census_scales <- function(master_polygon,
 
   # Cut using cartographic DA
   if (!is.null(DA_carto)) {
-    sf::st_transform(DA_carto, crs = crs)
     census_datasets <- lapply(census_datasets, digital_to_cartographic,
                               DA_carto = DA_carto, crs = crs)
   }

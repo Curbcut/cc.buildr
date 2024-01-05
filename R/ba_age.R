@@ -57,14 +57,24 @@ ba_age <- function(scales_variables_modules, scales_sequences) {
     for (year in cc.data::census_years) {
       for (new_var_name in names(vars)) {
         if (new_var_name == "age_agg_0_85plus") {
-          scale[[paste(new_var_name, year, sep = "_")]] <- 1
+          # In percentage
+          scale[[paste(new_var_name, "pct", year, sep = "_")]] <- 1
+
+          # In count value
+          scale[[paste(new_var_name, "count", year, sep = "_")]] <-
+            scale[[paste("c_population", year, sep = "_")]]
           next
         }
 
 
         age_var_codes <- vars[[new_var_name]]
-        scale[[paste(new_var_name, year, sep = "_")]] <-
-          rowSums(sf::st_drop_geometry(scale)[paste(age_var_codes, year, sep = "_")])
+        pct_val <- rowSums(sf::st_drop_geometry(scale)[paste(age_var_codes, year, sep = "_")])
+
+        # in percentage
+        scale[[paste(new_var_name, "pct", year, sep = "_")]] <- pct_val
+        # in count value
+        scale[[paste(new_var_name, "count", year, sep = "_")]] <-
+          pct_val * scale[[paste("c_population", year, sep = "_")]]
       }
     }
 
@@ -81,6 +91,7 @@ ba_age <- function(scales_variables_modules, scales_sequences) {
   # Data tibble -------------------------------------------------------------
 
   unique_var <-  names(vars)
+  unique_var <- c(paste0(unique_var, "_pct"), paste0(unique_var, "_count"))
 
   data <- data_construct(svm_data = scales_variables_modules$data,
                          scales_data = final_dat,
@@ -93,20 +104,25 @@ ba_age <- function(scales_variables_modules, scales_sequences) {
   variables <-
     lapply(unique_var, \(u_var) {
 
+      pct <- grepl("_pct$", u_var)
+      var <- gsub("_pct|_count", "", u_var)
+
       title <- (\(x) {
-        if (u_var == "age_agg_85plus") return("Aged over 85 (%)")
-        start <- stringr::str_extract(u_var, "(?<=age_agg_).*(?=_)")
-        end <- stringr::str_extract(u_var, "(?<=age_agg_\\d{1,2}_).*")
+        if (grepl("age_agg_85plus", var)) return("Aged over 85 (%)")
+        start <- stringr::str_extract(var, "(?<=age_agg_).*(?=_)")
+        end <- stringr::str_extract(var, "(?<=age_agg_\\d{1,2}_).*")
         if (end == "85plus") end <- "over 85"
 
 
-        sprintf("Aged between %s and %s (%%)", start, end)
+        out <- sprintf("Aged between %s and %s", start, end)
+        if (pct) out <- paste(out, "(%)")
+        out
       })()
 
       short <- (\(x) {
-        if (u_var == "age_agg_85plus") return("85+ yo")
-        start <- stringr::str_extract(u_var, "(?<=age_agg_).*(?=_)")
-        end <- stringr::str_extract(u_var, "(?<=age_agg_\\d{1,2}_).*")
+        if (grepl("age_agg_85plus", var)) return("85+ yo")
+        start <- stringr::str_extract(var, "(?<=age_agg_).*(?=_)")
+        end <- stringr::str_extract(var, "(?<=age_agg_\\d{1,2}_).*")
         if (end == "85plus") end <- "85+"
 
 
@@ -114,37 +130,42 @@ ba_age <- function(scales_variables_modules, scales_sequences) {
       })()
 
       explanation <- (\(x) {
-        if (u_var == "age_agg_85plus")
+        if (grepl("age_agg_85plus", var))
           return("the percentage of the population aged over 85 years old")
-        start <- stringr::str_extract(u_var, "(?<=age_agg_).*(?=_)")
-        end <- stringr::str_extract(u_var, "(?<=age_agg_\\d{1,2}_).*")
+        start <- stringr::str_extract(var, "(?<=age_agg_).*(?=_)")
+        end <- stringr::str_extract(var, "(?<=age_agg_\\d{1,2}_).*")
         if (end == "85plus") end <- "over 85"
 
-
-        sprintf("the percentage of the population aged between %s and %s years old", start, end)
+        beg <- if (pct) "percentage of the population" else "number of individuals"
+        sprintf("the %s aged between %s and %s years old", beg, start, end)
       })()
 
       exp_q5 <- (\(x) {
-        if (u_var == "age_agg_85plus")
+        if (grepl("age_agg_85plus", var))
           return("are aged over 85 years old")
-        start <- stringr::str_extract(u_var, "(?<=age_agg_).*(?=_)")
-        end <- stringr::str_extract(u_var, "(?<=age_agg_\\d{1,2}_).*")
+        start <- stringr::str_extract(var, "(?<=age_agg_).*(?=_)")
+        end <- stringr::str_extract(var, "(?<=age_agg_\\d{1,2}_).*")
         if (end == "85plus") end <- "over 85"
 
 
         sprintf("are aged between %s and %s years old", start, end)
       })()
 
+      group_name <- title
+      group_diff <- list(
+        "Data representation" = (\(x) {
+          if (!pct) "Number" else "Percentage"
+        })())
+
       out <- add_variable(
         variables = scales_variables_modules$variables,
         var_code = u_var,
-        type = "pct",
+        type = if (pct) "pct" else "count",
         var_title = title,
         var_short = short,
         explanation = explanation,
         exp_q5 = exp_q5,
-        parent_vec = scales_variables_modules$variables$parent_vec[
-          scales_variables_modules$variables$var_code == "age_0_14"],
+        parent_vec = "c_population",
         theme = "Age",
         private = FALSE,
         pe_include = FALSE,
@@ -153,7 +174,9 @@ ba_age <- function(scales_variables_modules, scales_sequences) {
         source = "Canadian census",
         interpolated = scales_variables_modules$variables$interpolated[
           scales_variables_modules$variables$var_code == "age_0_14"][[1]],
-        allow_title_duplicate = TRUE
+        allow_title_duplicate = TRUE,
+        group_name = group_name,
+        group_diff = group_diff
       )
       out[out$var_code == u_var, ]
     })
@@ -174,7 +197,7 @@ ba_age <- function(scales_variables_modules, scales_sequences) {
     scales_variables_modules$modules |>
     add_module(
       id = "age",
-      theme = "Demographic",
+      theme = "Demographics",
       nav_title = "Age demographics",
       title_text_title = "Age distribution",
       title_text_main = paste0(
@@ -183,10 +206,10 @@ ba_age <- function(scales_variables_modules, scales_sequences) {
         "care, and social services."
       ),
       title_text_extra = paste0(
-        "<p>The age distribution data visualized here is sourced from the Canadian C",
-        "ensus, ranging from 1996 to the present. These datasets provide insights in",
-        "to demographic trends and shifts over time. Key initiatives to address age-",
-        "related challenges include healthcare reforms and educational adjustments."
+        "<p>The age distribution data visualized on this page come from the Canadian C",
+        "ensus from 1996 to the present. These datasets provide insights into ",
+        "demographic trends and shifts over time. Key initiatives to address age-",
+        "related challenges include healthcare reforms and educational reforms."
       ),
       metadata = TRUE,
       dataset_info = paste0(
@@ -194,13 +217,14 @@ ba_age <- function(scales_variables_modules, scales_sequences) {
         "sus-engagement/about'>age distribution data from the 1996 to the latest C",
         "anadian Censuses</a></p>"
       ),
-      var_left = unique_var,
+      var_left = variables[grepl("^age_agg_", variables$var_code),
+                           c("var_code", "group_name", "group_diff")],
       dates = cc.data::census_years,
       main_dropdown_title = NA,
       var_right = variables$var_code[variables$source == "Canadian census" &
                                        variables$theme != "Age" &
                                        !is.na(variables$parent_vec)],
-      default_var = "age_agg_0_14",
+      default_var = "age_agg_0_14_pct",
       avail_scale_combinations = avail_scale_combinations
     )
 
@@ -214,3 +238,4 @@ ba_age <- function(scales_variables_modules, scales_sequences) {
     data = data
   ))
 }
+

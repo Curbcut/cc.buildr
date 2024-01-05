@@ -4,7 +4,13 @@
 \alias{rev_geocode_sf}
 \title{Reverse geocode spatial features}
 \usage{
-rev_geocode_sf(master_polygon, sf_df, province_code, crs)
+rev_geocode_sf(
+  master_polygon,
+  sf_df,
+  province_code,
+  crs,
+  rev_NA_localhost = FALSE
+)
 }
 \arguments{
 \item{master_polygon}{<\code{sfc_MULTIPOLYGON}> Unioned multipolygon of all the
@@ -21,6 +27,10 @@ Open Database of Addresses. One of \code{"AB"}, \code{"BC"}, \code{"MB"},
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32618} for Montreal.}
+
+\item{rev_NA_localhost}{<\code{logical}> Should localhost (nominatim-canada docker)
+be used to revers geocode what's not found through \code{cc.buildr::addresses_db_links}?
+Defaults to FALSE which uses OSM service.}
 }
 \value{
 The same sf data.frame fed, with the \code{name} column populated

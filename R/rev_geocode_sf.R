@@ -19,11 +19,15 @@
 #' \code{"SK"}.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32618} for Montreal.
+#' @param rev_NA_localhost <`logical`> Should localhost (nominatim-canada docker)
+#' be used to revers geocode what's not found through `cc.buildr::addresses_db_links`?
+#' Defaults to FALSE which uses OSM service.
 #'
 #' @return The same sf data.frame fed, with the `name` column populated
 #' with the reverse geocoded addresses.
 #' @export
-rev_geocode_sf <- function(master_polygon, sf_df, province_code, crs) {
+rev_geocode_sf <- function(master_polygon, sf_df, province_code, crs,
+                           rev_NA_localhost = FALSE) {
   if (!province_code %in% cc.buildr::addresses_db_links$province_code) {
     stop(paste0(
       "`province_code` must be an available province_code in ",

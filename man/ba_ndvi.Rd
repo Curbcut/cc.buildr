@@ -6,8 +6,6 @@
 \usage{
 ba_ndvi(
   scales_variables_modules,
-  master_polygon,
-  all_scales,
   data_output_path = "dev/data/ndvi/",
   years = cc.data::ndvi_years(),
   skip_scales = NULL,
@@ -19,13 +17,6 @@ ba_ndvi(
 \item{scales_variables_modules}{<\verb{named list}> A list of length three.
 The first is all the scales, the second is the variables table, and the
 third is the modules table.}
-
-\item{master_polygon}{<\code{sfc_MULTIPOLYGON}> Unioned multipolygon of all the boundary
-for which NDVI information should be retrieved.}
-
-\item{all_scales}{<\verb{named list}> Named list of dataframed of all available scales,
-previously to consolidate them. The 30x30 raster data will be intersected once for
-every scale, and then left joined to the scales in \code{scales_variables_modules}.}
 
 \item{data_output_path}{<\code{character}> String representing the directory path
 to store the NDVI data (default is "dev/data/ndvi/").}

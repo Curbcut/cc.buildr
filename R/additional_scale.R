@@ -7,7 +7,7 @@
 #' @param additional_table <`sf data.frame`> An sf data.frame of two or three columns:
 #' \code{name} and \code{geometry} or \code{ID}, \code{name} and \code{geometry}.
 #' Ideally, the name of each zone should be unique.
-#' @param DA_table <`sf data.frame`> A \code{DA} sf data.frame from which
+#' @param DB_table <`sf data.frame`> A \code{DB} sf data.frame from which
 #' population and households will be interpolated.
 #' @param ID_prefix <`character`> A character of length 1. In order to keep
 #' the identifiers unique on the platform, the prefix used before the
@@ -21,13 +21,15 @@
 #' \code{32617} for Toronto.
 #' @param DA_carto <`sf data.frame`> The cartographic version of DAs, one of the
 #' output of \code{\link{create_master_polygon}}.
+#' @param switch_to_carto <`logical`> Should the geometry be switched to cartographic?
+#' Unnecessary for scales that are already cartographic.
 #'
 #' @return An sf data.frame with population and households interpolated from
-#' the \code{DA_table}, containing all columns necessary to import on the
+#' the \code{DB_table}, containing all columns necessary to import on the
 #' platform.
 #' @export
-additional_scale <- function(additional_table, DA_table, ID_prefix, name_2,
-                             crs, DA_carto) {
+additional_scale <- function(additional_table, DB_table, ID_prefix, name_2,
+                             crs, DA_carto, switch_to_carto = TRUE) {
   if (!all(names(additional_table) == c("name", "geometry"))) {
     if (!all(names(additional_table) == c("ID", "name", "geometry"))) {
       stop(paste0(
@@ -38,11 +40,13 @@ additional_scale <- function(additional_table, DA_table, ID_prefix, name_2,
   }
 
   additional_table <- sf::st_transform(additional_table, crs = crs)
-  additional_table <- digital_to_cartographic(additional_table, DA_carto,
-                                              crs = crs)
+  if (switch_to_carto) {
+    additional_table <- digital_to_cartographic(additional_table, DA_carto,
+                                                crs = crs)
+  }
 
-  # Interpolate DA_table to get population and households
-  das <- DA_table[, c("ID", "households", "population")]
+  # Interpolate DB_table to get population and households
+  das <- DB_table[, c("ID", "households", "population")]
   das_transformed <- sf::st_transform(das, crs)
   das <- sf::st_set_agr(das_transformed, "constant")
 
@@ -57,7 +61,7 @@ additional_scale <- function(additional_table, DA_table, ID_prefix, name_2,
   additional_table <-
     interpolate_from_area(
       to = additional_table,
-      from = DA_table,
+      from = DB_table,
       additive_vars = c("population", "households"),
       crs = crs
     )
@@ -68,7 +72,7 @@ additional_scale <- function(additional_table, DA_table, ID_prefix, name_2,
   # Consolidate output
   additional_table$name_2 <- name_2
   additional_table <- sf::st_transform(additional_table, 4326)
-  additional_table[, c(
+  additional_table[, names(additional_table) %in% c(
     "ID", "name", "name_2", "population", "households", "area",
     "geometry", "geometry_digital"
   )]

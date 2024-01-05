@@ -16,6 +16,7 @@ ba_census_data(
  },
   scales_sequences,
   crs,
+  DB_table,
   housing_module = TRUE,
   age_module = TRUE
 )
@@ -46,6 +47,10 @@ hierarchical ordering of scales on an auto-zoom.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}
+
+\item{DB_table}{<\verb{named list}> Named list of all the years for which DBs existed.
+Every dataframe in the list must have the DB ID, DA ID, population and dwellings
+count. It is created using \code{\link[cc.data]{DB_get}}.}
 
 \item{housing_module}{<\code{logical}> Should a housing module be added to
 the list of modules.}

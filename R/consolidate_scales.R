@@ -21,30 +21,6 @@
 #' @export
 consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
 
-  ## AT INTERPOLATION STEP, REMOVE FROM ALL SCALE THE DB WITH POPULATION = 0?
-  ## MAYBE ADD A NEW GEOMETRY COLUMN??
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   ## Make sure IDs are unique ------------------------------------------------
 
   subset_ID <- sapply(all_scales, `[[`, "ID")
@@ -92,6 +68,9 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
       if (scale_name == seq[[1]]) next
       # Skip small scales
       if (scale_name %in% c("street", "building")) next
+      # SKIP GRIDS
+      if (grepl("^grd\\d", scale_name)) next
+
 
       # Grab the `df` in which to add the *_ID
       lower <- scales[[scale_name]]
@@ -157,6 +136,7 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
     }
   }
 
+  scales_merged_ids <- scales
 
   # Add an area column for every scale --------------------------------------
 
@@ -165,6 +145,9 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
       if (scale_name %in% c("street", "building")) {
         return(scale_df)
       }
+      # SKIP GRIDS
+      if (grepl("^grd\\d", scale_name)) return(scale_df)
+
       scale_df$area <- get_area(scale_df)
       scale_df
     }, names(scales), scales,
@@ -177,6 +160,8 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
     # Take out too small scales, like street and building which would make this function
     # last for hours.
     take_out_small <- scales[!names(scales) %in% c("street", "building")]
+    # SKIP GRIDS
+    take_out_small <- take_out_small[!grepl("^grd\\d", names(take_out_small))]
 
     # Spatialy filter scales that have 10% of their content inside of x region.
     ids <- lapply(take_out_small, \(scale_df) {

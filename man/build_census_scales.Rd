@@ -8,7 +8,7 @@ build_census_scales(
   master_polygon,
   census_dataset = cc.buildr::current_census,
   regions,
-  levels = c("CSD", "CT", "DA"),
+  levels = c("CSD", "CT", "DA", "DB"),
   crs,
   fill_CTs_with_CSDs = FALSE,
   override_name_2 = list(CSD = "City"),

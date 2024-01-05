@@ -11,15 +11,14 @@
 post_processing <- function(scales) {
   # Cast to the right geometry type
   scales <- lapply(scales, \(scale_df) {
-    df <- scale_df[!sf::st_is_empty(scale_df), ]
-    if (nrow(scale_df) != nrow(df)) {
-      taken_out <- nrow(scale_df) - nrow(df)
-      warning(paste0(
-        "`", taken_out, "` observations have been filtered out ",
-        "from `", geo, "-", scale_name,
-        "` due to spatial features being empty."
-      ))
-    }
+    df <- scale_df#[!sf::st_is_empty(scale_df), ]
+    # if (nrow(scale_df) != nrow(df)) {
+    #   taken_out <- nrow(scale_df) - nrow(df)
+    #   warning(paste0(
+    #     "`", taken_out, "` observations have been filtered out ",
+    #     "from `", scale_name, "` due to spatial features being empty."
+    #   ))
+    # }
 
     geos_types <- unique(sf::st_geometry_type(df$geometry))
     if (length(geos_types) == 1) {

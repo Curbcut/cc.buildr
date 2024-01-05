@@ -29,6 +29,7 @@
 #' @export
 get_census_cc <- function(master_polygon, census_dataset, regions,
                           level, var_select = c(
+                            "DAUID" = "DA_UID",
                             "CTUID" = "CT_UID",
                             "CSDUID" = "CSD_UID",
                             "name" = "name",
@@ -37,13 +38,23 @@ get_census_cc <- function(master_polygon, census_dataset, regions,
                           ),
                           crs, format = TRUE, cartographic = FALSE,
                           area_threshold = 0.05) {
-  census_data <- cancensus::get_census(
-    dataset = census_dataset, regions = regions,
-    level = level, geo_format = "sf", quiet = TRUE,
-    use_cache = TRUE
-  )
 
-  names(census_data)[names(census_data) == "GeoUID"] <- "ID"
+  census_data <- if (level == "DB") {
+    DB <- cc.data::bucket_read_object_zip_shp(object = "DB_shp_carto.zip",
+                                              bucket = "curbcut.rawdata")
+    out <- DB[DB$PRUID == unlist(regions), ]
+    names(out)[names(out) == "DBUID"] <- "ID"
+    out
+  } else {
+    out <- cancensus::get_census(
+      dataset = census_dataset, regions = regions,
+      level = level, geo_format = "sf", quiet = TRUE,
+      use_cache = TRUE
+    )
+    names(out)[names(out) == "GeoUID"] <- "ID"
+    out
+  }
+
   # Switch for the full census geometries (with water)
   if (!cartographic) {
     census_data <- cc.data::census_switch_full_geo(
@@ -78,6 +89,8 @@ get_census_cc <- function(master_polygon, census_dataset, regions,
 
   # If spatial filter must not be done with the `master_polygon`
   if (!format) {
+    if (level == "DB")
+      warning("Without `format = TRUE`, DBs won't have population and dwelling counts.")
     return(census_data)
   }
 
@@ -89,6 +102,28 @@ get_census_cc <- function(master_polygon, census_dataset, regions,
     ID_col = "ID",
     area_threshold = area_threshold
   )
+
+  if (level == "DB") {
+    DB_ID <- census_data$ID
+    waves <- split(DB_ID, seq_len(ceiling(length(DB_ID) / 1000)))
+    dbs <- lapply(waves, \(x) {
+      cancensus::get_census(census_dataset, region = list(DB = x), quiet = TRUE,
+                            use_cache = TRUE)
+    })
+    dbs <- Reduce(rbind, dbs)
+    names(dbs)[names(dbs) == "GeoUID"] <- "ID"
+
+    # Select `var_select` columns
+    avail_vars <- var_select[var_select %in% names(dbs)]
+    dbs <- dbs[, c("ID", avail_vars)]
+
+    # Rename `var_select` columns. Order kept due to previous selecting,
+    # which ordered columns.
+    names(dbs)[which(names(dbs) %in% avail_vars)] <- names(avail_vars)
+
+    # Merge population and households
+    census_data <- merge(census_data, dbs)
+  }
 
   # Keep only the polygons part of the master_polygon
   return(census_data)

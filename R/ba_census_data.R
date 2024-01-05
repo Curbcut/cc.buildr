@@ -19,6 +19,9 @@
 #' hierarchical ordering of scales on an auto-zoom.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
+#' @param DB_table <`named list`> Named list of all the years for which DBs existed.
+#' Every dataframe in the list must have the DB ID, DA ID, population and dwellings
+#' count. It is created using \code{\link[cc.data]{DB_get}}.
 #' @param housing_module <`logical`> Should a housing module be added to
 #' the list of modules.
 #' @param age_module <`logical`> Should an age module be added to
@@ -39,6 +42,7 @@ ba_census_data <- function(scales_variables_modules,
                            },
                            scales_sequences,
                            crs,
+                           DB_table,
                            housing_module = TRUE,
                            age_module = TRUE) {
   # Declare all variables from the census -----------------------------------
@@ -66,6 +70,7 @@ ba_census_data <- function(scales_variables_modules,
     census_vectors = census_vectors,
     census_years = census_years,
     crs = crs,
+    DB_table = DB_table,
     scales_to_interpolate = scales_to_interpolate
   )
 

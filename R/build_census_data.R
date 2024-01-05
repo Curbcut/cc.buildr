@@ -14,6 +14,9 @@
 #' should be added to the scales. Defaults to \code{\link[cc.data]{census_years}}
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
+#' @param DB_table <`named list`> Named list of all the years for which DBs existed.
+#' Every dataframe in the list must have the DB ID, DA ID, population and dwellings
+#' count. It is created using \code{\link[cc.data]{DB_get}}.
 #' @param census_scales <`character vector`> Vector of all the census scales for
 #' which we have data in the database.
 #' @param scales_to_interpolate <`character vector`> Scales for which census
@@ -30,7 +33,7 @@
 #' vector of all regions at which the data will be available.
 #' @export
 build_census_data <- function(scales_consolidated, region_DA_IDs,
-                              census_vectors, census_years, crs,
+                              census_vectors, census_years, crs, DB_table,
                               census_scales = cc.data::census_scales,
                               scales_to_interpolate = scales_greater_than(
                                 base_scale = scales_consolidated$DA,
@@ -54,6 +57,7 @@ build_census_data <- function(scales_consolidated, region_DA_IDs,
       DA_IDs = region_DA_IDs,
       census_vectors = census_vectors,
       census_years = census_years,
+      DB_table = DB_table,
       crs = crs
     )
 
