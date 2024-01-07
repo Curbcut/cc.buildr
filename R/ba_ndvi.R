@@ -68,8 +68,6 @@ ba_ndvi <- function(scales_variables_modules,
 
     # Processing each intersection
     processed_intersections <- lapply(intersections, function(intersection) {
-      # Return NA if no intersection
-      if (length(intersection) == 0) return(NA)
 
       # Subsetting 'grd' for the intersected indices
       fits <- grd[intersection, ]
@@ -80,6 +78,14 @@ ba_ndvi <- function(scales_variables_modules,
 
       # Initializing an empty list to store results
       results <- list()
+
+      # Return NA if no intersection
+      if (length(intersection) == 0) return({
+        for (n in ndvi_cols) {
+          results[[n]] <- NA_real_
+        }
+        tibble::as_tibble(results)
+      })
 
       # Calculating mean for each NDVI column, ignoring NA values
       for (n in ndvi_cols) {
@@ -94,7 +100,8 @@ ba_ndvi <- function(scales_variables_modules,
 
     # Combining the processed data with the original 'scale' data (minus geometry)
     # and converting the result to a tibble
-    final_output <- cbind(sf::st_drop_geometry(scale), Reduce(rbind, processed_intersections))
+    p_int <- Reduce(rbind, processed_intersections)
+    final_output <- cbind(sf::st_drop_geometry(scale), p_int)
     tibble::as_tibble(final_output)
   }, simplify = FALSE, USE.NAMES = TRUE)
 
