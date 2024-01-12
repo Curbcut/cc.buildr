@@ -7,7 +7,7 @@
 save_short_tables_qs(
   data_folder = "data/",
   all_scales,
-  skip_scales = c("building", "street")
+  skip_scales = c("building", "street", "grd30", "grd60", "grd120", "grd300")
 )
 }
 \arguments{

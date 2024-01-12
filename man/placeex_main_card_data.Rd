@@ -10,7 +10,7 @@ placeex_main_card_data(
   region_DA_IDs,
   crs,
   regions_dictionary,
-  ignore_scales = c("building", "street"),
+  ignore_scales = c("building", "street", "grd30", "grd60", "grd120", "grd300"),
   region_
 )
 }

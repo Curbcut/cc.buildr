@@ -156,7 +156,7 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
 
   # Return for every region the ID of ALL scales ----------------------------
 
-  out_for_dict <- future.apply::future_lapply(regions, \(region) {
+  out_for_dict <- lapply(regions, \(region) {
     # Take out too small scales, like street and building which would make this function
     # last for hours.
     take_out_small <- scales[!names(scales) %in% c("street", "building")]

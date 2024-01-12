@@ -12,7 +12,7 @@ ba_census_data(
   scales_to_interpolate = {
     
     names(scales_variables_modules$scales)[!names(scales_variables_modules$scales) \%in\%
-    c("building", "street")]
+    c("building", "street", "grd30", "grd60", "grd120", "grd300")]
  },
   scales_sequences,
   crs,

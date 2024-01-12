@@ -243,3 +243,25 @@ save_geometry_export <- function(data_folder = "data/", all_scales) {
 
   return(invisible(NULL))
 }
+
+#' Unload specified scales from the scales_variables_modules
+#'
+#' This function removes specified scale variables from a list of scales.
+#' It is useful for managing memory if a scale is not to be re-used.
+#'
+#' @param scales_variables_modules <`list`> A list containing scales and
+#' their associated variables and modules.
+#' @param unload <`character vector`> A character vector of scale names to
+#' be unloaded from the list.
+#'
+#' @return <`list`> Returns the modified list of scales variables modules,
+#' excluding the scales specified in `unload`.
+#' @export
+unload_scales <- function(scales_variables_modules, unload) {
+  if (any(!unload %in% names(scales_variables_modules$scales))) {
+    stop("One or more of the specified scales to unload are not present in the list.")
+  }
+
+  scales_variables_modules[
+    !names(scales_variables_modules$scales) %in% unload]
+}
