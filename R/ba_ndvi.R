@@ -100,7 +100,7 @@ ba_ndvi <- function(scales_variables_modules,
 
     # Combining the processed data with the original 'scale' data (minus geometry)
     # and converting the result to a tibble
-    p_int <- Reduce(rbind, processed_intersections)
+    p_int <- data.table::rbindlist(processed_intersections)
     final_output <- cbind(sf::st_drop_geometry(scale), p_int)
     tibble::as_tibble(final_output)
   }, simplify = FALSE, USE.NAMES = TRUE)
@@ -128,10 +128,9 @@ ba_ndvi <- function(scales_variables_modules,
   # Data tibble -------------------------------------------------------------
 
   time_regex <- "_\\d{4}$"
-  data <- data_construct(svm_data = scales_variables_modules$data,
-                         scales_data = interpolated,
-                         unique_var = "ndvi",
-                         time_regex = time_regex)
+  data_construct(scales_data = interpolated,
+                 unique_var = "ndvi",
+                 time_regex = time_regex)
 
 
   # Variables table ---------------------------------------------------------
@@ -227,7 +226,7 @@ ba_ndvi <- function(scales_variables_modules,
   # Return ------------------------------------------------------------------
 
   return(list(
-    scales = interpolated,
+    scales = scales_variables_modules$scales,
     variables = variables,
     modules = modules,
     data = data

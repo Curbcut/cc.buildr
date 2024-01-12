@@ -17,7 +17,10 @@
 #' and scales for data values.
 #' @export
 placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
-                                   regions_dictionary, ignore_scales = c("building", "street"),
+                                   regions_dictionary,
+                                   ignore_scales = c(
+                                     "building", "street", "grd30", "grd60", "grd120",
+                                     "grd300"),
                                    region_) {
   # Init --------------------------------------------------------------------
 

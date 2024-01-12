@@ -109,10 +109,9 @@ ba_var <- function(data, scales_variables_modules, base_scale,
 
   # Data tibble -------------------------------------------------------------
 
-  data <- data_construct(svm_data = scales_variables_modules$data,
-                         scales_data = data_interpolated$scales,
-                         unique_var = unique_var,
-                         time_regex = time_regex)
+  data_construct(scales_data = data_interpolated$scales,
+                 unique_var = unique_var,
+                 time_regex = time_regex)
 
 
   # Variables table ---------------------------------------------------------
@@ -184,9 +183,8 @@ ba_var <- function(data, scales_variables_modules, base_scale,
   # Return ------------------------------------------------------------------
 
   return(list(
-    scales = data_interpolated$scales,
+    scales = scales_variables_modules$scales,
     variables = variables,
-    modules = modules,
-    data = data
+    modules = modules
   ))
 }

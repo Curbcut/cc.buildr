@@ -37,7 +37,9 @@ ba_census_data <- function(scales_variables_modules,
                            census_years = cc.data::census_years,
                            scales_to_interpolate = {
                              names(scales_variables_modules$scales)[
-                               !names(scales_variables_modules$scales) %in% c("building", "street")
+                               !names(scales_variables_modules$scales) %in% c(
+                                 "building", "street", "grd30", "grd60", "grd120",
+                                 "grd300")
                              ]
                            },
                            scales_sequences,
@@ -77,8 +79,7 @@ ba_census_data <- function(scales_variables_modules,
 
   # Data tibble -------------------------------------------------------------
 
-  data <- data_construct(svm_data = scales_variables_modules$data,
-                         scales_data = census_dat$scales,
+  data <- data_construct(scales_data = census_dat$scales,
                          unique_var = unique_var,
                          time_regex = time_regex)
 
@@ -211,10 +212,9 @@ ba_census_data <- function(scales_variables_modules,
 
   svm <-
     list(
-      scales = census_dat$scales,
+      scales = scales_variables_modules$scales,
       variables = variables,
-      modules = modules,
-      data = data
+      modules = modules
     )
   if (age_module) {
     svm <- ba_age(scales_variables_modules = svm, scales_sequences = scales_sequences)

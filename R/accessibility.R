@@ -108,13 +108,12 @@ ba_accessibility_points <- function(scales_variables_modules,
   breaks_var <- lapply(unique_var, paste0, "_20_2023")
   names(breaks_var) <- unique_var
 
-  data <- data_construct(svm_data = scales_variables_modules$data,
-                         scales_data = data_interpolated$scales,
-                         unique_var = unique_var,
-                         time_regex = time_regex,
-                         schema = list(time = time_regex,
-                                       transportationtime = "_\\d{1,2}"),
-                         breaks_var = breaks_var)
+  data_construct(scales_data = data_interpolated$scales,
+                 unique_var = unique_var,
+                 time_regex = time_regex,
+                 schema = list(time = time_regex,
+                               transportationtime = "_\\d{1,2}"),
+                 breaks_var = breaks_var)
 
 
   # Types and parent vectors ------------------------------------------------
@@ -384,9 +383,8 @@ ba_accessibility_points <- function(scales_variables_modules,
   # Return ------------------------------------------------------------------
 
   return(list(
-    scales = data_interpolated$scales,
+    scales = scales_variables_modules$scales,
     variables = variables,
-    modules = modules,
-    data = data
+    modules = modules
   ))
 }

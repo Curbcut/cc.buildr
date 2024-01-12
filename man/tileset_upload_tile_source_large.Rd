@@ -4,7 +4,13 @@
 \alias{tileset_upload_tile_source_large}
 \title{Upload a large tilesource to a Mapbox account}
 \usage{
-tileset_upload_tile_source_large(df, id, username, access_token)
+tileset_upload_tile_source_large(
+  df,
+  id,
+  total_batches = 100,
+  username,
+  access_token
+)
 }
 \arguments{
 \item{df}{<\verb{sf data.frame}> The \code{sf} data.frame that must be uploaded to
@@ -12,6 +18,10 @@ mapbox. CRS must be 4326.}
 
 \item{id}{<\code{character}> The ID of the new tile source. For a scale, usually
 follows a prefix (mtl), the region (CMA), and the scale (CSD), e.g \code{mtl_CMA_building}.}
+
+\item{total_batches}{<\code{numeric}> Number of batches to divide the data frame into
+for the upload process. Defaults to 100. As the dataset is large, the more batches
+will be needed.}
 
 \item{username}{<\code{character}> Mapbox account username.}
 

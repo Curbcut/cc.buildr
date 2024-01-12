@@ -93,10 +93,9 @@ ba_age <- function(scales_variables_modules, scales_sequences) {
   unique_var <-  names(vars)
   unique_var <- c(paste0(unique_var, "_pct"), paste0(unique_var, "_count"))
 
-  data <- data_construct(svm_data = scales_variables_modules$data,
-                         scales_data = final_dat,
-                         unique_var = unique_var,
-                         time_regex = time_regex)
+  data_construct(scales_data = final_dat,
+                 unique_var = unique_var,
+                 time_regex = time_regex)
 
 
   # Variables table ---------------------------------------------------------
@@ -232,10 +231,9 @@ ba_age <- function(scales_variables_modules, scales_sequences) {
   # Return ------------------------------------------------------------------
 
   return(list(
-    scales = final_dat,
+    scales = scales_variables_modules$scales,
     variables = variables,
-    modules = modules,
-    data = data
+    modules = modules
   ))
 }
 

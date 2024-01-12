@@ -198,7 +198,7 @@ accessibility_add_intervals <- function(point_per_DA,
         }, simplify = FALSE, USE.NAMES = FALSE)
         Reduce(cbind, list(tibble::tibble(!!id := DA), intervaled))
       })
-      out <- Reduce(rbind, along_ttm)
+      out <- data.table::rbindlist(along_ttm)
       pb()
       out
     })

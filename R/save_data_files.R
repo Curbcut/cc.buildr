@@ -96,40 +96,29 @@ save_streets_sqlite <- function(scale_chr = "street", all_scales) {
 #' scales, then creates the folders for each region and scale, and finally saves the
 #' tables in the database.
 #'
+#' @param scales <`named list`> All the scales, usually `scales_variables_modules$scales`.
 #' @param data_folder <`character`> Where the `.qs` files should be
 #' written to. Defaults to `data/`.
-#' @param svm_data <`named list`> A named list of data.frame
-#' containing all scales with a named list of their data. Usually
-#' `scales_variables_modules$data`.
 #'
 #' @return An invisible NULL value.
 #' @export
-save_all_scales_qs <- function(data_folder = "data/", svm) {
-  svm_data <- svm$data
+save_all_scales_qs <- function(scales, data_folder = "data/") {
 
-  mapply(\(scale_name, data_list) {
+  mapply(\(scale_name, scale_df) {
     # Construct the folder path for the scale
     folder <- sprintf("%s%s/", data_folder, scale_name)
 
     # If the folder doesn't exist, create it
     if (!dir.exists(folder)) dir.create(folder)
 
-    mapply(\(data_name, data) {
-      if (is.null(data)) return()
-
-      # Construct the file path for the table
-      file <- sprintf("%s%s.qs", folder, data_name)
-
-      # Save the table
-      qs::qsave(data, file = file)
-
-    }, names(data_list), data_list)
+    all_files <- list.files(folder)
+    all_files <- gsub(".qs$", "", all_files)
 
     # Population and households parent vectors are necessary even for scales
     # without census data
-    if (!"c_population" %in% names(data_list)) {
+    if (!"c_population" %in% all_files) {
       data_name <- "c_population"
-      dat <- svm$scales[[scale_name]]
+      dat <- scales[[scale_name]]
       if (!"population" %in% names(dat)) return()
       dat <- dat[c("ID", "population")]
       census_year <- cc.data::census_years
@@ -146,9 +135,9 @@ save_all_scales_qs <- function(data_folder = "data/", svm) {
       # Save the table
       qs::qsave(dat, file = file)
     }
-    if (!"private_households" %in% names(data_list)) {
+    if (!"private_households" %in% all_files) {
       data_name <- "private_households"
-      dat <- svm$scales[[scale_name]]
+      dat <- scales[[scale_name]]
       if (!"households" %in% names(dat)) return()
       dat <- dat[c("ID", "households")]
       census_year <- cc.data::census_years
@@ -171,7 +160,7 @@ save_all_scales_qs <- function(data_folder = "data/", svm) {
     all_files <- gsub(".qs$", "", all_files)
     qs::qsave(all_files, sprintf("%s%s_files.qs", data_folder, scale_name))
 
-  }, names(svm_data), svm_data)
+  }, names(scales), scales)
 
   return(invisible(NULL))
 }
@@ -194,7 +183,9 @@ save_all_scales_qs <- function(data_folder = "data/", svm) {
 #' As light as possible so they live in the global environment.
 #' @export
 save_short_tables_qs <- function(data_folder = "data/", all_scales,
-                                 skip_scales = c("building", "street")) {
+                                 skip_scales = c(
+                                   "building", "street", "grd30", "grd60", "grd120",
+                                   "grd300")) {
 
   # Remove the scales to skip
   scales <- all_scales[!names(all_scales) %in% skip_scales]

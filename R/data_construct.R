@@ -5,8 +5,6 @@
 #' attributes. It further tests for binning breaks and whether quintiles should
 #' be used. The resulting data is merged with the existing scales_variables_modules data.
 #'
-#' @param svm_data <`named list`> Lits of already existing data (usually
-#' `scales_variables_modules$data`)
 #' @param scales_data <`named list`> A list containing the new data for each scale.
 #' @param unique_var <`character`> A character vector of unique variable names to
 #' construct data for, e.g. `c('alp', 'housing_tenant', ...)` without the
@@ -30,7 +28,7 @@
 #' of observations), quintiles are applied. If breaks calculations
 #' are not adequate, the function stops with an error.
 #' @export
-data_construct <- function(svm_data, scales_data, unique_var, time_regex,
+data_construct <- function(scales_data, unique_var, time_regex, data_folder = "data/",
                            schema = list(time = time_regex),
                            breaks_var = NULL) {
 
@@ -52,7 +50,6 @@ data_construct <- function(svm_data, scales_data, unique_var, time_regex,
     ))
     time_regex <- sprintf("_%s", time_regex)
   }
-
 
   trimed <- mapply(\(scale_name, scale_df) {
     dat <- lapply(unique_var, \(v) {
@@ -140,18 +137,30 @@ data_construct <- function(svm_data, scales_data, unique_var, time_regex,
     return(dat)
   }, names(scales_data), scales_data, SIMPLIFY = FALSE)
 
-  mapply(\(data_name, data_df) {
+  # Save the data
+  mapply(\(scale_name, data_list) {
+    if (length(data_list) == 0) return()
 
-    scale_dat <- trimed[[data_name]]
+    # Construct the folder path for the scale
+    folder <- sprintf("%s%s/", data_folder, scale_name)
 
-    if (is.null(scale_dat)) return(data_df)
+    # If the folder doesn't exist, create it
+    if (!dir.exists(folder)) dir.create(folder)
 
-    # Make it a list if it's not already
-    out <- if (is.list(scale_dat)) scale_dat else list(scale_dat)
+    mapply(\(data_name, data) {
+      if (is.null(data)) return()
 
-    # Return the previous data and the new
-    c(data_df, out)
+      # Construct the file path for the table
+      file <- sprintf("%s%s.qs", folder, data_name)
 
-  }, names(svm_data), svm_data, SIMPLIFY = FALSE)
+      # Save the table
+      qs::qsave(data, file = file)
+
+    }, names(data_list), data_list)
+
+  }, names(trimed), trimed)
+
+  # Return nothing. The data is saved.
+  return(NULL)
 
 }

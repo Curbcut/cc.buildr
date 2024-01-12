@@ -5,18 +5,15 @@
 \title{Append new data to the \code{data} element of scales_variables_modules}
 \usage{
 data_construct(
-  svm_data,
   scales_data,
   unique_var,
   time_regex,
+  data_folder = "data/",
   schema = list(time = time_regex),
   breaks_var = NULL
 )
 }
 \arguments{
-\item{svm_data}{<\verb{named list}> Lits of already existing data (usually
-\code{scales_variables_modules$data})}
-
 \item{scales_data}{<\verb{named list}> A list containing the new data for each scale.}
 
 \item{unique_var}{<\code{character}> A character vector of unique variable names to

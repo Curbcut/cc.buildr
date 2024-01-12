@@ -80,32 +80,42 @@ tileset_upload_tile_source <- function(df, id, username, access_token) {
 #' mapbox. CRS must be 4326.
 #' @param id <`character`> The ID of the new tile source. For a scale, usually
 #' follows a prefix (mtl), the region (CMA), and the scale (CSD), e.g `mtl_CMA_building`.
+#' @param total_batches <`numeric`> Number of batches to divide the data frame into
+#' for the upload process. Defaults to 100. As the dataset is large, the more batches
+#' will be needed.
 #' @param username <`character`> Mapbox account username.
 #' @param access_token <`character`> Private access token to the Mapbox account.
 #'
 #' @return Returns nothing when succesfull.
 #' @export
 tileset_upload_tile_source_large <-
-  function(df, id, username, access_token) {
-    iter_size <- ceiling(nrow(df) / 100)
+  function(df, id, total_batches = 100, username, access_token) {
+    iter_size <- ceiling(nrow(df) / total_batches)
 
     to_process_list <-
-      lapply(1:100, \(x) {
-        df[(((x - 1) * iter_size + 1):(x * iter_size)), ] |>
+      lapply(1:total_batches, \(x) {
+        df[(((x - 1) * iter_size + 1):min(x * iter_size, nrow(df))), ] |>
           geojsonsf::sf_geojson() |>
           paste0(collapse = " ") |>
           geojson::featurecollection()
       })
 
-    # Iteratively post files to tile source
-    tmp <- tempfile(fileext = ".json")
-    tmp_list <- lapply(1:10, \(x) tempfile(fileext = ".json"))
+    batch_size <- total_batches / 10
+    num_groups <- ceiling(length(to_process_list) / batch_size)
 
-    lapply(1:10, function(x) {
-      to_process <- to_process_list[((x - 1) * 10 + 1):(x * 10)]
-      mapply(geojson::ndgeo_write, to_process, tmp_list)
+    for (group in 1:num_groups) {
+      # Define the range for each group
+      start <- (group - 1) * batch_size + 1
+      end <- min(group * batch_size, length(to_process_list))
+
+      # Temporary files for each of the batches in the group
+      tmp_list <- lapply(start:end, \(x) tempfile(fileext = ".json"))
+
+      # Write to temporary files
+      mapply(geojson::ndgeo_write, to_process_list[start:end], tmp_list)
 
       # Concatenate geoJSONs
+      tmp <- tempfile(fileext = ".json")
       if (Sys.info()[["sysname"]] == "Windows") {
         out <- paste0("type ", paste(tmp_list, collapse = " "), " > ", tmp)
         shell(out)
@@ -116,13 +126,13 @@ tileset_upload_tile_source_large <-
 
       # Upload to MTS
       out <- paste0(
-        'curl -X POST "https://api.mapbox.com/tilesets/v1/sources/',
+        'curl --retry 5 --retry-delay 5 -X POST "https://api.mapbox.com/tilesets/v1/sources/',
         username, "/", id, "?access_token=", access_token,
         '" -F file=@', tmp,
         ' --header "Content-Type: multipart/form-data"'
       )
       system(out)
-    })
+    }
   }
 
 
