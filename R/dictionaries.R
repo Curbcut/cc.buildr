@@ -198,6 +198,13 @@ add_regions_to_scales_dictionary <- function(scales_dictionary, regions,
   # Grab region area
   regions_area <- sapply(regions, sf::st_area)
 
+  # In known regions, add the `grd` scales
+  known_regions <- c(known_regions, list(grd30 = regions_dictionary$region,
+                                         grd60 = regions_dictionary$region,
+                                         grd120 = regions_dictionary$region,
+                                         grd300 = regions_dictionary$region,
+                                         grd480 = regions_dictionary$region))
+
   # For every scales, extract the matching region
   scales_to_match <-
     scales_consolidated$scales[!names(scales_consolidated$scales) %in% names(known_regions)]

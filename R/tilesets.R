@@ -1196,3 +1196,306 @@ stories_create_tileset <- function(stories, prefix, username, access_token) {
     access_token = access_token
   )
 }
+
+#' Upload NDVI Tilesets
+#'
+#' This function uploads NDVI tilesets for different grid scales and regions.
+#' It handles the deletion of old tilesets, creation of new ones, and their publishing.
+#' The function is designed to work with specific data structures and assumes
+#' the presence of NDVI year-specific data.
+#'
+#' @param grids_dir <`character`> Directory containing grid files. Default is "dev/data/built/".
+#' @param map_zoom_levels <`list`> List of zoom levels for different grid scales.
+#' @param max_zoom <`list`> Maximum zoom levels for different grid scales.
+#' Default values for scales grd480, grd300, grd120, grd60, and grd30.
+#' @param regions <`data.frame` or `sf` object> Spatial data for different regions.
+#' @param prefix <`character`> Prefix attached to every tile source and
+#' created and published tileset. Should correspond to the Curbcut city, e.g. `mtl`.
+#' @param username <`character`> Mapbox account username.
+#' @param access_token <`character`> Private access token to the Mapbox account.
+#' @param ndvi_delta_breaks <`numeric vector`> Break points for categorizing NDVI deltas.
+#' Default is c(-0.5, -0.1, -0.02, 0.02, 0.1, 0.5).
+#'
+#' @return Invisibly returns NULL. The function's primary purpose is the side-effects
+#' of uploading, creating, and publishing tilesets.
+#' @export
+tileset_upload_ndvi <- function(grids_dir = "dev/data/built/",
+                                map_zoom_levels,
+                                max_zoom = list(grd480 = 11, grd300 = 13, grd120 = 14,
+                                                grd60 = 15, grd30 = 16),
+                                regions,
+                                prefix,
+                                username,
+                                access_token,
+                                ndvi_delta_breaks = c(-0.5, -0.1, -0.02, 0.02, 0.1, 0.5)) {
+
+  all_scales <- sapply(c(30, 60, 120, 300, 480), \(x) {
+    file <- sprintf("%sgrd%s.qs", grids_dir, x)
+    geo <- qs::qread(file)
+    data_file <- qs::qread(sprintf("data/grd%s/ndvi.qs", x))
+    merge(geo, data_file, by = "ID")
+  }, simplify = FALSE, USE.NAMES = TRUE)
+
+  # Switch the geometry for digital
+  all_scales <- lapply(all_scales, \(scale_df) {
+    # If there is no digital geometry, return raw
+    if (!"geometry_digital" %in% names(scale_df)) return(scale_df)
+
+    # Switch the geometry to the digital one
+    scale_df <- sf::st_drop_geometry(scale_df)
+    names(scale_df)[names(scale_df) == "geometry_digital"] <- "geometry"
+    sf::st_as_sf(scale_df)
+  })
+
+  # Reset
+  mapply(\(scale_name, scale_df) {
+    name <- paste(prefix, scale_name, sep = "_")
+
+    tileset_delete_tileset_source(
+      id = name,
+      username = username,
+      access_token = access_token
+    )
+
+    tileset_delete_tileset(
+      id = name,
+      username = username,
+      access_token = access_token
+    )
+  }, names(all_scales), all_scales, SIMPLIFY = FALSE)
+
+  # DO THE SAME FOR AUTOZOOMS
+  lapply(names(map_zoom_levels), \(x) {
+    x <- gsub("mzl_", "", x)
+    x <- paste(prefix, x, sep = "_")
+
+    tileset_delete_tileset_source(
+      id = x,
+      username = username,
+      access_token = access_token
+    )
+
+    tileset_delete_tileset(
+      id = x,
+      username = username,
+      access_token = access_token
+    )
+  })
+
+  # Tileset sources
+  mapply(function(region_name, reg_sf) {
+    mapply(function(scale_name, scale_df) {
+      scale_n <- paste(prefix, scale_name, region_name, sep = "_")
+      df <- scale_df
+      df <- sf::st_filter(df, reg_sf)
+
+      vars_col <- grep("ndvi_\\d{4}$", names(df), value = TRUE)
+
+      # Subset
+      df <- df[, c("ID", vars_col)]
+      if (scale_name == "grd300") df$ID_color <- df$ID
+
+      cols <- names(df)
+      cols <- cols[grepl("^ndvi_", cols)]
+      cols <- gsub("ndvi_", "", cols)
+
+      # Sort years in descending order (since you want lowest to highest in pairs)
+      cols_sorted <- sort(cols, decreasing = TRUE)
+      combinations <- combn(cols_sorted, 2)
+      pairs <- data.frame(year1 = combinations[2,], year2 = combinations[1,])
+
+
+      # Add the delta column
+      for (i in seq_len(nrow(pairs))) {
+        pair <- pairs[i, ]
+
+        v_1 <- paste0("ndvi_", pair[[1]])
+        v_2 <- paste0("ndvi_", pair[[2]])
+
+        var <- sprintf("ndvi_delta_%s_%s", pair[[1]], pair[[2]])
+
+        df[[var]] <- (df[[v_2]] - df[[v_1]]) / df[[v_2]]
+
+        # Add the `group` for the map colouring
+        df$var_left_q5 <- 5
+        df$var_left_q5[df[[var]] < ndvi_delta_breaks[5]] <- 4
+        df$var_left_q5[df[[var]] < ndvi_delta_breaks[4]] <- 3
+        df$var_left_q5[df[[var]] < ndvi_delta_breaks[3]] <- 2
+        df$var_left_q5[df[[var]] < ndvi_delta_breaks[2]] <- 1
+        df$var_left_q5[is.na(df[[var]])] <- NA
+        df[[var]] <- as.character(df$var_left_q5)
+        df$var_left_q5 <- NULL
+
+      }
+
+
+      # Add the group to all the ndvi columns
+      for (col in cols) {
+        var <- paste0("ndvi_", col)
+
+        df$col <- 5
+        df$col[df[[var]] < 0.8] <- 4
+        df$col[df[[var]] < 0.6] <- 3
+        df$col[df[[var]] < 0.4] <- 2
+        df$col[df[[var]] < 0.2] <- 1
+        df$col[is.na(df[[var]])] <- NA
+
+        df[[var]] <- as.character(df$col)
+        df$col <- NULL
+
+      }
+
+      df <- sf::st_transform(df, 4326)
+
+      tileset_upload_tile_source_large(
+        id = scale_n,
+        df = df,
+        total_batches = if (scale_name == "grd30") 1000 else 100,
+        username = username,
+        access_token = access_token
+      )
+    }, names(all_scales), all_scales)
+  }, names(regions), regions)
+
+  # Create recipe, create tileset and publish
+  maxzooms <- tibble::tibble(scale = names(max_zoom),
+                             maxzoom = unlist(max_zoom))
+
+  all_recipes <-
+    mapply(function(region_name, reg_sf) {
+      mapply(\(scale_name, scale_df) {
+
+        source_names <- paste(prefix, scale_name, region_name, sep = "_")
+        sources <- paste0("mapbox://tileset-source/", username, "/", source_names)
+        names(sources) <- source_names
+        minzooms <- 3
+        names(minzooms) <- source_names
+
+        default_maxzoom <- maxzooms$maxzoom[maxzooms$scale == scale_name]
+        new_maxzoom <- max(default_maxzoom, 14)
+        maxzooms_ <- new_maxzoom
+        names(maxzooms_) <- source_names
+        layer_sizes <- 2500
+        names(layer_sizes) <- source_names
+
+        recipe <- tileset_create_recipe(
+          layer_names = source_names,
+          source = sources,
+          minzoom = minzooms,
+          maxzoom = maxzooms_,
+          recipe_name = source_names,
+          layer_size = layer_sizes
+        )
+
+        tileset_create_tileset(source_names,
+                               recipe = recipe,
+                               username = username,
+                               access_token = access_token
+        )
+
+        tileset_publish_tileset(source_names,
+                                username = username,
+                                access_token = access_token
+        )
+      }, names(all_scales), all_scales, SIMPLIFY = FALSE)
+    }, names(regions), regions)
+
+  # Function to calculate on autozoom when the scale starts and when it ends
+  calculate_zoom_levels <- function(zoom_levels) {
+    # Initialize the output tibble
+    result <- tibble::tibble(
+      scale = character(), min_zoom = integer(),
+      max_zoom = integer()
+    )
+
+    # Loop through the named numeric vector
+    for (i in seq_along(zoom_levels)) {
+      scale_name <- names(zoom_levels)[i]
+      zoom_value <- zoom_levels[i]
+
+      # Calculate min zoom
+      min_zoom <- ifelse(i == 1, 0, result$max_zoom[i - 1] + 1)
+
+      # Calculate max zoom
+      max_zoom <-
+        if (length(zoom_levels) == 1) {
+          10
+        } else {
+          ifelse(i == length(zoom_levels), zoom_value, zoom_levels[i + 1] - 1)
+        }
+
+
+      # Add the min and max zoom to the result tibble
+      result <-
+        tibble::add_row(result,
+                        scale = scale_name, min_zoom = min_zoom,
+                        max_zoom = max_zoom
+        )
+    }
+
+    return(result)
+  }
+
+  auto_zoom_recipes <-
+    mapply(function(region_name, reg_sf) {
+
+      zoom_levels <- map_zoom_levels$mzl_grd480_grd300_grd120_grd60_grd30
+
+      az_name <- paste(prefix, "ndvi_autozoom", region_name, sep = "_")
+      scale_names <- paste(prefix, names(zoom_levels), region_name, sep = "_")
+
+
+      sources <- stats::setNames(paste0(
+        "mapbox://tileset-source/", username, "/",
+        scale_names
+      ), scale_names)
+
+      zooms <- calculate_zoom_levels(zoom_levels)
+      minzooms <- zooms$min_zoom
+      maxzooms <- zooms$max_zoom
+      maxzooms[length(maxzooms)] <- 16
+      names(minzooms) <- scale_names
+      names(maxzooms) <- scale_names
+
+      layer_sizes <-
+        stats::setNames(rep(2500, length(scale_names)), scale_names)
+
+      recipe <-
+        tileset_create_recipe(
+          layer_names = scale_names,
+          source = sources,
+          minzoom = minzooms,
+          maxzoom = maxzooms,
+          layer_size = layer_sizes,
+          recipe_name = az_name
+        )
+
+      # Reset
+      tileset_delete_tileset_source(
+        id = az_name,
+        username = username,
+        access_token = access_token
+      )
+      tileset_delete_tileset(
+        id = az_name,
+        username = username,
+        access_token = access_token
+      )
+      # Give some time so the deletion is completed
+      Sys.sleep(5)
+
+      # New tileset
+      tileset_create_tileset(az_name,
+                             recipe = recipe,
+                             username = username,
+                             access_token = access_token
+      )
+      tileset_publish_tileset(az_name,
+                              username = username,
+                              access_token = access_token
+      )
+    }, names(regions), regions)
+
+
+  return(invisible(NULL))
+}
