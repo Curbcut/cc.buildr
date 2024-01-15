@@ -160,7 +160,7 @@ split_scale <- function(destination, cutting_layer,
   destination_out <- sf::st_make_valid(destination_out)
 
   # Make sure the active geometry column is geometry
-  st_geometry(destination_out) <- "geometry"
+  sf::st_geometry(destination_out) <- "geometry"
 
   # Add area
   destination_out$area <- get_area(destination_out)
