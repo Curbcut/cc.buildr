@@ -4,7 +4,13 @@
 \alias{ru_lst}
 \title{Add a ready to use Land Surface Temperature data and module}
 \usage{
-ru_lst(scales_variables_modules, region_DA_IDs, scales_sequences, crs)
+ru_lst(
+  scales_variables_modules,
+  region_DA_IDs,
+  scales_sequences,
+  crs,
+  overwrite = FALSE
+)
 }
 \arguments{
 \item{scales_variables_modules}{<\verb{named list}> A list of length three.
@@ -20,6 +26,9 @@ hierarchical ordering of scales on an auto-zoom.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}
+
+\item{overwrite}{<\code{logical}> Should the data already processed and stored be
+overwriten?}
 }
 \value{
 A list of length 3, similar to the one fed to

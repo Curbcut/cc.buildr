@@ -173,12 +173,14 @@ census_scales_dictionary <- function(census_scales) {
 #' Defaults to NULL.
 #' @param DA_carto <`sf data.frame`> The cartographic version of DAs, one of the
 #' output of \code{\link{create_master_polygon}}.
+#' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
+#' \code{32617} for Toronto.
 #'
 #' @return A modified scales_dictionary with region information added.
 #' @export
 add_regions_to_scales_dictionary <- function(scales_dictionary, regions,
                                              scales_consolidated,
-                                             known_regions = NULL, DA_carto) {
+                                             known_regions = NULL, DA_carto, crs) {
 
   # Digital to cartographic
   regions <- lapply(regions, \(reg) {

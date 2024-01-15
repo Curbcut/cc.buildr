@@ -34,7 +34,8 @@ ba_var(
   module_dataset_info = NULL,
   module_dates = NULL,
   module_main_dropdown_title = NULL,
-  module_var_right = NULL
+  module_var_right = NULL,
+  overwrite = FALSE
 )
 }
 \arguments{
@@ -109,6 +110,9 @@ years.}
 \item{module_main_dropdown_title}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 
 \item{module_var_right}{<\verb{character vector}> Optional. See \code{\link[cc.buildr]{add_module}}.}
+
+\item{overwrite}{<\code{logical}> Should the data already processed and stored be
+overwriten?}
 }
 \value{
 A list of length 3, similar to the one fed to

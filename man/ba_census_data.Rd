@@ -12,7 +12,7 @@ ba_census_data(
   scales_to_interpolate = {
     
     names(scales_variables_modules$scales)[!names(scales_variables_modules$scales) \%in\%
-    c("building", "street", "grd30", "grd60", "grd120", "grd300")]
+    c("building", "street", "DB", "grd30", "grd60", "grd120", "grd300")]
  },
   scales_sequences,
   crs,
@@ -59,7 +59,7 @@ the list of modules.}
 \item{age_module}{<\code{logical}> Should an age module be added to
 the list of modules.}
 
-\item{overwrite}{<\code{logical}> Should the data already precessed and stored be
+\item{overwrite}{<\code{logical}> Should the data already processed and stored be
 overwriten?}
 }
 \value{

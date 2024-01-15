@@ -14,7 +14,8 @@ exclude_processed_scales(
 \arguments{
 \item{unique_vars}{<\verb{character vector}> A vector of unique variable names.}
 
-\item{scales}{<\verb{character vector}> A vector of scale names to be checked.}
+\item{scales}{<\verb{character vector OR named list}> A vector of scale names or a named
+list of scales to be checked.}
 
 \item{overwrite}{<\code{logical}> If TRUE, no scales are excluded and all are returned.}
 

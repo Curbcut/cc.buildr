@@ -16,7 +16,8 @@ ba_accessibility_points(
   default_var = "access_foot_food_grocery",
   scales_sequences,
   crs,
-  DA_DB = "DA"
+  DA_DB = "DA",
+  overwrite
 )
 }
 \arguments{
@@ -50,6 +51,9 @@ hierarchical ordering of scales on an auto-zoom.}
 \code{32617} for Toronto.}
 
 \item{DA_DB}{<\code{character}> Which of DA or DB should be used to calculate accessibility.}
+
+\item{overwrite}{<\code{logical}> Should the data already processed and stored be
+overwriten?}
 }
 \value{
 A list containing the scales, variables, and modules tables.

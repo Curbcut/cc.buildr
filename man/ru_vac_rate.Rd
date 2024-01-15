@@ -32,6 +32,9 @@ approximate matches to the name of the \code{cmhczone} table in
 \code{scales_variables_modules}? Useful for Montreal where names are more or less
 unique and so an approximate match can be beneficial. less for Toronto where
 the name \code{York} is used in many different names.}
+
+\item{overwrite}{<\code{logical}> Should the data already processed and stored be
+overwriten?}
 }
 \value{
 A list of length 3, similar to the one fed to

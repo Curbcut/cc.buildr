@@ -12,7 +12,9 @@ interpolate_custom_geo(
   average_vars = c(),
   additive_vars = c(),
   name_interpolate_from,
-  construct_for = NULL
+  construct_for = NULL,
+  overwrite = FALSE,
+  time_regex = "_\\\\d{4}$"
 )
 }
 \arguments{
@@ -48,6 +50,13 @@ each of them has a vector character of scales for which the \code{data} should b
 interpolated to. Used by \code{\link[cc.buildr]{interpolate_from_census_geo}}.
 It bypasses the process where \code{interpolate_custom_geo} only interpolates
 for geometries bigger than the data.}
+
+\item{overwrite}{<\code{logical}> Should the data already processed and stored be
+overwriten?}
+
+\item{time_regex}{<\code{character}> Regular expression which corresponds to
+a timeframe, placed at the end of the \code{vars} vector. e.g. \verb{\\\\d\{4\}} for
+years.}
 }
 \value{
 Returns a list of length 4. The first is the same list that is fed in

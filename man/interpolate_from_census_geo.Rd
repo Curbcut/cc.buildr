@@ -15,7 +15,9 @@ interpolate_from_census_geo(
   additive_vars = c(),
   only_scales = scales_greater_than(base_scale =
     all_scales[[base_scale]][all_scales[[base_scale]]$ID \%in\% data[[paste0(base_scale,
-    "_ID")]], ], all_scales = all_scales, crs = crs)
+    "_ID")]], ], all_scales = all_scales, crs = crs),
+  overwrite = FALSE,
+  time_regex = "_\\\\d{4}$"
 )
 }
 \arguments{
@@ -52,6 +54,13 @@ are present inside the CSD.}
 
 \item{only_scales}{<\verb{character vector}> All the scales for which data should
 be interpolated and appended. Defults to using \code{\link{scales_greater_than}}.}
+
+\item{overwrite}{<\code{logical}> Should the data already processed and stored be
+overwriten?}
+
+\item{time_regex}{<\code{character}> Regular expression which corresponds to
+a timeframe, placed at the end of the \code{vars} vector. e.g. \verb{\\\\d\{4\}} for
+years.}
 }
 \value{
 Returns a list of length 4. The first is the same list that is fed in

@@ -9,7 +9,8 @@ add_regions_to_scales_dictionary(
   regions,
   scales_consolidated,
   known_regions = NULL,
-  DA_carto
+  DA_carto,
+  crs
 )
 }
 \arguments{
@@ -30,6 +31,9 @@ Defaults to NULL.}
 
 \item{DA_carto}{<\verb{sf data.frame}> The cartographic version of DAs, one of the
 output of \code{\link{create_master_polygon}}.}
+
+\item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
+\code{32617} for Toronto.}
 }
 \value{
 A modified scales_dictionary with region information added.
