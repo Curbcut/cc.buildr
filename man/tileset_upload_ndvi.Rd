@@ -33,7 +33,7 @@ created and published tileset. Should correspond to the Curbcut city, e.g. \code
 \item{access_token}{<\code{character}> Private access token to the Mapbox account.}
 
 \item{ndvi_delta_breaks}{<\verb{numeric vector}> Break points for categorizing NDVI deltas.
-Default is c(-2.5, -0.1, -0.02, 0.02, 0.1, 2.5).}
+Default is c(-0.5, -0.1, -0.02, 0.02, 0.1, 0.5).}
 }
 \value{
 Invisibly returns NULL. The function's primary purpose is the side-effects

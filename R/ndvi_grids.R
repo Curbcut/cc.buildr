@@ -89,3 +89,73 @@ ndvi_grids <- function(census_scales, base_polygons,
   # Return
   return(grids)
 }
+
+#' Append NDVI scales to the scales dictionary.
+#'
+#' This function adds multiple NDVI scale entries to a given dictionary. Each
+#' entry contains details about a specific scale, such as its singular and
+#' plural forms, slider title, and descriptive text.
+#'
+#' @param scales_dictionary <`data.frame`> A dictionary to which NDVI scales will be added.
+#'
+#' @return Updated scales dictionary with NDVI scale entries.
+#' @export
+scales_dictionary_ndvi <- function(scales_dictionary) {
+
+  scales_dictionary <-
+    append_scale_to_dictionary(scales_dictionary,
+                               scale = "grd30",
+                               sing = "area at the 30m scale",
+                               sing_with_article = "the area at the 30m scale",
+                               plur = "areas at the 30m scale",
+                               slider_title = "30m",
+                               place_heading = "{name}",
+                               place_name = "the 30m grid area around {name}",
+                               subtext = "Small square areas, each measuring 30 meters by 30 meters")
+
+  scales_dictionary <-
+    append_scale_to_dictionary(scales_dictionary,
+                               scale = "grd60",
+                               sing = "area at the 60m scale",
+                               sing_with_article = "the area at the 60m scale",
+                               plur = "areas at the 60m scale",
+                               slider_title = "60m",
+                               place_heading = "{name}",
+                               place_name = "the 60m grid area around {name}",
+                               subtext = "Small square areas, each measuring 60 meters by 60 meters")
+
+  scales_dictionary <-
+    append_scale_to_dictionary(scales_dictionary,
+                               scale = "grd120",
+                               sing = "area at the 120m scale",
+                               sing_with_article = "the area at the 120m scale",
+                               plur = "areas at the 120m scale",
+                               slider_title = "120m",
+                               place_heading = "{name}",
+                               place_name = "the 120m grid area around {name}",
+                               subtext = "Small square areas, each measuring 120 meters by 120 meters")
+
+  scales_dictionary <-
+    append_scale_to_dictionary(scales_dictionary,
+                               scale = "grd300",
+                               sing = "area at the 300m scale",
+                               sing_with_article = "the area at the 300m scale",
+                               plur = "areas at the 300m scale",
+                               slider_title = "300m",
+                               place_heading = "{name}",
+                               place_name = "the 300m grid area around {name}",
+                               subtext = "Small square areas, each measuring 300 meters by 300 meters")
+
+  scales_dictionary <-
+    append_scale_to_dictionary(scales_dictionary,
+                               scale = "grd480",
+                               sing = "area at the 480m scale",
+                               sing_with_article = "the area at the 480m scale",
+                               plur = "areas at the 480m scale",
+                               slider_title = "480m",
+                               place_heading = "{name}",
+                               place_name = "the 480m grid area around {name}",
+                               subtext = "Small square areas, each measuring 480 meters by 480 meters")
+
+  return(scales_dictionary)
+}
