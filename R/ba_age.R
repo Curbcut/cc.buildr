@@ -5,12 +5,18 @@
 #' third is the modules table.
 #' @param scales_sequences <`list`> A list of scales sequences representing the
 #' hierarchical ordering of scales on an auto-zoom.
+#' @param scales_to_interpolate <`character vector`> WILL NOT be used for calculations.
+#' Simply used to inform the variables table. ALL scales holding census `age` data
+#' will be used for calculation of the age page data.
+#' @param overwrite <`logical`> Should the data already precessed and stored be
+#' overwriten?
 #'
 #' @return A list of length 4, similar to the one fed to
 #' `scales_variables_modules` with age data added, their addition
 #' in the variables table and the module table.
 #' @export
-ba_age <- function(scales_variables_modules, scales_sequences) {
+ba_age <- function(scales_variables_modules, scales_sequences, scales_to_interpolate,
+                   overwrite = FALSE) {
   # Declare all variables from the census -----------------------------------
 
   time_regex <- "_\\d{4}$"
@@ -50,7 +56,35 @@ ba_age <- function(scales_variables_modules, scales_sequences) {
 
   # Build census data for all possible scales -------------------------------
 
-  final_dat <- lapply(scales_variables_modules$scales, \(scale) {
+  # Add all age data to the scales
+  svm_scales <- scales_variables_modules$scales
+
+  # Exclude scales that already have data
+  unique_var <-  names(vars)
+  unique_var <- c(paste0(unique_var, "_pct"), paste0(unique_var, "_count"))
+
+  svm_scales <- svm_scales[exclude_processed_scales(unique_var, overwrite = overwrite,
+                                                    names(svm_scales))]
+
+  # Build the scales as they have 'age'
+  svm_scales <- mapply(\(scale_name, scale_df) {
+
+    all_files <- list.files(paste0("data/", scale_name, "/"), full.names = TRUE)
+    age_files <- all_files[grepl(sprintf("%s/age_\\d", scale_name), all_files)]
+
+    if (length(age_files) == 0) return(scale_df)
+
+    # Add c_population
+    age_files <- c(age_files, paste0("data/", scale_name, "/c_population.qs"))
+
+    age_data <- lapply(age_files, qs::qread)
+    age_data <- Reduce(\(x, y) merge(x, y, by = "ID"), age_data)
+
+    merge(scale_df, age_data, by = "ID")
+
+  }, names(svm_scales), svm_scales)
+
+  final_dat <- lapply(svm_scales, \(scale) {
     if (!"age_0_14_2021" %in% names(scale)) return(scale)
 
     # Iterate over all years
@@ -81,11 +115,6 @@ ba_age <- function(scales_variables_modules, scales_sequences) {
     return(scale)
 
   })
-
-  avail_scales <- sapply(scales_variables_modules$scales, \(scale) {
-    if (!"age_0_14_2021" %in% names(scale)) F else T
-  })
-  avail_scales <- names(avail_scales)[avail_scales]
 
 
   # Data tibble -------------------------------------------------------------
@@ -169,7 +198,7 @@ ba_age <- function(scales_variables_modules, scales_sequences) {
         private = FALSE,
         pe_include = FALSE,
         dates = cc.data::census_years,
-        avail_scale = avail_scales,
+        avail_scale = scales_to_interpolate,
         source = "Canadian census",
         interpolated = scales_variables_modules$variables$interpolated[
           scales_variables_modules$variables$var_code == "age_0_14"][[1]],
@@ -187,7 +216,7 @@ ba_age <- function(scales_variables_modules, scales_sequences) {
 
   avail_scale_combinations <-
     get_avail_scale_combinations(scales_sequences = scales_sequences,
-                                 avail_scales = avail_scales)
+                                 avail_scales = scales_to_interpolate)
 
 
   # Modules table -----------------------------------------------------------
@@ -236,4 +265,3 @@ ba_age <- function(scales_variables_modules, scales_sequences) {
     modules = modules
   ))
 }
-

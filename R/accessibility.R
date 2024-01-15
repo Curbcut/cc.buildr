@@ -26,6 +26,8 @@
 #' @param default_var <`character`> The first variable the user will see when
 #' they will lang on the page. Defaults to groceries accessible within a 20 minutes walk.
 #' @param DA_DB <`character`> Which of DA or DB should be used to calculate accessibility.
+#' @param overwrite <`logical`> Should the data already processed and stored be
+#' overwriten?
 #'
 #' @return A list containing the scales, variables, and modules tables.
 #' @export
@@ -44,7 +46,8 @@ ba_accessibility_points <- function(scales_variables_modules,
                                     default_var = "access_foot_food_grocery",
                                     scales_sequences,
                                     crs,
-                                    DA_DB = "DA") {
+                                    DA_DB = "DA",
+                                    overwrite) {
   if (max(time_intervals) > 60) {
     stop(paste0(
       "The maximum time interval available in the travel time ",
@@ -93,7 +96,9 @@ ba_accessibility_points <- function(scales_variables_modules,
       all_scales = scales_variables_modules$scales,
       weight_by = "population",
       crs = crs,
-      average_vars = average_vars
+      average_vars = average_vars,
+      overwrite = overwrite,
+      time_regex = "_\\d{4}$"
     )
 
 

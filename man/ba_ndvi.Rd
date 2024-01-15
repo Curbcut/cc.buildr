@@ -10,7 +10,8 @@ ba_ndvi(
   years = cc.data::ndvi_years(),
   skip_scales = NULL,
   scales_sequences,
-  crs
+  crs,
+  overwrite = FALSE
 )
 }
 \arguments{
@@ -32,6 +33,9 @@ hierarchical ordering of scales on an auto-zoom.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}
+
+\item{overwrite}{<\code{logical}> Should the data already precessed and stored be
+overwriten?}
 }
 \value{
 A list of length 3, similar to the one fed to

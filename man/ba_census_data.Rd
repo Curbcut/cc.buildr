@@ -18,7 +18,8 @@ ba_census_data(
   crs,
   DB_table,
   housing_module = TRUE,
-  age_module = TRUE
+  age_module = TRUE,
+  overwrite = FALSE
 )
 }
 \arguments{
@@ -57,6 +58,9 @@ the list of modules.}
 
 \item{age_module}{<\code{logical}> Should an age module be added to
 the list of modules.}
+
+\item{overwrite}{<\code{logical}> Should the data already precessed and stored be
+overwriten?}
 }
 \value{
 A list of length 3, similar to the one fed to

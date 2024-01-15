@@ -42,6 +42,8 @@
 #' @param module_dates <`numeric vector`> Optional. See \code{\link[cc.buildr]{add_module}}.
 #' @param module_main_dropdown_title <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
 #' @param module_var_right <`character vector`> Optional. See \code{\link[cc.buildr]{add_module}}.
+#' @param overwrite <`logical`> Should the data already processed and stored be
+#' overwriten?
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with the new variable added, and possible a new
@@ -67,7 +69,8 @@ ba_var <- function(data, scales_variables_modules, base_scale,
                    module_dataset_info = NULL,
                    module_dates = NULL,
                    module_main_dropdown_title = NULL,
-                   module_var_right = NULL) {
+                   module_var_right = NULL,
+                   overwrite = FALSE) {
   # Get list of data variables ----------------------------------------------
 
   var <-
@@ -97,7 +100,9 @@ ba_var <- function(data, scales_variables_modules, base_scale,
       weight_by = weight_by,
       crs = crs,
       additive_vars = additive_vars,
-      average_vars = average_vars
+      average_vars = average_vars,
+      overwrite = overwrite,
+      time_regex = time_regex
     )
 
 

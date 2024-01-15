@@ -26,6 +26,8 @@
 #' the list of modules.
 #' @param age_module <`logical`> Should an age module be added to
 #' the list of modules.
+#' @param overwrite <`logical`> Should the data already processed and stored be
+#' overwriten?
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with census variable added, their addition
@@ -38,7 +40,7 @@ ba_census_data <- function(scales_variables_modules,
                            scales_to_interpolate = {
                              names(scales_variables_modules$scales)[
                                !names(scales_variables_modules$scales) %in% c(
-                                 "building", "street", "grd30", "grd60", "grd120",
+                                 "building", "street", "DB", "grd30", "grd60", "grd120",
                                  "grd300")
                              ]
                            },
@@ -46,15 +48,17 @@ ba_census_data <- function(scales_variables_modules,
                            crs,
                            DB_table,
                            housing_module = TRUE,
-                           age_module = TRUE) {
+                           age_module = TRUE,
+                           overwrite = FALSE) {
+
   # Declare all variables from the census -----------------------------------
 
   unique_var <- cc.data::census_add_parent_vectors(census_vectors)
 
   vars <-
     sapply(unique_var,
-      \(x) paste(x, census_years, sep = "_"),
-      simplify = FALSE, USE.NAMES = FALSE
+           \(x) paste(x, census_years, sep = "_"),
+           simplify = FALSE, USE.NAMES = FALSE
     ) |> unlist()
 
   # Only keep vars for which we know there is data
@@ -62,6 +66,13 @@ ba_census_data <- function(scales_variables_modules,
   vars <- vars[!vars %in% cc.data::census_vectors_details$var_code[no_data]]
 
   time_regex <- "_\\d{4}$"
+
+
+  # Which scales should be recalculated -------------------------------------
+
+  scales_to_interpolate_exc <- exclude_processed_scales(unique_vars = unique_var,
+                                                        scales = scales_to_interpolate,
+                                                        overwrite = overwrite)
 
 
   # Build census data for all possible scales -------------------------------
@@ -73,18 +84,25 @@ ba_census_data <- function(scales_variables_modules,
     census_years = census_years,
     crs = crs,
     DB_table = DB_table,
-    scales_to_interpolate = scales_to_interpolate
+    scales_to_interpolate = scales_to_interpolate_exc
   )
 
 
   # Data tibble -------------------------------------------------------------
 
-  data <- data_construct(scales_data = census_dat$scales,
-                         unique_var = unique_var,
-                         time_regex = time_regex)
+  data_construct(scales_data = census_dat$scales,
+                 unique_var = unique_var,
+                 time_regex = time_regex)
 
 
   # Variables table ---------------------------------------------------------
+
+  # Vectorized check for presence of every scale in cc.data::census_scales
+  interpolated_from_vector <- ifelse(scales_to_interpolate %in% cc.data::census_scales, FALSE, "DA")
+
+  # Combining into a data frame (tibble)
+  interpolated_ref <- tibble::tibble(scale = scales_to_interpolate,
+                                     interpolated_from = interpolated_from_vector)
 
   variables <-
     lapply(unique_var, \(u_var) {
@@ -126,9 +144,9 @@ ba_census_data <- function(scales_variables_modules,
         private = FALSE,
         pe_include = pe_include,
         dates = dates,
-        avail_scale = census_dat$avail_scale,
+        avail_scale = scales_to_interpolate,
         source = "Canadian census",
-        interpolated = census_dat$interpolated_ref,
+        interpolated = interpolated_ref,
         rankings_chr = cc.data::census_vectors_table$rankings_chr[
           cc.data::census_vectors_table$var_code == u_var
         ][[1]]
@@ -155,7 +173,7 @@ ba_census_data <- function(scales_variables_modules,
 
   avail_scale_combinations <-
     get_avail_scale_combinations(scales_sequences = scales_sequences,
-                                 avail_scales = census_dat$avail_scale)
+                                 avail_scales = scales_to_interpolate)
 
 
   # Modules table -----------------------------------------------------------
@@ -198,8 +216,8 @@ ba_census_data <- function(scales_variables_modules,
           dates = census_years,
           main_dropdown_title = NA,
           var_right = variables$var_code[variables$source == "Canadian census" &
-            variables$theme != "Housing" &
-            !is.na(variables$parent_vec)],
+                                           variables$theme != "Housing" &
+                                           !is.na(variables$parent_vec)],
           default_var = "housing_tenant",
           avail_scale_combinations = avail_scale_combinations
         )
@@ -217,7 +235,9 @@ ba_census_data <- function(scales_variables_modules,
       modules = modules
     )
   if (age_module) {
-    svm <- ba_age(scales_variables_modules = svm, scales_sequences = scales_sequences)
+    svm <- ba_age(scales_variables_modules = svm, scales_sequences = scales_sequences,
+                  scales_to_interpolate = scales_to_interpolate,
+                  overwrite = overwrite)
   }
 
 

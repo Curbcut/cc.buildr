@@ -10,13 +10,15 @@
 #' hierarchical ordering of scales on an auto-zoom.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
+#' @param overwrite <`logical`> Should the data already processed and stored be
+#' overwriten?
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with the ALP variable added, its addition
 #' in the variables table and the module table.
 #' @export
 ru_alp <- function(scales_variables_modules, regions_dictionary, region_DA_IDs,
-                   scales_sequences, crs) {
+                   scales_sequences, crs, overwrite = FALSE) {
   data <- cc.data::db_read_data("alp",
                                 column_to_select = "DA_ID",
                                 IDs = region_DA_IDs, crs = crs
@@ -90,7 +92,8 @@ ru_alp <- function(scales_variables_modules, regions_dictionary, region_DA_IDs,
     module_var_right = scales_variables_modules$variables$var_code[
       scales_variables_modules$variables$source == "Canadian census" &
         !is.na(scales_variables_modules$variables$parent_vec)
-    ]
+    ],
+    overwrite = overwrite
   )
 }
 
@@ -106,13 +109,15 @@ ru_alp <- function(scales_variables_modules, regions_dictionary, region_DA_IDs,
 #' hierarchical ordering of scales on an auto-zoom.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
+#' @param overwrite <`logical`> Should the data already processed and stored be
+#' overwriten?
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with the Can-BICS variable added, its addition
 #' in the variables table and the module table.
 #' @export
 ru_canbics <- function(scales_variables_modules, region_DA_IDs,
-                       scales_sequences, crs) {
+                       scales_sequences, crs, overwrite = FALSE) {
   data <- cc.data::db_read_data("canbics",
                                 column_to_select = "DA_ID",
                                 IDs = region_DA_IDs, crs = crs
@@ -179,7 +184,8 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs,
     module_var_right = scales_variables_modules$variables$var_code[
       scales_variables_modules$variables$source == "Canadian census" &
         !is.na(scales_variables_modules$variables$parent_vec)
-    ]
+    ],
+    overwrite = overwrite
   )
 
   # Change DA interpolation to postal codes
@@ -203,13 +209,15 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs,
 #' hierarchical ordering of scales on an auto-zoom.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
+#' @param overwrite <`logical`> Should the data already processed and stored be
+#' overwriten?
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with the Can-BICS variable added, its addition
 #' in the variables table and the module table.
 #' @export
 ru_lst <- function(scales_variables_modules, region_DA_IDs,
-                   scales_sequences, crs) {
+                   scales_sequences, crs, overwrite = FALSE) {
   data <- cc.data::db_read_data("lst",
     column_to_select = "DA_ID",
     IDs = region_DA_IDs, crs = crs
@@ -266,7 +274,8 @@ ru_lst <- function(scales_variables_modules, region_DA_IDs,
     module_var_right = scales_variables_modules$variables$var_code[
       scales_variables_modules$variables$source == "Canadian census" &
         !is.na(scales_variables_modules$variables$parent_vec)
-    ]
+    ],
+    overwrite = overwrite
   )
 
   # Change DA interpolation to postal codes
@@ -295,6 +304,8 @@ ru_lst <- function(scales_variables_modules, region_DA_IDs,
 #' `scales_variables_modules`? Useful for Montreal where names are more or less
 #' unique and so an approximate match can be beneficial. less for Toronto where
 #' the name `York` is used in many different names.
+#' @param overwrite <`logical`> Should the data already processed and stored be
+#' overwriten?
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with the CMHC's vacancy rate variables added,
@@ -458,8 +469,8 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
 
   # Data tibble
   data_construct(scales_data = merged_to_svm,
-                         unique_var = unique_vars,
-                         time_regex = time_regex)
+                 unique_var = unique_vars,
+                 time_regex = time_regex)
 
   # Types
   types <- rep(list("pct"), sum(grepl("^vac_rate", unique_vars)))

@@ -249,7 +249,7 @@ save_geometry_export <- function(data_folder = "data/", all_scales) {
 #' This function removes specified scale variables from a list of scales.
 #' It is useful for managing memory if a scale is not to be re-used.
 #'
-#' @param scales_variables_modules <`list`> A list containing scales and
+#' @param scales <`list`> A list containing scales and
 #' their associated variables and modules.
 #' @param unload <`character vector`> A character vector of scale names to
 #' be unloaded from the list.
@@ -257,11 +257,51 @@ save_geometry_export <- function(data_folder = "data/", all_scales) {
 #' @return <`list`> Returns the modified list of scales variables modules,
 #' excluding the scales specified in `unload`.
 #' @export
-unload_scales <- function(scales_variables_modules, unload) {
-  if (any(!unload %in% names(scales_variables_modules$scales))) {
+unload_scales <- function(scales, unload) {
+  if (any(!unload %in% names(scales))) {
     stop("One or more of the specified scales to unload are not present in the list.")
   }
 
-  scales_variables_modules[
-    !names(scales_variables_modules$scales) %in% unload]
+  scales[!names(scales) %in% unload]
+
+}
+
+#' Exclude scales with processed data already saved
+#'
+#' This function excludes scales for which data has already been processed and stored.
+#' If 'overwrite' is TRUE, no exclusion is performed and all scales are returned.
+#'
+#' @param unique_vars <`character vector`> A vector of unique variable names.
+#' @param scales <`character vector OR named list`> A vector of scale names or a named
+#' list of scales to be checked.
+#' @param overwrite <`logical`> If TRUE, no scales are excluded and all are returned.
+#' @param data_folder <`character`> The folder where data files are stored.
+#' Default is "data/".
+#'
+#' @return <`character vector`> Scales for which data files do not exist
+#' or all scales if 'overwrite' is TRUE.
+#' @export
+exclude_processed_scales <- function(unique_vars, scales, overwrite = FALSE, data_folder = "data/") {
+  if (overwrite) return(scales)
+
+  # We want the function to work both for the named list of scales, or for a
+  # character vector of scales.
+  if (is.list(scales)) {
+    scales_name <- names(scales)
+  } else {
+    scales_name <- scales
+  }
+
+  all_files <- list.files(data_folder, recursive = TRUE)
+
+  # Iterate over scales_name to know which ones already have data stored
+  keep_index <- sapply(scales_name, \(sc) {
+    data_files <- paste0(sc, "/", unique_vars, ".qs")
+
+    # Keep the index if there are data that isn't already stored
+    !all(data_files %in% all_files)
+  })
+
+  # Remove scales that already have all the data
+  scales[keep_index]
 }

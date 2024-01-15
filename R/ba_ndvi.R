@@ -18,6 +18,8 @@
 #' hierarchical ordering of scales on an auto-zoom.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
+#' @param overwrite <`logical`> Should the data already precessed and stored be
+#' overwriten?
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with the NDVI variable added, its addition
@@ -26,116 +28,125 @@
 ba_ndvi <- function(scales_variables_modules,
                     data_output_path = "dev/data/ndvi/",
                     years = cc.data::ndvi_years(),
-                    skip_scales = NULL, scales_sequences, crs) {
+                    skip_scales = NULL, scales_sequences, crs,
+                    overwrite = FALSE) {
 
   # Scales to go over
   skip_scales <- c(skip_scales, "building", "street")
   scales <- scales_variables_modules$scales[!names(scales_variables_modules$scales) %in% skip_scales]
   scales <- lapply(scales, `[`, "ID")
 
+  # Keep track of all the scales that are supposed to have data
+  avail_scale <- names(scales)
+
+  # Remove from the processing scales that ALREADY have the data processed and stored
+  scales <- scales[exclude_processed_scales("ndvi", scales = names(scales),
+                                            overwrite = overwrite)]
+
 
   # Add it to all the scales ------------------------------------------------
 
-  scales <- lapply(scales, sf::st_transform, crs)
-  all_files <- list.files(data_output_path, recursive = TRUE, full.names = TRUE)
+  if (length(scales) != 0) {
 
-  grd <- qs::qread(sprintf("%sgrd30.qs", data_output_path))
-  grd <- sf::st_centroid(grd)
-  grd <- sf::st_transform(grd, crs)
+    scales <- lapply(scales, sf::st_transform, crs)
+    all_files <- list.files(data_output_path, recursive = TRUE, full.names = TRUE)
 
-  scales_to_add_vals <- scales
+    grd <- qs::qread(sprintf("%sgrd30.qs", data_output_path))
+    grd <- sf::st_centroid(grd)
+    grd <- sf::st_transform(grd, crs)
 
-  # Check if 'data.qs' file exists
-  data_file_path <- sprintf("%sdata.qs", data_output_path)
-  if (file.exists(data_file_path)) {
-    # Read the existing data
-    existing_data <- qs::qread(data_file_path)
+    scales_to_add_vals <- scales
 
-    # Extract names of scales already processed
-    existing_scales <- names(existing_data)
+    # Check if 'data.qs' file exists
+    data_file_path <- sprintf("%sdata.qs", data_output_path)
+    if (file.exists(data_file_path)) {
+      # Read the existing data
+      existing_data <- qs::qread(data_file_path)
 
-    # Filter out scales that are already processed
-    scales <- scales[!names(scales) %in% existing_scales]
-  }
+      # Extract names of scales already processed
+      existing_scales <- names(existing_data)
 
-  # Applying a function to each element in 'scales'
-  scales_ndvi_dat <- sapply(scales, function(scale) {
-    # Extracting the 'ID' column from 'scaled' dataframe
-    scale <- scale["ID"]
+      # Filter out scales that are already processed
+      scales <- scales[!names(scales) %in% existing_scales]
+    }
 
-    # Calculating intersections between 'scale' and 'grd' using sf package
-    intersections <- sf::st_intersects(scale, grd)
+    # Applying a function to each element in 'scales'
+    scales_ndvi_dat <- sapply(scales, function(scale) {
+      # Extracting the 'ID' column from 'scaled' dataframe
+      scale <- scale["ID"]
 
-    # Processing each intersection
-    processed_intersections <- lapply(intersections, function(intersection) {
+      # Calculating intersections between 'scale' and 'grd' using sf package
+      intersections <- sf::st_intersects(scale, grd)
 
-      # Subsetting 'grd' for the intersected indices
-      fits <- grd[intersection, ]
+      # Processing each intersection
+      processed_intersections <- lapply(intersections, function(intersection) {
 
-      # Finding NDVI column names matching the specific pattern and years
-      ndvi_cols <- grep("ndvi_\\d{4}", names(fits), value = TRUE)
-      ndvi_cols <- grep(paste0(years, collapse = "|"), ndvi_cols, value = TRUE)
+        # Subsetting 'grd' for the intersected indices
+        fits <- grd[intersection, ]
 
-      # Initializing an empty list to store results
-      results <- list()
+        # Finding NDVI column names matching the specific pattern and years
+        ndvi_cols <- grep("ndvi_\\d{4}", names(fits), value = TRUE)
+        ndvi_cols <- grep(paste0(years, collapse = "|"), ndvi_cols, value = TRUE)
 
-      # Return NA if no intersection
-      if (length(intersection) == 0) return({
+        # Initializing an empty list to store results
+        results <- list()
+
+        # Return NA if no intersection
+        if (length(intersection) == 0) return({
+          for (n in ndvi_cols) {
+            results[[n]] <- NA_real_
+          }
+          tibble::as_tibble(results)
+        })
+
+        # Calculating mean for each NDVI column, ignoring NA values
         for (n in ndvi_cols) {
-          results[[n]] <- NA_real_
+          results[[n]] <- mean(fits[[n]], na.rm = TRUE)
+          # Assigning NA_real_ for NA results for consistency
+          if (is.na(results[[n]])) results[[n]] <- NA_real_
         }
+
+        # Converting the results list to a tibble
         tibble::as_tibble(results)
       })
 
-      # Calculating mean for each NDVI column, ignoring NA values
-      for (n in ndvi_cols) {
-        results[[n]] <- mean(fits[[n]], na.rm = TRUE)
-        # Assigning NA_real_ for NA results for consistency
-        if (is.na(results[[n]])) results[[n]] <- NA_real_
-      }
+      # Combining the processed data with the original 'scale' data (minus geometry)
+      # and converting the result to a tibble
+      p_int <- data.table::rbindlist(processed_intersections)
+      final_output <- cbind(sf::st_drop_geometry(scale), p_int)
+      tibble::as_tibble(final_output)
+    }, simplify = FALSE, USE.NAMES = TRUE)
 
-      # Converting the results list to a tibble
-      tibble::as_tibble(results)
-    })
+    # Combine new data with existing data
+    if (exists("existing_data")) {
+      scales_ndvi_dat <- c(existing_data, scales_ndvi_dat)
+    }
 
-    # Combining the processed data with the original 'scale' data (minus geometry)
-    # and converting the result to a tibble
-    p_int <- data.table::rbindlist(processed_intersections)
-    final_output <- cbind(sf::st_drop_geometry(scale), p_int)
-    tibble::as_tibble(final_output)
-  }, simplify = FALSE, USE.NAMES = TRUE)
+    # Save the updated data
+    qs::qsave(scales_ndvi_dat, data_file_path)
 
-  # Combine new data with existing data
-  if (exists("existing_data")) {
-    scales_ndvi_dat <- c(existing_data, scales_ndvi_dat)
+    # Add the grids to scales_ndvi_dat
+    grd_dat <- sapply(c("grd30", "grd60", "grd120", "grd300"), \(x) {
+      qs::qread(sprintf("%s%s.qs", data_output_path, x))
+    }, simplify = FALSE, USE.NAMES = TRUE)
+    scales_ndvi_dat <- c(scales_ndvi_dat, grd_dat)
+
+    # Apply to our scales
+    interpolated <- mapply(\(scale_name, scale_df) {
+      if (!scale_name %in% names(scales_ndvi_dat)) return(scale_df)
+      merge(scale_df, scales_ndvi_dat[[scale_name]], by = "ID", all.x = TRUE)
+    }, names(scales_variables_modules$scales), scales_variables_modules$scales)
+
+    # Data tibble -------------------------------------------------------------
+
+    time_regex <- "_\\d{4}$"
+    data_construct(scales_data = interpolated,
+                   unique_var = "ndvi",
+                   time_regex = time_regex)
+
   }
 
-  # Save the updated data
-  qs::qsave(scales_ndvi_dat, data_file_path)
-
-  # Add the grids to scales_ndvi_dat
-  grd_dat <- sapply(c("grd30", "grd60", "grd120", "grd300"), \(x) {
-    qs::qread(sprintf("%s%s.qs", data_output_path, x))
-  }, simplify = FALSE, USE.NAMES = TRUE)
-  scales_ndvi_dat <- c(scales_ndvi_dat, grd_dat)
-
-  # Apply to our scales
-  interpolated <- mapply(\(scale_name, scale_df) {
-    if (!scale_name %in% names(scales_ndvi_dat)) return(scale_df)
-    merge(scale_df, scales_ndvi_dat[[scale_name]], by = "ID", all.x = TRUE)
-  }, names(scales_variables_modules$scales), scales_variables_modules$scales)
-
-  # Data tibble -------------------------------------------------------------
-
-  time_regex <- "_\\d{4}$"
-  data_construct(scales_data = interpolated,
-                 unique_var = "ndvi",
-                 time_regex = time_regex)
-
-
   # Variables table ---------------------------------------------------------
-
-  avail_scale <- names(scales_ndvi_dat)
 
   interpolated_ref <- tibble::tibble(
     scale = avail_scale,
@@ -228,7 +239,6 @@ ba_ndvi <- function(scales_variables_modules,
   return(list(
     scales = scales_variables_modules$scales,
     variables = variables,
-    modules = modules,
-    data = data
+    modules = modules
   ))
 }

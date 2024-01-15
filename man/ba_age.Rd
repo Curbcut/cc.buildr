@@ -4,7 +4,12 @@
 \alias{ba_age}
 \title{Build and append age from census data}
 \usage{
-ba_age(scales_variables_modules, scales_sequences)
+ba_age(
+  scales_variables_modules,
+  scales_sequences,
+  scales_to_interpolate,
+  overwrite = FALSE
+)
 }
 \arguments{
 \item{scales_variables_modules}{<\verb{named list}> A list of length three.
@@ -13,6 +18,13 @@ third is the modules table.}
 
 \item{scales_sequences}{<\code{list}> A list of scales sequences representing the
 hierarchical ordering of scales on an auto-zoom.}
+
+\item{scales_to_interpolate}{<\verb{character vector}> WILL NOT be used for calculations.
+Simply used to inform the variables table. ALL scales holding census \code{age} data
+will be used for calculation of the age page data.}
+
+\item{overwrite}{<\code{logical}> Should the data already precessed and stored be
+overwriten?}
 }
 \value{
 A list of length 4, similar to the one fed to

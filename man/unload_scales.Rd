@@ -4,10 +4,10 @@
 \alias{unload_scales}
 \title{Unload specified scales from the scales_variables_modules}
 \usage{
-unload_scales(scales_variables_modules, unload)
+unload_scales(scales, unload)
 }
 \arguments{
-\item{scales_variables_modules}{<\code{list}> A list containing scales and
+\item{scales}{<\code{list}> A list containing scales and
 their associated variables and modules.}
 
 \item{unload}{<\verb{character vector}> A character vector of scale names to

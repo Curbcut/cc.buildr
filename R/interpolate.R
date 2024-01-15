@@ -149,6 +149,11 @@ scales_greater_than <- function(base_scale, all_scales, crs) {
 #' are present inside the CSD.
 #' @param only_scales <`character vector`> All the scales for which data should
 #' be interpolated and appended. Defults to using \code{\link{scales_greater_than}}.
+#' @param overwrite <`logical`> Should the data already processed and stored be
+#' overwriten?
+#' @param time_regex <`character`> Regular expression which corresponds to
+#' a timeframe, placed at the end of the `vars` vector. e.g. `\\d{4}` for
+#' years.
 #'
 #' @return Returns a list of length 4. The first is the same list that is fed in
 #' `all_scales`, with the columns from `data` interpolated in. The second is
@@ -171,7 +176,9 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
                                             all_scales[[base_scale]]$ID %in% data[[
                                               paste0(base_scale, "_ID")]], ],
                                           all_scales = all_scales,
-                                          crs = crs)) {
+                                          crs = crs),
+                                        overwrite = FALSE,
+                                        time_regex = "_\\d{4}$") {
   ## Catch errors
   if (!paste0(base_scale, "_ID") %in% names(data)) {
     stop(paste0(
@@ -199,13 +206,22 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
         average_vars = average_vars,
         additive_vars = additive_vars,
         name_interpolate_from = base_scale,
-        construct_for = construct_for
+        construct_for = construct_for,
+        overwrite = FALSE,
+        time_regex = "_\\d{4}$"
       )
     })
   }
 
   ## Which are the scales that should be interpolated (as tibble)
   scales_to_interpolate <- all_scales[which(names(all_scales) %in% construct_for)]
+
+  ## Which scales do not already have data processed and saved?
+  unique_var <- unique(gsub(time_regex, "", c(additive_vars, average_vars)))
+  scales_to_interpolate_exc <- exclude_processed_scales(unique_vars = unique_var,
+                                                        scales = scales_to_interpolate,
+                                                        overwrite = overwrite)
+
 
   ## Interpolate over all the scales
 
@@ -225,7 +241,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
 
   # Start with th census scales
   census_scales <-
-    names(scales_to_interpolate)[names(scales_to_interpolate) %in% existing_census_scales]
+    names(scales_to_interpolate_exc)[names(scales_to_interpolate_exc) %in% existing_census_scales]
   census_scales <- all_scales[census_scales]
 
   census_interpolated <-
@@ -290,7 +306,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
 
   # Interpolate to non-census scales
   non_census_scales <-
-    names(scales_to_interpolate)[!names(scales_to_interpolate) %in% existing_census_scales]
+    names(scales_to_interpolate_exc)[!names(scales_to_interpolate_exc) %in% existing_census_scales]
 
   non_census_scales <- all_scales[non_census_scales]
 
@@ -366,27 +382,31 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
   interpolated <- c(census_interpolated, non_census_interpolated)
 
 
-  ## Reorder all columns
-  interpolated <- lapply(interpolated, reorder_columns)
+  all_scales_reattached <- if (length(interpolated) != 0) {
+    ## Reorder all columns
+    interpolated <- lapply(interpolated, reorder_columns)
 
 
-  ## Get the CRS back to WGS 84
-  interpolated <- lapply(interpolated, sf::st_transform, 4326)
+    ## Get the CRS back to WGS 84
+    interpolated <- lapply(interpolated, sf::st_transform, 4326)
 
 
-  ## Reattach non-interpolated scales
-  missing_scales <- all_scales[!names(all_scales) %in% names(interpolated)]
-  all_scales_reattached <- c(interpolated, missing_scales)
+    ## Reattach non-interpolated scales
+    missing_scales <- all_scales[!names(all_scales) %in% names(interpolated)]
+    c(interpolated, missing_scales)
 
+  } else {
+    NULL
+  }
 
   ## Scales at which the data is available
-  avail_scale <- names(interpolated)
+  avail_scale <- names(scales_to_interpolate)
 
 
   ## Create interpolated references as a data.frame
   interpolated_ref <- tibble::tibble(
-    scale = names(interpolated),
-    interpolated_from = rep(base_scale, length(interpolated))
+    scale = avail_scale,
+    interpolated_from = rep(base_scale, length(avail_scale))
   )
   interpolated_ref$interpolated_from[interpolated_ref$scale == base_scale] <- FALSE
 
@@ -518,6 +538,11 @@ interpolate_from_area <- function(to, from,
 #' interpolated to. Used by \code{\link[cc.buildr]{interpolate_from_census_geo}}.
 #' It bypasses the process where `interpolate_custom_geo` only interpolates
 #' for geometries bigger than the data.
+#' @param overwrite <`logical`> Should the data already processed and stored be
+#' overwriten?
+#' @param time_regex <`character`> Regular expression which corresponds to
+#' a timeframe, placed at the end of the `vars` vector. e.g. `\\d{4}` for
+#' years.
 #'
 #' @return Returns a list of length 4. The first is the same list that is fed in
 #' `all_scales`, with the columns from `data` interpolated in. The second is
@@ -534,7 +559,9 @@ interpolate_custom_geo <- function(data, all_scales, crs,
                                    average_vars = c(),
                                    additive_vars = c(),
                                    name_interpolate_from,
-                                   construct_for = NULL) {
+                                   construct_for = NULL,
+                                   overwrite = FALSE,
+                                   time_regex = "_\\d{4}$") {
 
   if (is.null(construct_for)) {
     ## Only interpolate for bigger geometries than the base one
@@ -547,8 +574,14 @@ interpolate_custom_geo <- function(data, all_scales, crs,
   ## Scales to interpolate
   scales_to_interpolate <- all_scales[names(all_scales) %in% construct_for]
 
+  ## Which scales do not already have data processed and saved?
+  unique_var <- unique(gsub(time_regex, "", c(additive_vars, average_vars)))
+  scales_to_interpolate_exc <- exclude_processed_scales(unique_vars = unique_var,
+                                                        scales = scales_to_interpolate,
+                                                        overwrite = overwrite)
+
   ## Interpolate over all the scales
-  interpolated <- lapply(scales_to_interpolate, \(scale_df) {
+  interpolated <- lapply(scales_to_interpolate_exc, \(scale_df) {
     interpolate_from_area(
       to = scale_df,
       from = data,
@@ -559,27 +592,31 @@ interpolate_custom_geo <- function(data, all_scales, crs,
   })
 
 
-  ## Reorder all columns
-  interpolated <- lapply(interpolated, reorder_columns)
+  all_scales_reattached <- if (length(interpolated) != 0) {
+    ## Reorder all columns
+    interpolated <- lapply(interpolated, reorder_columns)
 
 
-  ## Get the CRS back to WGS 84
-  interpolated <- lapply(interpolated, sf::st_transform, 4326)
+    ## Get the CRS back to WGS 84
+    interpolated <- lapply(interpolated, sf::st_transform, 4326)
 
 
-  ## Reattach non-interpolated scales
-  missing_scales <- all_scales[!names(all_scales) %in% names(interpolated)]
-  all_scales_reattached <- c(interpolated, missing_scales)
+    ## Reattach non-interpolated scales
+    missing_scales <- all_scales[!names(all_scales) %in% names(interpolated)]
+    c(interpolated, missing_scales)
 
+  } else {
+    NULL
+  }
 
   ## Scales at which the data is available
-  avail_scale <- names(interpolated)
+  avail_scale <- names(scales_to_interpolate)
 
 
   ## Create interpolated references as a data.frame
   interpolated_ref <- tibble::tibble(
-    scale = names(interpolated),
-    interpolated_from = rep(name_interpolate_from, length(interpolated))
+    scale = avail_scale,
+    interpolated_from = rep(name_interpolate_from, length(avail_scale))
   )
   interpolated_ref$interpolated_from[interpolated_ref$scale == name_interpolate_from] <- FALSE
 
