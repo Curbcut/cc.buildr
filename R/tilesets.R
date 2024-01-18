@@ -319,7 +319,7 @@ tileset_publish_tileset <- function(tileset, username, access_token) {
 #' Service (MTS) how to turn tileset source data into vector tiles.
 #' @export
 tileset_create_recipe <- function(layer_names, source, minzoom, maxzoom,
-                                  layer_size = NULL, simp_zoom = NULL, simp_value = NULL,
+                                  layer_size = 2500, simp_zoom = NULL, simp_value = NULL,
                                   fallback_simp_zoom = 4, bbox = NULL, recipe_name) {
   out <- list()
   out$recipe$version <- 1

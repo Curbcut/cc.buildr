@@ -97,7 +97,7 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
         missing <- merged_centroids[is.na(merged_centroids[[id_name]]), ]
         if (nrow(missing) > 0) {
           id_fit <- sapply(seq_along(missing$geometry),
-                           \(r) cc.buildr:::get_largest_intersection(missing[r, ], hi_df),
+                           \(r) get_largest_intersection(missing[r, ], hi_df),
                            simplify = TRUE, USE.NAMES = FALSE)
 
           # Add to the missing *_ID the ID of the largest intersection

@@ -241,6 +241,7 @@ spatial_filtering <- function(df, crs, master_polygon, ID_col = "ID", area_thres
   return(df[df[[ID_col]] %in% filtered_ids, ])
 }
 
+#' @export
 get_largest_intersection <- function(x, other) {
 
   intersections <- sf::st_intersection(x, other)

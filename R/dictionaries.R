@@ -162,6 +162,7 @@ census_scales_dictionary <- function(census_scales) {
 #'
 #' @param scales_dictionary <`data.frame`> The scales dictionary built using
 #' \code{\link{build_census_scales}}.
+#' @param regions_dictionary <`data.frame`>
 #' @param regions <`named list`> A list containing unioned regions, output of
 #' \code{\link{create_master_polygon}}$regions.
 #' @param scales_consolidated <`named list`> A named list of sf data.frame
@@ -178,7 +179,9 @@ census_scales_dictionary <- function(census_scales) {
 #'
 #' @return A modified scales_dictionary with region information added.
 #' @export
-add_regions_to_scales_dictionary <- function(scales_dictionary, regions,
+add_regions_to_scales_dictionary <- function(scales_dictionary,
+                                             regions_dictionary,
+                                             regions,
                                              scales_consolidated,
                                              known_regions = NULL, DA_carto, crs) {
 

@@ -57,6 +57,9 @@ ndvi_grids <- function(census_scales, base_polygons,
                                              future.seed = NULL)
     grid$name <- grid_name
     grid <- grid[, c("ID", "name", "geometry")]
+    grid$DA_ID <- cc.buildr::append_DA_ID(DA_table = census_scales$DA,
+                                          df = grid,
+                                          crs = crs)
 
     qs::qsave(grid, file = save_file)
   }

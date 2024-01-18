@@ -9,7 +9,7 @@ tileset_create_recipe(
   source,
   minzoom,
   maxzoom,
-  layer_size = NULL,
+  layer_size = 2500,
   simp_zoom = NULL,
   simp_value = NULL,
   fallback_simp_zoom = 4,

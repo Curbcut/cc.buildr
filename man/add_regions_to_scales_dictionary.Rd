@@ -6,6 +6,7 @@
 \usage{
 add_regions_to_scales_dictionary(
   scales_dictionary,
+  regions_dictionary,
   regions,
   scales_consolidated,
   known_regions = NULL,
@@ -16,6 +17,8 @@ add_regions_to_scales_dictionary(
 \arguments{
 \item{scales_dictionary}{<\code{data.frame}> The scales dictionary built using
 \code{\link{build_census_scales}}.}
+
+\item{regions_dictionary}{<\code{data.frame}>}
 
 \item{regions}{<\verb{named list}> A list containing unioned regions, output of
 \code{\link{create_master_polygon}}$regions.}
