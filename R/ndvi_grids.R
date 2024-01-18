@@ -57,9 +57,7 @@ ndvi_grids <- function(census_scales, base_polygons,
                                              future.seed = NULL)
     grid$name <- grid_name
     grid <- grid[, c("ID", "name", "geometry")]
-    grid <- cc.buildr::append_DA_ID(DA_table = census_scales$DA,
-                                    df = grid,
-                                    crs = crs)
+
     qs::qsave(grid, file = save_file)
   }
 
@@ -68,7 +66,7 @@ ndvi_grids <- function(census_scales, base_polygons,
   grids <- lapply(grid_cells, process_and_save_grid, output_path, save_grids_dir, crs)
   names(grids) <- sprintf("grd%s", grid_cells)
 
-  if (overwrite_final_grids | !"DA_ID" %in% names(grids$grd480)) {
+  if (overwrite_final_grids | !"population" %in% names(grids$grd480)) {
     # Add population and households to grd480
     grids$grd480 <- additional_scale(additional_table = grids$grd480["name"],
                                      DB_table = census_scales$DB,
