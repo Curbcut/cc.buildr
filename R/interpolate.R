@@ -20,20 +20,21 @@
 #' after the input value_col
 interpolate_fast_weighted_mean <- function(df, id_col, weight_col, value_col) {
 
-  # Remove rows with NA entry
-  df <- df[!apply(is.na(df[c(value_col, weight_col)]), 1, any), ]
+  # Remove rows with NA in value_col and weight_col
+  df <- df[!is.na(df[[value_col]]) & !is.na(df[[weight_col]]), ]
 
-  # Split the data by IDs
-  split_data <- split(df, df[[id_col]])
+  # Calculate the sum of products of value and weight for each group
+  sum_val_times_weight <- tapply(df[[value_col]] * df[[weight_col]], df[[id_col]], sum, na.rm = TRUE)
 
-  # Calculate the weighted average for each group
-  weighted_avgs <- sapply(split_data, function(x) {
-    stats::weighted.mean(x[[value_col]], x[[weight_col]], na.rm = TRUE)
-  })
+  # Calculate the sum of weights for each group
+  sum_weight <- tapply(df[[weight_col]], df[[id_col]], sum, na.rm = TRUE)
 
-  # Return the results as a data frame
-  result <- data.frame(ID = names(weighted_avgs),
-                       avg = as.vector(weighted_avgs))
+  # Compute weighted mean
+  weighted_mean <- sum_val_times_weight / sum_weight
+
+  # Create the result as a data frame
+  result <- data.frame(ID = names(weighted_mean),
+                       avg = as.numeric(weighted_mean))
   names(result)[2] <- value_col
 
   return(result)
@@ -61,29 +62,32 @@ interpolate_fast_weighted_mean <- function(df, id_col, weight_col, value_col) {
 #' after the input col_name.
 interpolate_fast_additive_sum <- function(col_name, data, id_col,
                                           weight_col = NULL) {
+  # Remove rows with NA in col_name and weight_col (if weight_col is not NULL)
+  nas <- if (!is.null(weight_col)) {
+    which(is.na(data[[col_name]]) & is.na(data[[weight_col]]))
+  } else {
+    which(is.na(data[[col_name]]))
+  }
+  if (length(nas) > 0) data <- data[-nas, ]
 
-  # Remove rows with NA entry
-  data <- data[!apply(is.na(data[c(col_name, if (!is.null(weight_col)) weight_col)]), 1, any), ]
-
-  # Extract the necessary columns
-  col_df <- data[c(id_col, col_name)]
-
-  # Weight by
+  # Weight the column if weight_col is provided
   if (!is.null(weight_col)) {
-    col_df[[col_name]] <- col_df[[col_name]] * data[[weight_col]]
+    weighted_col <- data[[col_name]] * data[[weight_col]]
+  } else {
+    weighted_col <- data[[col_name]]
   }
 
-  # Calculate the sum for each group
-  summed_data <- stats::aggregate(col_df[, col_name],
-                                  by = list(col_df[[id_col]]),
-                                  FUN = sum, na.rm = TRUE
-  )
+  # Calculate the sum for each group using tapply
+  summed_data <- tapply(weighted_col, data[[id_col]], sum, na.rm = TRUE)
 
-  # Rename the columns
-  colnames(summed_data) <- c("ID", col_name)
+  # Convert to a data frame and set column names
+  result <- data.frame(ID = names(summed_data),
+                       Sum = as.numeric(summed_data))
+  names(result)[2] <- col_name
 
   # Return the results as a data frame
-  return(summed_data)
+  return(result)
+
 }
 
 #' Determine which scales are greater in size than the base scale

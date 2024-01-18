@@ -12,7 +12,8 @@ tileset_upload_ndvi(
   prefix,
   username,
   access_token,
-  ndvi_delta_breaks = c(-0.5, -0.1, -0.02, 0.02, 0.1, 0.5)
+  ndvi_delta_breaks = c(-0.5, -0.1, -0.02, 0.02, 0.1, 0.5),
+  crs
 )
 }
 \arguments{
@@ -34,6 +35,9 @@ created and published tileset. Should correspond to the Curbcut city, e.g. \code
 
 \item{ndvi_delta_breaks}{<\verb{numeric vector}> Break points for categorizing NDVI deltas.
 Default is c(-0.5, -0.1, -0.02, 0.02, 0.1, 0.5).}
+
+\item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
+\code{32617} for Toronto.}
 }
 \value{
 Invisibly returns NULL. The function's primary purpose is the side-effects

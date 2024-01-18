@@ -44,7 +44,12 @@ tileset_list_tile_sources <- function(username, access_token) {
 #' @return Returns nothing if succeeds.
 #' @export
 tileset_upload_tile_source <- function(df, id, username, access_token) {
-  if (sf::st_crs(df)$input != "EPSG:4326") stop("`df` must have the 4326 crs.")
+  current_crs <- sf::st_crs(df)$input
+  if (current_crs != "EPSG:4326") {
+    df <- sf::st_transform(df, 4326)
+    warning(paste0("crs of input data was not 4326 as it need to be to upload ",
+                   "to Mapbox. CRS has been updated."))
+  }
 
   # Initialize tempfile
   tmp1 <- tempfile(fileext = ".json")
@@ -90,6 +95,14 @@ tileset_upload_tile_source <- function(df, id, username, access_token) {
 #' @export
 tileset_upload_tile_source_large <-
   function(df, id, total_batches = 100, username, access_token) {
+
+    current_crs <- sf::st_crs(df)$input
+    if (current_crs != "EPSG:4326") {
+      df <- sf::st_transform(df, 4326)
+      warning(paste0("crs of input data was not 4326 as it need to be to upload ",
+                     "to Mapbox. CRS has been updated."))
+    }
+
     iter_size <- ceiling(nrow(df) / total_batches)
 
     to_process_list <-
@@ -1215,6 +1228,8 @@ stories_create_tileset <- function(stories, prefix, username, access_token) {
 #' @param access_token <`character`> Private access token to the Mapbox account.
 #' @param ndvi_delta_breaks <`numeric vector`> Break points for categorizing NDVI deltas.
 #' Default is c(-0.5, -0.1, -0.02, 0.02, 0.1, 0.5).
+#' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
+#' \code{32617} for Toronto.
 #'
 #' @return Invisibly returns NULL. The function's primary purpose is the side-effects
 #' of uploading, creating, and publishing tilesets.
@@ -1227,9 +1242,11 @@ tileset_upload_ndvi <- function(grids_dir = "dev/data/built/",
                                 prefix,
                                 username,
                                 access_token,
-                                ndvi_delta_breaks = c(-0.5, -0.1, -0.02, 0.02, 0.1, 0.5)) {
+                                ndvi_delta_breaks = c(-0.5, -0.1, -0.02, 0.02, 0.1, 0.5),
+                                crs) {
 
-  all_scales <- sapply(c(30, 60, 120, 300, 480), \(x) {
+  grids_size <- c(30, 60, 120, 300, 480)
+  all_scales <- sapply(grids_size, \(x) {
     file <- sprintf("%sgrd%s.qs", grids_dir, x)
     geo <- qs::qread(file)
     data_file <- qs::qread(sprintf("data/grd%s/ndvi.qs", x))
@@ -1246,41 +1263,29 @@ tileset_upload_ndvi <- function(grids_dir = "dev/data/built/",
     names(scale_df)[names(scale_df) == "geometry_digital"] <- "geometry"
     sf::st_as_sf(scale_df)
   })
+  names(all_scales) <- sprintf("grd%s", grids_size)
+
+  # Region at the current crs
+  regions <- lapply(regions, sf::st_transform, crs)
 
   # Reset
-  mapply(\(scale_name, scale_df) {
-    name <- paste(prefix, scale_name, sep = "_")
+  mapply(function(region_name, reg_sf) {
+    mapply(\(scale_name, scale_df) {
+      name <- paste(prefix, scale_name, region_name, sep = "_")
 
-    tileset_delete_tileset_source(
-      id = name,
-      username = username,
-      access_token = access_token
-    )
+      tileset_delete_tileset_source(
+        id = name,
+        username = username,
+        access_token = access_token
+      )
 
-    tileset_delete_tileset(
-      id = name,
-      username = username,
-      access_token = access_token
-    )
-  }, names(all_scales), all_scales, SIMPLIFY = FALSE)
-
-  # DO THE SAME FOR AUTOZOOMS
-  lapply(names(map_zoom_levels), \(x) {
-    x <- gsub("mzl_", "", x)
-    x <- paste(prefix, x, sep = "_")
-
-    tileset_delete_tileset_source(
-      id = x,
-      username = username,
-      access_token = access_token
-    )
-
-    tileset_delete_tileset(
-      id = x,
-      username = username,
-      access_token = access_token
-    )
-  })
+      tileset_delete_tileset(
+        id = name,
+        username = username,
+        access_token = access_token
+      )
+    }, names(all_scales), all_scales, SIMPLIFY = FALSE)
+  }, names(regions), regions)
 
   # Tileset sources
   mapply(function(region_name, reg_sf) {
@@ -1346,7 +1351,6 @@ tileset_upload_ndvi <- function(grids_dir = "dev/data/built/",
       }
 
       df <- sf::st_transform(df, 4326)
-
       tileset_upload_tile_source_large(
         id = scale_n,
         df = df,
