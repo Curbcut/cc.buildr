@@ -16,6 +16,9 @@
 #' tiles should be overwritten. Default is `FALSE`.
 #' @param overwrite_final_grids <`logical`> Flag to determine if existing final
 #' grids should be overwritten. Default is `FALSE`.
+#' @param grid_sizes <`character vector`> What should the size of the grid cells?
+#' Defaults to `c(30, 60, 120, 300, 600)`. Must multiples of 30.
+#' @param crs <`numeric`> EPSG
 #'
 #' @return <`list`> Returns a list of processed grid data at various cell sizes.
 #' @export
@@ -23,7 +26,9 @@ ndvi_grids <- function(census_scales, base_polygons,
                        output_path = "dev/data/ndvi/",
                        save_grids_dir = "dev/data/built/",
                        overwrite_ndvi_tiles = FALSE,
-                       overwrite_final_grids = FALSE) {
+                       overwrite_final_grids = FALSE,
+                       crs = crs,
+                       grid_sizes = c(30, 60, 120, 300, 600)) {
 
   output_path_tmp <- sprintf("%stmp/", output_path)
   dir.create(output_path, showWarnings = FALSE)
@@ -37,6 +42,7 @@ ndvi_grids <- function(census_scales, base_polygons,
     output_path = output_path,
     temp_folder = output_path_tmp,
     overwrite = overwrite_ndvi_tiles,
+    grid_sizes = grid_sizes,
     crs = crs)
 
   # Function to process and save grids
@@ -56,34 +62,37 @@ ndvi_grids <- function(census_scales, base_polygons,
                                              cc.data::rev_geocode_localhost,
                                              future.seed = NULL)
     grid$name <- grid_name
+    grid$ID <- sprintf("grd%s_%s", grid_size, seq_along(grid$geometry))
     grid <- grid[, c("ID", "name", "geometry")]
-    grid$DA_ID <- cc.buildr::append_DA_ID(DA_table = census_scales$DA,
-                                          df = grid,
-                                          crs = crs)
+    grid <- cc.buildr::append_DA_ID(DA_table = census_scales$DA,
+                                    df = grid,
+                                    crs = crs)
 
     qs::qsave(grid, file = save_file)
   }
 
   # Process and save each grid
-  grid_cells <- c(30, 60, 120, 300, 480)
+  grid_cells <- grid_sizes
   grids <- lapply(grid_cells, process_and_save_grid, output_path, save_grids_dir, crs)
   names(grids) <- sprintf("grd%s", grid_cells)
 
-  if (overwrite_final_grids | !"population" %in% names(grids$grd480)) {
-    # Add population and households to grd480
-    grids$grd480 <- additional_scale(additional_table = grids$grd480["name"],
-                                     DB_table = census_scales$DB,
-                                     ID_prefix = "grd480",
-                                     name_2 = "480-m",
-                                     DA_carto = base_polygons$DA_carto,
-                                     switch_to_carto = FALSE,
-                                     crs = crs)
-    # Append DAs to grd480
-    grids$grd480 <- cc.buildr::append_DA_ID(DA_table = census_scales$DA,
-                                            df = grids$grd480,
-                                            crs = crs)
+  if (overwrite_final_grids | !"population" %in% names(grids[[length(grids)]])) {
+    size <- grid_cells[length(grid_cells)]
 
-    qs::qsave(grids$grd480, file = sprintf("%sgrd480.qs", save_grids_dir))
+    # Add population and households to grd600
+    grids[[length(grids)]] <- additional_scale(additional_table = grids[[length(grids)]]["name"],
+                                               DB_table = census_scales$DB,
+                                               ID_prefix = paste0("grd", size),
+                                               name_2 = paste0(size, "-m"),
+                                               DA_carto = base_polygons$DA_carto,
+                                               switch_to_carto = FALSE,
+                                               crs = crs)
+    # Append DAs to grd600
+    grids[[length(grids)]] <- cc.buildr::append_DA_ID(DA_table = census_scales$DA,
+                                                      df = grids[[length(grids)]],
+                                                      crs = crs)
+
+    qs::qsave(grids[[length(grids)]], file = sprintf("%sgrd%s.qs", save_grids_dir, size))
   }
 
 
@@ -149,14 +158,14 @@ scales_dictionary_ndvi <- function(scales_dictionary) {
 
   scales_dictionary <-
     append_scale_to_dictionary(scales_dictionary,
-                               scale = "grd480",
-                               sing = "area at the 480m scale",
-                               sing_with_article = "the area at the 480m scale",
-                               plur = "areas at the 480m scale",
-                               slider_title = "480m",
+                               scale = "grd600",
+                               sing = "area at the 600m scale",
+                               sing_with_article = "the area at the 600m scale",
+                               plur = "areas at the 600m scale",
+                               slider_title = "600m",
                                place_heading = "{name}",
-                               place_name = "the 480m grid area around {name}",
-                               subtext = "Small square areas, each measuring 480 meters by 480 meters")
+                               place_name = "the 600m grid area around {name}",
+                               subtext = "Small square areas, each measuring 600 meters by 600 meters")
 
   return(scales_dictionary)
 }

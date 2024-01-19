@@ -1220,7 +1220,7 @@ stories_create_tileset <- function(stories, prefix, username, access_token) {
 #' @param grids_dir <`character`> Directory containing grid files. Default is "dev/data/built/".
 #' @param map_zoom_levels <`list`> List of zoom levels for different grid scales.
 #' @param max_zoom <`list`> Maximum zoom levels for different grid scales.
-#' Default values for scales grd480, grd300, grd120, grd60, and grd30.
+#' Default values for scales grd600, grd300, grd120, grd60, and grd30.
 #' @param regions <`data.frame` or `sf` object> Spatial data for different regions.
 #' @param prefix <`character`> Prefix attached to every tile source and
 #' created and published tileset. Should correspond to the Curbcut city, e.g. `mtl`.
@@ -1236,7 +1236,7 @@ stories_create_tileset <- function(stories, prefix, username, access_token) {
 #' @export
 tileset_upload_ndvi <- function(grids_dir = "dev/data/built/",
                                 map_zoom_levels,
-                                max_zoom = list(grd480 = 11, grd300 = 13, grd120 = 14,
+                                max_zoom = list(grd600 = 11, grd300 = 13, grd120 = 14,
                                                 grd60 = 15, grd30 = 16),
                                 regions,
                                 prefix,
@@ -1245,7 +1245,7 @@ tileset_upload_ndvi <- function(grids_dir = "dev/data/built/",
                                 ndvi_delta_breaks = c(-0.5, -0.1, -0.02, 0.02, 0.1, 0.5),
                                 crs) {
 
-  grids_size <- c(30, 60, 120, 300, 480)
+  grids_size <- c(30, 60, 120, 300, 600)
   all_scales <- sapply(grids_size, \(x) {
     file <- sprintf("%sgrd%s.qs", grids_dir, x)
     geo <- qs::qread(file)
@@ -1443,7 +1443,7 @@ tileset_upload_ndvi <- function(grids_dir = "dev/data/built/",
   auto_zoom_recipes <-
     mapply(function(region_name, reg_sf) {
 
-      zoom_levels <- map_zoom_levels$mzl_grd480_grd300_grd120_grd60_grd30
+      zoom_levels <- map_zoom_levels$mzl_grd600_grd300_grd120_grd60_grd30
 
       az_name <- paste(prefix, "ndvi_autozoom", region_name, sep = "_")
       scale_names <- paste(prefix, names(zoom_levels), region_name, sep = "_")

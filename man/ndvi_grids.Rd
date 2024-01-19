@@ -10,7 +10,9 @@ ndvi_grids(
   output_path = "dev/data/ndvi/",
   save_grids_dir = "dev/data/built/",
   overwrite_ndvi_tiles = FALSE,
-  overwrite_final_grids = FALSE
+  overwrite_final_grids = FALSE,
+  crs = crs,
+  grid_sizes = c(30, 60, 120, 300, 600)
 )
 }
 \arguments{
@@ -30,6 +32,11 @@ tiles should be overwritten. Default is \code{FALSE}.}
 
 \item{overwrite_final_grids}{<\code{logical}> Flag to determine if existing final
 grids should be overwritten. Default is \code{FALSE}.}
+
+\item{crs}{<\code{numeric}> EPSG}
+
+\item{grid_sizes}{<\verb{character vector}> What should the size of the grid cells?
+Defaults to \code{c(30, 60, 120, 300, 600)}. Must multiples of 30.}
 }
 \value{
 <\code{list}> Returns a list of processed grid data at various cell sizes.

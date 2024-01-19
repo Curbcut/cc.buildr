@@ -206,7 +206,7 @@ add_regions_to_scales_dictionary <- function(scales_dictionary,
                                          grd60 = regions_dictionary$region,
                                          grd120 = regions_dictionary$region,
                                          grd300 = regions_dictionary$region,
-                                         grd480 = regions_dictionary$region))
+                                         grd600 = regions_dictionary$region))
 
   # For every scales, extract the matching region
   scales_to_match <-

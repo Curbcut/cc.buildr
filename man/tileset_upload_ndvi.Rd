@@ -7,7 +7,7 @@
 tileset_upload_ndvi(
   grids_dir = "dev/data/built/",
   map_zoom_levels,
-  max_zoom = list(grd480 = 11, grd300 = 13, grd120 = 14, grd60 = 15, grd30 = 16),
+  max_zoom = list(grd600 = 11, grd300 = 13, grd120 = 14, grd60 = 15, grd30 = 16),
   regions,
   prefix,
   username,
@@ -22,7 +22,7 @@ tileset_upload_ndvi(
 \item{map_zoom_levels}{<\code{list}> List of zoom levels for different grid scales.}
 
 \item{max_zoom}{<\code{list}> Maximum zoom levels for different grid scales.
-Default values for scales grd480, grd300, grd120, grd60, and grd30.}
+Default values for scales grd600, grd300, grd120, grd60, and grd30.}
 
 \item{regions}{<\code{data.frame} or \code{sf} object> Spatial data for different regions.}
 

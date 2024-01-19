@@ -5,16 +5,13 @@
 #' It evaluates each region's data presence and only keeps regions that have a
 #' high enough percentage of features filled with data.
 #'
-#' @param svm <`list`> A list representing the SVM object, which must contain
-#' `modules` and `data` elements. `scales_variables_modules`
+#' @param modules <`list`> Dataframe of modules.
 #' @param regions_dictionary <`data.frame`> The regions dictionary,
 #'
 #' @return <`list`> An SVM object with the `modules` element updated to include
 #' `regions`, which are the filtered regions based on the data coverage criteria.
 #' @export
-pages_regions <- function(svm, regions_dictionary) {
-  modules <- svm$modules
-  data <- svm$data
+pages_regions <- function(modules, regions_dictionary) {
 
   modules$regions <- lapply(modules$id, \(id) {
     vl <- modules$var_left[modules$id == id][[1]]
@@ -34,11 +31,13 @@ pages_regions <- function(svm, regions_dictionary) {
           # If there are no features for a scale inside this region, remove it
           # from the count
           if (length(scale_IDs) == 0) return(NULL)
+          dat <- sprintf("data/%s/%s.qs", scale_name, v)
 
-          dat <- data[[scale_name]][[v]]
           # If the data is not present as a certain scale, do not count it in
           # the count.
-          if (is.null(dat)) return(NULL)
+          if (!file.exists(dat)) return(NULL)
+
+          dat <- qs::qread(dat)
 
           # Length of IDs from this region present in the scales' data
           present_in_data <- dat[dat$ID %in% scale_IDs, ]
@@ -78,8 +77,8 @@ pages_regions <- function(svm, regions_dictionary) {
     return(kept_regs)
 
   })
-  svm$modules <- modules
 
-  return(svm)
+  return(modules)
+
 }
 

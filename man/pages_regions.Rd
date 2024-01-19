@@ -4,11 +4,10 @@
 \alias{pages_regions}
 \title{Pages Regions Function}
 \usage{
-pages_regions(svm, regions_dictionary)
+pages_regions(modules, regions_dictionary)
 }
 \arguments{
-\item{svm}{<\code{list}> A list representing the SVM object, which must contain
-\code{modules} and \code{data} elements. \code{scales_variables_modules}}
+\item{modules}{<\code{list}> Dataframe of modules.}
 
 \item{regions_dictionary}{<\code{data.frame}> The regions dictionary,}
 }
