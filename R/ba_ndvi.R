@@ -179,6 +179,9 @@ ba_ndvi <- function(scales_variables_modules,
   avail_scale_combinations <-
     get_avail_scale_combinations(scales_sequences = scales_sequences,
                                  avail_scales = avail_scale)
+  grds <- avail_scale_combinations[grepl("^grd", avail_scale_combinations)]
+  no_grds <- avail_scale_combinations[!grepl("^grd", avail_scale_combinations)]
+  avail_scale_combinations <-c(grds, no_grds)
 
 
   # Modules table -----------------------------------------------------------
