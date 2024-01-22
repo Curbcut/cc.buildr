@@ -157,17 +157,26 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
   # Return for every region the ID of ALL scales ----------------------------
 
   out_for_dict <- lapply(regions, \(region) {
+
+    # Transform
+    region <- sf::st_transform(region, crs)
+
     # Take out too small scales, like street and building which would make this function
     # last for hours.
     take_out_small <- scales[!names(scales) %in% c("street", "building")]
-    # SKIP GRIDS
+
+    # Other technique for grid cells (simple spatial filtering)
+    grid_cells <- take_out_small[grepl("^grd\\d", names(take_out_small))]
+    ids_grids <- lapply(grid_cells, \(scale_df) {
+      sf::st_filter(scale_df, region)$ID
+    })
+    names(ids_grids) <- names(grid_cells)
+
+    # Other technique for grid cells (simple spatial filtering)
     take_out_small <- take_out_small[!grepl("^grd\\d", names(take_out_small))]
 
     # Spatialy filter scales that have 10% of their content inside of x region.
     ids <- lapply(take_out_small, \(scale_df) {
-
-      region <- sf::st_transform(region, crs)
-
       spatial_filtering(
         df = scale_df,
         crs = crs,
@@ -180,7 +189,9 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
     # Rename to send, for each region, a named list of all scales with the IDs
     # that fall within the region.
     names(ids) <- names(take_out_small)
-    return(ids)
+
+
+    return(c(ids_grids, ids))
 
   })
 

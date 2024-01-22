@@ -58,9 +58,24 @@ ndvi_grids <- function(census_scales, base_polygons,
     grid <- qs::qread(grid_file)
     grid_geocode <- sf::st_transform(grid, 4326)
     grid_geocode <- sf::st_centroid(grid_geocode)
-    grid_name <- future.apply::future_sapply(grid_geocode$geometry,
-                                             cc.data::rev_geocode_localhost,
-                                             future.seed = NULL)
+
+    # Is the local nominatim running?
+    if ((length(shell(paste0("docker ps -aq -f name=^nominatim-canada$"),
+                      intern = TRUE)) > 0)) {
+      shell(paste0("docker start nominatim-canada"))
+    } else {
+      stop(paste0("There is no local version of nominatim-canada, necessary for ",
+                  "geocoding. Run `cc.data::rev_geocode_create_local_nominatim`."))
+    }
+
+    # Reverse geolocate every grid cell
+    progressr::with_progress({
+      pb <- progressr::progressor(nrow(grid_geocode))
+      grid_name <- future.apply::future_sapply(grid_geocode$geometry, \(x) {
+        pb()
+        cc.data::rev_geocode_localhost(point_sf = x)
+      }, future.seed = NULL)
+    })
     grid$name <- grid_name
     grid$ID <- sprintf("grd%s_%s", grid_size, seq_along(grid$geometry))
     grid <- grid[, c("ID", "name", "geometry")]
