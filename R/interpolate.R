@@ -404,7 +404,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
   }
 
   ## Scales at which the data is available
-  avail_scale <- names(scales_to_interpolate)
+  avail_scale <- c(names(scales_to_interpolate), base_scale)
 
 
   ## Create interpolated references as a data.frame

@@ -422,24 +422,39 @@ tileset_create_recipe <- function(layer_names, source, minzoom, maxzoom,
 #' @return Returns nothing if succeeds. Tilesets are created and published and
 #' ready to be used.
 #' @export
-tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom = NULL,
+tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
                                prefix, username, access_token, no_reset = NULL) {
+
+  # Remove grids (they have their own tileset upload function)
+  map_zoom_levels <- map_zoom_levels[!grepl("^mzl_grd", names(map_zoom_levels))]
+
+  # Grab all scales
+  all_scales <- sapply(map_zoom_levels, names)
+  all_scales <- unique(unlist(all_scales, use.names = FALSE))
+
+  all_scales <- sapply(all_scales, \(x) {
+    file <- sprintf("data/geometry_export/%s.qs", x)
+    if (!file.exists(file)) {
+      stop(sprintf("scale geometry file `%s` does not exist", file))
+    }
+    qs::qread(file)
+  }, simplify = FALSE, USE.NAMES = TRUE)
 
   # Remove from all scales the scales we shouldn't reset the tileset for
   if (!is.null(no_reset)) {
     all_scales <- all_scales[!names(all_scales) %in% no_reset]
   }
 
-  # Switch the geometry for digital
-  all_scales <- lapply(all_scales, \(scale_df) {
-    # If there is no digital geometry, return raw
-    if (!"geometry_digital" %in% names(scale_df)) return(scale_df)
-
-    # Switch the geometry to the digital one
-    scale_df <- sf::st_drop_geometry(scale_df)
-    names(scale_df)[names(scale_df) == "geometry_digital"] <- "geometry"
-    sf::st_as_sf(scale_df)
-  })
+  # # Switch the geometry for digital
+  # all_scales <- lapply(all_scales, \(scale_df) {
+  #   # If there is no digital geometry, return raw
+  #   if (!"geometry_digital" %in% names(scale_df)) return(scale_df)
+  #
+  #   # Switch the geometry to the digital one
+  #   scale_df <- sf::st_drop_geometry(scale_df)
+  #   names(scale_df)[names(scale_df) == "geometry_digital"] <- "geometry"
+  #   sf::st_as_sf(scale_df)
+  # })
 
   # Reset
   mapply(\(scale_name, scale_df) {
@@ -482,7 +497,7 @@ tileset_upload_all <- function(all_scales, map_zoom_levels, tweak_max_zoom = NUL
 
     # We can detect too large data to pass by the normal flow by the fact
     # they don't have population and households interpolated
-    if (!all(c("population", "households") %in% names(scale_df))) {
+    if (grepl("_building$", scale_name)) {
       df <- scale_df[, grepl("ID$", names(scale_df))]
       df <- df[, c("ID", "DA_ID")]
       names(df) <- c("ID", "ID_color", "geometry")
