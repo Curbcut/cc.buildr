@@ -135,6 +135,9 @@ add_module <- function(modules, id, theme = "", nav_title, title_text_title,
       ))
     }
   }
+  if (id %in% modules$id) {
+    stop("modules `id` must be unique")
+  }
 
   tibble::add_row(
     modules,

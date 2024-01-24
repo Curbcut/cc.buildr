@@ -10,6 +10,9 @@
 #' retrieved by the centroid of the master_polygon created. If not supplied, it
 #' is derived from the centroid of all the regions through a simple mathematical
 #' approach.
+#' @param prov_code <`numeric`> Is the provinde code from cancensus (GeoUID)
+#' already known? If so, enter it. It can help if the centroid of the master
+#' polygon of the region is in a lake! Then no province is filtered.
 #'
 #' @return The output is a named list of length 5: The master polygon,
 #' all the individual regions present in \code{all_regions}, the crs, the
@@ -18,7 +21,7 @@
 #' DA version.
 #'
 #' @export
-create_master_polygon <- function(all_regions, crs = NULL) {
+create_master_polygon <- function(all_regions, crs = NULL, prov_code = NULL) {
   # Download or retrieve the geo sf -----------------------------------------
 
   regions <-
@@ -83,8 +86,12 @@ create_master_polygon <- function(all_regions, crs = NULL) {
   )
   master_polygon <- sf::st_make_valid(master_polygon)
   master_polygon_centroid <- sf::st_centroid(master_polygon)
-  prov_code <- sf::st_intersection(provinces, master_polygon_centroid)$GeoUID
+  if (is.null(prov_code))
+    prov_code <- sf::st_intersection(provinces, master_polygon_centroid)$GeoUID
 
+  if (length(prov_code) == 0) {
+    stop("Provide manually the cancensus province code (GeoUID).")
+  }
 
   # Get cartogrtaphic DA ----------------------------------------------------
 

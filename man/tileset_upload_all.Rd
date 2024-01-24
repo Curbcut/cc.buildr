@@ -5,7 +5,6 @@
 \title{Do it all tileset function}
 \usage{
 tileset_upload_all(
-  all_scales,
   map_zoom_levels,
   tweak_max_zoom = NULL,
   prefix,
@@ -15,10 +14,6 @@ tileset_upload_all(
 )
 }
 \arguments{
-\item{all_scales}{<\verb{named list}> A named list of sf data.frame
-containing all scales listed with their regions, normally
-\code{scales_variables_modules$scales}.}
-
 \item{map_zoom_levels}{<\verb{named list}> The previously created zoom levels
 using \code{\link[cc.buildr]{map_zoom_levels_create_all}} and
 \code{\link[cc.buildr]{map_zoom_levels_create_custom}}.}
@@ -38,6 +33,10 @@ created and published tileset. Should correspond to the Curbcut city, e.g. \code
 If boundaries change and new tilesets are necessary, potentially buildings would
 not be re-uploaded as it's costly and they don't change. Defaults to NULL for
 resetting all scales.}
+
+\item{all_scales}{<\verb{named list}> A named list of sf data.frame
+containing all scales listed with their regions, normally
+\code{scales_variables_modules$scales}.}
 }
 \value{
 Returns nothing if succeeds. Tilesets are created and published and

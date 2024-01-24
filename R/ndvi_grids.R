@@ -28,7 +28,8 @@ ndvi_grids <- function(census_scales, base_polygons,
                        overwrite_ndvi_tiles = FALSE,
                        overwrite_final_grids = FALSE,
                        crs = crs,
-                       grid_sizes = c(30, 60, 120, 300, 600)) {
+                       grid_sizes = c(30, 60, 120, 300, 600),
+                       geocode_progressor = FALSE) {
 
   output_path_tmp <- sprintf("%stmp/", output_path)
   dir.create(output_path, showWarnings = FALSE)
@@ -69,13 +70,20 @@ ndvi_grids <- function(census_scales, base_polygons,
     }
 
     # Reverse geolocate every grid cell
-    progressr::with_progress({
-      pb <- progressr::progressor(nrow(grid_geocode))
-      grid_name <- future.apply::future_sapply(grid_geocode$geometry, \(x) {
-        pb()
-        cc.data::rev_geocode_localhost(point_sf = x)
-      }, future.seed = NULL)
-    })
+    if (geocode_progressor) {
+      progressr::with_progress({
+        pb <- progressr::progressor(nrow(grid_geocode))
+        grid_name <- future.apply::future_sapply(grid_geocode$geometry, \(x) {
+          pb()
+          cc.data::rev_geocode_localhost(point_sf = x)
+        }, future.seed = NULL)
+      })
+    } else {
+      grid_name <- future.apply::future_sapply(grid_geocode$geometry,
+                                               cc.data::rev_geocode_localhost,
+                                               future.seed = NULL)
+    }
+
     grid$name <- grid_name
     grid$ID <- sprintf("grd%s_%s", grid_size, seq_along(grid$geometry))
     grid <- grid[, c("ID", "name", "geometry")]
