@@ -211,7 +211,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
         additive_vars = additive_vars,
         name_interpolate_from = base_scale,
         construct_for = construct_for,
-        overwrite = FALSE,
+        overwrite = overwrite,
         time_regex = "_\\d{4}$"
       )
     })
@@ -404,7 +404,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
   }
 
   ## Scales at which the data is available
-  avail_scale <- c(names(scales_to_interpolate), base_scale)
+  avail_scale <- unique(c(names(scales_to_interpolate), base_scale))
 
 
   ## Create interpolated references as a data.frame
@@ -614,7 +614,7 @@ interpolate_custom_geo <- function(data, all_scales, crs,
   }
 
   ## Scales at which the data is available
-  avail_scale <- names(scales_to_interpolate)
+  avail_scale <- unique(names(scales_to_interpolate))
 
 
   ## Create interpolated references as a data.frame

@@ -28,7 +28,9 @@ build_colours <- function(
     left_3 = c("#E8E8E8", "#B5C0DA", "#6C83B5"),
     right_5 = c("#C7DFCC", "#9DC6A6", "#73AE80", "#517A5A", "#2E4633"),
     right_3 = c("#E8E8E8", "#B8D6BE", "#73AE80"),
-    delta_5 = c("#6D5271", "#DCD3E2", "#E8E8E8", "#FEBD54", "#F69036"),
+    delta_5 = c("#6D5271", "#DCD3E2", "#E8E8E8", "#f9e699", "#F69036"),
+    delta_neg_5 = c(grDevices::colorRampPalette(delta_5[c(1, 2)])(4), "#E8E8E8"),
+    delta_pos_5 = c("#E8E8E8", grDevices::colorRampPalette(delta_5[c(4, 5)])(4)),
     bivar = c(
       "#E8E8E8", "#B5C0DA", "#6C83B5", "#B8D6BE", "#90B2B3", "#567994",
       "#73AE80", "#5A9178", "#2A5A5B"
@@ -115,6 +117,18 @@ build_colours <- function(
     fill = c(delta_5, col_NA)
   )
 
+  delta_neg <- tibble::tibble(
+    group = c(1:5, "NA"),
+    y = 1,
+    fill = c(delta_neg_5, col_NA)
+  )
+
+  delta_pos  <- tibble::tibble(
+    group = c(1:5, "NA"),
+    y = 1,
+    fill = c(delta_pos_5, col_NA)
+  )
+
   qual <- tibble::tibble(
     group = as.character(seq_along(qual) - 1),
     y = 1,
@@ -136,6 +150,8 @@ build_colours <- function(
     left_5 = left_5,
     bivar = bivar,
     delta = delta,
+    delta_neg = delta_neg,
+    delta_pos = delta_pos,
     variant_5 = variant_5,
     qual = qual,
     viridis = viridis
