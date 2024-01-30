@@ -25,11 +25,11 @@
 #' @export
 zoning_page <- function(scales_variables_modules, base_polygons, username,
                         access_token, crs, overwrite, overwrite_mb,
-                        tileset_prefix, CMA_name_in_coding_xlsx) {
+                        tileset_prefix, region_DA_IDs, CMA_name_in_coding_xlsx) {
 
   # Filter zoning -----------------------------------------------------------
 
-  if (!file.exists("data/zoning.qsm") | overwrite) {
+  if (!file.exists("dev/data/built/zoning.qsm") | overwrite) {
 
     z <- cc.data::bucket_read_object_zip_shp("LG_ZONING.shp.zip",
                                              "curbcut.bc.zoning")
@@ -338,7 +338,7 @@ zoning_page <- function(scales_variables_modules, base_polygons, username,
     # Save zoning tibbles -----------------------------------------------------
 
     qs::qsavem(zoning_lots, zones, zones_residential, zoning_lots_residential,
-               zones_compare, file = "data/zoning.qsm")
+               zones_compare, file = "dev/data/built/zoning.qsm")
 
   }
 
@@ -350,7 +350,7 @@ zoning_page <- function(scales_variables_modules, base_polygons, username,
 
 
   if (!tile_id %in% current_tilesets$id | overwrite_mb) {
-    qs::qload("data/zoning.qsm")
+    qs::qload("dev/data/built/zoning.qsm")
 
     # Merge residential information
     zoning_lots_residential$additional_units <- as.character(zoning_lots_residential$additional_units)
@@ -406,7 +406,7 @@ zoning_page <- function(scales_variables_modules, base_polygons, username,
   }
 
   # Make sure no geometry feature follows
-  qs::qload("data/zoning.qsm")
+  qs::qload("dev/data/built/zoning.qsm")
   zoning_lots <- sf::st_drop_geometry(zoning_lots)
   zoning_lots_residential <- sf::st_drop_geometry(zoning_lots_residential)
   qs::qsavem(zoning_lots, zones, zones_residential, zoning_lots_residential,
