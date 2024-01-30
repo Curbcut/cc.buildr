@@ -192,7 +192,12 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
   }
 
   ## Only interpolate for bigger geometries than the base one
-  construct_for <- only_scales
+  # Find the index of base_scale in existing_census_scales
+  base_index <- match(base_scale, existing_census_scales)
+  # Extract scales from existing_census_scales that are before base_scale
+  before_base_scales <- existing_census_scales[1:base_index]
+  # Combine before_base_scales with only_scales, removing duplicates
+  construct_for <- unique(c(before_base_scales, only_scales, base_scale))
 
   ## In the case weight_by is `area`
   if (weight_by == "area") {

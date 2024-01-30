@@ -4,10 +4,10 @@
 \alias{pages_regions}
 \title{Pages Regions Function}
 \usage{
-pages_regions(modules, regions_dictionary)
+pages_regions(svm, regions_dictionary)
 }
 \arguments{
-\item{modules}{<\code{list}> Dataframe of modules.}
+\item{svm}{<\code{list}> List of scales, variables and modules.}
 
 \item{regions_dictionary}{<\code{data.frame}> The regions dictionary,}
 }

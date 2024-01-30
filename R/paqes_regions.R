@@ -5,13 +5,16 @@
 #' It evaluates each region's data presence and only keeps regions that have a
 #' high enough percentage of features filled with data.
 #'
-#' @param modules <`list`> Dataframe of modules.
+#' @param svm <`list`> List of scales, variables and modules.
 #' @param regions_dictionary <`data.frame`> The regions dictionary,
 #'
 #' @return <`list`> An SVM object with the `modules` element updated to include
 #' `regions`, which are the filtered regions based on the data coverage criteria.
 #' @export
-pages_regions <- function(modules, regions_dictionary) {
+pages_regions <- function(svm, regions_dictionary) {
+
+  scales <- svm$scales
+  modules <- svm$modules
 
   modules$regions <- lapply(modules$id, \(id) {
     vl <- modules$var_left[modules$id == id][[1]]
@@ -41,15 +44,16 @@ pages_regions <- function(modules, regions_dictionary) {
 
           # Length of IDs from this region present in the scales' data
           present_in_data <- dat[dat$ID %in% scale_IDs, ]
+          all_scale <- merge(scales[[scale_name]][c("ID", "area")], present_in_data)
 
           # Do not count if there are missing values (NAs) for more than half of
           # the observations!
-          present_in_data <- subset(present_in_data, select = -ID)
-          only_nas <- apply(present_in_data, 1, \(x) all(is.na(x)))
-          present_in_data <- present_in_data[!only_nas, ]
+          only_values <- sf::st_drop_geometry(subset(all_scale, select = -c(ID, area)))
+          only_nas <- apply(only_values, 1, \(x) all(is.na(x)))
+          present_in_data <- all_scale[!only_nas, ]
 
           # As a percentage of all the IDs needed to fill in the region
-          nrow(present_in_data) / length(scale_IDs)
+          sum(present_in_data$area) / sum(all_scale$area)
         }, names(region_scales), region_scales)
 
         # Remove the scales for which no data was calculated
@@ -78,7 +82,8 @@ pages_regions <- function(modules, regions_dictionary) {
 
   })
 
-  return(modules)
+  svm$modules <- modules
+
+  return(svm)
 
 }
-
