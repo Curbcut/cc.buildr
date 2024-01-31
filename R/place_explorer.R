@@ -340,7 +340,7 @@ placeex_main_card_data <- function(scales_dictionary, DA_table, region_DA_IDs, c
   # Return ------------------------------------------------------------------
 
   # For now, place explorer only takes first scales
-  data <- lapply(data, lapply, `[`, first_scale)
+  data <- lapply(data, lapply, `[`, first_scales)
 
   return(list(
     main_card_dict = dict,
