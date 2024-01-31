@@ -48,7 +48,7 @@ zoning_page <- function(scales_variables_modules, base_polygons, username,
     z <- tibble::as_tibble(z)
     z <- sf::st_as_sf(z)
 
-    z <- dplyr::group_by(z, ZONE_CODE, ICI_ZONE) |>
+    z <- dplyr::group_by(z, PROVIDER, ZONE_CODE, ICI_ZONE) |>
       dplyr::summarize()
     z <- sf::st_cast(z, "MULTIPOLYGON")
     z <- sf::st_transform(z, crs)
@@ -74,12 +74,28 @@ zoning_page <- function(scales_variables_modules, base_polygons, username,
     graphs <- matchr:::reduce_int(sf::st_intersects(mixed))
 
     new_mixed <- lapply(graphs, \(x) {
-      from <- mixed[x, ] |>
-        sf::st_make_valid() |>
-        sf::st_set_precision(1) |>
-        sf::st_make_valid()
+      # Initialize the error flag and precision
+      error <- TRUE
+      precision <- 0
 
-      to <- sf::st_intersection(from)["geometry"]
+      while (error) {
+        # Try to perform operations and catch any errors
+        tryCatch({
+          # Update the geometry with increased precision and make it valid
+          from <- sf::st_make_valid(mixed[x, ]) |>
+            sf::st_set_precision(precision) |>
+            sf::st_make_valid()
+
+          # Attempt to compute the intersection
+          to <- sf::st_intersection(from)["geometry"]
+
+          # If successful, set error flag to FALSE
+          error <- FALSE
+        }, error = function(e) {
+          # In case of an error, increment precision and leave error flag TRUE
+          precision <<- precision + 1
+        })
+      }
       to <- to[sf::st_is(to, "POLYGON") | sf::st_is(to, "MULTIPOLYGON"), ]
       sf::st_cast(to, "POLYGON")
     })
@@ -177,13 +193,13 @@ zoning_page <- function(scales_variables_modules, base_polygons, username,
     coding$single <- ifelse(coding$single & coding$duplex, FALSE, coding$single)
 
     coding$secondary_suite <- !is.na(coding$secondary_suite) & grepl("x|X", coding$secondary_suite)
-    coding <- coding[c("ZONE_CODE", "single", "duplex", "secondary_suite")]
+    coding <- coding[c("PROVIDER", "ZONE_CODE", "single", "duplex", "secondary_suite")]
 
     # Bind the coding information to residential zones
     # zoning_lots_residential <- zoning_lots[zoning_lots$ICI_ZONE == "RESIDENTIAL", ]
     zoning_lots_residential <-
       cc.buildr::merge(coding, zoning_lots[!names(zoning_lots) %in% "ICI_ZONE"],
-                       by = "ZONE_CODE", all.x = TRUE)
+                       by = c("PROVIDER", "ZONE_CODE"), all.x = TRUE)
     zoning_lots_residential <- zoning_lots_residential[!is.na(zoning_lots_residential$ID), ]
 
 
@@ -254,7 +270,7 @@ zoning_page <- function(scales_variables_modules, base_polygons, username,
 
     # Categories
     zoning_lots_residential$res_category_before <- apply(zoning_lots_residential, 1, \(x) {
-      if (is.na(x$single)) return("Multiresidential")
+      if (!x$single & !x$duplex) return("Multiresidential")
       if (x$single) {
         if (x$secondary_suite) return("Single + Secondary suite/ADU")
         return("Single")
@@ -422,24 +438,25 @@ zoning_page <- function(scales_variables_modules, base_polygons, username,
       nav_title = "Zoning",
       title_text_title = "Zoning",
       title_text_main = paste0(
-        "Zoning is a set of laws that separates land into “zones” where each zo",
-        "ne has regulations that dictate what kinds and how many buildings and ",
-        "dwellings are allowed. Although zoning can be relatively invisible, it",
-        " shapes the city in important ways. Zoning plays a role in spatially s",
-        "tructuring the city and as a result is often entangled in spatial ineq",
-        "ualities like housing crises and environmental racism. Because of this",
-        ", addressing land-use regulations can help in the pursuit of spatial e",
-        "quity and the common good."
+        "<p>Zoning is a set of laws that separates land into “zones” where ea",
+        "ch zone has regulations that dictate what kinds and how many buildings",
+        " and dwellings are allowed. Although zoning can be relatively invisibl",
+        "e, it shapes the city in important ways. Zoning plays a role in spatia",
+        "lly structuring the city and as a result is often entangled in spatial",
+        " inequalities like housing crises and environmental racism. Because of",
+        " this, addressing land-use regulations can help in the pursuit of spat",
+        "ial equity and the common good."
       ),
       title_text_extra = paste0(
-        "Upzoning, or inclusionary zoning of low-density residential neighbourh",
-        "oods has recently been put forward as a strategy to tackle housing cri",
-        "ses in North America. This is done by regulating development density r",
-        "ights. The Small-Scale, Multi-Unit Housing (SSMUH) legislation, or Bil",
-        "l 44, aims to increase housing supply, create more diverse housing cho",
-        "ices, and over time, contribute to more affordable housing across BC. ",
-        "To visualize this new legislation, select “Residential zones” on the l",
-        "eft-hand panel, and slide the slider to the right to toggle “Bill 44”."
+        "<p>Upzoning, or inclusionary zoning of low-density residential neighbo",
+        "urhoods has recently been put forward as a strategy to tackle housing ",
+        "crises in North America. This is done by regulating development densit",
+        "y rights. The Small-Scale, Multi-Unit Housing (SSMUH) legislation, or ",
+        "Bill 44, aims to increase housing supply, create more diverse housing ",
+        "choices, and over time, contribute to more affordable housing across B",
+        "C. To visualize this new legislation, select “Residential zones” on th",
+        "e left-hand panel, and slide the slider to the right to toggle “Bill 4",
+        "4”."
       ),
       metadata = FALSE,
       dataset_info = ""

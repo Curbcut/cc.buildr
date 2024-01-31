@@ -1,8 +1,6 @@
 #' Produce the place explorer main card
 #'
-#' @param scales <`list`> Lists of spatial features dataframes with regions and
-#' scales filled with at minimum census and alp data. Usually is
-#' `scales_variables_modules$scales`.
+#' @param scales_dictionary <`list`> Scales dictionary
 #' @param DA_table <`sf data.frame`> Tables containing all the dissemination areas
 #' of the zone under study. Usually is `census_scales$DA`
 #' @param region_DA_IDs <`character vector`> Vector of all the dissemination area's
@@ -12,16 +10,18 @@
 #' @param regions_dictionary <`data.frame`> The regions dictionary built using
 #' \code{\link[cc.buildr]{regions_dictionary}}. Will be used to filter out scales
 #' for which data should not be calculated.
+#' @param first_scales <`character vector`> Scales for which place explorer should
+#' be calculated
 #'
 #' @return Lists containing all the main card indicators. Sub lists of regions
 #' and scales for data values.
 #' @export
-placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
+placeex_main_card_data <- function(scales_dictionary, DA_table, region_DA_IDs, crs,
                                    regions_dictionary,
                                    ignore_scales = c(
                                      "building", "street", "grd30", "grd60", "grd120",
-                                     "grd300"),
-                                   region_) {
+                                     "grd300", "grd600"),
+                                   first_scales) {
   # Init --------------------------------------------------------------------
 
   dict <- tibble::tibble(
@@ -45,15 +45,15 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
   current_census_year <- gsub("CA", "20", cc.buildr::current_census)
 
   # Which scales can we show PE for?
-  # ignore_scales <- c(ignore_scales, "grd250", "grd100", "grd50", "grd25")
-  scales <- scales[!names(scales) %in% ignore_scales]
-
+  scales <- scales_dictionary$scale[!scales_dictionary$scale %in% ignore_scales]
+  scales <- sapply(scales, \(x) qs::qread(sprintf("data/geometry_export/%s.qs", x)),
+                   simplify = FALSE, USE.NAMES = TRUE)
 
   # Filter regions ----------------------------------------------------------
 
   regions <- regions_dictionary$region[regions_dictionary$pickable]
 
-  all_scales <- lapply(regions, \(reg) {
+  all_scales <- sapply(regions, \(reg) {
     reg_db <- regions_dictionary$scales[regions_dictionary$region == reg][[1]]
     out <- lapply(names(scales), \(scale_name) {
       scale_df <- scales[[scale_name]]
@@ -61,8 +61,7 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
     })
     names(out) <- names(scales)
     out
-  })
-  names(all_scales) <- regions
+  }, simplify = FALSE, USE.NAMES = TRUE)
 
 
   # Common functions --------------------------------------------------------
@@ -175,12 +174,14 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
   # Format correctly
   data$ndvi <- map_over_scales(
     all_scales = all_scales,
-    fun = \(scale_df = scale_df, ...) {
-      if (!"ndvi_2022" %in% names(scale_df)) {
-        return(NULL)
-      }
-      out <- scale_df[c("ID", "ndvi_2022")]
-      out <- sf::st_drop_geometry(out)
+    fun = \(scale_df = scale_df, scale_name = scale_name, ...) {
+      data_file <- sprintf("data/%s/ndvi.qs", scale_name)
+      if (!file.exists(data_file)) return(NULL)
+
+      dat <- qs::qread(data_file)
+      out <- dat[c(1, ncol(dat))]
+      out <- out[out$ID %in% scale_df$ID, ]
+
       out <- mc_df_format(out)
       return(out)
     }
@@ -217,23 +218,28 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
   dict <- rbind(dict, sust_dict)
 
 
-  vars <- paste0(c("trans_walk_or_bike_", "trans_transit_"), current_census_year)
+  vars <- c("trans_walk_or_bike", "trans_transit")
 
   # Format correctly
   data$sust <- map_over_scales(
     all_scales = all_scales,
-    fun = \(scale_df = scale_df, ...) {
-      if (all(!vars %in% names(scale_df))) {
-        return(NULL)
-      }
-      out <- scale_df[c("ID", vars)]
-      out$var <- out[[vars[1]]] + out[[vars[2]]]
+    fun = \(scale_df = scale_df, scale_name = scale_name, ...) {
+      data_file <- sprintf("data/%s/", scale_name)
+      data_file <- paste0(data_file, vars, ".qs")
+      if (!file.exists(data_file[1])) return(NULL)
+
+      dat <- lapply(data_file, qs::qread)
+      dat <- lapply(dat, \(x) x[c(1, ncol(x))])
+      dat <- lapply(dat, \(x) x[x$ID %in% scale_df$ID, ])
+      out <- Reduce(merge, dat)
+      out$var <- out[[2]] + out[[3]]
       out <- out[c("ID", "var")]
-      out <- sf::st_drop_geometry(out)
+
       out <- mc_df_format(out)
       return(out)
     }
   )
+
   # Remove empty lists
   data$sust <- lapply(data$sust, \(x) {
     x[!sapply(x, is.null)]
@@ -263,23 +269,22 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
     )
   dict <- rbind(dict, singled_dict)
 
-
-  vars <- paste0("housing_single_detached_", current_census_year)
-
   # Format correctly
   data$singled <- map_over_scales(
     all_scales = all_scales,
-    fun = \(scale_df = scale_df, ...) {
-      if (all(!vars %in% names(scale_df))) {
-        return(NULL)
-      }
-      out <- scale_df[c("ID", vars)]
-      # out <- out[c("ID", "var")]
-      out <- sf::st_drop_geometry(out)
+    fun = \(scale_df = scale_df, scale_name = scale_name, ...) {
+      data_file <- sprintf("data/%s/housing_single_detached.qs", scale_name)
+      if (!file.exists(data_file)) return(NULL)
+
+      dat <- qs::qread(data_file)
+      out <- dat[c(1, ncol(dat))]
+      out <- out[out$ID %in% scale_df$ID, ]
+
       out <- mc_df_format(out)
       return(out)
     }
   )
+
   # Remove empty lists
   data$singled <- lapply(data$singled, \(x) {
     x[!sapply(x, is.null)]
@@ -309,23 +314,22 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
     )
   dict <- rbind(dict, activel_dict)
 
-
-  vars <- paste0("alp_", current_census_year)
-
   # Format correctly
   data$activel <- map_over_scales(
     all_scales = all_scales,
-    fun = \(scale_df = scale_df, ...) {
-      if (all(!vars %in% names(scale_df))) {
-        return(NULL)
-      }
-      out <- scale_df[c("ID", vars)]
-      # out <- out[c("ID", "var")]
-      out <- sf::st_drop_geometry(out)
+    fun = \(scale_df = scale_df, scale_name = scale_name, ...) {
+      data_file <- sprintf("data/%s/alp.qs", scale_name)
+      if (!file.exists(data_file)) return(NULL)
+
+      dat <- qs::qread(data_file)
+      out <- dat[c(1, ncol(dat))]
+      out <- out[out$ID %in% scale_df$ID, ]
+
       out <- mc_df_format(out)
       return(out)
     }
   )
+
   # Remove empty lists
   data$activel <- lapply(data$activel, \(x) {
     x[!sapply(x, is.null)]
@@ -334,6 +338,9 @@ placeex_main_card_data <- function(scales, DA_table, region_DA_IDs, crs,
 
 
   # Return ------------------------------------------------------------------
+
+  # For now, place explorer only takes first scales
+  data <- lapply(data, lapply, `[`, first_scale)
 
   return(list(
     main_card_dict = dict,
@@ -395,7 +402,7 @@ placeex_main_card_final_output <- function(region, scale, scale_df, select_id, l
       higher_than_threshold <-
         if (z$pretty_data_var > 53) {
           curbcut::cc_t("Its value is higher than the WHO's guideline value of 53. ",
-               lang = lang
+                        lang = lang
           )
         } else {
           ""
@@ -623,12 +630,12 @@ placeex_main_card_prep_output_fr <- function(data, dict, region, scale, select_i
 
   df_scale <- "La zone"
   df_scales <- curbcut::cc_t(scales_dictionary$plur[scales_dictionary$scale == scale],
-                    lang = "fr"
+                             lang = "fr"
   )
 
   # To what it compares
   to_compare <- curbcut::cc_t(regions_dictionary$to_compare[regions_dictionary$region == region],
-                     lang = "fr"
+                              lang = "fr"
   )
 
   # Prepare list to store all data
@@ -811,9 +818,6 @@ tilejson <- function(mapbox_username, tileset_prefix, tile, return_error = FALSE
 
 #' Pre-process all the possible Rmds
 #'
-#' @param scales_variables_modules <`named list`> A list of length three.
-#' The first is all the scales, the second is the variables table, and the
-#' third is the modules table.
 #' @param pe_main_card_data <`list`> Data and dictionary necessary to knit the
 #' rmds. The output of \code{\link[cc.buildr]{placeex_main_card_data}}.
 #' @param regions_dictionary <`data.frame`> The regions dictionary built using
@@ -845,8 +849,7 @@ tilejson <- function(mapbox_username, tileset_prefix, tile, return_error = FALSE
 #' @return Returns nothing if successful. All place explorer possibilities are
 #' saved in the `out_folder`.
 #' @export
-placeex_main_card_rmd <- function(scales_variables_modules,
-                                  pe_main_card_data,
+placeex_main_card_rmd <- function(pe_main_card_data,
                                   regions_dictionary,
                                   scales_dictionary,
                                   lang = "en",
@@ -855,9 +858,10 @@ placeex_main_card_rmd <- function(scales_variables_modules,
                                   rev_geocode_from_localhost = TRUE,
                                   check_bslib_version = TRUE,
                                   overwrite = TRUE,
-                                  skip_scales = c("building", "street"),
+                                  skip_scales = c("building", "street", "grd30", "grd60",
+                                                  "grd120", "grd300", "grd600"),
                                   scales_sequences,
-                                  data_path) {
+                                  full_data_path = sprintf("%s/data/", getwd())) {
   if (!requireNamespace("rmarkdown", quietly = TRUE)) {
     stop(
       "Package \"rmarkdown\" must be installed to use this function.",
@@ -880,25 +884,25 @@ placeex_main_card_rmd <- function(scales_variables_modules,
 
   # Setup -------------------------------------------------------------------
 
-  variables <- scales_variables_modules$variables
+  variables <- qs::qread(sprintf("%svariables.qs", full_data_path))
 
   out_folder <- "www/place_explorer"
   if (!out_folder %in% list.files("www", full.names = TRUE)) dir.create(out_folder)
   if (!grepl("/$", out_folder)) out_folder <- paste0(out_folder, "/")
 
   regions <- regions_dictionary$region[regions_dictionary$pickable]
-  all_scales <- scales_variables_modules$scales[
-    !names(scales_variables_modules$scales) %in% skip_scales]
 
-  # Only pre-process the first scale now.
-  possible_scales <- unique(sapply(scales_sequences, `[[`, 1))
-  all_scales <- all_scales[names(all_scales) %in% possible_scales]
-  all_scales <- all_scales[!names(all_scales) %in% skip_scales]
+  all_scales <- unlist(lapply(pe_main_card_data$main_card_data, lapply, names),
+                       use.names = FALSE)
+  all_scales <- unique(all_scales)
+  all_scales <- sapply(all_scales, \(x) qs::qread(sprintf("data/geometry_export/%s.qs", x)),
+                       simplify = FALSE, USE.NAMES = TRUE)
+
 
   # Get the head file -------------------------------------------------------
 
   inp <- system.file(paste0("place_explorer/pe_en.Rmd"),
-    package = "cc.buildr"
+                     package = "cc.buildr"
   )
 
   header_file <- paste0(getwd(), "/", out_folder, "header.html")
@@ -916,21 +920,21 @@ placeex_main_card_rmd <- function(scales_variables_modules,
     )
 
   rmarkdown::render(inp,
-    output_file = header_file,
-    params = list(
-      select_id = all_scales[[1]]$ID[1],
-      region = regions[[1]],
-      scale = names(all_scales)[[1]],
-      scale_sing = "",
-      tileset_prefix = tileset_prefix,
-      map_loc = all_scales[[1]]$centroid[[1]],
-      map_zoom = 10,
-      mapbox_username = mapbox_username,
-      title_card_data = title_card_data,
-      variables = variables,
-      scale_df = sf::st_drop_geometry(all_scales[[1]]),
-      data_path = data_path
-    ), envir = new.env(), quiet = TRUE
+                    output_file = header_file,
+                    params = list(
+                      select_id = all_scales[[1]]$ID[1],
+                      region = regions[[1]],
+                      scale = names(all_scales)[[1]],
+                      scale_sing = "",
+                      tileset_prefix = tileset_prefix,
+                      map_loc = sf::st_centroid(all_scales[[1]][1, ])$geometry |> unlist(),
+                      map_zoom = 10,
+                      mapbox_username = mapbox_username,
+                      title_card_data = title_card_data,
+                      variables = variables,
+                      scale_df = sf::st_drop_geometry(all_scales[[1]]),
+                      data_path = full_data_path
+                    ), envir = new.env(), quiet = TRUE
   )
 
   x <- readLines(header_file)
@@ -951,7 +955,7 @@ placeex_main_card_rmd <- function(scales_variables_modules,
     })) * length(lang))
     lapply(lang, \(lan) {
       inp <- system.file(paste0("place_explorer/pe_", lan, ".Rmd"),
-        package = "cc.buildr"
+                         package = "cc.buildr"
       )
 
       future.apply::future_lapply(regions, \(region) {
@@ -988,7 +992,7 @@ placeex_main_card_rmd <- function(scales_variables_modules,
             if (nrow(df) == 0) return(NULL)
 
             # Setup all necessary input
-            map_loc <- df$centroid[[1]]
+            map_loc <- sf::st_centroid(df)$geometry |> unlist()
             title_card_data <-
               placeex_main_card_final_output(
                 region = region,
@@ -1063,7 +1067,7 @@ placeex_main_card_rmd <- function(scales_variables_modules,
                   title_card_data = title_card_data,
                   variables = variables,
                   scale_df = sf::st_drop_geometry(scale_df),
-                  data_path = data_path
+                  data_path = full_data_path
                 ), envir = new.env(), quiet = TRUE
               ),
               error = function(e) {

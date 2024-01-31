@@ -21,85 +21,85 @@ params:
     scale_df: ""
     data_path: ""
 ---
-
+  
 ```{css, echo=FALSE}
 .bg-col_pe_1 {
   background-color:#CA002095;
-  color:#ffffff;
-  border-radius: 5px;
+    color:#ffffff;
+    border-radius: 5px;
 }
 
 .bg-col_pe_2 {
   background-color:#F4A58295;
-  color:#222222;
-  border-radius: 5px;
+    color:#222222;
+    border-radius: 5px;
 }
 
 .bg-col_pe_3 {
   background-color:#A9A9A995;
-  color:#222222;
-  border-radius: 5px;
+    color:#222222;
+    border-radius: 5px;
 }
 
 .bg-col_pe_4 {
   background-color:#BAE4B395;
-  color:#222222;
-  border-radius: 5px;
+    color:#222222;
+    border-radius: 5px;
 }
 
 .bg-col_pe_5 {
   background-color:#31A35495;
-  color:#ffffff;
-  border-radius: 5px;
+    color:#ffffff;
+    border-radius: 5px;
 }
 
 .bg-col_no_data {
   background-color:#22222222;
-  color:#ffffff;
-  border-radius: 5px;
+    color:#ffffff;
+    border-radius: 5px;
 }
 
 .bg-tab_class_1 {
   background-color:#6c83b5;
-  color:#ffffff;
-  border-radius: 5px;
+    color:#ffffff;
+    border-radius: 5px;
 }
 
 .bg-tab_class_2 {
   background-color:#8b9dc5;
-  color:#ffffff;
-  border-radius: 5px;
+    color:#ffffff;
+    border-radius: 5px;
 }
 
 .bg-tab_class_3 {
   background-color:#aab7d5;
-  color:#222222;
-  border-radius: 5px;
+    color:#222222;
+    border-radius: 5px;
 }
 
 .bg-tab_class_4 {
   background-color:#cad2e4;
-  color:#222222;
-  border-radius: 5px;
+    color:#222222;
+    border-radius: 5px;
 }
 
 .bg-tab_class_5 {
   background-color:#eaedf4;
-  color:#222222;
-  border-radius: 5px;
+    color:#222222;
+    border-radius: 5px;
 }
 
 .bg-tab_class_no_data {
   background-color:#22222222;
-  color:#ffffff;
-  border-radius: 5px;
+    color:#ffffff;
+    border-radius: 5px;
 }
 
 ```
 
 ```{r map, echo = FALSE}
 
-require(curbcut)
+suppressPackageStartupMessages(require(curbcut, quietly = TRUE))
 
 # Which of the title cards do this ID have data for
 avail_dat <- sapply(params$title_card_data, \(x)  "hex_cat" %in% names(x))
@@ -119,8 +119,8 @@ map_style_building <- "mapbox://styles/curbcut/cljkciic3002h01qveq5z1wrp"
 
 # The MVT json
 mvt <- tilejson(mapbox_username = params$mapbox_username,
-                         tileset_prefix = params$tileset_prefix,
-                         tile = params$scale)
+                tileset_prefix = params$tileset_prefix,
+                tile = params$scale)
 
 # Show the map
 rdeck::rdeck(map_style = map_style_building, 
@@ -260,21 +260,17 @@ contents <- lapply(all_themes, \(t) {
   
   # All possible variables in the theme
   all_vars <- params$variables$var_code[params$variables$theme == t &
-                                      params$variables$pe_include]
+                                          params$variables$pe_include]
   
   # Iterate over all the variables in the theme and create the cards
   cards <- lapply(all_vars, \(var) {
-
+    
     # Construct the variable with the most recent year
     date <- max(params$variables$dates[params$variables$var_code == var][[1]])
     
     # Grab the type of the variable, and the title 
     type <- unlist(params$variables$type[params$variables$var_code == var])
     var_title <- params$variables$var_title[params$variables$var_code == var]
-    
-    sum(grepl(var, names(scale_df)))
-    # If the column does not exist, return nothing
-    if (sum(grepl(var, names(scale_df))) == 0) return(NULL)
     
     # Construct the class of the variable and the data needed for the 
     # text function.
@@ -287,7 +283,7 @@ contents <- lapply(all_themes, \(t) {
     # will search in the global environent if it's not able to load the `data`.
     data <- curbcut::data_get(vars = vars, scale = params$scale, region = params$region, 
                               data_path = params$data_path)
-
+    
     # Construct the text
     vl <- curbcut::match_schema_to_col(data = data, time = time, schemas = NULL)
     

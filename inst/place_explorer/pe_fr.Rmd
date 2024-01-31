@@ -99,7 +99,7 @@ params:
 
 ```{r map, echo = FALSE}
 
-require(curbcut)
+suppressPackageStartupMessages(require(curbcut, quietly = TRUE))
 
 # Which of the title cards do this ID have data for
 avail_dat <- sapply(params$title_card_data, \(x)  "hex_cat" %in% names(x))
@@ -258,10 +258,6 @@ contents <- lapply(all_themes, \(t) {
     # Grab the type of the variable, and the title 
     type <- unlist(params$variables$type[params$variables$var_code == var])
     var_title <- params$variables$var_title[params$variables$var_code == var]
-    
-    sum(grepl(var, names(scale_df)))
-    # If the column does not exist, return nothing
-    if (sum(grepl(var, names(scale_df))) == 0) return(NULL)
     
     # Construct the class of the variable and the data needed for the 
     # text function.

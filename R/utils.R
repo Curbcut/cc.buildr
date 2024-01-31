@@ -94,7 +94,12 @@ get_area <- function(geometry, ...) {
 #' @export
 reorder_columns <- function(scale_df) {
 
-  mandatory_start <- c("ID", "name", "name_2")
+  mandatory_start <- c()
+  if ("ID" %in% names(scale_df)) mandatory_start <- c(mandatory_start, "ID")
+  if ("name" %in% names(scale_df)) mandatory_start <- c(mandatory_start, "name")
+  if ("name_2" %in% names(scale_df)) mandatory_start <- c(mandatory_start, "name_2")
+
+
   all_ids <- names(scale_df)[grepl("_ID", names(scale_df))]
   other <- character()
 
