@@ -162,13 +162,12 @@ zoning_page <- function(scales_variables_modules, base_polygons, username,
 
     # Population count of the municipality of the zone
 
-    pop <- sf::st_join(sf::st_centroid(zoning_lots),
-                       sf::st_transform(scales_variables_modules$scales$CSD["population"],
-                                        crs))
-
-    zoning_lots <- merge(zoning_lots, sf::st_drop_geometry(pop)[c("ID", "population")],
-                         by = "ID")
+    zoning_lots <- sf::st_join(zoning_lots,
+                               sf::st_transform(scales_variables_modules$scales$CSD["population"],
+                                                crs))
     names(zoning_lots)[names(zoning_lots) == "population"] <- "pop"
+    zoning_lots <- zoning_lots[!is.na(zoning_lots$pop), ]
+
 
     # Add the area
     zoning_lots$area <- cc.buildr::get_area(zoning_lots)
