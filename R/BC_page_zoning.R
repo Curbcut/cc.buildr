@@ -340,7 +340,7 @@ zoning_page <- function(scales_variables_modules, base_polygons, username,
 
     zones_t <- 0:5
     zones_compare <- lapply(zones_t, \(type) {
-      size_km2 <- sum(zoning_lots$area[zoning_lots_residential$additional_units == type])
+      size_km2 <- sum(zoning_lots_residential$area[zoning_lots_residential$additional_units == type])
       c(prettyNum(round(size_km2  / 1e6, digits = 1), big.mark = ","),
         scales::percent(size_km2 / sum(zoning_lots_residential$area), accuracy = 0.1))
     })
