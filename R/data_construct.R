@@ -125,6 +125,11 @@ data_construct <- function(scales_data, unique_var, time_regex, data_folder = "d
       # Add the breaks we just calculated
       attr(df, "breaks") <- breaks
 
+      if (all(is.na(breaks)))
+        stop(sprintf(paste0("All break values are NAs for variable `%s` in ",
+                            "scale `%s`. Is it a scale with only one feature?"),
+                     v, scale_name))
+
       return(df)
     })
 

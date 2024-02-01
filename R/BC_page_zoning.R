@@ -161,10 +161,15 @@ zoning_page <- function(scales_variables_modules, base_polygons, username,
     zoning_lots$in_bus <- as.logical(lengths(in_bus))
 
     # Population count of the municipality of the zone
-
-    zoning_lots <- sf::st_join(zoning_lots,
-                               sf::st_transform(scales_variables_modules$scales$CSD["population"],
-                                                crs))
+    CSD <- scales_variables_modules$scales$CSD
+    if (is.null(CSD)) {
+      csds <- scales_variables_modules$scales$DA$CSD_ID |> unique()
+      CSD <- cancensus::get_census("CA21", regions = list(CSD = csds), level = "CSD",
+                                   geo_format = "sf")
+      CSD <- CSD[c("GeoUID", "Households", "Population")]
+      names(CSD) <- c("ID", "households", "population", "geometry")
+    }
+    zoning_lots <- sf::st_join(zoning_lots, sf::st_transform(CSD["population"], crs))
     names(zoning_lots)[names(zoning_lots) == "population"] <- "pop"
     zoning_lots <- zoning_lots[!is.na(zoning_lots$pop), ]
 

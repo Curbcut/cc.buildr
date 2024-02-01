@@ -22,6 +22,13 @@ bill44_page <- function(scales_variables_modules, scales_sequences, crs,
 
   # Whichs CSDs are covered by the zoning information?
   CSD <- scales_variables_modules$scales$CSD
+  if (is.null(CSD)) {
+    csds <- scales_variables_modules$scales$DA$CSD_ID |> unique()
+    CSD <- cancensus::get_census("CA21", regions = list(CSD = csds), level = "CSD",
+                                 geo_format = "sf")
+    CSD <- CSD[c("GeoUID", "Households", "Population")]
+    names(CSD) <- c("ID", "households", "population", "geometry")
+  }
   CSD <- sf::st_transform(CSD, crs)
   CSD$previous_area <- cc.buildr::get_area(CSD)
   CSD_int <- sf::st_intersection(CSD, zoning_lots)
@@ -284,4 +291,3 @@ bill44_page <- function(scales_variables_modules, scales_sequences, crs,
     modules = modules
   ))
 }
-
