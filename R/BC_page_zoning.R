@@ -177,6 +177,18 @@ zoning_page <- function(scales_variables_modules, base_polygons, username,
     # Add the area
     zoning_lots$area <- cc.buildr::get_area(zoning_lots)
 
+    # For Prince George, 'OTHER' ICI_ZONE must be fixed
+    if (CMA_name_in_coding_xlsx == "Prince George") {
+      zoning_lots$ICI_ZONE <- ifelse(grepl("^A", zoning_lots$ZONE_CODE),
+                                     "AGRICULTURAL / RURAL", zoning_lots$ICI_ZONE)
+      zoning_lots$ICI_ZONE <- ifelse(grepl("^R|^AR", zoning_lots$ZONE_CODE),
+                                     "RESIDENTIAL", zoning_lots$ICI_ZONE)
+      zoning_lots$ICI_ZONE <- ifelse(grepl("^C", zoning_lots$ZONE_CODE),
+                                     "COMMERCIAL", zoning_lots$ICI_ZONE)
+      zoning_lots$ICI_ZONE <- ifelse(grepl("^M", zoning_lots$ZONE_CODE),
+                                     "INDUSTRIAL", zoning_lots$ICI_ZONE)
+    }
+
     qs::qsave(zoning_lots, "dev/data/built/zoning_lots.qs")
     zoning_lots <- qs::qread("dev/data/built/zoning_lots.qs")
 

@@ -116,6 +116,7 @@ dyk_prep <- function(svm, scales_dictionary, n = NULL) {
 #' and then additionally `select_ID`, `dyk_type`, `dyk_text` and `dyk_weight`).
 #' @export
 dyk_uni <- function(vars_dyk, svm, scales_dictionary, langs, translation_df = NULL) {
+  first_scale <- scales_dictionary$scale[[1]]
 
   # Prepare translation_df
   assign("translation_df", value = translation_df, envir = as.environment(1))
@@ -157,7 +158,7 @@ dyk_uni <- function(vars_dyk, svm, scales_dictionary, langs, translation_df = NU
     vars_dyk |>
     dplyr::filter(var_right == " ") |>
     dplyr::filter(n() > 1, .by = c(module, region, scale, var_left)) |>
-    dplyr::filter(scale == "CSD") |>
+    dplyr::filter(scale == first_scale) |>
     dplyr::summarize(date = list(as.character(c(min(as.numeric(date)),
                                                 max(as.numeric(date))))),
                      .by = c(module, region, scale, var_left, var_right))
