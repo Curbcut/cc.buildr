@@ -111,6 +111,7 @@ bill44_page <- function(scales_variables_modules, scales_sequences, crs,
   only_scales <- scales_greater_than(base_scale = scales_variables_modules$scales$DB,
                                      all_scales = scales_variables_modules$scales,
                                      crs = crs)
+  only_scales <- only_scales[only_scales %in% c("CSD", "CD", "CT", "DA", "DB")]
 
   data <- mapply(\(scale_name, scale_df) {
 
