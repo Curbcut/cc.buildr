@@ -73,7 +73,7 @@ additional_scale <- function(additional_table, DB_table, ID_prefix, name_2,
   additional_table$name_2 <- name_2
   additional_table <- sf::st_transform(additional_table, 4326)
   additional_table[, names(additional_table) %in% c(
-    "ID", "name", "name_2", "population", "households", "area",
+    "ID", "name", "name_2", "population", "households", "dwellings", "area",
     "geometry", "geometry_digital"
   )]
 }

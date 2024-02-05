@@ -10,7 +10,7 @@ get_census_cc(
   regions,
   level,
   var_select = c(DAUID = "DA_UID", CTUID = "CT_UID", CSDUID = "CSD_UID", name = "name",
-    population = "Population", households = "Households"),
+    population = "Population", households = "Households", dwellings = "Dwellings"),
   crs,
   format = TRUE,
   cartographic = FALSE,

@@ -480,6 +480,9 @@ interpolate_from_area <- function(to, from,
   })
 
   # Calculate the sum for each column using lapply
+  if (!"ID" %in% names(intersected_table)) {
+    stop("Missing `ID` column in the `to` table.")
+  }
   summarized_add <- lapply(additive_vars, interpolate_fast_additive_sum,
                            data = intersected_table, id_col = "ID",
                            weight_col = weight_by

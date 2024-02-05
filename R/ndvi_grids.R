@@ -45,15 +45,13 @@ ndvi_grids <- function(census_scales, base_polygons,
     grid_sizes = grid_sizes,
     crs = crs)
 
-  # Function to process and save grids
-  process_and_save_grid <- function(grid_size, output_path, save_grids_dir, crs) {
+  # Process and save grids
+  for (grid_size in grid_sizes) {
     grid_file <- sprintf("%sgrd%s.qs", output_path, grid_size)
     save_file <- sprintf("%sgrd%s.qs", save_grids_dir, grid_size)
 
     # Check if file exists and overwrite is FALSE
-    if (file.exists(save_file) && !overwrite_final_grids) {
-      return(qs::qread(save_file))
-    }
+    if (file.exists(save_file) && !overwrite_final_grids) next
 
     grid <- qs::qread(grid_file)
     grid_geocode <- sf::st_transform(grid, 4326)
@@ -89,7 +87,6 @@ ndvi_grids <- function(census_scales, base_polygons,
     })
 
     grid$name <- grid_name
-    grid$ID <- sprintf("grd%s_%s", grid_size, seq_along(grid$geometry))
     grid <- grid[, c("ID", "name", "geometry")]
     grid <- cc.buildr::append_DA_ID(DA_table = census_scales$DA,
                                     df = grid,
@@ -98,13 +95,11 @@ ndvi_grids <- function(census_scales, base_polygons,
     qs::qsave(grid, file = save_file)
   }
 
-  # Process and save each grid
-  grid_cells <- grid_sizes
-  grids <- lapply(grid_cells, process_and_save_grid, output_path, save_grids_dir, crs)
-  names(grids) <- sprintf("grd%s", grid_cells)
+  grids <- lapply(grid_sizes, \(x) qs::qread(sprintf("%sgrd%s.qs", save_grids_dir, x)))
+  names(grids) <- sprintf("grd%s", grid_sizes)
 
   if (overwrite_final_grids | !"population" %in% names(grids[[length(grids)]])) {
-    size <- grid_cells[length(grid_cells)]
+    size <- grid_sizes[length(grid_sizes)]
 
     # Add population and households to grd600
     grids[[length(grids)]] <- additional_scale(additional_table = grids[[length(grids)]]["name"],

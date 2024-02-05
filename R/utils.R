@@ -105,6 +105,7 @@ reorder_columns <- function(scale_df) {
 
   if ("population" %in% names(scale_df)) other <- c(other, "population")
   if ("households" %in% names(scale_df)) other <- c(other, "households")
+  if ("dwellings" %in% names(scale_df)) other <- c(other, "dwellings")
   if ("area" %in% names(scale_df)) other <- c(other, "area")
 
   rest <- names(scale_df)[!names(scale_df) %in% c(

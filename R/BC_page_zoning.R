@@ -188,6 +188,13 @@ zoning_page <- function(scales_variables_modules, base_polygons, username,
       zoning_lots$ICI_ZONE <- ifelse(grepl("^M", zoning_lots$ZONE_CODE),
                                      "INDUSTRIAL", zoning_lots$ICI_ZONE)
     }
+    if (CMA_name_in_coding_xlsx == "Kelowna CMA") {
+      zoning_lots$ICI_ZONE[zoning_lots$PROVIDER == "CENTRAL OKANAGAN" &
+                             zoning_lots$ICI_ZONE == "RURAL"] <- "AGRICULTURAL / RURAL"
+      zoning_lots$ICI_ZONE[zoning_lots$PROVIDER == "CENTRAL OKANAGAN" &
+                             zoning_lots$ZONE_CODE %in% c("RU1", "RU2", "RU3",
+                                                          "RU4", "RU5", "RU6")] <- "RESIDENTIAL"
+    }
 
     qs::qsave(zoning_lots, "dev/data/built/zoning_lots.qs")
     zoning_lots <- qs::qread("dev/data/built/zoning_lots.qs")

@@ -34,7 +34,8 @@ get_census_cc <- function(master_polygon, census_dataset, regions,
                             "CSDUID" = "CSD_UID",
                             "name" = "name",
                             "population" = "Population",
-                            "households" = "Households"
+                            "households" = "Households",
+                            "dwellings" = "Dwellings"
                           ),
                           crs, format = TRUE, cartographic = FALSE,
                           area_threshold = 0.05) {
