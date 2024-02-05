@@ -12,8 +12,7 @@ ndvi_grids(
   overwrite_ndvi_tiles = FALSE,
   overwrite_final_grids = FALSE,
   crs = crs,
-  grid_sizes = c(30, 60, 120, 300, 600),
-  geocode_progressor = FALSE
+  grid_sizes = c(30, 60, 120, 300, 600)
 )
 }
 \arguments{

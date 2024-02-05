@@ -28,8 +28,7 @@ ndvi_grids <- function(census_scales, base_polygons,
                        overwrite_ndvi_tiles = FALSE,
                        overwrite_final_grids = FALSE,
                        crs = crs,
-                       grid_sizes = c(30, 60, 120, 300, 600),
-                       geocode_progressor = FALSE) {
+                       grid_sizes = c(30, 60, 120, 300, 600)) {
 
   output_path_tmp <- sprintf("%stmp/", output_path)
   dir.create(output_path, showWarnings = FALSE)
@@ -69,20 +68,25 @@ ndvi_grids <- function(census_scales, base_polygons,
                   "geocoding. Run `cc.data::rev_geocode_create_local_nominatim`."))
     }
 
+    n <- nrow(grid_geocode)
+    all_coords <- lapply(grid_geocode$geometry[1:n %% 1000 == 1], as.vector)
+    coords_matrix <- do.call(rbind, all_coords)
+
     # Reverse geolocate every grid cell
-    if (geocode_progressor) {
-      progressr::with_progress({
-        pb <- progressr::progressor(nrow(grid_geocode))
-        grid_name <- future.apply::future_sapply(grid_geocode$geometry, \(x) {
+    # Progression steps
+    progressr::with_progress({
+      pb <- progressr::progressor(length(all_coords))
+
+      grid_name <- future.apply::future_sapply(grid_geocode$geometry, \(x) {
+        # Progress every 1000 elements
+        x_vec <- as.vector(x)
+        if (sum(rowSums(coords_matrix == x_vec))) {
           pb()
-          cc.data::rev_geocode_localhost(point_sf = x)
-        }, future.seed = NULL)
-      })
-    } else {
-      grid_name <- future.apply::future_sapply(grid_geocode$geometry,
-                                               cc.data::rev_geocode_localhost,
-                                               future.seed = NULL)
-    }
+        }
+
+        cc.data::rev_geocode_localhost(point_sf = x)
+      }, future.seed = NULL)
+    })
 
     grid$name <- grid_name
     grid$ID <- sprintf("grd%s_%s", grid_size, seq_along(grid$geometry))
@@ -122,7 +126,6 @@ ndvi_grids <- function(census_scales, base_polygons,
   # Return
   return(grids)
 }
-
 #' Append NDVI scales to the scales dictionary.
 #'
 #' This function adds multiple NDVI scale entries to a given dictionary. Each
