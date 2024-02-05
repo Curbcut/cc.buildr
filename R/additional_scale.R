@@ -46,7 +46,7 @@ additional_scale <- function(additional_table, DB_table, ID_prefix, name_2,
   }
 
   # Interpolate DB_table to get population and households
-  das <- DB_table[, c("ID", "households", "population")]
+  das <- DB_table[, c("ID", "households", "population", "dwellings")]
   das_transformed <- sf::st_transform(das, crs)
   das <- sf::st_set_agr(das_transformed, "constant")
 
@@ -62,7 +62,7 @@ additional_scale <- function(additional_table, DB_table, ID_prefix, name_2,
     interpolate_from_area(
       to = additional_table,
       from = DB_table,
-      additive_vars = c("population", "households"),
+      additive_vars = c("population", "households", "dwellings"),
       crs = crs
     )
 
