@@ -29,8 +29,7 @@
 #' are not adequate, the function stops with an error.
 #' @export
 data_construct <- function(scales_data, unique_var, time_regex, data_folder = "data/",
-                           schema = list(time = time_regex),
-                           breaks_var = NULL) {
+                           schema = list(time = time_regex), breaks_var = NULL) {
 
   # If time_regex does not end with an dollar sign, flag it.
   if (!grepl("\\$$", time_regex)) {
@@ -142,6 +141,10 @@ data_construct <- function(scales_data, unique_var, time_regex, data_folder = "d
     return(dat)
   }, names(scales_data), scales_data, SIMPLIFY = FALSE)
 
+  # List .sqlite databases
+  sqlite_dbs <- grep("\\.sqlite$", list.files(data_folder), value = TRUE)
+  sqlite_dbs <- gsub("\\.sqlite$", "", sqlite_dbs)
+
   # Save the data
   mapply(\(scale_name, data_list) {
     if (length(data_list) == 0) return()
@@ -155,11 +158,22 @@ data_construct <- function(scales_data, unique_var, time_regex, data_folder = "d
     mapply(\(data_name, data) {
       if (is.null(data)) return()
 
-      # Construct the file path for the table
-      file <- sprintf("%s%s.qs", folder, data_name)
+      # Is it to be saved in the sqlite?
+      if (scale_name %in% sqlite_dbs) {
+        con <- DBI::dbConnect(RSQLite::SQLite(), sprintf("%s%s.sqlite", data_folder, scale_name))
 
-      # Save the table
-      qs::qsave(data, file = file)
+        # Write the tibble to the SQLite database as a temporary table
+        DBI::dbWriteTable(con, name = data_name, value = data, overwrite = TRUE)
+
+        # Close the database connection
+        DBI::dbDisconnect(con)
+      } else {
+        # Construct the file path for the table
+        file <- sprintf("%s%s.qs", folder, data_name)
+
+        # Save the table
+        qs::qsave(data, file = file)
+      }
 
     }, names(data_list), data_list)
 

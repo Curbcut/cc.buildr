@@ -319,7 +319,7 @@ zoning_page <- function(scales_variables_modules, base_polygons, username,
       if (zone_row$in_hist) return("Single + Secondary suite/ADU")
 
       # If it's in a Transit-Oriented Area
-      if (zone_row$in_toa) return("ALTERNATE PROCESS")
+      if (zone_row$in_toa) return("Alternate process")
 
       # If the lot is larger than 4050m^2
       if (zone_row$area > 4050) return("Single + Secondary suite/ADU")
@@ -458,8 +458,8 @@ zoning_page <- function(scales_variables_modules, base_polygons, username,
     add_module(
       id = "zoning",
       theme = "Land use",
-      nav_title = "Zoning",
-      title_text_title = "Zoning",
+      nav_title = "Current and projected zoning",
+      title_text_title = "Current and projected zoning",
       title_text_main = paste0(
         "<p>Zoning is a set of laws that separates land into “zones” where ea",
         "ch zone has regulations that dictate what kinds and how many buildings",

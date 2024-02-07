@@ -20,15 +20,37 @@ bill44_page <- function(scales_variables_modules, scales_sequences, crs,
 
   qs::qload("dev/data/built/zoning.qsm")
 
-  # Whichs CSDs are covered by the zoning information?
-  CSD <- scales_variables_modules$scales$CSD
-  if (is.null(CSD)) {
-    csds <- scales_variables_modules$scales$DA$CSD_ID |> unique()
-    CSD <- cancensus::get_census("CA21", regions = list(CSD = csds), level = "CSD",
-                                 geo_format = "sf")
-    CSD <- CSD[c("GeoUID", "Households", "Population")]
-    names(CSD) <- c("ID", "households", "population", "geometry")
-  }
+  # Grab dwelling constructions
+  csds <- scales_variables_modules$scales$DA$CSD_ID |> unique()
+  CSD <- cancensus::get_census("CA21", regions = list(CSD = csds), level = "CSD",
+                               geo_format = "sf")
+  CSD <- CSD[c("GeoUID", "Dwellings 2016", "Dwellings")]
+  names(CSD) <- c("ID", "dwellings_2016", "dwellings", "geometry")
+
+  CSD$fiver_years_dev <- CSD$dwellings - CSD$dwellings_2016
+
+
+  # ### VISUALIZE AT DB SCALE WHAT DEVELOPMENT LOOKED LIKE ?
+  # DB_21 <- cancensus::get_census("CA21", regions = list(CSD = 5935010), level = "DB",
+  #                                geo_format = "sf")
+  # DB_21 <- DB_21[c("GeoUID", "CSD_UID", "Dwellings")]
+  # names(DB_21)[1] <- "ID"
+  # DB_16 <- cancensus::get_census("CA16", regions = list(CSD = 5935010), level = "DB",
+  #                                geo_format = "sf")
+  # DB_16 <- DB_16[c("GeoUID", "CSD_UID", "Dwellings")]
+  # names(DB_16)[3] <- "Dwellings_2016"
+  #
+  # DB_change <- interpolate_from_area(DB_21, DB_16, additive_vars = "Dwellings_2016",
+  #                       crs = crs, round_additive = FALSE)
+  # DB_change$dwellings_diff <-
+  #   (DB_change$Dwellings - DB_change$Dwellings_2016) / DB_change$Dwellings_2016
+  # DB_change$dwellings_diff[is.infinite(DB_change$dwellings_diff) | is.na(DB_change$dwellings_diff)] <- NA
+  #
+  #
+  # # DB_change$dwellings_diff[DB_change$dwellings_diff > 1] <- 1
+  # DB_change["dwellings_diff"] |> .mv()
+
+
   CSD <- sf::st_transform(CSD, crs)
   CSD$previous_area <- cc.buildr::get_area(CSD)
   CSD_int <- sf::st_intersection(CSD, zoning_lots)
@@ -45,16 +67,17 @@ bill44_page <- function(scales_variables_modules, scales_sequences, crs,
   DB <- sf::st_transform(DB, crs)
   DB$DB_area <- cc.buildr::get_area(DB)
   DB <-  DB[DB$CSD_ID %in% CSD_covered, ]
-  DB <- DB[c("ID", grep("_ID", names(DB), value = TRUE), "households", "DB_area")]
+  DB <- DB[c("ID", grep("_ID", names(DB), value = TRUE), "dwellings", "DB_area")]
   # Only keep DBs in an area we have zoning information
 
   res <- zoning_lots_residential[c("res_category_before", "res_category_after")]
   res$area <- cc.buildr::get_area(res)
   res$lot_area <- cc.buildr::get_area(res)
 
-  lots <- sf::st_join(sf::st_centroid(res), DB)
+  lots <- sf::st_join(sf::st_centroid(res), DB[c("ID", "CSD_ID", "DB_area", "dwellings")])
+  lots <- lots[!is.na(lots$ID), ]
 
-  # For every category previous to the Bill 44, how many units are built
+  # For every category previous to the Bill 44, how many units (per lot) are built
   # per zone?
   hou_p_lots <-
     lots |>
@@ -63,20 +86,15 @@ bill44_page <- function(scales_variables_modules, scales_sequences, crs,
     dplyr::filter(length(unique(res_category_before)) == 1) |>
     dplyr::filter((sum(lot_area) / DB_area) > 0.33) |>
     dplyr::mutate(nb_lots = dplyr::n()) |>
-    dplyr::select(res_category_before, households, nb_lots) |>
+    dplyr::select(res_category_before, dwellings, nb_lots) |>
     dplyr::group_by(ID, res_category_before) |>
-    dplyr::summarize(households = unique(households),
+    dplyr::summarize(dwellings = unique(dwellings),
                      nb_lots = unique(nb_lots), .groups = "drop") |>
     dplyr::group_by(res_category_before) |>
-    dplyr::summarize(households = sum(households),
+    dplyr::summarize(dwellings = sum(dwellings),
                      nb_lots = sum(nb_lots)) |>
     dplyr::group_by(res_category_before) |>
-    dplyr::summarize(households_per_lots = households / nb_lots)
-
-  hou_p_lots <-
-    rbind(hou_p_lots,
-          tibble::tibble(res_category_before = "Single",
-                         households_per_lots = 1))
+    dplyr::summarize(dwellings_per_lots = dwellings / nb_lots)
 
   lots_new_zoning <- lots[lots$res_category_before != "Multiresidential", ] |>
     sf::st_drop_geometry() |>
@@ -90,22 +108,105 @@ bill44_page <- function(scales_variables_modules, scales_sequences, crs,
 
   # Remove Multi
   lots_new_zoning <- lots_new_zoning[lots_new_zoning$res_category_before != "Multiresidential", ]
+  lots_new_zoning$lot_id <- sprintf("lot_%s", seq_along(lots_new_zoning$ID))
 
-  potentiel_new_units_per_DBs <-
-    lots_new_zoning |>
-    dplyr::group_by(ID) |>
-    dplyr::summarize(
-      rz_hou = sum(households_per_lots), # Sum of households per lot for each ID (when MULTI is removed)
-      new_potential = sum(new_zoning),   # Sum of new zoning potential for each ID (for all the RESTRICTED ZONES (none-multi))
-      potential_new_units = new_potential - rz_hou # Calculating the potential new units
-    ) |>
-    dplyr::select(ID, potential_new_units)
 
+
+
+  # CALCULATE POTENTIAL FOR DEVELOPMENT
+  lots_new_zoning$development_potential <- pmax(lots_new_zoning$new_zoning - lots_new_zoning$dwellings_per_lots, 0)
+  lots_new_zoning <- lots_new_zoning[!is.na(lots_new_zoning$development_potential), ]
+
+
+  # Function to allocate units within a single CSD
+  allocate_units_in_csd <- function(csd_lots, units_to_allocate) {
+
+    # Percentage of units to add to all lots
+    pct_add <- units_to_allocate / sum(csd_lots$development_potential)
+
+    # Of the potential, x pct is developed. Add it to the allocated units number
+    csd_lots$allocated_units <- csd_lots$allocated_units + (csd_lots$development_potential * pct_add)
+
+    # Remove the allocated units from the development potential, so it can be
+    # calculated incrementally
+    csd_lots$development_potential <- csd_lots$development_potential - csd_lots$allocated_units
+
+    return(csd_lots)
+
+
+    # while(units_to_allocate > 0) {
+    #   # Probabilities based on development potential
+    #   probabilities <- csd_lots$development_potential / sum(csd_lots$development_potential)
+    #
+    #   # Select a lot
+    #   selected_lot <- sample(nrow(csd_lots), 1, prob = probabilities)
+    #
+    #   # Units to allocate to the selected lot
+    #   units_for_lot <- min(units_to_allocate, csd_lots$development_potential[selected_lot])
+    #   csd_lots$allocated_units[selected_lot] <- csd_lots$allocated_units[selected_lot] + units_for_lot
+    #
+    #   # Update remaining units and development potential
+    #   units_to_allocate <- units_to_allocate - units_for_lot
+    #   csd_lots$development_potential[selected_lot] <- csd_lots$development_potential[selected_lot] - units_for_lot
+    # }
+    # return(csd_lots)
+  }
+
+  end_tibble <- tibble::tibble()
+
+  # Iterate over each CSD and allocate units
+  for (csd_id in unique(lots_new_zoning$CSD_ID)) {
+    # Filter lots for the current CSD
+    current_csd_lots <- subset(lots_new_zoning, CSD_ID == csd_id)
+
+    # Initialize allocated units for these lots
+    current_csd_lots$allocated_units <- rep(0, nrow(current_csd_lots))
+
+    # Additional number of units in the last 5 years
+    fiver_years_dev <- CSD$fiver_years_dev[CSD$ID == csd_id]
+    # Bring it up to 2029 (8 years)
+    total_new_units_for_csd <- fiver_years_dev / 5 * 8
+
+    # Allocate units in the current CSD (baseline scenario)
+    updated_csd_lots <- allocate_units_in_csd(current_csd_lots, total_new_units_for_csd)
+    updated_csd_lots$allocated_units_baseline <- updated_csd_lots$allocated_units
+
+    # Add 50% of the 4.11% additional units (of housing stock in 2024)
+    dwellings_2021 <- CSD$dwellings[CSD$ID == csd_id]
+    dwellings_2024 <- dwellings_2021 + (fiver_years_dev / 5 * 3)
+    auckland_units_addition <- dwellings_2024 * 0.0411 * 0.5
+    updated_csd_lots <- allocate_units_in_csd(updated_csd_lots, auckland_units_addition)
+    updated_csd_lots$allocated_units_auckland50 <- updated_csd_lots$allocated_units
+
+    # Add 100% of the 4.11% additional units (of housing stock)
+    # No change to `auckland_units_addition`, we just add it to the previous numbers
+    updated_csd_lots <- allocate_units_in_csd(updated_csd_lots, auckland_units_addition)
+    updated_csd_lots$allocated_units_auckland100 <- updated_csd_lots$allocated_units
+
+    # Add 150% of the 4.11% additional units (of housing stock)
+    updated_csd_lots <- allocate_units_in_csd(updated_csd_lots, auckland_units_addition)
+    updated_csd_lots$allocated_units_auckland150 <- updated_csd_lots$allocated_units
+
+    # Update the main dataset
+    updated_csd_lots <- updated_csd_lots[
+      c("lot_id", "ID", "allocated_units_baseline", "allocated_units_auckland50",
+        "allocated_units_auckland100", "allocated_units_auckland150")]
+    end_tibble <- rbind(end_tibble, updated_csd_lots)
+  }
+
+  # Sum per DBs
   additions <-
-    merge(DB, potentiel_new_units_per_DBs, by = "ID", all.x = TRUE) |>
-    dplyr::mutate(potential_new_units =
-                    ifelse(is.na(potential_new_units), 0, potential_new_units)) |>
-    sf::st_drop_geometry()
+    end_tibble |>
+    dplyr::group_by(ID) |>
+    dplyr::summarize(`000` = sum(allocated_units_baseline),
+                     `050` = sum(allocated_units_auckland50),
+                     `100` = sum(allocated_units_auckland100),
+                     `150` = sum(allocated_units_auckland150))
+
+  additions <- merge(DB, additions, by = "ID", all.x = TRUE)
+  additions[is.na(additions)] <- 0
+  # The first scenario is 2021 dwelling counts!
+  additions$`000` <- additions$dwellings
 
   # Calculate values for every scale
   only_scales <- scales_greater_than(base_scale = scales_variables_modules$scales$DB,
@@ -122,16 +223,17 @@ bill44_page <- function(scales_variables_modules, scales_sequences, crs,
       all_dbs <- additions[additions[[id_col]] == ID, ]
       out <- tibble::tibble(ID = ID)
 
-      for (i in c(0, 2, 5, 100)) {
-        name <- sprintf("bill44_count_%03d", i)
+      for (i in c("000", "050", "100", "150")) {
+        name <- sprintf("bill44_count_%s", i)
 
-        # Calculate the updated number of households
-        updated_households <- all_dbs$households + (all_dbs$potential_new_units * (i/100))
-        out[[name]] <- sum(updated_households)
+        # Calculate the updated number of dwellings
+        updated_dwellings <- round(all_dbs$dwellings + (all_dbs[[i]]))
+        if (i == "000") updated_dwellings <- all_dbs$dwellings # Baseline scenario is 2021 dwellings
+        out[[name]] <- sum(updated_dwellings)
 
-        # Calculate the number of households per square kilometer and add it as a new column
-        name_sqkm <- sprintf("bill44_sqkm_%03d", i)
-        out[[name_sqkm]] <- sum(updated_households) / sum(all_dbs$DB_area / 1e6)
+        # Calculate the number of dwellings per square kilometer and add it as a new column
+        name_sqkm <- sprintf("bill44_sqkm_%s", i)
+        out[[name_sqkm]] <- sum(updated_dwellings) / sum(all_dbs$DB_area / 1e6)
       }
 
       out
@@ -177,7 +279,7 @@ bill44_page <- function(scales_variables_modules, scales_sequences, crs,
   ## Dates at which the data is available
   dates <- unique(curbcut::s_extract(time_regex, var))
   dates <- gsub("^_", "", dates)
-  names(dates) <- c("Status quo", "2% is built", "5% is built", "Everything gets built")
+  names(dates) <- c("Baseline (2021)", "Low growth (2029)", "Medium growth (2029)", "High growth (2029)")
 
   new_variables <- lapply(unique_var, \(var) {
 
@@ -240,7 +342,7 @@ bill44_page <- function(scales_variables_modules, scales_sequences, crs,
     add_module(
       id = "bill44",
       theme = "Land use",
-      nav_title = "Bill 44",
+      nav_title = "Small-Scale, Multi-Unit Housing legislation (Bill 44)",
       title_text_title = "Small-Scale, Multi-Unit Housing (SSMUH) legislation",
       title_text_main = paste0(
         "<p>The Small-Scale, Multi-Unit Housing (SSMUH) legislation, or Bill 44, a",
