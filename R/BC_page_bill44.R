@@ -221,6 +221,9 @@ bill44_page <- function(scales_variables_modules, scales_sequences, crs,
     out <- lapply(unique(additions[[id_col]]), \(ID) {
 
       all_dbs <- additions[additions[[id_col]] == ID, ]
+      # ID exists?
+      if (length(scale_df$area[scale_df$ID == ID]) == 0) return(NULL)
+      # DBs cover enough of the ID?
       if (sum(all_dbs$DB_area) < (scale_df$area[scale_df$ID == ID] * 0.75)) return(NULL)
       out <- tibble::tibble(ID = ID)
 
@@ -376,8 +379,8 @@ bill44_page <- function(scales_variables_modules, scales_sequences, crs,
         " (Greenaway-McGrevy, Philips, 2023) in the Journal of Economics. This ",
         "study found that over the five years following the reform, the housing",
         " supply increased by 4.11%. The potential future scenarios in BC have ",
-        "been modelled on this basis: <ul style=’margin-left:20px;  list-style:",
-        " disc;’><li>The 2021 scenario represents the existing dwelling informa",
+        "been modelled on this basis: <ul style='margin-left:20px; list-style:",
+        " disc;'><li>The 2021 scenario represents the existing dwelling informa",
         "tion from the Canadian census without any zoning changes.<li>The Low G",
         "rowth scenario projects a 2.055% increase in evenly distributed develo",
         "pment in areas impacted by Bill 44 by 2029. This scenario represents t",
@@ -419,8 +422,7 @@ bill44_page <- function(scales_variables_modules, scales_sequences, crs,
         "onstruction in Auckland</a><p>For more information about the SSMUH leg",
         "islation please visit: <a href=’https://www2.gov.bc.ca/assets/gov/hous",
         "ing-and-tenancy/tools-for-government/local-governments-and-housing/ssm",
-        "uh_provincial_policy_manual.pdf’>Provincial Policy Manual & Sit
-"
+        "uh_provincial_policy_manual.pdf’>Provincial Policy Manual & Site Standards</a>"
       ),
       metadata = FALSE,
       dataset_info = paste0(
