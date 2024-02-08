@@ -221,6 +221,7 @@ bill44_page <- function(scales_variables_modules, scales_sequences, crs,
     out <- lapply(unique(additions[[id_col]]), \(ID) {
 
       all_dbs <- additions[additions[[id_col]] == ID, ]
+      if (sum(all_dbs$DB_area) < (scale_df$area[scale_df$ID == ID] * 0.75)) return(NULL)
       out <- tibble::tibble(ID = ID)
 
       for (i in c("000", "050", "100", "150")) {

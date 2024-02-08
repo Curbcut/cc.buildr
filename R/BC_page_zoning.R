@@ -479,7 +479,8 @@ zoning_page <- function(scales_variables_modules, base_polygons, username,
         "choices, and over time, contribute to more affordable housing across B",
         "C. To visualize this new legislation, select “Residential zones” on th",
         "e left-hand panel, and slide the slider to the right to toggle “Bill 4",
-        "4”. The visualization of the zoning changes on this page is Curbcut’s interpretation and is not intended as a legal interpretation."
+        "4”. The visualization of the zoning changes on this page is Curbcut’s ",
+        "interpretation and is not intended as a legal interpretation."
       ),
       metadata = FALSE,
       dataset_info = ""
