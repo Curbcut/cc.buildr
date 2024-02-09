@@ -462,8 +462,8 @@ zoning_page <- function(scales_variables_modules, base_polygons, username,
     add_module(
       id = "zoning",
       theme = "Land use",
-      nav_title = "Current and projected zoning",
-      title_text_title = "Current and projected zoning",
+      nav_title = "Current zoning",# and projected zoning",
+      title_text_title = "Current zoning",# and projected zoning",
       title_text_main = paste0(
         "<p>Zoning is a set of laws that separates land into “zones” where ea",
         "ch zone has regulations that dictate what kinds and how many buildings",
@@ -481,13 +481,26 @@ zoning_page <- function(scales_variables_modules, base_polygons, username,
         "y rights. The Small-Scale, Multi-Unit Housing (SSMUH) legislation, or ",
         "Bill 44, aims to increase housing supply, create more diverse housing ",
         "choices, and over time, contribute to more affordable housing across B",
-        "C. To visualize this new legislation, select “Residential zones” on th",
-        "e left-hand panel, and slide the slider to the right to toggle “Bill 4",
-        "4”. The visualization of the zoning changes on this page is Curbcut’s ",
-        "interpretation and is not intended as a legal interpretation."
+        "C."# To visualize this new legislation, select “Residential zones” on th",
+        # "e left-hand panel, and slide the slider to the right to toggle “Bill 4",
+        # "4”. The visualization of the zoning changes on this page is Curbcut’s ",
+        # "interpretation and is not intended as a legal interpretation."
       ),
       metadata = FALSE,
-      dataset_info = ""
+      dataset_info = paste0(
+        "<p>Data from the ICI Society was cleaned and standardized to rectify i",
+        "nconsistencies and fill missing values, ensuring a robust foundation f",
+        "or analysis. The combined cadastre (detailing land parcels) and zoning",
+        " (defining land use permissions) dataset was then refined for detailed",
+        " examination.<p>Graduate students from McGill University were engaged ",
+        "to classify residential zones within this dataset, leveraging their ac",
+        "ademic expertise and manual review methods to accurately categorize pa",
+        "rcels based on zoning designations.<p>Following classification, the an",
+        "alysis consisted of integrating cadastre and zoning data for spatial e",
+        "xamination. This step utilized GIS technology to overlay land parcel a",
+        "nd zoning information, enabling an in-depth analysis of land use patte",
+        "rns across the targeted area."
+      )
     )
 
 
