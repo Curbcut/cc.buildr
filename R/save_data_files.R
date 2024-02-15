@@ -235,7 +235,7 @@ save_geometry_export <- function(data_folder = "data/", all_scales) {
 
     file_link <- paste0(data_folder, "geometry_export/", scale_name, ".qs")
 
-    subs <- grepl("ID$|name$", names(scale_df))
+    subs <- grepl("ID$|name$|area$", names(scale_df))
     d <- scale_df[, subs]
 
     qs::qsave(d, file = file_link)
