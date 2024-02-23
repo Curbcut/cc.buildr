@@ -170,7 +170,8 @@ ba_ndvi <- function(scales_variables_modules,
       dates = years,
       avail_scale = avail_scale,
       source = "Curbcut",
-      interpolated = interpolated_ref
+      interpolated = interpolated_ref,
+      breaks_q5 = c(0, 0.2, 0.4, 0.6, 0.8, 1)
     )
 
 

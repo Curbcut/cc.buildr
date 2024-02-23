@@ -29,6 +29,7 @@ add_variable(
   rank_name_short = NULL,
   var_measurement = data.frame(scale = avail_scale, measurement = rep("scalar",
     length(avail_scale))),
+  breaks_q5 = NULL,
   allow_title_duplicate = FALSE
 )
 }
@@ -169,6 +170,9 @@ Other example: survey responses with options like 'Strongly disagree', 'Disagree
 order or ranking is possible. Qualitative variables. Example: animal types,
 such as 'Mammal', 'Bird', 'Reptile', 'Fish'.}
 }}
+
+\item{breaks_q5}{<\verb{character/numeric vector}> If the q5 breaks should be
+hardcoded, insert them here. Defaults to NULL.}
 
 \item{allow_title_duplicate}{<\code{logical}> It is necessary to not have variable title
 duplicates in the same dropdown menu, as the title is what is displayed to the

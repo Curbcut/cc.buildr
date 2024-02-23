@@ -155,6 +155,8 @@ append_empty_variables_table <- function(scales_consolidated) {
 #'  order or ranking is possible. Qualitative variables. Example: animal types,
 #'  such as 'Mammal', 'Bird', 'Reptile', 'Fish'.}
 #' }
+#' @param breaks_q5 <`character/numeric vector`> If the q5 breaks should be
+#' hardcoded, insert them here. Defaults to NULL.
 #' @param allow_title_duplicate <`logical`> It is necessary to not have variable title
 #' duplicates in the same dropdown menu, as the title is what is displayed to the
 #' user. If there is a duplicate, the user will be selecting two variable codes
@@ -180,7 +182,7 @@ add_variable <- function(variables, var_code, type, var_title,
                          var_measurement = data.frame(
                            scale = avail_scale,
                            measurement = rep("scalar", length(avail_scale))
-                         ),
+                         ), breaks_q5 = NULL,
                          allow_title_duplicate = FALSE) {
   if (var_code %in% variables$var_code) {
     stop(paste0("`", var_code, "` is a duplicate."))
@@ -239,6 +241,12 @@ add_variable <- function(variables, var_code, type, var_title,
     }
   }
 
+  if (!is.null(breaks_q5)) {
+    if (length(breaks_q5) != 6) {
+      stop("breaks_q5 argument should be a vector of length 6.")
+    }
+  }
+
   tibble::add_row(
     variables,
     var_code = as.character(var_code),
@@ -261,7 +269,8 @@ add_variable <- function(variables, var_code, type, var_title,
     rankings_chr = list(rankings_chr),
     rank_name = list(rank_name),
     rank_name_short = list(rank_name_short),
-    var_measurement = list(var_measurement)
+    var_measurement = list(var_measurement),
+    breaks_q5 = list(breaks_q5)
   )
 }
 

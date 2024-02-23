@@ -43,7 +43,7 @@ Suggests:
 License: AGPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
 URL: https://github.com/MSSI-urban/cc.buildr
 BugReports: https://github.com/MSSI-urban/cc.buildr/issues
 Depends: 

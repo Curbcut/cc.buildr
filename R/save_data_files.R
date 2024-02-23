@@ -96,15 +96,15 @@ save_streets_sqlite <- function(scale_chr = "street", all_scales) {
 #' scales, then creates the folders for each region and scale, and finally saves the
 #' tables in the database.
 #'
-#' @param scales <`named list`> All the scales, usually `scales_variables_modules$scales`.
+#' @param scales_dictionary <`named list`> Dictionary of scales
 #' @param data_folder <`character`> Where the `.qs` files should be
 #' written to. Defaults to `data/`.
 #'
 #' @return An invisible NULL value.
 #' @export
-save_all_scales_qs <- function(scales, data_folder = "data/") {
+save_all_scales_qs <- function(scales_dictionary, data_folder = "data/") {
 
-  mapply(\(scale_name, scale_df) {
+  lapply(scales_dictionary$scale, \(scale_name) {
     # Construct the folder path for the scale
     folder <- sprintf("%s%s/", data_folder, scale_name)
 
@@ -118,41 +118,48 @@ save_all_scales_qs <- function(scales, data_folder = "data/") {
     # without census data
     if (!"c_population" %in% all_files) {
       data_name <- "c_population"
-      dat <- scales[[scale_name]]
-      if (!"population" %in% names(dat)) return()
-      dat <- dat[c("ID", "population")]
-      census_year <- cc.data::census_years
-      census_year <- census_year[length(census_year)]
-      names(dat)[2] <- sprintf("%s_%s", data_name, census_year)
-      dat <- sf::st_drop_geometry(dat)
+      dat_file <- sprintf("%s%s.qs", data_folder, scale_name)
+      if (file.exists(dat_file)) {
+        dat <- qs::qread(dat_file)
+        if (!"population" %in% names(dat)) return()
+        dat <- dat[c("ID", "population")]
+        census_year <- cc.data::census_years
+        census_year <- census_year[length(census_year)]
+        names(dat)[2] <- sprintf("%s_%s", data_name, census_year)
+        dat <- sf::st_drop_geometry(dat)
 
-      # Add the schema regexes
-      attr(dat, "schema") <- list(time = "_\\d{4}$")
+        # Add the schema regexes
+        attr(dat, "schema") <- list(time = "_\\d{4}$")
 
-      # Construct the file path for the table
-      file <- sprintf("%s%s.qs", folder, data_name)
+        # Construct the file path for the table
+        file <- sprintf("%s%s.qs", folder, data_name)
 
-      # Save the table
-      qs::qsave(dat, file = file)
+        # Save the table
+        qs::qsave(dat, file = file)
+      }
+
     }
     if (!"private_households" %in% all_files) {
       data_name <- "private_households"
-      dat <- scales[[scale_name]]
-      if (!"households" %in% names(dat)) return()
-      dat <- dat[c("ID", "households")]
-      census_year <- cc.data::census_years
-      census_year <- census_year[length(census_year)]
-      names(dat)[2] <- sprintf("%s_%s", data_name, census_year)
-      dat <- sf::st_drop_geometry(dat)
+      dat_file <- sprintf("%s%s.qs", data_folder, scale_name)
+      if (file.exists(dat_file)) {
+        dat <- qs::qread(dat_file)
+        if (!"households" %in% names(dat)) return()
+        dat <- dat[c("ID", "households")]
+        census_year <- cc.data::census_years
+        census_year <- census_year[length(census_year)]
+        names(dat)[2] <- sprintf("%s_%s", data_name, census_year)
+        dat <- sf::st_drop_geometry(dat)
 
-      # Add the schema regexes
-      attr(dat, "schema") <- list(time = "_\\d{4}$")
+        # Add the schema regexes
+        attr(dat, "schema") <- list(time = "_\\d{4}$")
 
-      # Construct the file path for the table
-      file <- sprintf("%s%s.qs", folder, data_name)
+        # Construct the file path for the table
+        file <- sprintf("%s%s.qs", folder, data_name)
 
-      # Save the table
-      qs::qsave(dat, file = file)
+        # Save the table
+        qs::qsave(dat, file = file)
+      }
     }
 
     # Keep a 'dictionary' of all available files
@@ -160,7 +167,7 @@ save_all_scales_qs <- function(scales, data_folder = "data/") {
     all_files <- gsub(".qs$", "", all_files)
     qs::qsave(all_files, sprintf("%s%s_files.qs", data_folder, scale_name))
 
-  }, names(scales), scales)
+  })
 
   return(invisible(NULL))
 }
@@ -296,6 +303,16 @@ exclude_processed_scales <- function(unique_vars, scales, overwrite = FALSE, dat
 
   # Iterate over scales_name to know which ones already have data stored
   keep_index <- sapply(scales_name, \(sc) {
+
+    # If it's a sqlite
+    sqlite_path <- sprintf("%s%s.sqlite", data_folder, sc)
+    if (sqlite_path %in% all_files) {
+      conn <- DBI::dbConnect(RSQLite::SQLite(), sqlite_path)
+      table <- DBI::dbGetQuery(conn, "SELECT name FROM sqlite_master")$name
+      DBI::dbDisconnect(conn)
+      return(!all(unique_vars %in% table))
+    }
+
     data_files <- paste0(sc, "/", unique_vars, ".qs")
 
     # Keep the index if there are data that isn't already stored

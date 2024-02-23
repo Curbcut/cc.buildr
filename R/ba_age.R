@@ -136,7 +136,11 @@ ba_age <- function(scales_variables_modules, scales_sequences, scales_to_interpo
       var <- gsub("_pct|_count", "", u_var)
 
       title <- (\(x) {
-        if (grepl("age_agg_85plus", var)) return("Aged over 85 (%)")
+        if (grepl("age_agg_85plus", var)) {
+          out <- "Aged over 85"
+          if (pct) out <- paste(out, "(%)")
+          return(out)
+        }
         start <- stringr::str_extract(var, "(?<=age_agg_).*(?=_)")
         end <- stringr::str_extract(var, "(?<=age_agg_\\d{1,2}_).*")
         if (end == "85plus") end <- "over 85"
@@ -148,7 +152,11 @@ ba_age <- function(scales_variables_modules, scales_sequences, scales_to_interpo
       })()
 
       short <- (\(x) {
-        if (grepl("age_agg_85plus", var)) return("85+ yo")
+        if (grepl("age_agg_85plus", var)) {
+          out <- "85+ yo"
+          if (pct) out <- paste(out, "(%)")
+          return(out)
+        }
         start <- stringr::str_extract(var, "(?<=age_agg_).*(?=_)")
         end <- stringr::str_extract(var, "(?<=age_agg_\\d{1,2}_).*")
         if (end == "85plus") end <- "85+"
@@ -158,8 +166,12 @@ ba_age <- function(scales_variables_modules, scales_sequences, scales_to_interpo
       })()
 
       explanation <- (\(x) {
-        if (grepl("age_agg_85plus", var))
-          return("the percentage of the population aged over 85 years old")
+        if (grepl("age_agg_85plus", var)) {
+          out <- "aged over 85 years old"
+
+          beg <- if (pct) "percentage of the population" else "number of individuals"
+          return(sprintf("the %s %s", beg, out))
+        }
         start <- stringr::str_extract(var, "(?<=age_agg_).*(?=_)")
         end <- stringr::str_extract(var, "(?<=age_agg_\\d{1,2}_).*")
         if (end == "85plus") end <- "over 85"

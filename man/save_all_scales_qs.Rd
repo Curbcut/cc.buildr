@@ -4,10 +4,10 @@
 \alias{save_all_scales_qs}
 \title{Save all scale tables in QS format}
 \usage{
-save_all_scales_qs(scales, data_folder = "data/")
+save_all_scales_qs(scales_dictionary, data_folder = "data/")
 }
 \arguments{
-\item{scales}{<\verb{named list}> All the scales, usually \code{scales_variables_modules$scales}.}
+\item{scales_dictionary}{<\verb{named list}> Dictionary of scales}
 
 \item{data_folder}{<\code{character}> Where the \code{.qs} files should be
 written to. Defaults to \verb{data/}.}
