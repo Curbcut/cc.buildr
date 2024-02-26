@@ -32,7 +32,8 @@ append_empty_variables_table <- function(scales_consolidated) {
       rankings_chr = list(),
       rank_name = list(),
       rank_name_short = list(),
-      var_measurement = list()
+      var_measurement = list(),
+      breaks_q5 = list()
     )
 
   list(scales = scales_consolidated, variables = variables)

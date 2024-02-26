@@ -247,7 +247,8 @@ contents <- lapply(all_themes, \(t) {
   
   # All possible variables in the theme
   all_vars <- params$variables$var_code[params$variables$theme == t &
-                                      params$variables$pe_include]
+                                          params$variables$pe_include &
+                     sapply(params$variables$avail_scale, \(x) any(x %in% params$scale))]
   
   # Iterate over all the variables in the theme and create the cards
   cards <- lapply(all_vars, \(var) {

@@ -14,7 +14,6 @@ placeex_main_card_rmd(
   rev_geocode_from_localhost = TRUE,
   check_bslib_version = TRUE,
   overwrite = TRUE,
-  skip_scales = c("building", "street", "grd30", "grd60", "grd120", "grd300", "grd600"),
   scales_sequences,
   full_data_path = sprintf("\%s/data/", getwd())
 )
@@ -53,9 +52,6 @@ Set \code{FALSE} to continue with the version of \code{bslib} on your system.}
 
 \item{overwrite}{<\code{logical}> Should the .html files be overwritten? Defaults
 to \code{TRUE}.}
-
-\item{skip_scales}{<\verb{character vector}> Scales for which place explorer documents
-should not be created.}
 }
 \value{
 Returns nothing if successful. All place explorer possibilities are

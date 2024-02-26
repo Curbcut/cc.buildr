@@ -843,8 +843,6 @@ tilejson <- function(mapbox_username, tileset_prefix, tile, return_error = FALSE
 #' Set `FALSE` to continue with the version of `bslib` on your system.
 #' @param overwrite <`logical`> Should the .html files be overwritten? Defaults
 #' to `TRUE`.
-#' @param skip_scales <`character vector`> Scales for which place explorer documents
-#' should not be created.
 #'
 #' @return Returns nothing if successful. All place explorer possibilities are
 #' saved in the `out_folder`.
@@ -858,8 +856,6 @@ placeex_main_card_rmd <- function(pe_main_card_data,
                                   rev_geocode_from_localhost = TRUE,
                                   check_bslib_version = TRUE,
                                   overwrite = TRUE,
-                                  skip_scales = c("building", "street", "grd30", "grd60",
-                                                  "grd120", "grd300", "grd600"),
                                   scales_sequences,
                                   full_data_path = sprintf("%s/data/", getwd())) {
   if (!requireNamespace("rmarkdown", quietly = TRUE)) {
@@ -895,6 +891,7 @@ placeex_main_card_rmd <- function(pe_main_card_data,
   all_scales <- unlist(lapply(pe_main_card_data$main_card_data, lapply, names),
                        use.names = FALSE)
   all_scales <- unique(all_scales)
+  all_scales <- all_scales[!is.na(all_scales)]
   all_scales <- sapply(all_scales, \(x) qs::qread(sprintf("data/geometry_export/%s.qs", x)),
                        simplify = FALSE, USE.NAMES = TRUE)
 
