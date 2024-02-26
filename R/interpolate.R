@@ -299,7 +299,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
           if (identical(x$ID, y$ID)) {
             cbind(x, y[2])
           } else {
-            merge(x, y, by = "ID")
+            merge(x, y, by = "ID", all = TRUE)
           }
         }
         Reduce(merg_, summarized)
@@ -374,7 +374,7 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
             if (identical(x$ID, y$ID)) {
               cbind(x, y[2])
             } else {
-              merge(x, y, by = "ID")
+              merge(x, y, by = "ID", all = TRUE)
             }
           }
           Reduce(merg_, summarized)
@@ -504,7 +504,7 @@ interpolate_from_area <- function(to, from,
       if (identical(x$ID, y$ID)) {
         cbind(x, y[2])
       } else {
-        merge(x, y, by = "ID")
+        merge(x, y, by = "ID", all = TRUE)
       }
     }
     Reduce(merg_, summarized)
