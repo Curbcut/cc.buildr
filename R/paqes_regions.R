@@ -20,7 +20,6 @@ pages_regions <- function(svm, regions_dictionary) {
     pb <- progressr::progressor(length(modules$id))
 
     modules$regions <- lapply(modules$id, \(id) {
-      print(id)
       vl <- modules$var_left[modules$id == id][[1]]
       vl <- if (!is.data.frame(vl)) vl else vl$var_code
       if (length(vl) > 100) vl <- vl[sample(1:length(vl), 20)]

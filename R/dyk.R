@@ -122,9 +122,13 @@ dyk_uni <- function(vars_dyk, svm, scales_dictionary, langs, translation_df = NU
   assign("translation_df", value = translation_df, envir = as.environment(1))
 
   # Assign scales in global environment to use explore_text_region_val_df
-  mapply(\(scale_name, scale_df) {
-    assign(scale_name, scale_df, envir = .GlobalEnv)
-  }, names(svm$scales), svm$scales)
+  sapply(unique(vars_dyk$scale), \(x) {
+    assign(x, qs::qread(sprintf("data/geometry_export/%s.qs", x)), envir = .GlobalEnv)
+  })
+  # Get back the scales that have been unloaded in the data building process
+  svm$scales <- sapply(unique(vars_dyk$scale), \(x) {
+    qs::qread(sprintf("data/geometry_export/%s.qs", x))
+  }, simplify = FALSE, USE.NAMES = TRUE)
 
   # Get highest/lowest DYKs
   dyk_highest <- vars_dyk[vars_dyk$var_right == " ", ]
