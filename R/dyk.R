@@ -7,8 +7,7 @@
 #'
 #' @param svm <`list`> A list, usually `scales_variables_modules`, containing
 #' the scales, modules, and variables tables.
-#' @param all_tables <`list`> A list, usually `all_tables`, containing the
-#' scales present in each region.
+#' @param scales_dictionary <`tibble`> scales_dictionary
 #' @param n <`integer`> Optionally, an integer scalar specifying the number of
 #' rows in `svm$modules` to be used for creating the DYK variable table. The
 #' default (`NULL`) will use all rows; other values may be useful for testing.
@@ -16,18 +15,29 @@
 #' @return A data frame with six columns (`module`, `region`, `scale`, `date`,
 #' `var_left` and `var_right`), each of which is a character vector.
 #' @export
-dyk_prep <- function(svm, all_tables, n = NULL) {
+dyk_prep <- function(svm, scales_dictionary, n = NULL) {
 
   modules <- svm$modules
+  variables <- svm$variables
   if (!missing(n) && !is.null(n)) modules <- modules[1:n,]
+
+  # Create a data.frame that mimics a tibble
+  regions <- lapply(names(scales_dictionary$regions), function(name) {
+    tibble::tibble(
+      scale = rep(name, length( scales_dictionary$regions[[name]])),
+      region = scales_dictionary$regions[[name]]
+    )
+  })
+
+  # Combine the data.frame list into a single data.frame
+  regions <- do.call(rbind, regions)
 
   vars_dyk <-
     modules |>
     dplyr::select(module = id, region = regions, var_left, var_right,
                   date = dates) |>
     tidyr::unnest(region) |>
-    dplyr::left_join(dplyr::tibble(region = names(all_tables),
-                                   scale = all_tables), by = "region") |>
+    dplyr::left_join(regions, by = "region", relationship = "many-to-many") |>
     dplyr::relocate(scale, .after = region) |>
     tidyr::unnest(scale) |>
     dplyr::mutate(date = lapply(date, as.character)) |>
@@ -38,30 +48,32 @@ dyk_prep <- function(svm, all_tables, n = NULL) {
     dplyr::filter(!sapply(var_left, tibble::is_tibble)) |>
     tidyr::unnest(var_left) |>
     # Add a var_right = " " to each row to preserve simple univariate cases
-    mutate(var_right = lapply(var_right, \(x) c(x, " "))) |>
+    dplyr::mutate(var_right = lapply(var_right, \(x) c(x, " "))) |>
     tidyr::unnest(var_right)
 
+  variables$dates <- lapply(variables$dates, as.character)
+
   var_left_check <-
-    svm$variables |>
+    variables |>
     dplyr::filter(var_code %in% vars_dyk$var_left) |>
-    dplyr::select(var_left = var_code, df = avail_df, date = dates) |>
+    dplyr::select(var_left = var_code, scale = avail_scale, date = dates) |>
     tidyr::unnest(date) |>
-    tidyr::unnest(df) |>
-    tidyr::separate_wider_delim(df, delim = "_", names = c("region", "scale"))
+    tidyr::unnest(scale) |>
+    dplyr::left_join(regions, by = "scale", relationship = "many-to-many")
 
   var_right_check <-
-    svm$variables |>
+    variables |>
     dplyr::filter(var_code %in% vars_dyk$var_right) |>
-    dplyr::select(var_right = var_code, df = avail_df, date = dates) |>
+    dplyr::select(var_right = var_code, scale = avail_scale, date = dates) |>
     reframe(
       var_right = c(" ", var_right),
-      df = c(list(unique(unlist(df))), df),
+      scale = c(list(unique(unlist(scale))), scale),
       date = c(list(as.character(
         min(as.numeric(unlist(date)) - 5):max(as.numeric(unlist(date)) + 5))),
         date)) |>
     tidyr::unnest(date) |>
-    tidyr::unnest(df) |>
-    tidyr::separate_wider_delim(df, delim = "_", names = c("region", "scale"))
+    tidyr::unnest(scale) |>
+    dplyr::left_join(regions, by = "scale", relationship = "many-to-many")
 
   vars_dyk <-
     vars_dyk |>
@@ -103,13 +115,23 @@ dyk_prep <- function(svm, all_tables, n = NULL) {
 #' @return A data frame with ten columns (the columns present in `vars_dyk`,
 #' and then additionally `select_ID`, `dyk_type`, `dyk_text` and `dyk_weight`).
 #' @export
-dyk_uni <- function(vars_dyk, svm, scales_dictionary, langs, translation_df) {
+dyk_uni <- function(vars_dyk, svm, scales_dictionary, langs, translation_df = NULL) {
+  first_scale <- scales_dictionary$scale[[1]]
 
   # Prepare translation_df
   assign("translation_df", value = translation_df, envir = as.environment(1))
 
+  # Assign scales in global environment to use explore_text_region_val_df
+  sapply(unique(vars_dyk$scale), \(x) {
+    assign(x, qs::qread(sprintf("data/geometry_export/%s.qs", x)), envir = .GlobalEnv)
+  })
+  # Get back the scales that have been unloaded in the data building process
+  svm$scales <- sapply(unique(vars_dyk$scale), \(x) {
+    qs::qread(sprintf("data/geometry_export/%s.qs", x))
+  }, simplify = FALSE, USE.NAMES = TRUE)
+
   # Get highest/lowest DYKs
-  dyk_highest <- vars_dyk[vars_dyk$var_right == " ",]
+  dyk_highest <- vars_dyk[vars_dyk$var_right == " ", ]
   dyk_highest_out <- dyk_uni_highest_lowest(
     var_left = dyk_highest$var_left,
     region = dyk_highest$region,
@@ -140,7 +162,7 @@ dyk_uni <- function(vars_dyk, svm, scales_dictionary, langs, translation_df) {
     vars_dyk |>
     dplyr::filter(var_right == " ") |>
     dplyr::filter(n() > 1, .by = c(module, region, scale, var_left)) |>
-    dplyr::filter(scale == "CSD") |>
+    dplyr::filter(scale == first_scale) |>
     dplyr::summarize(date = list(as.character(c(min(as.numeric(date)),
                                                 max(as.numeric(date))))),
                      .by = c(module, region, scale, var_left, var_right))
@@ -148,6 +170,7 @@ dyk_uni <- function(vars_dyk, svm, scales_dictionary, langs, translation_df) {
     var_left = dyk_change$var_left,
     region = dyk_change$region,
     scale = dyk_change$scale,
+    date = dyk_change$date,
     svm = svm,
     langs = langs)
   dyk_change$scale <- NA_character_
@@ -216,7 +239,8 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm,
   # Get class
   vars <- mapply(curbcut::vars_build,
                  var_left = paste(var_left, date, sep = "_"),
-                 df = paste(region, scale, sep = "_"),
+                 scale = scale,
+                 time = date,
                  MoreArgs = list(
                    check_choropleth = FALSE,
                    variables = svm$variables),
@@ -225,9 +249,10 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm,
   # Initial region mention (one per lang)
   region_start <- lapply(langs, \(lang) {
     out <- mapply(\(x, y) curbcut:::explore_context(
-      region = x, select_id = NA, df = paste(x, y, sep = "_"), switch_DA = FALSE,
+      region = x, select_id = NA, scale = y, switch_DA = FALSE,
       lang = lang), x = region, y = scale, SIMPLIFY = FALSE, USE.NAMES = FALSE)
-    sapply(out, \(x) curbcut::s_sentence(x$p_start))
+    out <- sapply(out, \(x) gsub(" $", "", x$p_start))
+    curbcut::s_sentence(out)
   })
 
   # Scale name (one per lang)
@@ -236,54 +261,55 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm,
   scale_name <- lapply(langs, \(x) sapply(scale_name, curbcut::cc_t, lang = x))
 
   # Highest value (only one for now)
-  highest_val <- mapply(\(var_left, region, scale, date) {
-    tb <- svm$scales[[region]][[scale]]
+  highest_val <- mapply(\(var_left, scale, date) {
+    tb <- qs::qread(sprintf("data/%s/%s.qs", scale, var_left))
     max(tb[[paste(var_left, date, sep = "_")]], na.rm = TRUE)
-  }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
+  }, var_left, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
   # Highest ID (only one)
-  highest_ID <- mapply(\(var_left, region, scale, date) {
-    tb <- svm$scales[[region]][[scale]]
+  highest_ID <- mapply(\(var_left, scale, date) {
+    tb <- qs::qread(sprintf("data/%s/%s.qs", scale, var_left))
     tb$ID[which.max(tb[[paste(var_left, date, sep = "_")]])]
-  }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
+  }, var_left, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
   # Highest name (only one)
-  highest_name <- mapply(\(var_left, region, scale, highest_ID) {
-    tb <- svm$scales[[region]][[scale]]
-    tb$name[tb$ID == highest_ID]
-  }, var_left, region, scale, highest_ID, USE.NAMES = FALSE, SIMPLIFY = TRUE)
+  highest_name <- mapply(\(sc, id) {
+    tb <- svm$scales[[sc]]
+    tb$name[tb$ID == id]
+  }, scale, highest_ID, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
   # Lowest value (only one for now)
-  lowest_val <- mapply(\(var_left, region, scale, date) {
-    tb <- svm$scales[[region]][[scale]]
+  lowest_val <- mapply(\(var_left, scale, date) {
+    tb <- qs::qread(sprintf("data/%s/%s.qs", scale, var_left))
     min(tb[[paste(var_left, date, sep = "_")]], na.rm = TRUE)
-  }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
+  }, var_left, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
   # Lowest ID (only one)
-  lowest_ID <- mapply(\(var_left, region, scale, date) {
-    tb <- svm$scales[[region]][[scale]]
+  lowest_ID <- mapply(\(var_left, scale, date) {
+    tb <- qs::qread(sprintf("data/%s/%s.qs", scale, var_left))
     tb$ID[which.min(tb[[paste(var_left, date, sep = "_")]])]
-  }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
+  }, var_left, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
   # Lowest name (only one)
-  lowest_name <- mapply(\(var_left, region, scale, lowest_ID) {
-    tb <- svm$scales[[region]][[scale]]
+  lowest_name <- mapply(\(var_left, scale, lowest_ID) {
+    tb <- svm$scales[[scale]]
     tb$name[tb$ID == lowest_ID]
-  }, var_left, region, scale, lowest_ID, USE.NAMES = FALSE, SIMPLIFY = TRUE)
+  }, var_left, scale, lowest_ID, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
   # Name prefix (one per lang)
   name_pre <- mapply(\(highest_ID, var_left, region, scale, date) {
 
-    tb <- svm$scales[[region]][[scale]]
-    tb_top_name <- names(svm$scales[[region]][1])
-
-    if (scale != tb_top_name) {
-
-      scales_dictionary |>
-        dplyr::filter(scale == !!scale) |>
-        pull(sing_with_article)
-
-    } else ""
+    # tb <- qs::qread(sprintf("data/%s/%s.qs", scale, var_left))
+    # tb_top_name <- names(svm$scales[[region]][1])
+    #
+    # if (scale != tb_top_name) {
+    #
+    #   scales_dictionary |>
+    #     dplyr::filter(scale == !!scale) |>
+    #     dplyr::pull(sing_with_article)
+    #
+    # } else
+    ""
 
   }, highest_ID, var_left, region, scale, date, USE.NAMES = FALSE,
   SIMPLIFY = TRUE)
@@ -295,14 +321,15 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm,
   # Name suffix (one per lang)
   name_suf <- mapply(\(highest_ID, var_left, region, scale, date) {
 
-    tb <- svm$scales[[region]][[scale]]
-    tb_top_name <- names(svm$scales[[region]][1])
-
-    if (scale != tb_top_name) {
-      tb_top <- svm$scales[[region]][[1]]
-      top_ID <- tb[[paste0(tb_top_name, "_ID")]][tb$ID == highest_ID]
-      tb_top$name[tb_top$ID == top_ID]
-    } else ""
+    # tb <- qs::qread(sprintf("data/%s/%s.qs", scale, var_left))
+    # tb_top_name <- names(svm$scales[[region]][1])
+    #
+    # if (scale != tb_top_name) {
+    #   tb_top <- svm$scales[[region]][[1]]
+    #   top_ID <- tb[[paste0(tb_top_name, "_ID")]][tb$ID == highest_ID]
+    #   tb_top$name[tb_top$ID == top_ID]
+    # } else
+    ""
 
   }, highest_ID, var_left, region, scale, date, USE.NAMES = FALSE,
   SIMPLIFY = TRUE)
@@ -362,27 +389,26 @@ dyk_uni_highest_lowest <- function(var_left, region, scale, date, svm,
 
 }
 
-dyk_val_convert <- function(vars, region, scale, vals, svm, langs) {
+dyk_val_convert <- function(vars, region, scale, vals, svm, langs, variables) {
 
   lapply(langs, \(lang) {
     mapply(\(var, reg, scl, val) {
       if (inherits(var$var_left, "ind")) {
 
-        var_left <- stringr::str_remove(var$var_left, "_\\d{4}")
+        ind_raw_dat <- qs::qread(sprintf("data/%s/%s.qs", scl, var$var_left))
+        breaks <- attr(ind_raw_dat, "breaks")
 
-        breaks <- svm$variables |>
-          dplyr::filter(var_code == var_left) |>
-          dplyr::pull(breaks_q5) |>
-          (\(x) x[[1]])() |>
-          dplyr::filter(df == paste(reg, scl, sep = "_"))
+        rn <- svm$variables$rank_name[svm$variables$var_code == var$var_left][[1]]
+        out <- (\(x) {
+          if (val >= breaks[6]) return(5)
+          if (val >= breaks[5]) return(5)
+          if (val >= breaks[4]) return(4)
+          if (val >= breaks[3]) return(3)
+          if (val >= breaks[2]) return(2)
+          return(1)
+        })()
 
-        out <-
-          breaks |>
-          dplyr::filter(var >= min(val, max(var))) |>
-          dplyr::slice(1) |>
-          dplyr::pull(rank_name)
-
-        curbcut::cc_t(out, lang = lang)
+        curbcut::cc_t(rn[out], lang = lang)
 
       } else curbcut::convert_unit(var = var$var_left, x = val, decimal = 1,
                                    compact = FALSE)
@@ -446,6 +472,8 @@ dyk_assemble_lowest <- function(
 #' for which the DYK should be calculated.
 #' @param scale <`character`> A string representing the name of the scale
 #' for which the DYK should be calculated.
+#' @param date <`list of character vector`> Reprenseting the dates for which
+#' the DYK should be calculated2
 #' @param svm <`list`> A list, usually `scales_variables_modules`, containing
 #' the scales, modules, and variables tables.
 #'
@@ -453,31 +481,60 @@ dyk_assemble_lowest <- function(
 #' which contain a character vector of DYK outputs and a numeric vector of the
 #' values respectively.
 #' @export
-dyk_uni_change <- function(var_left, region, scale, svm, langs) {
+dyk_uni_change <- function(var_left, region, scale, date, svm, langs) {
 
   # Get class
   vars <- mapply(curbcut::vars_build,
                  var_left = var_left,
-                 df = paste(region, scale, sep = "_"),
+                 scale = scale,
+                 time = date,
+                 MoreArgs = list(
+                   check_choropleth = FALSE,
+                   variables = svm$variables),
+                 SIMPLIFY = FALSE, USE.NAMES = FALSE)
+  time <- lapply(vars, `[[`, "time")
+  vars <- lapply(vars, `[[`, "vars")
+  data <- mapply(curbcut::data_get,
+                 vars = vars,
+                 scale = scale,
+                 region = region,
+                 time = time,
                  MoreArgs = list(
                    check_choropleth = FALSE,
                    variables = svm$variables),
                  SIMPLIFY = FALSE, USE.NAMES = FALSE)
 
-  # Get region values
-  values <-
-    map2(var_left, region, \(x, y) {
-      svm$variables |>
-        filter(var_code == x) |>
-        pull(region_values) |>
-        pluck(1) |>
-        filter(region == y)})
+  values <-mapply(\(var, dat, tim, sc, reg) {
 
-  first_val <- sapply(values, \(x) x$val[length(x$val)])
-  last_val <- sapply(values, \(x) x$val[1])
+    # Grab values for single years. Allow for `apply`
+    var_lr <- sprintf("var_%s", "left")
+    times <- sapply(tim[[var_lr]], \(x) setNames(list(x), var_lr),
+                    simplify = FALSE, USE.NAMES = TRUE)
+    names(times) <- tim[[var_lr]]
+
+    # Grab the region values
+    region_vals <-
+      lapply(times, \(t) {
+        curbcut:::explore_text_region_val_df(
+          var = var,
+          region = reg,
+          select_id = NA,
+          data = dat,
+          scale = sc,
+          col = "left",
+          lang = NULL,
+          time = t
+        )
+      })
+
+  }, lapply(vars, `[[`, "var_left"), data, time, scale, region,
+  SIMPLIFY = FALSE, USE.NAMES = FALSE)
+
+  first_val <- sapply(values, \(x) x[[1]]$val)
+  last_val <- sapply(values, \(x) x[[2]]$val)
   change <- mapply(\(x, y) (y - x) / x, x = first_val, y = last_val)
-  first_date <- sapply(values, \(x) x$year[length(x$year)])
-  last_date <- sapply(values, \(x) x$year[1])
+  first_date <- sapply(values, \(x) names(x)[[1]])
+  last_date <- sapply(values, \(x) names(x)[[2]])
 
   # Produce warnings for infinite values
   inf <- is.infinite(change)
@@ -490,10 +547,11 @@ dyk_uni_change <- function(var_left, region, scale, svm, langs) {
   # Initial region mention (one per lang)
   region_start <- lapply(langs, \(lang) {
     out <- mapply(\(x, y) curbcut:::explore_context(
-      region = x, select_id = NA, df = paste(x, y, sep = "_"),
+      region = x, select_id = NA, scale = y,
       switch_DA = FALSE, lang = lang), x = region, y = scale, SIMPLIFY = FALSE,
       USE.NAMES = FALSE)
-    sapply(out, \(x) curbcut::s_sentence(x$p_start))
+    out <- sapply(out, \(x) gsub(" $", "", x$p_start))
+    curbcut::s_sentence(out)
   })
 
   # Variable explanation (one per lang)
@@ -622,9 +680,10 @@ dyk_uni_compare <- function(var_left, var_right, region, scale, date, svm,
 
   # Get class
   vars <- mapply(curbcut::vars_build,
-                 var_left = paste(var_left, date, sep = "_"),
-                 var_right = paste(var_right, date, sep = "_"),
-                 df = paste(region, scale, sep = "_"),
+                 var_left = var_left,
+                 var_right = var_right,
+                 scale = scale,
+                 time = date,
                  MoreArgs = list(
                    check_choropleth = FALSE,
                    variables = svm$variables),
@@ -633,10 +692,11 @@ dyk_uni_compare <- function(var_left, var_right, region, scale, date, svm,
   # Initial region mention (one per lang)
   region_start <- lapply(langs, \(lang) {
     out <- mapply(\(x, y) curbcut:::explore_context(
-      region = x, select_id = NA, df = paste(x, y, sep = "_"),
+      region = x, select_id = NA, scale = y,
       switch_DA = FALSE, lang = lang), x = region, y = scale, SIMPLIFY = FALSE,
       USE.NAMES = FALSE)
-    sapply(out, \(x) curbcut::s_sentence(x$p_start))
+    out <- sapply(out, \(x) gsub(" $", "", x$p_start))
+    curbcut::s_sentence(out)
   })
 
   # Scale name (one per lang)
@@ -648,11 +708,11 @@ dyk_uni_compare <- function(var_left, var_right, region, scale, date, svm,
 
   # Values
   val_1 <- mapply(\(var_left, region, scale, date) {
-    tb <- svm$scales[[region]][[scale]]
+    tb <- qs::qread(sprintf("data/%s/%s.qs", scale, var_left))
     tb[[paste(var_left, date, sep = "_")]]
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = FALSE)
   val_2 <- mapply(\(var_right, region, scale, date) {
-    tb <- svm$scales[[region]][[scale]]
+    tb <- qs::qread(sprintf("data/%s/%s.qs", scale, var_right))
     tb[[paste(var_right, date, sep = "_")]]
   }, var_right, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = FALSE)
 
@@ -798,11 +858,11 @@ dyk_bivar_outlier <- function(var_left, var_right, region, scale, date,
 
   # Values
   val_1 <- mapply(\(var_left, region, scale, date) {
-    tb <- svm$scales[[region]][[scale]]
+    tb <- qs::qread(sprintf("data/%s/%s.qs", scale, var_left))
     tb[[paste(var_left, date, sep = "_")]]
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = FALSE)
   val_2 <- mapply(\(var_right, region, scale, date) {
-    tb <- svm$scales[[region]][[scale]]
+    tb <- qs::qread(sprintf("data/%s/%s.qs", scale, var_left))
     tb[[paste(var_right, date, sep = "_")]]
   }, var_right, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = FALSE)
 
@@ -860,7 +920,7 @@ dyk_bivar_outlier <- function(var_left, var_right, region, scale, date,
 
   # Get outlier place names
   outlier_place <- mapply(\(x, region, scale) {
-    svm$scales[[region]][[scale]]$name[x]
+    svm$scales[[scale]]$name[x]
   }, which_out, region, scale, USE.NAMES = FALSE, SIMPLIFY = FALSE)
 
   # Get outlier values
@@ -936,26 +996,26 @@ dyk_bivar_outlier <- function(var_left, var_right, region, scale, date,
 
   # Highest value
   highest_val <- mapply(\(var_left, region, scale, date) {
-    tb <- svm$scales[[region]][[scale]]
+    tb <- qs::qread(sprintf("data/%s/%s.qs", scale, var_left))
     max(tb[[paste(var_left, date, sep = "_")]], na.rm = TRUE)
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
   # Highest name
   highest_name <- mapply(\(var_left, region, scale, date) {
-    tb <- svm$scales[[region]][[scale]]
+    tb <- qs::qread(sprintf("data/%s/%s.qs", scale, var_left))
     tb$name[which.max(tb[[paste(var_left, date, sep = "_")]])]
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
   # Second highest value
   second_highest_val <- mapply(\(var_left, region, scale, date) {
-    tb <- svm$scales[[region]][[scale]]
+    tb <- qs::qread(sprintf("data/%s/%s.qs", scale, var_left))
     max_val <- which.max(tb[[paste(var_left, date, sep = "_")]])
     max(tb[[paste(var_left, date, sep = "_")]][-max_val], na.rm = TRUE)
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
   # Second highest name
   second_highest_name <- mapply(\(var_left, region, scale, date) {
-    tb <- svm$scales[[region]][[scale]]
+    tb <- qs::qread(sprintf("data/%s/%s.qs", scale, var_left))
     val_vec <- tb[[paste(var_left, date, sep = "_")]]
     # Remove top value
     val_vec[which.max(val_vec)] <- -Inf
@@ -964,26 +1024,26 @@ dyk_bivar_outlier <- function(var_left, var_right, region, scale, date,
 
   # Lowest value
   lowest_val <- mapply(\(var_left, region, scale, date) {
-    tb <- svm$scales[[region]][[scale]]
+    tb <- qs::qread(sprintf("data/%s/%s.qs", scale, var_left))
     min(tb[[paste(var_left, date, sep = "_")]], na.rm = TRUE)
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
   # Lowest name
   lowest_name <- mapply(\(var_left, region, scale, date) {
-    tb <- svm$scales[[region]][[scale]]
+    tb <- qs::qread(sprintf("data/%s/%s.qs", scale, var_left))
     tb$name[which.min(tb[[paste(var_left, date, sep = "_")]])]
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
   # Second lowest value
   second_lowest_val <- mapply(\(var_left, region, scale, date) {
-    tb <- svm$scales[[region]][[scale]]
+    tb <- qs::qread(sprintf("data/%s/%s.qs", scale, var_left))
     min_val <- which.min(tb[[paste(var_left, date, sep = "_")]])
     min(tb[[paste(var_left, date, sep = "_")]][-min_val], na.rm = TRUE)
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = TRUE)
 
   # Second lowest name
   second_lowest_name <- mapply(\(var_left, region, scale, date) {
-    tb <- svm$scales[[region]][[scale]]
+    tb <- qs::qread(sprintf("data/%s/%s.qs", scale, var_left))
     val_vec <- tb[[paste(var_left, date, sep = "_")]]
     # Remove bottom value
     val_vec[which.min(val_vec)] <- Inf

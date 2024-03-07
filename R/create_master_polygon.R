@@ -10,13 +10,18 @@
 #' retrieved by the centroid of the master_polygon created. If not supplied, it
 #' is derived from the centroid of all the regions through a simple mathematical
 #' approach.
+#' @param prov_code <`numeric`> Is the provinde code from cancensus (GeoUID)
+#' already known? If so, enter it. It can help if the centroid of the master
+#' polygon of the region is in a lake! Then no province is filtered.
 #'
-#' @return The output is a named list of length 4: The master polygon,
-#' all the individual regions present in \code{all_regions}, the crs, and the
+#' @return The output is a named list of length 5: The master polygon,
+#' all the individual regions present in \code{all_regions}, the crs, the
 #' `regions` argument to \code{\link[cancensus]{get_census}} of the province
-#' in which the centroid of the master polygon falls.
+#' in which the centroid of the master polygon falls, and the carographic
+#' DA version.
+#'
 #' @export
-create_master_polygon <- function(all_regions, crs = NULL) {
+create_master_polygon <- function(all_regions, crs = NULL, prov_code = NULL) {
   # Download or retrieve the geo sf -----------------------------------------
 
   regions <-
@@ -26,12 +31,17 @@ create_master_polygon <- function(all_regions, crs = NULL) {
       } else if (!is.list(x)) {
         sf::read_sf(x)
       } else {
-        cancensus::get_census(cc.buildr::current_census,
-          regions = x,
-          # DA for a better spatial coverage
-          level = "DA",
-          geo_format = "sf",
-          quiet = TRUE
+        out <- cancensus::get_census(cc.buildr::current_census,
+                                     regions = x,
+                                     # DA for a better spatial coverage
+                                     level = names(x),
+                                     geo_format = "sf",
+                                     quiet = TRUE
+        )
+        names(out)[names(out) == "GeoUID"] <- "ID"
+        cc.data::census_switch_full_geo(
+          df = out,
+          scale_name = names(x)
         )
       }
       z <- sf::st_union(z)
@@ -60,7 +70,8 @@ create_master_polygon <- function(all_regions, crs = NULL) {
     sapply(regions, sf::st_transform, crs, simplify = FALSE, USE.NAMES = TRUE)
   master_polygon <- Reduce(sf::st_union, regions_crs)
   master_polygon <- master_polygon[
-    sf::st_geometry_type(master_polygon) == "MULTIPOLYGON"
+    sf::st_geometry_type(master_polygon) == "MULTIPOLYGON" |
+      sf::st_geometry_type(master_polygon) == "POLYGON"
   ]
   master_polygon <- sf::st_make_valid(master_polygon)
   master_polygon <- sf::st_transform(master_polygon, 4326)
@@ -69,13 +80,33 @@ create_master_polygon <- function(all_regions, crs = NULL) {
   # Get region from Cancensus -----------------------------------------------
 
   provinces <- cancensus::get_census(cc.buildr::current_census,
-    regions = list(C = 01),
-    level = "PR", geo_format = "sf",
-    quiet = TRUE
+                                     regions = list(C = 01),
+                                     level = "PR", geo_format = "sf",
+                                     quiet = TRUE
   )
   master_polygon <- sf::st_make_valid(master_polygon)
   master_polygon_centroid <- sf::st_centroid(master_polygon)
-  prov_code <- sf::st_intersection(provinces, master_polygon_centroid)$GeoUID
+  if (is.null(prov_code))
+    prov_code <- sf::st_intersection(provinces, master_polygon_centroid)$GeoUID
+
+  if (length(prov_code) == 0) {
+    stop("Provide manually the cancensus province code (GeoUID).")
+  }
+
+  # Get cartogrtaphic DA ----------------------------------------------------
+
+  DA_carto <- get_census_cc(
+    master_polygon = master_polygon,
+    census_dataset = cc.buildr::current_census,
+    regions = list(PR = prov_code),
+    level = "DA",
+    crs = crs,
+    cartographic = TRUE,
+    area_threshold = 0.05
+  )
+
+  DA_carto <- sf::st_transform(DA_carto, crs)
+  DA_carto <- sf::st_union(DA_carto)
 
 
   # Return ------------------------------------------------------------------
@@ -84,6 +115,7 @@ create_master_polygon <- function(all_regions, crs = NULL) {
     master_polygon = master_polygon,
     regions = regions,
     crs = crs,
-    province_cancensus_code = list(PR = prov_code)
+    province_cancensus_code = list(PR = prov_code),
+    DA_carto = DA_carto
   ))
 }

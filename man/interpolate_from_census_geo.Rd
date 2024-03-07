@@ -11,9 +11,13 @@ interpolate_from_census_geo(
   weight_by = "households",
   crs,
   existing_census_scales = c("CSD", "CT", "DA", "DB"),
-  only_regions = names(all_scales),
   average_vars = c(),
-  additive_vars = c()
+  additive_vars = c(),
+  only_scales = scales_greater_than(base_scale =
+    all_scales[[base_scale]][all_scales[[base_scale]]$ID \%in\% data[[paste0(base_scale,
+    "_ID")]], ], all_scales = all_scales, crs = crs),
+  overwrite = FALSE,
+  time_regex = "_\\\\d{4}$"
 )
 }
 \arguments{
@@ -23,8 +27,7 @@ and an ID that corresponds to the base scale, e.g. \code{"DA_ID"}.}
 \item{base_scale}{<\code{character}> The census scale at which the data is
 arranged.}
 
-\item{all_scales}{<\verb{named list}> A named list of scales. The first level is
-the geo, and the second is the scales.}
+\item{all_scales}{<\verb{named list}> A named list of scales.}
 
 \item{weight_by}{<\code{character}> The denominator for which average variables
 should be interpolated. Defaults to \code{households}. The other options are
@@ -40,10 +43,6 @@ intersected. (The boundaries of the census geometries fit into each other,
 but this is not the case for the other geometries, hence the need to
 identify them).}
 
-\item{only_regions}{<\verb{character vector}> All the regions for which data
-should be interpolated and appended. Defults to all the regions in
-\code{all_scales}.}
-
 \item{average_vars}{<\verb{character vector}> Corresponds to the column names
 of the variables that are to be interpolated as an average, like a
 percentage, a median, an index, etc. weighted by the \code{weight_by} argument.}
@@ -52,6 +51,16 @@ percentage, a median, an index, etc. weighted by the \code{weight_by} argument.}
 the variables that are 'count' variables. In the case of this function, the
 output value of a CSD would be the sum of the values of the DAs or CTs that
 are present inside the CSD.}
+
+\item{only_scales}{<\verb{character vector}> All the scales for which data should
+be interpolated and appended. Defults to using \code{\link{scales_greater_than}}.}
+
+\item{overwrite}{<\code{logical}> Should the data already processed and stored be
+overwriten?}
+
+\item{time_regex}{<\code{character}> Regular expression which corresponds to
+a timeframe, placed at the end of the \code{vars} vector. e.g. \verb{\\\\d\{4\}} for
+years.}
 }
 \value{
 Returns a list of length 4. The first is the same list that is fed in

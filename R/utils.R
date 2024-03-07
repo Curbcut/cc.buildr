@@ -73,23 +73,6 @@ map_over_scales <- function(all_scales, fun, with_progress = TRUE, parallel = FA
   return(out)
 }
 
-#' Reconstruct all_tables
-#'
-#' As all the data arrange in a named list of regions > scales was created using
-#' a list of character vector previously named `all_tables`, this function
-#' allows to recreate the `all_tables` list of vectors using the data of
-#' `all_scales`.
-#'
-#' @param all_scales <`named list`> A named list of scales. The first level is
-#' the geo, and the second is the scales.
-#'
-#' @return A list of vectors of characters. The first level of the list is the
-#' geo, and the second is all the scales available in that particular geo.
-#' @export
-reconstruct_all_tables <- function(all_scales) {
-  mapply(names, all_scales, SIMPLIFY = FALSE)
-}
-
 #' Compute geometric measurements and drop units
 #'
 #' @param geometry <`sf`, `sfc` or `sfg`> A column of geometries.
@@ -104,51 +87,49 @@ get_area <- function(geometry, ...) {
 
 #' Reorder columns as they are expected in the workflow
 #'
-#' @param all_scales <`named list`> A named list of scales. The first level is
-#' the geo, and the second is the scales.
+#' @param scale_df <`data.frame`> A `scale` data.frame for which columns
+#' should be reordered.
 #'
 #' @return Returns the same list that is fed, with columns re-ordered.
 #' @export
-reorder_columns <- function(all_scales) {
-  cc.buildr::map_over_scales(
-    all_scales = all_scales,
-    fun = \(geo = geo, scales = scales,
-      scale_name = scale_name, scale_df = scale_df) {
-      scales_order <- names(scales)
-      needed_present_scales <-
-        scales_order[seq_len(which(scales_order == scale_name))]
+reorder_columns <- function(scale_df) {
 
-      mandatory_start <- c("ID", "name", "name_2")
-      all_ids <- paste0(needed_present_scales, "_ID")
-      other <- character()
+  mandatory_start <- c()
+  if ("ID" %in% names(scale_df)) mandatory_start <- c(mandatory_start, "ID")
+  if ("name" %in% names(scale_df)) mandatory_start <- c(mandatory_start, "name")
+  if ("name_2" %in% names(scale_df)) mandatory_start <- c(mandatory_start, "name_2")
 
-      if ("population" %in% names(scale_df)) other <- c(other, "population")
-      if ("households" %in% names(scale_df)) other <- c(other, "households")
-      if ("area" %in% names(scale_df)) other <- c(other, "area")
 
-      rest <- names(scale_df)[!names(scale_df) %in% c(
-        mandatory_start, all_ids,
-        other
-      )]
-      rest <- rest[!rest %in% c("popw_centroids_coords", "centroid", "geometry")]
-      last <- names(scale_df)[
-        names(scale_df) %in% c("popw_centroids_coords", "centroid", "geometry")
-      ]
+  all_ids <- names(scale_df)[grepl("_ID", names(scale_df))]
+  other <- character()
 
-      out <- scale_df[, c(mandatory_start, all_ids, other, rest, last)]
+  if ("population" %in% names(scale_df)) other <- c(other, "population")
+  if ("households" %in% names(scale_df)) other <- c(other, "households")
+  if ("dwellings" %in% names(scale_df)) other <- c(other, "dwellings")
+  if ("area" %in% names(scale_df)) other <- c(other, "area")
 
-      if (ncol(out) != ncol(scale_df)) {
-        stop(
-          paste0(
-            "Some columns have been dropped along the way in the use of ",
-            "x function."
-          )
-        )
-      }
+  rest <- names(scale_df)[!names(scale_df) %in% c(
+    mandatory_start, all_ids,
+    other
+  )]
+  rest <- rest[!rest %in% c("popw_centroids_coords", "centroid", "geometry", "geometry_digital")]
+  last <- names(scale_df)[
+    names(scale_df) %in% c("popw_centroids_coords", "centroid", "geometry", "geometry_digital")
+  ]
 
-      out
-    }
-  )
+  out <- scale_df[, c(mandatory_start, all_ids, other, rest, last)]
+
+  if (ncol(out) != ncol(scale_df)) {
+    stop(
+      paste0(
+        "Some columns have been dropped along the way in the use of ",
+        "`reorder_columns` function."
+      )
+    )
+  }
+
+  out
+
 }
 
 #' Reimplemntation of dplyr::ntile in base R
@@ -191,9 +172,39 @@ rough_rank <- function(x, n) {
 #'
 #' @return Merged tibbles as a tibble and keep sf class if was present
 #' @export
-merge <- function(x, y, ...) {
-  merged <- tibble::as_tibble(base::merge(x, y, ...))
-  if ("sf" %in% class(x) || "sf" %in% class(y)) merged <- sf::st_as_sf(merged)
+merge <- function(x, y, by = intersect(names(x), names(y)), by.x = by,
+                  by.y = by, ...) {
+
+  # Store 'geometry_digital' from 'x' and 'y' along with keys for joining later
+  if ("geometry_digital" %in% names(x)) {
+    x_geometry_digital <- x[, c("geometry_digital", by.x)]
+    x_geometry_digital <- sf::st_drop_geometry(x_geometry_digital)
+    x <- x[setdiff(names(x), "geometry_digital")]
+  }
+  if ("geometry_digital" %in% names(y)) {
+    y_geometry_digital <- y[, c("geometry_digital", by.y)]
+    y_geometry_digital <- sf::st_drop_geometry(y_geometry_digital)
+    y <- y[setdiff(names(y), "geometry_digital")]
+  }
+
+  # Merge 'x' and 'y' using base merge function
+  merged <- base::merge(x, y, by.x = by.x, by.y = by.y, ...)
+
+  if (exists("x_geometry_digital")) {
+    merged <- dplyr::left_join(merged, x_geometry_digital, by = by.x)
+  }
+  if (exists("y_geometry_digital") && !exists("x_geometry_digital")) { # Avoid overwriting 'x' geometry
+    merged <- dplyr::left_join(merged, y_geometry_digital, by = by.y)
+  }
+
+  # As tibble
+  merged <- tibble::as_tibble(merged)
+
+  # If 'sf' class should be preserved, convert back to 'sf' object
+  if ("sf" %in% class(x) || "sf" %in% class(y)) {
+    merged <- sf::st_as_sf(merged)
+  }
+
   merged
 }
 
@@ -234,4 +245,28 @@ spatial_filtering <- function(df, crs, master_polygon, ID_col = "ID", area_thres
 
   # Return a subset of the original data frame that meets the filtering condition
   return(df[df[[ID_col]] %in% filtered_ids, ])
+}
+
+#' @export
+get_largest_intersection <- function(x, other) {
+
+  intersections <- sf::st_intersection(x, other)
+  # If it intersects nothing, return NA
+  if (nrow(intersections) == 0) return(NA)
+
+  areas <- sf::st_area(intersections)
+  index <- which.max(areas)
+  out <- sf::st_drop_geometry(intersections)[index, names(other)[names(other) != "geometry"]]
+  if (nrow(out) == 0) {
+    dist <- sf::st_distance(x, other)
+    index <- which.min(dist)
+    out <- sf::st_drop_geometry(other)[index, ]
+  }
+  if (nrow(out) == 0) {
+    out <- tibble::add_row(out)
+    for (n in names(other)) {
+      out[[n]] <- NA
+    }
+  }
+  out
 }

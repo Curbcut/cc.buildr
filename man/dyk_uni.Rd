@@ -4,7 +4,7 @@
 \alias{dyk_uni}
 \title{Create a Table of Univariate DYKs}
 \usage{
-dyk_uni(vars_dyk, svm, scales_dictionary, langs, translation_df)
+dyk_uni(vars_dyk, svm, scales_dictionary, langs, translation_df = NULL)
 }
 \arguments{
 \item{vars_dyk}{<\code{data.frame}> A data frame with columns \code{module},

@@ -5,19 +5,18 @@
 \title{Create all basic map zoom levels}
 \usage{
 map_zoom_levels_create_all(
-  all_tables,
-  zoom_levels = list(first = 0, CT = 10.5, DA = 12.5, building = 15.5)
+  scales_sequences,
+  zoom_levels = list(first = 0, CT = 10, DA = 12, building = 16)
 )
 }
 \arguments{
-\item{all_tables}{<\verb{named list}> A named list of character. The names are
-the \code{region} e.g. CMA, island, city, ... and the vectors are all the
-scales available in these geo e.g. CSD, CT, DA, building, ...}
+\item{scales_sequences}{<\code{list}> A list of scales sequences representing the
+hierarchical ordering of scales on an auto-zoom.}
 
 \item{zoom_levels}{<\verb{named list}> A numeric list with names. Every scale
-that is not located first in the region's list must be part of this list,
+that is not located first in the \code{scales_sequences}'s list must be part of this list,
 with a numeric applied to it (at which zoom level will the user switch between
-one scale to another on auto-zoom). The first element of every region's list
+one scale to another on auto-zoom). The first element of every \code{scales_sequences}'s list
 of scales has the name \code{first} in that list, which will always be defaulted
 to 0.}
 }

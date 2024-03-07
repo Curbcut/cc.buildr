@@ -12,14 +12,22 @@
 #' variables explained.
 #' @param census_years <`character vector`> Years for which the census data
 #' should be added to the scales. Defaults to \code{\link[cc.data]{census_years}}
-#' @param skip_scale_interpolation <`character vector`> Scales for which census
-#' data should not be interpolated (e.g. very small scales like 25m grid cells.).
-#' In those cases, census data won't be interpolated and appended. Defaults to
-#' NULL to interpolate to everything.
+#' @param scales_to_interpolate <`character vector`> Scales for which census
+#' data should be interpolated (e.g. very small scales like 25m grid cells should be excluded.).
+#' Defaults to all the scales except building and street.
+#' @param scales_sequences <`list`> A list of scales sequences representing the
+#' hierarchical ordering of scales on an auto-zoom.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
+#' @param DB_table <`named list`> Named list of all the years for which DBs existed.
+#' Every dataframe in the list must have the DB ID, DA ID, population and dwellings
+#' count. It is created using \code{\link[cc.data]{DB_get}}.
 #' @param housing_module <`logical`> Should a housing module be added to
 #' the list of modules.
+#' @param age_module <`logical`> Should an age module be added to
+#' the list of modules.
+#' @param overwrite <`logical`> Should the data already processed and stored be
+#' overwriten?
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with census variable added, their addition
@@ -29,18 +37,42 @@ ba_census_data <- function(scales_variables_modules,
                            region_DA_IDs,
                            census_vectors = cc.data::census_vectors,
                            census_years = cc.data::census_years,
-                           skip_scale_interpolation = NULL,
+                           scales_to_interpolate = {
+                             names(scales_variables_modules$scales)[
+                               !names(scales_variables_modules$scales) %in% c(
+                                 "building", "street", "DB", "grd30", "grd60", "grd120",
+                                 "grd300")
+                             ]
+                           },
+                           scales_sequences,
                            crs,
-                           housing_module = TRUE) {
+                           DB_table,
+                           housing_module = TRUE,
+                           age_module = TRUE,
+                           overwrite = FALSE) {
+
   # Declare all variables from the census -----------------------------------
 
   unique_var <- cc.data::census_add_parent_vectors(census_vectors)
 
   vars <-
     sapply(unique_var,
-      \(x) paste(x, census_years, sep = "_"),
-      simplify = FALSE, USE.NAMES = FALSE
+           \(x) paste(x, census_years, sep = "_"),
+           simplify = FALSE, USE.NAMES = FALSE
     ) |> unlist()
+
+  # Only keep vars for which we know there is data
+  no_data <- sapply(cc.data::census_vectors_details$vec, \(x) all(is.na(unlist(x))))
+  vars <- vars[!vars %in% cc.data::census_vectors_details$var_code[no_data]]
+
+  time_regex <- "_\\d{4}$"
+
+
+  # Which scales should be recalculated -------------------------------------
+
+  scales_to_interpolate_exc <- exclude_processed_scales(unique_vars = unique_var,
+                                                        scales = scales_to_interpolate,
+                                                        overwrite = overwrite)
 
 
   # Build census data for all possible scales -------------------------------
@@ -51,24 +83,35 @@ ba_census_data <- function(scales_variables_modules,
     census_vectors = census_vectors,
     census_years = census_years,
     crs = crs,
-    skip_scale_interpolation = skip_scale_interpolation
+    DB_table = DB_table,
+    scales_to_interpolate = scales_to_interpolate_exc
   )
 
 
-  # Calculate breaks --------------------------------------------------------
+  # Data tibble -------------------------------------------------------------
 
-  with_breaks <-
-    calculate_breaks(
-      all_scales = census_dat$scales,
-      vars = vars,
-      types = census_dat$types
-    )
+  data_construct(scales_data = census_dat$scales,
+                 unique_var = unique_var,
+                 time_regex = time_regex)
 
 
   # Variables table ---------------------------------------------------------
 
+  # Vectorized check for presence of every scale in cc.data::census_scales
+  interpolated_from_vector <- ifelse(scales_to_interpolate %in% cc.data::census_scales, FALSE, "DA")
+
+  # Combining into a data frame (tibble)
+  interpolated_ref <- tibble::tibble(scale = scales_to_interpolate,
+                                     interpolated_from = interpolated_from_vector)
+
   variables <-
     lapply(unique_var, \(u_var) {
+
+      # THIS IS NOT TRUE. WHICH VARIABLE ISN'T AVAILABLE AT ALL DATES?
+      dates <- vars[grepl(sprintf("%s%s", u_var, time_regex), vars)]
+      dates <- curbcut::s_extract_all(time_regex, dates)
+      dates <- gsub("^_", "", dates)
+
       # Include in place explorer
       pe_include <- if (u_var %in% cc.data::census_vectors_table$parent_vec) FALSE else TRUE
       # Only include larger brackets of age
@@ -100,13 +143,10 @@ ba_census_data <- function(scales_variables_modules,
         ],
         private = FALSE,
         pe_include = pe_include,
-        dates = with_breaks$avail_dates[[u_var]],
-        avail_df = census_dat$avail_df,
-        breaks_q3 = with_breaks$q3_breaks_table[[u_var]],
-        breaks_q5 = with_breaks$q5_breaks_table[[u_var]],
-        region_values = census_dat$region_values[[u_var]],
+        dates = dates,
+        avail_scale = scales_to_interpolate,
         source = "Canadian census",
-        interpolated = census_dat$interpolated_ref,
+        interpolated = interpolated_ref,
         rankings_chr = cc.data::census_vectors_table$rankings_chr[
           cc.data::census_vectors_table$var_code == u_var
         ][[1]]
@@ -128,6 +168,12 @@ ba_census_data <- function(scales_variables_modules,
       variables$explanation_nodet[variables$var_code == "inc_limat"]
     )
 
+
+  # Possible sequences ------------------------------------------------------
+
+  avail_scale_combinations <-
+    get_avail_scale_combinations(scales_sequences = scales_sequences,
+                                 avail_scales = scales_to_interpolate)
 
 
   # Modules table -----------------------------------------------------------
@@ -160,7 +206,6 @@ ba_census_data <- function(scales_variables_modules,
             "ank'>Ville de Montréal. (4 octobre 2021). Métropole Mixte: Les grandes",
             " lignes du règlement.</a>"
           ),
-          regions = census_dat$regions,
           metadata = TRUE,
           dataset_info = paste0(
             "<p>This page presents <a href = 'https://www.statcan",
@@ -171,20 +216,32 @@ ba_census_data <- function(scales_variables_modules,
           dates = census_years,
           main_dropdown_title = NA,
           var_right = variables$var_code[variables$source == "Canadian census" &
-            variables$theme != "Housing" &
-            !is.na(variables$parent_vec)],
-          default_var = "housing_tenant"
+                                           variables$theme != "Housing" &
+                                           !is.na(variables$parent_vec)],
+          default_var = "housing_tenant",
+          avail_scale_combinations = avail_scale_combinations
         )
     } else {
       scales_variables_modules$modules
     }
 
 
+  # Age page and data formatting --------------------------------------------
+
+  svm <-
+    list(
+      scales = scales_variables_modules$scales,
+      variables = variables,
+      modules = modules
+    )
+  if (age_module) {
+    svm <- ba_age(scales_variables_modules = svm, scales_sequences = scales_sequences,
+                  scales_to_interpolate = scales_to_interpolate,
+                  overwrite = overwrite)
+  }
+
+
   # Return ------------------------------------------------------------------
 
-  return(list(
-    scales = with_breaks$scales,
-    variables = variables,
-    modules = modules
-  ))
+  return(svm)
 }

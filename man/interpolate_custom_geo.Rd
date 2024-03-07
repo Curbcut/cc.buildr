@@ -8,25 +8,26 @@ interpolate_custom_geo(
   data,
   all_scales,
   crs,
-  only_regions = names(all_scales),
+  only_scales = names(all_scales),
   average_vars = c(),
   additive_vars = c(),
   name_interpolate_from,
-  construct_for = NULL
+  construct_for = NULL,
+  overwrite = FALSE,
+  time_regex = "_\\\\d{4}$"
 )
 }
 \arguments{
 \item{data}{<\code{data.frame}> Containing any number of column with data,
 and an ID that corresponds to the source scale, e.g. \code{"DA_ID"}.}
 
-\item{all_scales}{<\verb{named list}> A named list of scales. The first level is
-the geo, and the second is the scales.}
+\item{all_scales}{<\verb{named list}> A named list of scales.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32618} for Montreal.}
 
-\item{only_regions}{<\verb{character vector}> All the regions for which data should
-be interpolated and appended. Defults to all the regions in \code{all_scales}.}
+\item{only_scales}{<\verb{character vector}> All the scales for which data should
+be interpolated and appended. Defults to all the scales in \code{all_scales}.}
 
 \item{average_vars}{<\verb{character vector}> Corresponds to the column names
 of the variables that are to be interpolated as an average, like a percentage,
@@ -49,6 +50,13 @@ each of them has a vector character of scales for which the \code{data} should b
 interpolated to. Used by \code{\link[cc.buildr]{interpolate_from_census_geo}}.
 It bypasses the process where \code{interpolate_custom_geo} only interpolates
 for geometries bigger than the data.}
+
+\item{overwrite}{<\code{logical}> Should the data already processed and stored be
+overwriten?}
+
+\item{time_regex}{<\code{character}> Regular expression which corresponds to
+a timeframe, placed at the end of the \code{vars} vector. e.g. \verb{\\\\d\{4\}} for
+years.}
 }
 \value{
 Returns a list of length 4. The first is the same list that is fed in

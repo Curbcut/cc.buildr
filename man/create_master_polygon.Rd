@@ -4,7 +4,7 @@
 \alias{create_master_polygon}
 \title{Create master polygon}
 \usage{
-create_master_polygon(all_regions, crs = NULL)
+create_master_polygon(all_regions, crs = NULL, prov_code = NULL)
 }
 \arguments{
 \item{all_regions}{<\verb{named list}> A name list of all the regions wanted. The value
@@ -18,12 +18,17 @@ assigned, e.g. \code{32618} for Montreal. Optional, defaults to the UTM zone
 retrieved by the centroid of the master_polygon created. If not supplied, it
 is derived from the centroid of all the regions through a simple mathematical
 approach.}
+
+\item{prov_code}{<\code{numeric}> Is the provinde code from cancensus (GeoUID)
+already known? If so, enter it. It can help if the centroid of the master
+polygon of the region is in a lake! Then no province is filtered.}
 }
 \value{
-The output is a named list of length 4: The master polygon,
-all the individual regions present in \code{all_regions}, the crs, and the
+The output is a named list of length 5: The master polygon,
+all the individual regions present in \code{all_regions}, the crs, the
 \code{regions} argument to \code{\link[cancensus]{get_census}} of the province
-in which the centroid of the master polygon falls.
+in which the centroid of the master polygon falls, and the carographic
+DA version.
 }
 \description{
 Create master polygon

@@ -1,34 +1,26 @@
-#' Filter spatially scales in their parent geometry
+#' Consolidate Scales
 #'
-#' Necessary 1. to spatially filter scales in their parent geometry, 2. to update
-#' x_ID and name_2 for non-census scales, and 3. to update x_ID and name_2
-#' after a census scale has been split, e.g. with boroughs in the City of
-#' Montreal.
+#' This function takes all the scales and ensure uniformity. It also notes,
+#' using the sequences of scales, all the IDs of scales above them. It also
+#' calculates all the features which are part of regions.
 #'
-#' @param all_tables <`named list`> A named list of character. The names are
-#' the \code{region} e.g. CMA, island, city, ... and the vectors are all the scales
-#' available in these geo e.g. CSD, CT, DA, building, ...
-#' @param all_scales <`named list`> A named list containing all the dataframes
-#' present in the \code{all_tables} list.
-#' @param regions <`named list`> A named list of all the unioned geometry
-#' (the names of \code{all_tables}). The second element of the list returned
-#' by \code{\link[cc.buildr]{create_master_polygon}}.
-#' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
-#' \code{32618} for Montreal.
-#' @param match_with_centroids_regions <`character vector`> As some of the scales
-#' now span over water, the `sf::st_point_on_surface` method of matching
-#' which scales fit in which scales above (to attach CT_ID to DAs) doesn't necessarily work.
-#' Centraide's zone do not span on water, and so a CT with its centroid in water
-#' won't get matched to a Centraide zone. The calculation is much more intensive, so
-#' this argument is used to bypass the new method. E.g. `grid` ONLY span land, and
-#' all bottom scales of grid fit perfectly in the upper scales. In this case,
-#' use `match_with_centroids_regions = "grid"` to speed up the process. Defaults
-#' to NULL.
+#' @param scales_sequences <`list`> A list of scales sequences representing the
+#' hierarchical ordering of scales on an auto-zoom.
+#' @param all_scales <`named list`> A list of data frames corresponding to each
+#' scale.
+#' @param regions <`named list`> A list or unioned polygons of regions for which the
+#' consolidated data needs to be processed.
+#' @param crs <`character`> A Coordinate Reference System.
 #'
-#' @return A list of the same length as there are in \code{all_tables}, containing
-#' spatially filtered dataframes with updated name_2 and IDs if needed.
+#' @return A list containing:
+#'   \itemize{
+#'     \item \code{scales}: A modified list of all scales with corrected identifiers.
+#'     \item \code{for_region_dict_scales}: A list of scale IDs for each region,
+#'     spatially filtered based on 1% threshold.
+#'   }
 #' @export
-consolidate_scales <- function(all_tables, all_scales, regions, crs, match_with_centroids_regions = NULL) {
+consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
+
   ## Make sure IDs are unique ------------------------------------------------
 
   subset_ID <- sapply(all_scales, `[[`, "ID")
@@ -46,8 +38,9 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs, match_with_
   ## Add own ID to scales, and rename census ---------------------------------
 
   uniform_IDs <-
-    future.apply::future_mapply(
+    mapply(
       \(scale_name, scale_df) {
+
         # For all column names that end with `UID`, change it to `_ID`
         if (sum(grepl("UID$", names(scale_df))) > 0) {
           names(scale_df)[grepl("UID$", names(scale_df))] <-
@@ -59,209 +52,153 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs, match_with_
 
         # Reorder columns
         if (!"name_2" %in% names(scale_df)) scale_df$name_2 <- NA
-        names_ids <-
-          c("ID", "name", "name_2", names(scale_df)[grepl("_ID$", names(scale_df))])
-        rest_cols <- names(scale_df)[!names(scale_df) %in% names_ids]
-        sf::st_as_sf(scale_df)[, c(names_ids, rest_cols)]
+
+        reorder_columns(scale_df)
       }, names(all_scales), all_scales,
-      SIMPLIFY = FALSE, USE.NAMES = TRUE,
-      future.seed = TRUE
-    )
+      SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
 
-  ## Filter spatially the scales per their geo -------------------------------
+  # Add all *_ID ------------------------------------------------------------
 
-  spatially_filtered <-
-    future.apply::future_mapply(
-      \(geo, scales) {
-        sapply(scales, \(scale) {
-          if (scale %in% c("street", "building")) {
-            return(uniform_IDs[[scale]])
-          }
+  scales <- lapply(uniform_IDs, sf::st_transform, crs)
 
-          unioned_geo <- sf::st_transform(regions[[geo]], crs)
-          df <- sf::st_transform(uniform_IDs[[scale]], crs)
+  for (seq in scales_sequences) {
+    for (scale_name in seq) {
+      # Skip first scale
+      if (scale_name == seq[[1]]) next
+      # Skip small scales
+      if (scale_name %in% c("street", "building")) next
+      # SKIP GRIDS
+      if (grepl("^grd\\d", scale_name)) next
 
-          # Be more strict on the spatial filtering of the first level.
-          out <- if (identical(scales[[1]], scale)) {
-            spatial_filtering(
-              df = df,
-              crs = crs,
-              master_polygon = unioned_geo,
-              ID_col = "ID",
-              area_threshold = 0.20
-            )
-          } else {
-            # Filter spatially with the unioned geo.
-            spatial_filtering(
-              df = df,
-              crs = crs,
-              master_polygon = unioned_geo,
-              ID_col = "ID",
-              area_threshold = 0.01
-            )
-          }
 
-          out
-        }, simplify = FALSE, USE.NAMES = TRUE)
-      }, names(all_tables), all_tables,
-      SIMPLIFY = FALSE, USE.NAMES = TRUE,
-      future.seed = TRUE
-    )
+      # Grab the `df` in which to add the *_ID
+      lower <- scales[[scale_name]]
 
-  spatially_filtered <-
-    map_over_scales(
-      parallel = FALSE,
-      all_scales = spatially_filtered,
-      fun = \(geo = geo, scales = scales,
-        scale_name = scale_name, scale_df = scale_df) {
-        if (scale_name %in% c("street", "building")) {
-          return(scale_df[scale_df$DA_ID %in% scales$DA$DA_ID, ])
+      # Get which scales the _ID should be added to
+      higher <- seq[1:(which(scale_name == seq) - 1)]
+
+      # Loop over all the higher scale to apply the *_ID
+      for (hi in higher) {
+        # If the *_ID is already present, skip!
+        hi_df <- scales[[hi]]
+        id_name <- sprintf("%s_ID", hi)
+        if (id_name %in% names(lower)) next
+
+        # Only keep the necessary piece to bind
+        hi_df <- hi_df["ID"]
+        names(hi_df)[1] <- id_name
+
+        # Transfer the lower `df` to points and perform a spatial join
+        df_points_on_surface <- suppressWarnings(sf::st_point_on_surface(lower))
+        merged_centroids <- sf::st_join(df_points_on_surface, hi_df)
+
+        # For the NA result, spatial filter
+        missing <- merged_centroids[is.na(merged_centroids[[id_name]]), ]
+        if (nrow(missing) > 0) {
+          id_fit <- sapply(seq_along(missing$geometry),
+                           \(r) get_largest_intersection(missing[r, ], hi_df),
+                           simplify = TRUE, USE.NAMES = FALSE)
+
+          # Add to the missing *_ID the ID of the largest intersection
+          merged_centroids[[id_name]][is.na(merged_centroids[[id_name]])] <-
+            unlist(id_fit) |> unname()
         }
 
+        # Duplicates?
+        merged <- sf::st_drop_geometry(merged_centroids)
+        merged <- merged[!grepl("geometry", names(merged))]
+        merged_split <- split(merged, merged$ID)
+        merged_split <- lapply(merged_split, \(x) {
+          x[[id_name]] <- list(x[[id_name]])
+          out <- unique(x)
+          if (nrow(out) > 1)
+            stop(sprintf(paste0("Duplicates in the %s column for table %s ",
+                                "after spatial join."), id_name, scale_name))
+          return(out)
+        })
+
+        out <- data.table::rbindlist(merged_split) |> tibble::as_tibble()
+
+        # Revert to full geometry
+        lower_cols <- c("ID", "geometry", "geometry_digital")
+        out <- merge(out,
+                     lower[, names(lower) %in% lower_cols],
+                     by = "ID")
+        out <- tibble::as_tibble(out)
+        out <- sf::st_as_sf(out)
+
+        # Apply to the scale
+        scales[[scale_name]] <- out
+
+      }
+
+    }
+  }
+
+  scales_merged_ids <- scales
+
+  # Add an area column for every scale --------------------------------------
+
+  scales <- mapply(
+    \(scale_name, scale_df) {
+      if (scale_name %in% c("street", "building")) {
         return(scale_df)
       }
-    )
+      # SKIP GRIDS
+      if (grepl("^grd\\d", scale_name)) return(scale_df)
+
+      scale_df$area <- get_area(scale_df)
+      scale_df
+    }, names(scales), scales,
+    SIMPLIFY = FALSE)
 
 
-  ## Update name_2 and IDs for all cases (catch-all cases, like split scales) ----
+  # Return for every region the ID of ALL scales ----------------------------
 
-  out <-
-    map_over_scales(
-      parallel = TRUE,
-      all_scales = spatially_filtered,
-      fun = \(geo = geo, scales = scales,
-        scale_name = scale_name, scale_df = scale_df) {
-        if (scale_name %in% c("street", "building")) {
-          # If street or building is missing an ID:
-          above_levels <- names(scales)[2:(which(names(scales) == scale_name) - 1)]
-          other_ids <- lapply(above_levels, \(above_lvl) {
-            if (paste0(above_lvl, "_ID") %in% names(scale_df)) {
-              return()
-            }
+  out_for_dict <- lapply(regions, \(region) {
 
-            above_lvl_df <- scales[[above_lvl]]
-            above_lvl_df <- above_lvl_df[paste0(above_lvl, "_ID")]
-            above_lvl_df <- sf::st_transform(above_lvl_df, crs)
-            df <- sf::st_transform(scale_df, crs)
+    # Transform
+    region <- sf::st_transform(region, crs)
 
-            df_points_on_surface <-
-              suppressWarnings(sf::st_point_on_surface(df))
-            merged_centroids <- sf::st_join(df_points_on_surface, above_lvl_df)
+    # Take out too small scales, like street and building which would make this function
+    # last for hours.
+    take_out_small <- scales[!names(scales) %in% c("street", "building")]
 
-            sf::st_drop_geometry(merged_centroids[c("ID", paste0(above_lvl, "_ID"))])
-          })
-          merge_ <- function(x, y) merge(x, y, by = "ID")
-          out <- Reduce(merge_, other_ids[!sapply(other_ids, is.null)], init = scale_df)
+    # Other technique for grid cells (simple spatial filtering)
+    grid_cells <- take_out_small[grepl("^grd\\d", names(take_out_small))]
+    ids_grids <- lapply(grid_cells, \(scale_df) {
+      sf::st_filter(scale_df, region)$ID
+    })
+    names(ids_grids) <- names(grid_cells)
 
-          return(out)
-        }
-        if (scale_name == names(scales)[1]) {
-          return(scale_df)
-        }
+    # Other technique for grid cells (simple spatial filtering)
+    take_out_small <- take_out_small[!grepl("^grd\\d", names(take_out_small))]
 
-        top_level <- sf::st_transform(scales[[1]], crs)
-        df <- sf::st_transform(scale_df, crs)
+    # Spatialy filter scales that have 10% of their content inside of x region.
+    ids <- lapply(take_out_small, \(scale_df) {
+      spatial_filtering(
+        df = scale_df,
+        crs = crs,
+        master_polygon = region,
+        ID_col = "ID",
+        area_threshold = 0.1
+      )$ID
+    })
 
-        # Join name_2 and ID of the top level
-        get_largest_intersection <- function(x, other) {
-          intersections <- sf::st_intersection(x, other)
-          areas <- sf::st_area(intersections)
-          index <- which.max(areas)
-          out <- sf::st_drop_geometry(intersections)[index, names(other)[names(other) != "geometry"]]
-          if (nrow(out) == 0) {
-            dist <- sf::st_distance(x, other)
-            index <- which.min(dist)
-            out <- sf::st_drop_geometry(other)[index, ]
-          }
-          if (nrow(out) == 0) {
-            out <- tibble::add_row(out)
-            for (n in names(other)) {
-              out[[n]] <- NA
-            }
-          }
-
-          out
-        }
-
-        top_level <- top_level[, c("name", paste0(names(scales[1]), "_ID"))]
-        names(top_level)[1] <- "name_2"
-        df <- df[, !names(df) %in% names(top_level)]
-
-        if (geo %in% match_with_centroids_regions) {
-          df_points_on_surface <-
-            suppressWarnings(sf::st_point_on_surface(df))
-          merged_centroids <- sf::st_join(df_points_on_surface, top_level)
-          out <- merge(sf::st_drop_geometry(merged_centroids),
-            df[, c("ID", "geometry")],
-            by = "ID"
-          )
-        } else {
-          which_fit <- lapply(seq_along(df$geometry), \(r) get_largest_intersection(df[r, ], top_level))
-          which_fit <- Reduce(rbind, which_fit)
-          out <- cbind(df, which_fit)
-          out <- tibble::as_tibble(out)
-          out <- sf::st_as_sf(out)
-        }
+    # Rename to send, for each region, a named list of all scales with the IDs
+    # that fall within the region.
+    names(ids) <- names(take_out_small)
 
 
-        # Add any missing ID in the scales (apart from the top_level already
-        # taken care of)
-        above_levels <- names(scales)[2:(which(names(scales) == scale_name) - 1)]
-        other_ids <- lapply(above_levels, \(above_lvl) {
-          if (paste0(above_lvl, "_ID") %in% names(out)) {
-            return()
-          }
+    return(c(ids_grids, ids))
 
-          above_lvl_df <- scales[[above_lvl]]
-          above_lvl_df <- above_lvl_df[paste0(above_lvl, "_ID")]
-          df <- out
-
-          df_points_on_surface <-
-            suppressWarnings(sf::st_point_on_surface(df))
-          merged_centroids <- sf::st_join(df_points_on_surface, above_lvl_df)
-
-          sf::st_drop_geometry(merged_centroids[c("ID", paste0(above_lvl, "_ID"))])
-        })
-        merge_ <- function(x, y) merge(x, y, by = "ID")
-        out <- Reduce(merge_, other_ids[!sapply(other_ids, is.null)], init = out)
-
-        # Return
-        out
-      }
-    )
-
-  # + Add DA information to smaller scales (street and building)
-  out <-
-    map_over_scales(
-      all_scales = out,
-      fun = \(geo = geo, scales = scales,
-        scale_name = scale_name, scale_df = scale_df) {
-        if (!scale_name %in% c("street", "building")) {
-          return(scale_df)
-        }
-
-        scale_above_building <-
-          names(scales)[which(names(scales) == scale_name) - 1]
-
-        das <- sf::st_drop_geometry(scales[[scale_above_building]])
-        ids <- das[, c("name_2", names(das)[grepl("_ID$", names(das))])]
-        df <- scale_df[, !names(scale_df) %in% names(ids)[
-          names(ids) != paste0(scale_above_building, "_ID")
-        ]]
-
-        merge(df, ids, by = paste0(scale_above_building, "_ID"))
-      }
-    )
+  })
 
 
   ## Get the CRS back to WGS 84 ---------------------------------------------
 
-  out <-
-    map_over_scales(
-      all_scales = out,
-      fun = \(scale_df = scale_df, ...) sf::st_transform(scale_df, 4326)
-    )
+  out <- lapply(scales, sf::st_transform, 4326)
 
 
   ## Post-processing (make sure all geometry types are right) ---------------
@@ -272,11 +209,9 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs, match_with_
   ## Add a centroid vector column -------------------------------------------
 
   out <-
-    map_over_scales(
-      all_scales = out,
-      fun = \(scale_df = scale_df, scale_name = scale_name, ...) {
+    mapply(
+      \(scale_name, scale_df) {
         df <- sf::st_make_valid(scale_df)
-
         if (scale_name %in% c("street", "building")) {
           return(df)
         }
@@ -287,12 +222,13 @@ consolidate_scales <- function(all_tables, all_scales, regions, crs, match_with_
         ))
         centroids <- lapply(centroids, as.vector)
         df$centroid <- centroids
-        df
-      }
-    )
+
+        reorder_columns(df)
+      }, names(out), out,
+      SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
 
   # Return the final output -------------------------------------------------
 
-  return(out)
+  return(list(scales = out, for_region_dict_scales = out_for_dict))
 }

@@ -4,18 +4,13 @@
 \alias{save_all_scales_qs}
 \title{Save all scale tables in QS format}
 \usage{
-save_all_scales_qs(data_folder = "data/", all_scales, variables)
+save_all_scales_qs(scales_dictionary, data_folder = "data/")
 }
 \arguments{
+\item{scales_dictionary}{<\verb{named list}> Dictionary of scales}
+
 \item{data_folder}{<\code{character}> Where the \code{.qs} files should be
 written to. Defaults to \verb{data/}.}
-
-\item{all_scales}{<\verb{named list}> A named list of sf data.frame
-containing all scales listed with their regions, normally
-\code{scales_variables_modules$scales}.}
-
-\item{variables}{<\code{data.frame}> The \code{variables} data.frame, normally
-\code{scales_variables_modules$variables}.}
 }
 \value{
 An invisible NULL value.

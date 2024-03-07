@@ -5,7 +5,6 @@
 \title{Pre-process all the possible Rmds}
 \usage{
 placeex_main_card_rmd(
-  scales_variables_modules,
   pe_main_card_data,
   regions_dictionary,
   scales_dictionary,
@@ -15,14 +14,11 @@ placeex_main_card_rmd(
   rev_geocode_from_localhost = TRUE,
   check_bslib_version = TRUE,
   overwrite = TRUE,
-  skip_scales = c("building", "street")
+  scales_sequences,
+  full_data_path = sprintf("\%s/data/", getwd())
 )
 }
 \arguments{
-\item{scales_variables_modules}{<\verb{named list}> A list of length three.
-The first is all the scales, the second is the variables table, and the
-third is the modules table.}
-
 \item{pe_main_card_data}{<\code{list}> Data and dictionary necessary to knit the
 rmds. The output of \code{\link[cc.buildr]{placeex_main_card_data}}.}
 
@@ -56,9 +52,6 @@ Set \code{FALSE} to continue with the version of \code{bslib} on your system.}
 
 \item{overwrite}{<\code{logical}> Should the .html files be overwritten? Defaults
 to \code{TRUE}.}
-
-\item{skip_scales}{<\verb{character vector}> Scales for which place explorer documents
-should not be created.}
 }
 \value{
 Returns nothing if successful. All place explorer possibilities are

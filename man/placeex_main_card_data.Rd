@@ -5,17 +5,17 @@
 \title{Produce the place explorer main card}
 \usage{
 placeex_main_card_data(
-  scales,
+  scales_dictionary,
   DA_table,
   region_DA_IDs,
   crs,
-  regions_dictionary
+  regions_dictionary,
+  ignore_scales = c("building", "street", "grd30", "grd60", "grd120", "grd300", "grd600"),
+  first_scales
 )
 }
 \arguments{
-\item{scales}{<\code{list}> Lists of spatial features dataframes with regions and
-scales filled with at minimum census and alp data. Usually is
-\code{scales_variables_modules$scales}.}
+\item{scales_dictionary}{<\code{list}> Scales dictionary}
 
 \item{DA_table}{<\verb{sf data.frame}> Tables containing all the dissemination areas
 of the zone under study. Usually is \code{census_scales$DA}}
@@ -29,6 +29,9 @@ identifiers in the zone under study. Usually is \code{census_scales$DA$ID}}
 \item{regions_dictionary}{<\code{data.frame}> The regions dictionary built using
 \code{\link[cc.buildr]{regions_dictionary}}. Will be used to filter out scales
 for which data should not be calculated.}
+
+\item{first_scales}{<\verb{character vector}> Scales for which place explorer should
+be calculated}
 }
 \value{
 Lists containing all the main card indicators. Sub lists of regions

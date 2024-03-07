@@ -8,7 +8,8 @@ accessibility_add_intervals(
   point_per_DA,
   region_DA_IDs = region_DA_IDs,
   traveltimes,
-  time_intervals = which(1:60\%\%5 == 0)
+  time_intervals = which(1:60\%\%5 == 0),
+  DA_DB = "DA"
 )
 }
 \arguments{
@@ -24,6 +25,8 @@ of \code{\link[cc.buildr]{accessibility_get_travel_times}}.}
 
 \item{time_intervals}{A vector with the time intervals to use (in
 minutes). Defaults to \code{c(5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60)}.}
+
+\item{DA_DB}{<\code{character}> Which of DA or DB should be used to calculate accessibility.}
 }
 \value{
 A dataframe containing the number of accessible amenities per

@@ -8,6 +8,7 @@ ba_var(
   data,
   scales_variables_modules,
   base_scale,
+  scales_sequences,
   weight_by = "households",
   crs,
   additive_vars = c(),
@@ -33,7 +34,8 @@ ba_var(
   module_dataset_info = NULL,
   module_dates = NULL,
   module_main_dropdown_title = NULL,
-  module_var_right = NULL
+  module_var_right = NULL,
+  overwrite = FALSE
 )
 }
 \arguments{
@@ -48,6 +50,9 @@ third is the modules table.}
 \item{base_scale}{<\code{character}> The denominator for which data should be
 interpolated. Defaults to \code{households}. The other option is \code{population}.
 Directly fed to \code{\link[cc.buildr]{interpolate_from_census_geo}}}
+
+\item{scales_sequences}{<\code{list}> A list of scales sequences representing the
+hierarchical ordering of scales on an auto-zoom.}
 
 \item{weight_by}{<\code{character}> The denominator for which data should be
 interpolated. Defaults to \code{households}. The other option is \code{population}.
@@ -105,6 +110,9 @@ years.}
 \item{module_main_dropdown_title}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 
 \item{module_var_right}{<\verb{character vector}> Optional. See \code{\link[cc.buildr]{add_module}}.}
+
+\item{overwrite}{<\code{logical}> Should the data already processed and stored be
+overwriten?}
 }
 \value{
 A list of length 3, similar to the one fed to

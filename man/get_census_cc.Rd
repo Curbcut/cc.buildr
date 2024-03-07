@@ -9,11 +9,11 @@ get_census_cc(
   census_dataset,
   regions,
   level,
-  var_select = c(CTUID = "CT_UID", CSDUID = "CSD_UID", name = "name", population =
-    "Population", households = "Households"),
+  var_select = c(DAUID = "DA_UID", CTUID = "CT_UID", CSDUID = "CSD_UID", name = "name",
+    population = "Population", households = "Households", dwellings = "Dwellings"),
   crs,
   format = TRUE,
-  switch_full_geos = FALSE,
+  cartographic = FALSE,
   area_threshold = 0.05
 )
 }
@@ -43,8 +43,8 @@ to \code{c("CTUID" = "CT_UID", "CSDUID" = "CSD_UID", "name" = "name",
 \item{format}{<\code{logical}> Indicating if the census call should be filter
 by the <\code{master_polygon}> or not.}
 
-\item{switch_full_geos}{<\code{logical}> Should the census geometries get switched
-to the full one (the one which spans over water)?}
+\item{cartographic}{<\code{logical}> Should the census geometries get switched
+to the cartographic one (the one which spans over water)?}
 
 \item{area_threshold}{<\code{numeric}> How much of a feature should be present
 in the master polygon to include it in the dataset? Defaults to 0.05. In

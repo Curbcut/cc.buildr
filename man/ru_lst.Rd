@@ -4,7 +4,13 @@
 \alias{ru_lst}
 \title{Add a ready to use Land Surface Temperature data and module}
 \usage{
-ru_lst(scales_variables_modules, region_DA_IDs, crs)
+ru_lst(
+  scales_variables_modules,
+  region_DA_IDs,
+  scales_sequences,
+  crs,
+  overwrite = FALSE
+)
 }
 \arguments{
 \item{scales_variables_modules}{<\verb{named list}> A list of length three.
@@ -15,8 +21,14 @@ third is the modules table.}
 DA IDs present in the region. Only those will be extracted from the database
 to do interpolation.}
 
+\item{scales_sequences}{<\code{list}> A list of scales sequences representing the
+hierarchical ordering of scales on an auto-zoom.}
+
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}
+
+\item{overwrite}{<\code{logical}> Should the data already processed and stored be
+overwriten?}
 }
 \value{
 A list of length 3, similar to the one fed to

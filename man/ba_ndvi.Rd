@@ -6,25 +6,18 @@
 \usage{
 ba_ndvi(
   scales_variables_modules,
-  master_polygon,
-  all_scales,
   data_output_path = "dev/data/ndvi/",
   years = cc.data::ndvi_years(),
   skip_scales = NULL,
-  crs
+  scales_sequences,
+  crs,
+  overwrite = FALSE
 )
 }
 \arguments{
 \item{scales_variables_modules}{<\verb{named list}> A list of length three.
 The first is all the scales, the second is the variables table, and the
 third is the modules table.}
-
-\item{master_polygon}{<\code{sfc_MULTIPOLYGON}> Unioned multipolygon of all the boundary
-for which NDVI information should be retrieved.}
-
-\item{all_scales}{<\verb{named list}> Named list of dataframed of all available scales,
-previously to consolidate them. The 30x30 raster data will be intersected once for
-every scale, and then left joined to the scales in \code{scales_variables_modules}.}
 
 \item{data_output_path}{<\code{character}> String representing the directory path
 to store the NDVI data (default is "dev/data/ndvi/").}
@@ -35,8 +28,14 @@ to store the NDVI data (default is "dev/data/ndvi/").}
 \item{skip_scales}{<\verb{character vector}> Scales to be skipped in the analysis.
 Already skipped scales are building and street. Defaults to NULL.}
 
+\item{scales_sequences}{<\code{list}> A list of scales sequences representing the
+hierarchical ordering of scales on an auto-zoom.}
+
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}
+
+\item{overwrite}{<\code{logical}> Should the data already precessed and stored be
+overwriten?}
 }
 \value{
 A list of length 3, similar to the one fed to

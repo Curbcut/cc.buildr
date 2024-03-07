@@ -8,153 +8,149 @@
 #' @param scales_variables_modules <`named list`> A list of length three.
 #' The first is all the scales, the second is the variables table, and the
 #' third is the modules table.
-#' @param master_polygon <`sfc_MULTIPOLYGON`> Unioned multipolygon of all the boundary
-#' for which NDVI information should be retrieved.
-#' @param all_scales <`named list`> Named list of dataframed of all available scales,
-#' previously to consolidate them. The 30x30 raster data will be intersected once for
-#' every scale, and then left joined to the scales in `scales_variables_modules`.
 #' @param data_output_path <`character`> String representing the directory path
 #' to store the NDVI data (default is "dev/data/ndvi/").
 #' @param years <`numeric vector`> Years for which to build the data. Defaults to
 #' `cc.data::ndvi_years()`.
 #' @param skip_scales <`character vector`> Scales to be skipped in the analysis.
 #' Already skipped scales are building and street. Defaults to NULL.
+#' @param scales_sequences <`list`> A list of scales sequences representing the
+#' hierarchical ordering of scales on an auto-zoom.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
+#' @param overwrite <`logical`> Should the data already precessed and stored be
+#' overwriten?
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with the NDVI variable added, its addition
 #' in the variables table and the module table.
 #' @export
 ba_ndvi <- function(scales_variables_modules,
-                    master_polygon, all_scales,
                     data_output_path = "dev/data/ndvi/",
                     years = cc.data::ndvi_years(),
-                    skip_scales = NULL, crs) {
-  # Create the folders if they don't exist
-  dir.create(data_output_path) |> suppressWarnings()
-  tmp_folder <- paste0(data_output_path, "tmp/")
-  dir.create(tmp_folder) |> suppressWarnings()
+                    skip_scales = NULL, scales_sequences, crs,
+                    overwrite = FALSE) {
 
   # Scales to go over
   skip_scales <- c(skip_scales, "building", "street")
-  scales <- all_scales[!names(all_scales) %in% skip_scales]
+  scales <- scales_variables_modules$scales[!names(scales_variables_modules$scales) %in% skip_scales]
+  scales <- lapply(scales, `[`, "ID")
 
+  # Keep track of all the scales that are supposed to have data
+  avail_scale <- names(scales)
 
-  # Get NDVI data saved on disk ---------------------------------------------
-
-  possible_ndvi_years <- years
-
-  cc.data::ndvi_import_from_masterpolygon(master_polygon,
-    years = possible_ndvi_years,
-    output_path = data_output_path,
-    temp_folder = tmp_folder,
-    overwrite = FALSE,
-    filter_cloudy_tiles = TRUE
-  )
+  # Remove from the processing scales that ALREADY have the data processed and stored
+  scales <- scales[exclude_processed_scales("ndvi", scales = names(scales),
+                                            overwrite = overwrite)]
 
 
   # Add it to all the scales ------------------------------------------------
 
-  # Is the data file already calculated?
-  if (!"data.qs" %in% list.files(data_output_path)) {
+  if (length(scales) != 0) {
+
     scales <- lapply(scales, sf::st_transform, crs)
     all_files <- list.files(data_output_path, recursive = TRUE, full.names = TRUE)
 
-    data <- lapply(as.character(possible_ndvi_years), \(year) {
-      # Load all the data for that year
-      years_data <- all_files[grepl(sprintf("ndvi/%s", year), all_files)]
+    grd <- qs::qread(sprintf("%sgrd30.qs", data_output_path))
+    grd <- sf::st_centroid(grd)
+    grd <- sf::st_transform(grd, crs)
 
-      data <- lapply(years_data, qs::qread)
-      data <- lapply(data, sf::st_transform, crs)
-      data <- Reduce(rbind, data)
+    scales_to_add_vals <- scales
 
-      lapply(scales, \(scale) {
-        intersections <- sf::st_intersects(scale, data)
-        col_name <- sprintf("ndvi_%s", year)
-        scale[[col_name]] <-
-          sapply(intersections, \(int) mean(data$ndvi[int], na.rm = TRUE))
+    # Check if 'data.qs' file exists
+    data_file_path <- sprintf("%sdata.qs", data_output_path)
+    if (file.exists(data_file_path)) {
+      # Read the existing data
+      existing_data <- qs::qread(data_file_path)
 
-        return(scale[c("ID", col_name)])
-      })
-    })
-    names(data) <- possible_ndvi_years
-    qs::qsave(data, file = sprintf("%sdata.qs", data_output_path))
-  }
+      # Extract names of scales already processed
+      existing_scales <- names(existing_data)
 
-  data <- qs::qread(sprintf("%sdata.qs", data_output_path))
-  # Take out geometry
-  data <- lapply(data, \(yr_l) {
-    lapply(yr_l, \(df) {
-      df <- sf::st_drop_geometry(df)
-      is.na(df[[2]]) <- NA
-      df
-    })
-  })
-  # Get all scales to one df with the multiple years
-  avail_scales <- names(data[[1]])
-  data <- sapply(avail_scales, \(sc) {
-    out <- lapply(data, \(yr_l) {
-      sf::st_drop_geometry(yr_l[[sc]])
-    })
-    Reduce(\(x, y) merge(x, y, by = "ID", all = TRUE), out)
-  }, simplify = FALSE, USE.NAMES = TRUE)
-
-  data <- map_over_scales(
-    scales_variables_modules$scales,
-    fun = \(geo = geo, scales = scales, scale_df = scale_df,
-      scale_name = scale_name) {
-      if (!scale_name %in% avail_scales) {
-        return(scale_df)
-      }
-      scale_df <- scale_df[!grepl("ndvi_", names(scale_df))]
-      merge(scale_df, data[[scale_name]], by = "ID")
+      # Filter out scales that are already processed
+      scales <- scales[!names(scales) %in% existing_scales]
     }
-  )
 
+    # Applying a function to each element in 'scales'
+    scales_ndvi_dat <- sapply(scales, function(scale) {
+      # Extracting the 'ID' column from 'scaled' dataframe
+      scale <- scale["ID"]
 
+      # Calculating intersections between 'scale' and 'grd' using sf package
+      intersections <- sf::st_intersects(scale, grd)
 
-  # Calculate breaks --------------------------------------------------------
+      # Processing each intersection
+      processed_intersections <- lapply(intersections, function(intersection) {
 
-  all_vars <- sprintf("ndvi_%s", possible_ndvi_years)
+        # Subsetting 'grd' for the intersected indices
+        fits <- grd[intersection, ]
 
-  with_breaks <-
-    calculate_breaks(
-      all_scales = data,
-      vars = all_vars,
-      types = list(ndvi = "ind"),
-      use_quintiles = TRUE
-    )
+        # Finding NDVI column names matching the specific pattern and years
+        ndvi_cols <- grep("ndvi_\\d{4}", names(fits), value = TRUE)
+        ndvi_cols <- grep(paste0(years, collapse = "|"), ndvi_cols, value = TRUE)
 
+        # Initializing an empty list to store results
+        results <- list()
 
-  # Calculate region values -------------------------------------------------
+        # Return NA if no intersection
+        if (length(intersection) == 0) return({
+          for (n in ndvi_cols) {
+            results[[n]] <- NA_real_
+          }
+          tibble::as_tibble(results)
+        })
 
-  region_vals <-
-    variables_get_region_vals(
-      scales = data,
-      vars = "ndvi",
-      types = list(ndvi = "ind"),
-      breaks = with_breaks$q5_breaks_table,
-      parent_strings = list(ndvi = "households")
-    )
+        # Calculating mean for each NDVI column, ignoring NA values
+        for (n in ndvi_cols) {
+          results[[n]] <- mean(fits[[n]], na.rm = TRUE)
+          # Assigning NA_real_ for NA results for consistency
+          if (is.na(results[[n]])) results[[n]] <- NA_real_
+        }
 
+        # Converting the results list to a tibble
+        tibble::as_tibble(results)
+      })
+
+      # Combining the processed data with the original 'scale' data (minus geometry)
+      # and converting the result to a tibble
+      p_int <- data.table::rbindlist(processed_intersections)
+      final_output <- cbind(sf::st_drop_geometry(scale), p_int)
+      tibble::as_tibble(final_output)
+    }, simplify = FALSE, USE.NAMES = TRUE)
+
+    # Combine new data with existing data
+    if (exists("existing_data")) {
+      scales_ndvi_dat <- c(existing_data, scales_ndvi_dat)
+    }
+
+    # Save the updated data
+    qs::qsave(scales_ndvi_dat, data_file_path)
+
+    # Add the grids to scales_ndvi_dat
+    grd_dat <- sapply(c("grd30", "grd60", "grd120", "grd300"), \(x) {
+      qs::qread(sprintf("%s%s.qs", data_output_path, x))
+    }, simplify = FALSE, USE.NAMES = TRUE)
+    scales_ndvi_dat <- c(scales_ndvi_dat, grd_dat)
+
+    # Apply to our scales
+    interpolated <- mapply(\(scale_name, scale_df) {
+      if (!scale_name %in% names(scales_ndvi_dat)) return(scale_df)
+      merge(scale_df, scales_ndvi_dat[[scale_name]], by = "ID", all.x = TRUE)
+    }, names(scales_variables_modules$scales), scales_variables_modules$scales)
+
+    # Data tibble -------------------------------------------------------------
+
+    time_regex <- "_\\d{4}$"
+    data_construct(scales_data = interpolated,
+                   unique_var = "ndvi",
+                   time_regex = time_regex)
+
+  }
 
   # Variables table ---------------------------------------------------------
 
-  avail_df <- map_over_scales(data,
-    fun = \(geo = geo, scales = scales, scale_df = scale_df,
-      scale_name = scale_name) {
-      if (sum(grepl("ndvi", names(scale_df))) == 0) {
-        return(NULL)
-      }
-      sprintf("%s_%s", geo, scale_name)
-    }
-  ) |> unlist()
-  avail_df <- unname(avail_df)
-
-  interpolated <- tibble::tibble(
-    df = avail_df,
-    interpolated_from = rep(FALSE, length(avail_df))
+  interpolated_ref <- tibble::tibble(
+    scale = avail_scale,
+    interpolated_from = rep("rasters (30m*30m)", length(avail_scale))
   )
 
 
@@ -171,29 +167,25 @@ ba_ndvi <- function(scales_variables_modules,
       theme = "Ecology",
       private = FALSE,
       pe_include = TRUE,
-      region_values = region_vals$ndvi,
-      dates = with_breaks$avail_dates$ndvi,
-      avail_df = avail_df,
-      breaks_q3 = with_breaks$q3_breaks_table$ndvi,
-      breaks_q5 = with_breaks$q5_breaks_table$ndvi,
+      dates = years,
+      avail_scale = avail_scale,
       source = "Curbcut",
-      interpolated = interpolated
+      interpolated = interpolated_ref,
+      breaks_q5 = c(0, 0.2, 0.4, 0.6, 0.8, 1)
     )
 
 
+  # Possible sequences ------------------------------------------------------
+
+  avail_scale_combinations <-
+    get_avail_scale_combinations(scales_sequences = scales_sequences,
+                                 avail_scales = avail_scale)
+  grds <- avail_scale_combinations[grepl("^grd", avail_scale_combinations)]
+  no_grds <- avail_scale_combinations[!grepl("^grd", avail_scale_combinations)]
+  avail_scale_combinations <-c(grds, no_grds)
+
+
   # Modules table -----------------------------------------------------------
-
-  regions <- map_over_scales(data,
-    fun = \(geo = geo, scales = scales, scale_df = scale_df,
-      scale_name = scale_name) {
-      if (sum(grepl("ndvi", names(scale_df))) == 0) {
-        return(NULL)
-      }
-      geo
-    }
-  ) |> unlist()
-  regions <- unname(regions) |> unique()
-
 
   modules <-
     scales_variables_modules$modules |>
@@ -215,7 +207,6 @@ ba_ndvi <- function(scales_variables_modules,
         "Sentinel-2 (HLS) data, NDVI represents average vegetation during ",
         "the growing season (May 1st through August 31st)."
       ),
-      regions = regions,
       metadata = TRUE,
       dataset_info = paste0(
         "<p>The NDVI data on this page is derived from the HLSS30.v2.0 and HLSL30.v2.0 satellites, ",
@@ -237,19 +228,20 @@ ba_ndvi <- function(scales_variables_modules,
         "trends, essential for urban sustainability studies and environmental justice analyses.</p>"
       ),
       var_left = c("ndvi"),
-      dates = possible_ndvi_years,
+      dates = years,
       var_right = scales_variables_modules$variables$var_code[
         scales_variables_modules$variables$source == "Canadian census" &
           !is.na(scales_variables_modules$variables$parent_vec)
       ],
-      default_var = "ndvi"
+      default_var = "ndvi",
+      avail_scale_combinations = avail_scale_combinations
     )
 
 
   # Return ------------------------------------------------------------------
 
   return(list(
-    scales = with_breaks$scales,
+    scales = scales_variables_modules$scales,
     variables = variables,
     modules = modules
   ))

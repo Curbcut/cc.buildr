@@ -4,7 +4,7 @@
 \alias{dyk_uni_change}
 \title{Generate Change-over-time DYKs}
 \usage{
-dyk_uni_change(var_left, region, scale, svm, langs)
+dyk_uni_change(var_left, region, scale, date, svm, langs)
 }
 \arguments{
 \item{var_left}{\if{html}{\out{<character>}} A string representing the name of the variable
@@ -15,6 +15,9 @@ for which the DYK should be calculated.}
 
 \item{scale}{<\code{character}> A string representing the name of the scale
 for which the DYK should be calculated.}
+
+\item{date}{<\verb{list of character vector}> Reprenseting the dates for which
+the DYK should be calculated2}
 
 \item{svm}{<\code{list}> A list, usually \code{scales_variables_modules}, containing
 the scales, modules, and variables tables.}

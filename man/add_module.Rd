@@ -19,9 +19,10 @@ add_module(
   dates = NULL,
   main_dropdown_title = NA_character_,
   var_right = NULL,
-  suffix_zoom_levels = NA_character_,
   add_advanced_controls = NULL,
-  default_var = NA
+  default_var = NA,
+  avail_scale_combinations = NULL,
+  additional_schemas = NULL
 )
 }
 \arguments{
@@ -99,14 +100,6 @@ dropdown label.}
 \item{var_right}{<\verb{character vector}> Character vector of variable codes that
 there should be in the 'compare' dropdown of the page.}
 
-\item{suffix_zoom_levels}{<\verb{character vector}> Add suffix to the desired zoom
-levels of the user. Example: If the user wants to view the CMA region, but the
-data of the page is only available at the CT scale maximum, we can create a
-new zoom level named \code{max_zoom_levels_CMA_max_CT} using
-\code{\link{map_zoom_levels_create_custom}} with the CT being the maximum scale.
-The value of this argument is 'max_CT' (the suffix we appended to the
-zoom level name). Defaults to \code{NA_character_} (no suffix).}
-
 \item{add_advanced_controls}{<\verb{character vector}> Names of additional widgets
 that should be placed in the 'Advanced controls' instead of with the 'Indicators'
 section (Names of the names list \code{group_diff} of the \code{var_left} column.). If
@@ -118,6 +111,19 @@ the first the user will see when arriving on the page. Defaults to NA for
 pages that do not display variables: stories, place explorer, ... For any
 other page, the default_var must be one of the available variable in the
 \code{var_left} column.}
+
+\item{avail_scale_combinations}{<\verb{character vector}> All available scale combinations
+for display on the module. e.g. \verb{c(CSD_CT_DA_building, borough_CT_DA_building ...)}.
+These should all represent an available tileset as an autozoom, but also individual
+tilesets and scales.}
+
+\item{additional_schemas}{<\verb{character vector}> Which widgets are part of the
+data schema? e.g. for \code{access}, every access data has, in its schema,
+\code{schema$transportationtime = "_\\\\d{1,2}_"}. As every variable has, as a widget,
+\code{"Transport time"}. The value of this widget does not result in a loading of
+a new \code{data}, but instead is necessary to subset which column of \code{data} is
+the one under study. \code{additional_schemas} needs to, by itself, be a valid
+schema, ex. \code{list(transportationtime = 20)}. Defaults to NULL.}
 }
 \value{
 The same \code{modules} data.frame fed, with the added row.

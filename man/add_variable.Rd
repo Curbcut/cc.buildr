@@ -20,16 +20,16 @@ add_variable(
   private,
   pe_include = FALSE,
   dates,
-  avail_df,
-  breaks_q3,
-  breaks_q5,
-  region_values = NULL,
+  avail_scale,
   source,
   interpolated,
   rankings_chr = c("exceptionally low", "unusually low", "just about average",
     "unusually high", "exceptionally high"),
-  var_measurement = data.frame(df = avail_df, measurement = rep("scalar",
-    length(avail_df))),
+  rank_name = NULL,
+  rank_name_short = NULL,
+  var_measurement = data.frame(scale = avail_scale, measurement = rep("scalar",
+    length(avail_scale))),
+  breaks_q5 = NULL,
   allow_title_duplicate = FALSE
 )
 }
@@ -129,21 +129,8 @@ explorer? Defaults to \code{TRUE}.}
 
 \item{dates}{<\verb{character vector}> A vector of dates for which the data is available.}
 
-\item{avail_df}{<\code{list}> All the combinations of region and scales
+\item{avail_scale}{<\code{list}> All the combinations of region and scales
 at which the data is available, e.g. \code{c("CMA_CSD", "CMA_CT", ...)}}
-
-\item{breaks_q3}{<\code{data.frame}> A data.frame with with information regarding
-scales, date, rank, breaks. The last outputs of
-\code{\link[cc.buildr]{calculate_breaks}}}
-
-\item{breaks_q5}{<\code{data.frame}> A data.frame with with information regarding
-scales, date, rank, breaks. The last outputs of
-\code{\link[cc.buildr]{calculate_breaks}}}
-
-\item{region_values}{<\code{data.frame}> A data.frame with information regarding
-the values of the overall region. Must include the region, and potentially
-the year, val and count columns, depending on the variable type. Can be
-created using \code{\link{variables_get_region_vals}}.}
 
 \item{source}{<\code{character}> The source where the data comes from, e.g.
 "McGill Geo-Social Determinants of Health Research Group"}
@@ -159,8 +146,15 @@ The attach character will be its \code{q5} break. \code{ranking_chr} must be in 
 lower to higher. \verb{The variable score is 90\% which is unusually low for Montreal}.
 Defaults to \code{c("exceptionally low", "unusually low", "just about average", "unusually high", "exceptionally high")}}
 
+\item{rank_name}{<\verb{character vector}> Vector of character to characterise
+every 5 bins (breaks). Only used in \code{ind} types. Defaults to NULL, which will
+be converted into Very low (1st bin), Low (2nd), Moderate, High, Very high.}
+
+\item{rank_name_short}{<\verb{character vector}> Same as \code{rank_name} but shorter
+to fit easily on the legend.}
+
 \item{var_measurement}{<\verb{character list}> Data.frame where every row is an available
-df (\code{aval_df}) and the second column is the measurement type. These will impact
+scale (\code{aval_scale}) and the second column is the measurement type. These will impact
 both the explore panel text and the explore panel graph. Options are:
 \itemize{
 \item{"scalar"}{The default. If \code{var_measurement} is not supplied, the row will
@@ -176,6 +170,9 @@ Other example: survey responses with options like 'Strongly disagree', 'Disagree
 order or ranking is possible. Qualitative variables. Example: animal types,
 such as 'Mammal', 'Bird', 'Reptile', 'Fish'.}
 }}
+
+\item{breaks_q5}{<\verb{character/numeric vector}> If the q5 breaks should be
+hardcoded, insert them here. Defaults to NULL.}
 
 \item{allow_title_duplicate}{<\code{logical}> It is necessary to not have variable title
 duplicates in the same dropdown menu, as the title is what is displayed to the

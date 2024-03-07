@@ -6,24 +6,35 @@
 #' @param region_DA_IDs <`character vector`> All the current census'
 #' DA IDs present in the region. Only those will be extracted from the database
 #' to do interpolation.
+#' @param scales_sequences <`list`> A list of scales sequences representing the
+#' hierarchical ordering of scales on an auto-zoom.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
+#' @param overwrite <`logical`> Should the data already processed and stored be
+#' overwriten?
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with the ALP variable added, its addition
 #' in the variables table and the module table.
 #' @export
-ru_alp <- function(scales_variables_modules, region_DA_IDs, crs) {
+ru_alp <- function(scales_variables_modules, regions_dictionary, region_DA_IDs,
+                   scales_sequences, crs, overwrite = FALSE) {
+  data <- cc.data::db_read_data("alp",
+                                column_to_select = "DA_ID",
+                                IDs = region_DA_IDs, crs = crs
+  )
+  cols <- names(data)[names(data) != "DA_ID"]
+  dates <- gsub("alp_", "", cols)
+
+
   ba_var(
-    data = cc.data::db_read_data(table = "alp", column_to_select = "DA_ID", IDs = region_DA_IDs, crs = crs),
+    data = data,
     scales_variables_modules = scales_variables_modules,
+    scales_sequences = scales_sequences,
     base_scale = "DA",
     weight_by = "households",
     crs = crs,
-    average_vars = c(
-      "alp_2001", "alp_2006", "alp_2011", "alp_2016",
-      "alp_2021"
-    ),
+    average_vars = cols,
     variable_var_code = "alp",
     variable_type = "ind",
     variable_var_title = "Active living potential",
@@ -77,11 +88,12 @@ ru_alp <- function(scales_variables_modules, region_DA_IDs, crs) {
       ", this percentile approach offers a balanced and nuanced understanding",
       " of an area's walkability."
     ),
-    module_dates = c(2001, 2006, 2011, 2016, 2021),
+    module_dates = dates,
     module_var_right = scales_variables_modules$variables$var_code[
       scales_variables_modules$variables$source == "Canadian census" &
         !is.na(scales_variables_modules$variables$parent_vec)
-    ]
+    ],
+    overwrite = overwrite
   )
 }
 
@@ -93,24 +105,34 @@ ru_alp <- function(scales_variables_modules, region_DA_IDs, crs) {
 #' @param region_DA_IDs <`character vector`> All the current census'
 #' DA IDs present in the region. Only those will be extracted from the database
 #' to do interpolation.
+#' @param scales_sequences <`list`> A list of scales sequences representing the
+#' hierarchical ordering of scales on an auto-zoom.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
+#' @param overwrite <`logical`> Should the data already processed and stored be
+#' overwriten?
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with the Can-BICS variable added, its addition
 #' in the variables table and the module table.
 #' @export
-ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
+ru_canbics <- function(scales_variables_modules, region_DA_IDs,
+                       scales_sequences, crs, overwrite = FALSE) {
+  data <- cc.data::db_read_data("canbics",
+                                column_to_select = "DA_ID",
+                                IDs = region_DA_IDs, crs = crs
+  )
+  cols <- names(data)[names(data) != "DA_ID"]
+  dates <- gsub("canbics_", "", cols)
+
   out <- ba_var(
-    data = cc.data::db_read_data("canbics",
-      column_to_select = "DA_ID",
-      IDs = region_DA_IDs, crs = crs
-    ),
+    data = data,
     scales_variables_modules = scales_variables_modules,
+    scales_sequences = scales_sequences,
     base_scale = "DA",
     weight_by = "households",
     crs = crs,
-    average_vars = c("canbics_2021"),
+    average_vars = cols,
     variable_var_code = "canbics",
     variable_type = "ind",
     variable_var_title = "Can-BICS metric",
@@ -158,16 +180,17 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
         "terizing the cycling infrastructure of Canadian communities. ",
         "The data is initially provided at the dissemination area level.</p>"
       ),
-    module_dates = c(2021),
+    module_dates = dates,
     module_var_right = scales_variables_modules$variables$var_code[
       scales_variables_modules$variables$source == "Canadian census" &
         !is.na(scales_variables_modules$variables$parent_vec)
-    ]
+    ],
+    overwrite = overwrite
   )
 
   # Change DA interpolation to postal codes
   interpolated_df <- out$variables$interpolated[out$variables$var_code == "canbics"][[1]]
-  interpolated_df$interpolated_from[grepl("_DA$", interpolated_df$df)] <- "postal codes"
+  interpolated_df$interpolated_from[grepl("_DA$", interpolated_df$scale)] <- "postal codes"
   out$variables$interpolated[out$variables$var_code == "canbics"][[1]] <- interpolated_df
 
   # Return
@@ -182,14 +205,19 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs, crs) {
 #' @param region_DA_IDs <`character vector`> All the current census'
 #' DA IDs present in the region. Only those will be extracted from the database
 #' to do interpolation.
+#' @param scales_sequences <`list`> A list of scales sequences representing the
+#' hierarchical ordering of scales on an auto-zoom.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
+#' @param overwrite <`logical`> Should the data already processed and stored be
+#' overwriten?
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with the Can-BICS variable added, its addition
 #' in the variables table and the module table.
 #' @export
-ru_lst <- function(scales_variables_modules, region_DA_IDs, crs) {
+ru_lst <- function(scales_variables_modules, region_DA_IDs,
+                   scales_sequences, crs, overwrite = FALSE) {
   data <- cc.data::db_read_data("lst",
     column_to_select = "DA_ID",
     IDs = region_DA_IDs, crs = crs
@@ -200,6 +228,7 @@ ru_lst <- function(scales_variables_modules, region_DA_IDs, crs) {
   out <- ba_var(
     data = data,
     scales_variables_modules = scales_variables_modules,
+    scales_sequences = scales_sequences,
     base_scale = "DA",
     weight_by = "area",
     crs = crs,
@@ -245,12 +274,13 @@ ru_lst <- function(scales_variables_modules, region_DA_IDs, crs) {
     module_var_right = scales_variables_modules$variables$var_code[
       scales_variables_modules$variables$source == "Canadian census" &
         !is.na(scales_variables_modules$variables$parent_vec)
-    ]
+    ],
+    overwrite = overwrite
   )
 
   # Change DA interpolation to postal codes
   interpolated_df <- out$variables$interpolated[out$variables$var_code == "lst"][[1]]
-  interpolated_df$interpolated_from[grepl("_DA$", interpolated_df$df)] <- "postal codes"
+  interpolated_df$interpolated_from[grepl("_DA$", interpolated_df$scale)] <- "postal codes"
   out$variables$interpolated[out$variables$var_code == "lst"][[1]] <- interpolated_df
 
   # Return
@@ -266,18 +296,23 @@ ru_lst <- function(scales_variables_modules, region_DA_IDs, crs) {
 #' \code{32617} for Toronto.
 #' @param geo_uid <`numeric`> Cancensus CMA code, which can be found using
 #' \code{\link[cancensus]{list_census_regions}}.
+#' @param scales_sequences <`list`> A list of scales sequences representing the
+#' hierarchical ordering of scales on an auto-zoom.
 #' @param approximate_name_match <`logical`> CMHC zone naming can be different
 #' year to year (A single typo, or other). Should the function search for
 #' approximate matches to the name of the `cmhczone` table in
 #' `scales_variables_modules`? Useful for Montreal where names are more or less
 #' unique and so an approximate match can be beneficial. less for Toronto where
 #' the name `York` is used in many different names.
+#' @param overwrite <`logical`> Should the data already processed and stored be
+#' overwriten?
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with the CMHC's vacancy rate variables added,
 #' their addition in the variables table and the module table.
 #' @export
 ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
+                        scales_sequences = scales_sequences,
                         approximate_name_match = TRUE) {
   # Relevant dimensions
   # Rent ranges temporarily taken out as they are not available for the
@@ -287,6 +322,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
   dimensions_short <-
     c("bed", "year") # , "rent_range")
   years <- 2010:2022
+  time_regex <- "_\\d{4}$"
 
   # Retrieval
   cmhc_vac_rate <-
@@ -329,7 +365,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
             out$name <-
               sapply(out$name,
                 agrep,
-                x = scales_variables_modules$scales$cmhc$cmhczone$name,
+                x = scales_variables_modules$scales$cmhczone$name,
                 value = TRUE, USE.NAMES = FALSE
               )
             if (!all(sapply(out$name, length) == 1)) {
@@ -387,7 +423,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
             out$name <-
               sapply(out$name,
                 agrep,
-                x = scales_variables_modules$scales$cmhc$cmhczone$name,
+                x = scales_variables_modules$scales$cmhczone$name,
                 value = TRUE, USE.NAMES = FALSE
               )
             if (!all(sapply(out$name, length) == 1)) {
@@ -415,7 +451,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
     Reduce(\(x, y) merge(x, y, by = "name", all.x = TRUE),
       cmhc,
       init = sf::st_drop_geometry(
-        scales_variables_modules$scales$cmhc$cmhczone
+        scales_variables_modules$scales$cmhczone
       )[, "name"]
     )
 
@@ -424,18 +460,17 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
   unique_vars <- unique(gsub("_\\d{4}$", "", vars))
 
   # Append data
-  scales_variables_modules$scales$cmhc$cmhczone <-
-    merge(scales_variables_modules$scales$cmhc$cmhczone,
+  merged_to_svm <- scales_variables_modules$scales
+  merged_to_svm$cmhczone <-
+    merge(merged_to_svm$cmhczone,
       merged,
       by = "name"
     )
 
-  # Calculate breaks
-  with_breaks <-
-    calculate_breaks(
-      all_scales = scales_variables_modules$scales,
-      vars = vars
-    )
+  # Data tibble
+  data_construct(scales_data = merged_to_svm,
+                 unique_var = unique_vars,
+                 time_regex = time_regex)
 
   # Types
   types <- rep(list("pct"), sum(grepl("^vac_rate", unique_vars)))
@@ -453,14 +488,6 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
   names(parent_strings_count) <- unique_vars[grepl("^rental_universe", unique_vars)]
   parent_strings <- c(parent_strings, parent_strings_count)
 
-  # Region values
-  region_values <- variables_get_region_vals(
-    scales = with_breaks$scales,
-    vars = unique_vars,
-    types = types,
-    parent_strings = parent_strings,
-    breaks = with_breaks$q5_breaks_table
-  )
 
   # Add to the variables table
   variables <-
@@ -638,17 +665,14 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
           explanation = explanation,
           exp_q5 = "are vacant or unoccupied",
           parent_vec = parent_strings[[var]],
-          region_values = region_values[[var]],
           theme = "Vacancy rate",
           private = FALSE,
           pe_include = pe_include,
-          dates = with_breaks$avail_dates[[var]],
-          avail_df = "cmhc_cmhczone",
-          breaks_q3 = with_breaks$q3_breaks_table[[var]],
-          breaks_q5 = with_breaks$q5_breaks_table[[var]],
+          dates = years,
+          avail_scale = "cmhczone",
           source = "Canada Mortgage and Housing Corporation",
           interpolated = tibble::tibble(
-            df = "cmhc_cmhczone",
+            scale = "cmhczone",
             interpolated_from = FALSE
           ),
           group_name = group_name,
@@ -812,22 +836,24 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
           explanation = explanation,
           exp_q5 = NA,
           parent_vec = NA,
-          region_values = region_values[[var]],
           theme = "Vacancy rate",
           private = FALSE,
-          dates = with_breaks$avail_dates[[var]],
-          avail_df = "cmhc_cmhczone",
-          breaks_q3 = with_breaks$q3_breaks_table[[var]],
-          breaks_q5 = with_breaks$q5_breaks_table[[var]],
+          dates = years,
+          avail_scale = "cmhczone",
           source = "Canada Mortgage and Housing Corporation",
           interpolated = tibble::tibble(
-            df = "cmhc_cmhczone",
+            scale = "cmhczone",
             interpolated_from = FALSE
           )
         )
 
       out[out$var_code == var, ]
     }) |> (\(x) Reduce(rbind, x, init = variables))()
+
+  # Modules table
+  avail_scale_combinations <-
+    get_avail_scale_combinations(scales_sequences = scales_sequences,
+                                 avail_scales = "cmhczone")
 
   modules <-
     scales_variables_modules$modules |>
@@ -847,7 +873,6 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
         "rate means the opposite. The datasets visualized on this page come ",
         "from the CMHC and the 2021 Canadian Census."
       ),
-      regions = "cmhc",
       metadata = TRUE,
       dataset_info = "<p>The datasets visualized on this page come from the CMHC and the 2021 Canadian Census.",
       var_left = variables[grepl("^vac_rate", variables$var_code), c("var_code", "group_name", "group_diff")],
@@ -857,16 +882,15 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
         scales_variables_modules$variables$source == "Canadian census" &
           !is.na(scales_variables_modules$variables$parent_vec)
       ],
-      default_var = "vac_rate_2_bed_bed"
+      default_var = "vac_rate_2_bed_bed",
+      avail_scale_combinations = avail_scale_combinations
     )
 
 
   # Return ------------------------------------------------------------------
 
-  with_breaks$scales <- cc.buildr::reorder_columns(with_breaks$scales)
-
   return(list(
-    scales = with_breaks$scales,
+    scales = scales_variables_modules$scales,
     variables = variables,
     modules = modules
   ))

@@ -4,11 +4,11 @@
 \alias{reorder_columns}
 \title{Reorder columns as they are expected in the workflow}
 \usage{
-reorder_columns(all_scales)
+reorder_columns(scale_df)
 }
 \arguments{
-\item{all_scales}{<\verb{named list}> A named list of scales. The first level is
-the geo, and the second is the scales.}
+\item{scale_df}{<\code{data.frame}> A \code{scale} data.frame for which columns
+should be reordered.}
 }
 \value{
 Returns the same list that is fed, with columns re-ordered.

@@ -10,7 +10,10 @@ build_census_data(
   census_vectors,
   census_years,
   crs,
-  skip_scale_interpolation = NULL
+  DB_table,
+  census_scales = cc.data::census_scales,
+  scales_to_interpolate = scales_greater_than(base_scale = scales_consolidated$DA,
+    all_scales = scales_consolidated, crs = crs)
 )
 }
 \arguments{
@@ -33,10 +36,16 @@ should be added to the scales. Defaults to \code{\link[cc.data]{census_years}}}
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}
 
-\item{skip_scale_interpolation}{<\verb{character vector}> Scales for which census
-data should not be interpolated (e.g. very small scales like 25m grid cells.).
-In those cases, census data won't be interpolated and appended. Defaults to
-NULL to interpolate to everything.}
+\item{DB_table}{<\verb{named list}> Named list of all the years for which DBs existed.
+Every dataframe in the list must have the DB ID, DA ID, population and dwellings
+count. It is created using \code{\link[cc.data]{DB_get}}.}
+
+\item{census_scales}{<\verb{character vector}> Vector of all the census scales for
+which we have data in the database.}
+
+\item{scales_to_interpolate}{<\verb{character vector}> Scales for which census
+data should be interpolated (e.g. very small scales like 25m grid cells should be excluded.).
+Defaults to using \code{\link{scales_greater_than}}.}
 }
 \value{
 Returns a list of length 4. The first is the possible scales for which

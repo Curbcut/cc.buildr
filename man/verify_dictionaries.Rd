@@ -4,17 +4,17 @@
 \alias{verify_dictionaries}
 \title{Verify the regions and the scales dictionary}
 \usage{
-verify_dictionaries(all_tables, regions_dictionary, scales_dictionary)
+verify_dictionaries(regions_dictionary, scales_dictionary, scales)
 }
 \arguments{
-\item{all_tables}{<\verb{named list}> The name of the named list \code{all_tables}
-is used to retrieve the shapefiles in the supplied folder.}
-
 \item{regions_dictionary}{<\code{data.frame}> The regions dictionary built using
 \code{\link[cc.buildr]{regions_dictionary}}}
 
 \item{scales_dictionary}{<\code{data.frame}> The scales dictionary built using
 \code{\link[cc.buildr]{build_census_scales}}}
+
+\item{all_tables}{<\verb{named list}> The name of the named list \code{all_tables}
+is used to retrieve the shapefiles in the supplied folder.}
 }
 \value{
 Returns nothing if the test passes, or errors if it doesn't.

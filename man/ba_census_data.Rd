@@ -9,9 +9,17 @@ ba_census_data(
   region_DA_IDs,
   census_vectors = cc.data::census_vectors,
   census_years = cc.data::census_years,
-  skip_scale_interpolation = NULL,
+  scales_to_interpolate = {
+    
+    names(scales_variables_modules$scales)[!names(scales_variables_modules$scales) \%in\%
+    c("building", "street", "DB", "grd30", "grd60", "grd120", "grd300")]
+ },
+  scales_sequences,
   crs,
-  housing_module = TRUE
+  DB_table,
+  housing_module = TRUE,
+  age_module = TRUE,
+  overwrite = FALSE
 )
 }
 \arguments{
@@ -31,16 +39,28 @@ variables explained.}
 \item{census_years}{<\verb{character vector}> Years for which the census data
 should be added to the scales. Defaults to \code{\link[cc.data]{census_years}}}
 
-\item{skip_scale_interpolation}{<\verb{character vector}> Scales for which census
-data should not be interpolated (e.g. very small scales like 25m grid cells.).
-In those cases, census data won't be interpolated and appended. Defaults to
-NULL to interpolate to everything.}
+\item{scales_to_interpolate}{<\verb{character vector}> Scales for which census
+data should be interpolated (e.g. very small scales like 25m grid cells should be excluded.).
+Defaults to all the scales except building and street.}
+
+\item{scales_sequences}{<\code{list}> A list of scales sequences representing the
+hierarchical ordering of scales on an auto-zoom.}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}
 
+\item{DB_table}{<\verb{named list}> Named list of all the years for which DBs existed.
+Every dataframe in the list must have the DB ID, DA ID, population and dwellings
+count. It is created using \code{\link[cc.data]{DB_get}}.}
+
 \item{housing_module}{<\code{logical}> Should a housing module be added to
 the list of modules.}
+
+\item{age_module}{<\code{logical}> Should an age module be added to
+the list of modules.}
+
+\item{overwrite}{<\code{logical}> Should the data already processed and stored be
+overwriten?}
 }
 \value{
 A list of length 3, similar to the one fed to

@@ -12,7 +12,8 @@ split_scale(
   destination_pct_threshold = 0.95,
   buffer_around_cutting_layer = 100,
   sampled_points_voronoi = buffer_around_cutting_layer * 500,
-  crs
+  crs,
+  DA_carto
 )
 }
 \arguments{
@@ -47,6 +48,9 @@ buffer:point is very high (e.g. 1:500).}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be
 assigned, e.g. \code{32618} for Montreal.}
+
+\item{DA_carto}{<\verb{sf data.frame}> The cartographic version of DAs, one of the
+output of \code{\link{create_master_polygon}}.}
 }
 \value{
 An sf dataframes with features subdivided.
