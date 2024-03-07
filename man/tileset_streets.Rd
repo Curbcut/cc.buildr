@@ -4,7 +4,14 @@
 \alias{tileset_streets}
 \title{Create and publish street and park tilesets}
 \usage{
-tileset_streets(master_polygon, street, crs, prefix, username, access_token)
+tileset_streets(
+  master_polygon,
+  street,
+  crs,
+  inst_prefix,
+  username,
+  access_token
+)
 }
 \arguments{
 \item{master_polygon}{<\verb{sf data.frame}> Unioned multipolygon of all the
@@ -15,7 +22,7 @@ geometries for which data has been gathered.}
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}
 
-\item{prefix}{<\code{character}> Prefix attached to every tile source and
+\item{inst_prefix}{<\code{character}> Prefix attached to every tile source and
 created and published tileset. Should correspond to the Curbcut city, e.g. \code{mtl}.}
 
 \item{username}{<\code{character}> Mapbox account username.}

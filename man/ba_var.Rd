@@ -14,6 +14,7 @@ ba_var(
   additive_vars = c(),
   average_vars = c(),
   time_regex = "_\\\\d{4}$",
+  inst_prefix,
   variable_var_code,
   variable_type,
   variable_var_title,
@@ -68,6 +69,9 @@ Directly fed to \code{\link[cc.buildr]{interpolate_from_census_geo}}}
 \item{time_regex}{<\code{character}> Regular expression which corresponds to
 a timeframe, placed at the end of the \code{vars} vector. e.g. \verb{\\\\d\{4\}} for
 years.}
+
+\item{inst_prefix}{<\code{character}> The prefix of the instance, e.g. \code{'mtl'} which
+is the database schema in which the data is saved.}
 
 \item{variable_var_code}{<\code{charater}> See \code{\link[cc.buildr]{add_variable}}.}
 

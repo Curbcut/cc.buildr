@@ -32,7 +32,9 @@ Imports:
     rlang,
     stringi,
     scales,
-    curbcut
+    curbcut,
+    RPostgres,
+    aws.s3
 Suggests:
     styler,
     osmdata,

@@ -7,7 +7,7 @@
 tileset_upload_all(
   map_zoom_levels,
   tweak_max_zoom = NULL,
-  prefix,
+  inst_prefix,
   username,
   access_token,
   no_reset = NULL
@@ -22,7 +22,7 @@ using \code{\link[cc.buildr]{map_zoom_levels_create_all}} and
 additional scales? Named list, where the name is the scale name and the value
 is the maximum zoom of the scale.}
 
-\item{prefix}{<\code{character}> Prefix attached to every tile source and
+\item{inst_prefix}{<\code{character}> Prefix attached to every tile source and
 created and published tileset. Should correspond to the Curbcut city, e.g. \code{mtl}.}
 
 \item{username}{<\code{character}> Mapbox account username.}

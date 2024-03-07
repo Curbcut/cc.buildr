@@ -20,6 +20,8 @@
 #' \code{32617} for Toronto.
 #' @param overwrite <`logical`> Should the data already precessed and stored be
 #' overwriten?
+#' @param inst_prefix <`character`> The prefix of the instance, e.g. `'mtl'` which
+#' is the database schema in which the data is saved.
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with the NDVI variable added, its addition
@@ -29,7 +31,8 @@ ba_ndvi <- function(scales_variables_modules,
                     data_output_path = "dev/data/ndvi/",
                     years = cc.data::ndvi_years(),
                     skip_scales = NULL, scales_sequences, crs,
-                    overwrite = FALSE) {
+                    overwrite = FALSE,
+                    inst_prefix) {
 
   # Scales to go over
   skip_scales <- c(skip_scales, "building", "street")
@@ -41,7 +44,8 @@ ba_ndvi <- function(scales_variables_modules,
 
   # Remove from the processing scales that ALREADY have the data processed and stored
   scales <- scales[exclude_processed_scales("ndvi", scales = names(scales),
-                                            overwrite = overwrite)]
+                                            overwrite = overwrite,
+                                            inst_prefix = inst_prefix)]
 
 
   # Add it to all the scales ------------------------------------------------
@@ -142,7 +146,8 @@ ba_ndvi <- function(scales_variables_modules,
     time_regex <- "_\\d{4}$"
     data_construct(scales_data = interpolated,
                    unique_var = "ndvi",
-                   time_regex = time_regex)
+                   time_regex = time_regex,
+                   inst_prefix = inst_prefix)
 
   }
 

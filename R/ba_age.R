@@ -10,13 +10,15 @@
 #' will be used for calculation of the age page data.
 #' @param overwrite <`logical`> Should the data already precessed and stored be
 #' overwriten?
+#' @param inst_prefix <`character`> The prefix of the instance, e.g. `'mtl'` which
+#' is the database schema in which the data is saved.
 #'
 #' @return A list of length 4, similar to the one fed to
 #' `scales_variables_modules` with age data added, their addition
 #' in the variables table and the module table.
 #' @export
 ba_age <- function(scales_variables_modules, scales_sequences, scales_to_interpolate,
-                   overwrite = FALSE) {
+                   overwrite = FALSE, inst_prefix) {
   # Declare all variables from the census -----------------------------------
 
   time_regex <- "_\\d{4}$"
@@ -64,7 +66,7 @@ ba_age <- function(scales_variables_modules, scales_sequences, scales_to_interpo
   unique_var <- c(paste0(unique_var, "_pct"), paste0(unique_var, "_count"))
 
   svm_scales <- svm_scales[exclude_processed_scales(unique_var, overwrite = overwrite,
-                                                    names(svm_scales))]
+                                                    names(svm_scales), inst_prefix = inst_prefix)]
 
   # Build the scales as they have 'age'
   svm_scales <- mapply(\(scale_name, scale_df) {
@@ -124,7 +126,8 @@ ba_age <- function(scales_variables_modules, scales_sequences, scales_to_interpo
 
   data_construct(scales_data = final_dat,
                  unique_var = unique_var,
-                 time_regex = time_regex)
+                 time_regex = time_regex,
+                 inst_prefix = inst_prefix)
 
 
   # Variables table ---------------------------------------------------------

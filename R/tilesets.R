@@ -410,7 +410,7 @@ tileset_create_recipe <- function(layer_names, source, minzoom, maxzoom,
 #' @param tweak_max_zoom <`named list`> What would be the maximum zoom of the
 #' additional scales? Named list, where the name is the scale name and the value
 #' is the maximum zoom of the scale.
-#' @param prefix <`character`> Prefix attached to every tile source and
+#' @param inst_prefix <`character`> Prefix attached to every tile source and
 #' created and published tileset. Should correspond to the Curbcut city, e.g. `mtl`.
 #' @param username <`character`> Mapbox account username.
 #' @param access_token <`character`> Private access token to the Mapbox account.
@@ -423,7 +423,7 @@ tileset_create_recipe <- function(layer_names, source, minzoom, maxzoom,
 #' ready to be used.
 #' @export
 tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
-                               prefix, username, access_token, no_reset = NULL) {
+                               inst_prefix, username, access_token, no_reset = NULL) {
 
   # Remove grids (they have their own tileset upload function)
   map_zoom_levels <- map_zoom_levels[!grepl("^mzl_grd", names(map_zoom_levels))]
@@ -458,7 +458,7 @@ tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
 
   # Reset
   mapply(\(scale_name, scale_df) {
-    name <- paste(prefix, scale_name, sep = "_")
+    name <- paste(inst_prefix, scale_name, sep = "_")
 
     tileset_delete_tileset_source(
       id = name,
@@ -476,7 +476,7 @@ tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
   # DO THE SAME FOR AUTOZOOMS
   lapply(names(map_zoom_levels), \(x) {
     x <- gsub("mzl_", "", x)
-    x <- paste(prefix, x, sep = "_")
+    x <- paste(inst_prefix, x, sep = "_")
 
     tileset_delete_tileset_source(
       id = x,
@@ -493,7 +493,7 @@ tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
 
   # Tileset sources
   mapply(function(scale_name, scale_df) {
-    scale_name <- paste(prefix, scale_name, sep = "_")
+    scale_name <- paste(inst_prefix, scale_name, sep = "_")
 
     # We can detect too large data to pass by the normal flow by the fact
     # they don't have population and households interpolated
@@ -545,7 +545,7 @@ tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
   all_recipes <-
     mapply(\(scale_name, scale_df) {
 
-      source_names <- paste(prefix, scale_name, sep = "_")
+      source_names <- paste(inst_prefix, scale_name, sep = "_")
       sources <- paste0("mapbox://tileset-source/", username, "/", source_names)
       names(sources) <- source_names
       minzooms <- 3
@@ -618,8 +618,8 @@ tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
   auto_zoom_recipes <-
     mapply(\(mzl_name, zoom_levels) {
 
-      az_name <- gsub("^mzl", prefix, mzl_name)
-      scale_names <- paste(prefix, names(zoom_levels), sep = "_")
+      az_name <- gsub("^mzl", inst_prefix, mzl_name)
+      scale_names <- paste(inst_prefix, names(zoom_levels), sep = "_")
 
 
       sources <- stats::setNames(paste0(
@@ -685,7 +685,7 @@ tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
 #' will be used to weight which label to display first.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
-#' @param prefix <`character`> Prefix attached to every tile source and
+#' @param inst_prefix <`character`> inst_prefix attached to every tile source and
 #' created and published tileset. Should correspond to the Curbcut city, e.g. `mtl`.
 #' @param username <`character`> Mapbox account username.
 #' @param access_token <`character`> Private access token to the Mapbox account.
@@ -693,7 +693,7 @@ tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
 #' @return Returns nothing if succeeds. Tilesets are created and published and
 #' ready to be used.
 #' @export
-tileset_labels <- function(scales, crs, prefix, username, access_token) {
+tileset_labels <- function(scales, crs, inst_prefix, username, access_token) {
   mapply(\(region_name, scale) {
     scale <- scale[[1]]
 
@@ -702,7 +702,7 @@ tileset_labels <- function(scales, crs, prefix, username, access_token) {
       stop("One of `name`, `population` or `geometry` column is missing.")
     }
 
-    name <- paste(prefix, region_name, "label", sep = "_")
+    name <- paste(inst_prefix, region_name, "label", sep = "_")
 
     # Calculate centroid using a projection
     scale <- sf::st_transform(scale, crs)
@@ -760,7 +760,7 @@ tileset_labels <- function(scales, crs, prefix, username, access_token) {
 #' @param street <`sf data.frame`> All the streets in the zone under study.
 #' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
 #' \code{32617} for Toronto.
-#' @param prefix <`character`> Prefix attached to every tile source and
+#' @param inst_prefix <`character`> Prefix attached to every tile source and
 #' created and published tileset. Should correspond to the Curbcut city, e.g. `mtl`.
 #' @param username <`character`> Mapbox account username.
 #' @param access_token <`character`> Private access token to the Mapbox account.
@@ -768,7 +768,7 @@ tileset_labels <- function(scales, crs, prefix, username, access_token) {
 #' @return Returns nothing if succeeds. Tilesets are created and published and
 #' ready to be used.
 #' @export
-tileset_streets <- function(master_polygon, street, crs, prefix, username,
+tileset_streets <- function(master_polygon, street, crs, inst_prefix, username,
                             access_token) {
   if (!requireNamespace("osmdata", quietly = TRUE)) {
     stop(
@@ -788,7 +788,7 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
   street_3 <- sf::st_transform(street_3, 4326)
 
   # Delete tilesets
-  ids <- paste0(prefix, "_street_", c(1:3))
+  ids <- paste0(inst_prefix, "_street_", c(1:3))
   lapply(ids, tileset_delete_tileset,
     username = username,
     access_token = access_token
@@ -801,19 +801,19 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
   # Upload tile_source
   tileset_upload_tile_source(
     df = street_1,
-    id = paste0(prefix, "_street_1"),
+    id = paste0(inst_prefix, "_street_1"),
     username = username,
     access_token = access_token
   )
   tileset_upload_tile_source(
     df = street_2,
-    id = paste0(prefix, "_street_2"),
+    id = paste0(inst_prefix, "_street_2"),
     username = username,
     access_token = access_token
   )
   tileset_upload_tile_source_large(
     df = street_3,
-    id = paste0(prefix, "_street_3"),
+    id = paste0(inst_prefix, "_street_3"),
     username = username,
     access_token = access_token
   )
@@ -828,7 +828,7 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
 
   tileset_upload_tile_source(
     df = north_pole_sf,
-    id = paste0(prefix, "_np"),
+    id = paste0(inst_prefix, "_np"),
     username = username,
     access_token = access_token
   )
@@ -852,13 +852,13 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
   park <- park[park$leisure != "nature_reserve" & !is.na(park$leisure), "name"]
 
   tileset_delete_tileset_source(
-    id = paste0(prefix, "_park"),
+    id = paste0(inst_prefix, "_park"),
     username = username,
     access_token = access_token
   )
   tileset_upload_tile_source(
     df = park,
-    id = paste0(prefix, "_park"),
+    id = paste0(inst_prefix, "_park"),
     username = username,
     access_token = access_token
   )
@@ -867,7 +867,7 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
   # Create recipes
   # Street 1
   source_names <- c("_street_1", "_np")
-  sources <- paste0("mapbox://tileset-source/", username, "/", prefix, source_names)
+  sources <- paste0("mapbox://tileset-source/", username, "/", inst_prefix, source_names)
   names(sources) <- source_names
   minzooms <- c(9, 14)
   names(minzooms) <- source_names
@@ -878,12 +878,12 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
     source = sources,
     minzoom = minzooms,
     maxzoom = maxzooms,
-    recipe_name = paste0(prefix, "_street_1")
+    recipe_name = paste0(inst_prefix, "_street_1")
   )
 
   # Street 2
   source_names <- c("_street_2", "_np")
-  sources <- paste0("mapbox://tileset-source/", username, "/", prefix, source_names)
+  sources <- paste0("mapbox://tileset-source/", username, "/", inst_prefix, source_names)
   names(sources) <- source_names
   minzooms <- c(11, 14)
   names(minzooms) <- source_names
@@ -894,12 +894,12 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
     source = sources,
     minzoom = minzooms,
     maxzoom = maxzooms,
-    recipe_name = paste0(prefix, "_street_2")
+    recipe_name = paste0(inst_prefix, "_street_2")
   )
 
   # Street 3
   source_names <- c("_street_3", "_np")
-  sources <- paste0("mapbox://tileset-source/", username, "/", prefix, source_names)
+  sources <- paste0("mapbox://tileset-source/", username, "/", inst_prefix, source_names)
   names(sources) <- source_names
   minzooms <- c(13, 14)
   names(minzooms) <- source_names
@@ -910,43 +910,43 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
     source = sources,
     minzoom = minzooms,
     maxzoom = maxzooms,
-    recipe_name = paste0(prefix, "_street_3")
+    recipe_name = paste0(inst_prefix, "_street_3")
   )
 
 
   # Publish tileset
   tileset_create_tileset(
-    tileset = paste0(prefix, "_street_1"),
+    tileset = paste0(inst_prefix, "_street_1"),
     recipe = recipe_street_1,
     username = username,
     access_token = access_token
   )
   tileset_publish_tileset(
-    tileset = paste0(prefix, "_street_1"),
+    tileset = paste0(inst_prefix, "_street_1"),
     username = username,
     access_token = access_token
   )
 
   tileset_create_tileset(
-    tileset = paste0(prefix, "_street_2"),
+    tileset = paste0(inst_prefix, "_street_2"),
     recipe = recipe_street_2,
     username = username,
     access_token = access_token
   )
   tileset_publish_tileset(
-    tileset = paste0(prefix, "_street_2"),
+    tileset = paste0(inst_prefix, "_street_2"),
     username = username,
     access_token = access_token
   )
 
   tileset_create_tileset(
-    tileset = paste0(prefix, "_street_3"),
+    tileset = paste0(inst_prefix, "_street_3"),
     recipe = recipe_street_3,
     username = username,
     access_token = access_token
   )
   tileset_publish_tileset(
-    tileset = paste0(prefix, "_street_3"),
+    tileset = paste0(inst_prefix, "_street_3"),
     username = username,
     access_token = access_token
   )
@@ -956,7 +956,7 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
 #'
 #' @param stories <`dataframe`>A dataframe with columns "ID", "name_id", "lon",
 #' "lat".
-#' @param prefix <`character`> Prefix attached to every tile source and
+#' @param inst_prefix <`character`> Prefix attached to every tile source and
 #' created and published tileset. Should correspond to the Curbcut city, e.g. `mtl`.
 #' @param username <`character`> Mapbox account username.
 #' @param access_token <`character`> Private access token to the Mapbox account.
@@ -964,15 +964,15 @@ tileset_streets <- function(master_polygon, street, crs, prefix, username,
 #' @return Returns nothing if succeeds. Tilesets are created and published and
 #' ready to be used.
 #' @export
-stories_create_tileset <- function(stories, prefix, username, access_token) {
+stories_create_tileset <- function(stories, inst_prefix, username, access_token) {
   # Delete tileset and source
   tileset_delete_tileset(
-    id = paste0(prefix, "_stories"),
+    id = paste0(inst_prefix, "_stories"),
     username = username,
     access_token = access_token
   )
   tileset_delete_tileset_source(
-    id = paste0(prefix, "_stories"),
+    id = paste0(inst_prefix, "_stories"),
     username = username,
     access_token = access_token
   )
@@ -985,29 +985,29 @@ stories_create_tileset <- function(stories, prefix, username, access_token) {
 
   tileset_upload_tile_source(
     df = stories,
-    id = paste0(prefix, "_stories"),
+    id = paste0(inst_prefix, "_stories"),
     username = username,
     access_token = access_token
   )
 
   # Create recipe
   stories_recipe <- tileset_create_recipe(
-    layer_names = paste0(prefix, "_stories"),
-    source = paste0("mapbox://tileset-source/", username, "/", prefix, "_stories"),
+    layer_names = paste0(inst_prefix, "_stories"),
+    source = paste0("mapbox://tileset-source/", username, "/", inst_prefix, "_stories"),
     minzoom = 3,
     maxzoom = 13,
-    recipe_name = paste0(prefix, "_stories")
+    recipe_name = paste0(inst_prefix, "_stories")
   )
 
   # Create and publish
   tileset_create_tileset(
-    tileset = paste0(prefix, "_stories"),
+    tileset = paste0(inst_prefix, "_stories"),
     recipe = stories_recipe,
     username = username,
     access_token = access_token
   )
   tileset_publish_tileset(
-    tileset = paste0(prefix, "_stories"),
+    tileset = paste0(inst_prefix, "_stories"),
     username = username,
     access_token = access_token
   )
@@ -1025,7 +1025,7 @@ stories_create_tileset <- function(stories, prefix, username, access_token) {
 #' @param max_zoom <`list`> Maximum zoom levels for different grid scales.
 #' Default values for scales grd600, grd300, grd120, grd60, and grd30.
 #' @param regions <`data.frame` or `sf` object> Spatial data for different regions.
-#' @param prefix <`character`> Prefix attached to every tile source and
+#' @param inst_prefix <`character`> Prefix attached to every tile source and
 #' created and published tileset. Should correspond to the Curbcut city, e.g. `mtl`.
 #' @param username <`character`> Mapbox account username.
 #' @param access_token <`character`> Private access token to the Mapbox account.
@@ -1042,7 +1042,7 @@ tileset_upload_ndvi <- function(grids_dir = "dev/data/built/",
                                 max_zoom = list(grd600 = 11, grd300 = 13, grd120 = 14,
                                                 grd60 = 15, grd30 = 16),
                                 regions,
-                                prefix,
+                                inst_prefix,
                                 username,
                                 access_token,
                                 ndvi_delta_breaks = c(-0.5, -0.1, -0.02, 0.02, 0.1, 0.5),
@@ -1074,7 +1074,7 @@ tileset_upload_ndvi <- function(grids_dir = "dev/data/built/",
   # Reset
   mapply(function(region_name, reg_sf) {
     mapply(\(scale_name, scale_df) {
-      name <- paste(prefix, scale_name, region_name, sep = "_")
+      name <- paste(inst_prefix, scale_name, region_name, sep = "_")
 
       tileset_delete_tileset_source(
         id = name,
@@ -1093,7 +1093,7 @@ tileset_upload_ndvi <- function(grids_dir = "dev/data/built/",
   # Tileset sources
   mapply(function(region_name, reg_sf) {
     mapply(function(scale_name, scale_df) {
-      scale_n <- paste(prefix, scale_name, region_name, sep = "_")
+      scale_n <- paste(inst_prefix, scale_name, region_name, sep = "_")
       df <- scale_df
       df <- sf::st_filter(df, reg_sf)
 
@@ -1172,7 +1172,7 @@ tileset_upload_ndvi <- function(grids_dir = "dev/data/built/",
     mapply(function(region_name, reg_sf) {
       mapply(\(scale_name, scale_df) {
 
-        source_names <- paste(prefix, scale_name, region_name, sep = "_")
+        source_names <- paste(inst_prefix, scale_name, region_name, sep = "_")
         sources <- paste0("mapbox://tileset-source/", username, "/", source_names)
         names(sources) <- source_names
         minzooms <- 3
@@ -1248,8 +1248,8 @@ tileset_upload_ndvi <- function(grids_dir = "dev/data/built/",
 
       zoom_levels <- map_zoom_levels$mzl_grd600_grd300_grd120_grd60_grd30
 
-      az_name <- paste(prefix, "ndvi_autozoom", region_name, sep = "_")
-      scale_names <- paste(prefix, names(zoom_levels), region_name, sep = "_")
+      az_name <- paste(inst_prefix, "ndvi_autozoom", region_name, sep = "_")
+      scale_names <- paste(inst_prefix, names(zoom_levels), region_name, sep = "_")
 
 
       sources <- stats::setNames(paste0(

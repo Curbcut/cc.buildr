@@ -9,7 +9,9 @@ ru_vac_rate(
   crs,
   geo_uid,
   scales_sequences = scales_sequences,
-  approximate_name_match = TRUE
+  approximate_name_match = TRUE,
+  overwrite = FALSE,
+  inst_prefix = inst_prefix
 )
 }
 \arguments{
@@ -35,6 +37,9 @@ the name \code{York} is used in many different names.}
 
 \item{overwrite}{<\code{logical}> Should the data already processed and stored be
 overwriten?}
+
+\item{inst_prefix}{<\code{character}> The prefix of the instance, e.g. \code{'mtl'} which
+is the database schema in which the data is saved.}
 }
 \value{
 A list of length 3, similar to the one fed to

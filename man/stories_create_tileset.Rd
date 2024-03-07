@@ -4,13 +4,13 @@
 \alias{stories_create_tileset}
 \title{Create a tileset from a stories dataframe}
 \usage{
-stories_create_tileset(stories, prefix, username, access_token)
+stories_create_tileset(stories, inst_prefix, username, access_token)
 }
 \arguments{
 \item{stories}{<\code{dataframe}>A dataframe with columns "ID", "name_id", "lon",
 "lat".}
 
-\item{prefix}{<\code{character}> Prefix attached to every tile source and
+\item{inst_prefix}{<\code{character}> Prefix attached to every tile source and
 created and published tileset. Should correspond to the Curbcut city, e.g. \code{mtl}.}
 
 \item{username}{<\code{character}> Mapbox account username.}

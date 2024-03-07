@@ -9,7 +9,7 @@ tileset_upload_ndvi(
   map_zoom_levels,
   max_zoom = list(grd600 = 11, grd300 = 13, grd120 = 14, grd60 = 15, grd30 = 16),
   regions,
-  prefix,
+  inst_prefix,
   username,
   access_token,
   ndvi_delta_breaks = c(-0.5, -0.1, -0.02, 0.02, 0.1, 0.5),
@@ -26,7 +26,7 @@ Default values for scales grd600, grd300, grd120, grd60, and grd30.}
 
 \item{regions}{<\code{data.frame} or \code{sf} object> Spatial data for different regions.}
 
-\item{prefix}{<\code{character}> Prefix attached to every tile source and
+\item{inst_prefix}{<\code{character}> Prefix attached to every tile source and
 created and published tileset. Should correspond to the Curbcut city, e.g. \code{mtl}.}
 
 \item{username}{<\code{character}> Mapbox account username.}

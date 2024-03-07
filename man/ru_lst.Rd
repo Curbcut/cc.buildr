@@ -9,7 +9,8 @@ ru_lst(
   region_DA_IDs,
   scales_sequences,
   crs,
-  overwrite = FALSE
+  overwrite = FALSE,
+  inst_prefix
 )
 }
 \arguments{
@@ -29,6 +30,9 @@ hierarchical ordering of scales on an auto-zoom.}
 
 \item{overwrite}{<\code{logical}> Should the data already processed and stored be
 overwriten?}
+
+\item{inst_prefix}{<\code{character}> The prefix of the instance, e.g. \code{'mtl'} which
+is the database schema in which the data is saved.}
 }
 \value{
 A list of length 3, similar to the one fed to

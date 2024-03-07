@@ -19,7 +19,8 @@ ba_census_data(
   DB_table,
   housing_module = TRUE,
   age_module = TRUE,
-  overwrite = FALSE
+  overwrite = FALSE,
+  inst_prefix
 )
 }
 \arguments{
@@ -61,6 +62,9 @@ the list of modules.}
 
 \item{overwrite}{<\code{logical}> Should the data already processed and stored be
 overwriten?}
+
+\item{inst_prefix}{<\code{character}> The prefix of the instance, e.g. \code{'mtl'} which
+is the database schema in which the data is saved.}
 }
 \value{
 A list of length 3, similar to the one fed to

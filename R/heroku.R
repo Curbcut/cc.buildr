@@ -77,11 +77,47 @@ heroku_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
     return(cat("Aborted successfully."))
   }
 
+  # Download the SSL certificates. Place it in the root directory which
+  # will be copied in the docker image
+  aws.s3::save_object(region = Sys.getenv("CURBCUT_BUCKET_DEFAULT_REGION"),
+                      key = Sys.getenv("CURBCUT_BUCKET_ACCESS_ID"),
+                      secret = Sys.getenv("CURBCUT_BUCKET_ACCESS_KEY"),
+                      object = "global-bundle.pem",
+                      bucket = "curbcut.misc",
+                      file = "global-bundle.pem",
+                      overwrite = TRUE)
+  aws.s3::save_object(region = Sys.getenv("CURBCUT_BUCKET_DEFAULT_REGION"),
+                      key = Sys.getenv("CURBCUT_BUCKET_ACCESS_ID"),
+                      secret = Sys.getenv("CURBCUT_BUCKET_ACCESS_KEY"),
+                      object = "Dockerfile",
+                      bucket = "curbcut.misc",
+                      file = "Dockerfile",
+                      overwrite = TRUE)
+
+  # Update config variables for the database access
+  config_set <- c(sprintf("heroku config:set CURBCUT_PROD_DB_HOST=%s -a %s",
+                          Sys.getenv("CURBCUT_PROD_DB_HOST"), app_name),
+                  sprintf("heroku config:set CURBCUT_PROD_DB_PORT=%s -a %s",
+                          Sys.getenv("CURBCUT_PROD_DB_PORT"), app_name),
+                  sprintf("heroku config:set CURBCUT_PROD_DB_NAME=%s -a %s",
+                          Sys.getenv("CURBCUT_PROD_DB_NAME"), app_name),
+                  sprintf("heroku config:set CURBCUT_PROD_DB_USER=%s -a %s",
+                          Sys.getenv("CURBCUT_PROD_DB_USER"), app_name),
+                  sprintf("heroku config:set CURBCUT_PROD_DB_PASSWORD=%s -a %s",
+                          Sys.getenv("CURBCUT_PROD_DB_PASSWORD"), app_name),
+                  sprintf("heroku config:set AWS_ACCESS_KEY_ID=%s -a %s",
+                          Sys.getenv("CURBCUT_PROD_DB_ACCESSKEY"), app_name),
+                  sprintf("heroku config:set AWS_SECRET_ACCESS_KEY=%s -a %s",
+                          Sys.getenv("CURBCUT_PROD_DB_SECRETACCESSKEY"), app_name),
+                  sprintf("heroku config:set AWS_DEFAULT_REGION=%s -a %s",
+                          Sys.getenv("CURBCUT_PROD_DB_REGION"), app_name))
+
   cmds <- c(
     paste0("cd ", wd),
     if (GA) "(Get-Content 'ui.R') -replace '# google_analytics', 'google_analytics' | Set-Content 'ui.R'",
     "heroku login",
     "heroku container:login",
+    config_set,
     paste0("heroku container:push web -a ", app_name),
     paste0("heroku container:release web -a ", app_name),
     # Remove Docker image after release
@@ -89,6 +125,8 @@ heroku_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
     # To keep every session on their own dyno (no shared temporary files)
     paste0("heroku features:enable http-session-affinity -a ", app_name),
     "del data\\modules_panel_calculated.qs",
+    "del global-bundle.pem",
+    "del Dockerfile",
     if (GA) "(Get-Content 'ui.R') -replace 'google_analytics', '# google_analytics' | Set-Content 'ui.R'",
     if (bucket) "Rscript -e \"cc.data::bucket_write_folder('data', 'curbcut.montreal.data')\""
   )

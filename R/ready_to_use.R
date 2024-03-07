@@ -12,13 +12,16 @@
 #' \code{32617} for Toronto.
 #' @param overwrite <`logical`> Should the data already processed and stored be
 #' overwriten?
+#' @param inst_prefix <`character`> The prefix of the instance, e.g. `'mtl'` which
+#' is the database schema in which the data is saved.
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with the ALP variable added, its addition
 #' in the variables table and the module table.
 #' @export
 ru_alp <- function(scales_variables_modules, regions_dictionary, region_DA_IDs,
-                   scales_sequences, crs, overwrite = FALSE) {
+                   scales_sequences, crs, overwrite = FALSE,
+                   inst_prefix) {
   data <- cc.data::db_read_data("alp",
                                 column_to_select = "DA_ID",
                                 IDs = region_DA_IDs, crs = crs
@@ -35,6 +38,7 @@ ru_alp <- function(scales_variables_modules, regions_dictionary, region_DA_IDs,
     weight_by = "households",
     crs = crs,
     average_vars = cols,
+    inst_prefix = inst_prefix,
     variable_var_code = "alp",
     variable_type = "ind",
     variable_var_title = "Active living potential",
@@ -111,13 +115,16 @@ ru_alp <- function(scales_variables_modules, regions_dictionary, region_DA_IDs,
 #' \code{32617} for Toronto.
 #' @param overwrite <`logical`> Should the data already processed and stored be
 #' overwriten?
+#' @param inst_prefix <`character`> The prefix of the instance, e.g. `'mtl'` which
+#' is the database schema in which the data is saved.
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with the Can-BICS variable added, its addition
 #' in the variables table and the module table.
 #' @export
 ru_canbics <- function(scales_variables_modules, region_DA_IDs,
-                       scales_sequences, crs, overwrite = FALSE) {
+                       scales_sequences, crs, overwrite = FALSE,
+                       inst_prefix) {
   data <- cc.data::db_read_data("canbics",
                                 column_to_select = "DA_ID",
                                 IDs = region_DA_IDs, crs = crs
@@ -133,6 +140,7 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs,
     weight_by = "households",
     crs = crs,
     average_vars = cols,
+    inst_prefix = inst_prefix,
     variable_var_code = "canbics",
     variable_type = "ind",
     variable_var_title = "Can-BICS metric",
@@ -211,13 +219,16 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs,
 #' \code{32617} for Toronto.
 #' @param overwrite <`logical`> Should the data already processed and stored be
 #' overwriten?
+#' @param inst_prefix <`character`> The prefix of the instance, e.g. `'mtl'` which
+#' is the database schema in which the data is saved.
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with the Can-BICS variable added, its addition
 #' in the variables table and the module table.
 #' @export
 ru_lst <- function(scales_variables_modules, region_DA_IDs,
-                   scales_sequences, crs, overwrite = FALSE) {
+                   scales_sequences, crs, overwrite = FALSE,
+                   inst_prefix) {
   data <- cc.data::db_read_data("lst",
     column_to_select = "DA_ID",
     IDs = region_DA_IDs, crs = crs
@@ -233,6 +244,7 @@ ru_lst <- function(scales_variables_modules, region_DA_IDs,
     weight_by = "area",
     crs = crs,
     average_vars = cols,
+    inst_prefix = inst_prefix,
     variable_var_code = "lst",
     variable_type = c("avg", "degree"),
     variable_var_title = "Land surface temperature",
@@ -306,6 +318,8 @@ ru_lst <- function(scales_variables_modules, region_DA_IDs,
 #' the name `York` is used in many different names.
 #' @param overwrite <`logical`> Should the data already processed and stored be
 #' overwriten?
+#' @param inst_prefix <`character`> The prefix of the instance, e.g. `'mtl'` which
+#' is the database schema in which the data is saved.
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with the CMHC's vacancy rate variables added,
@@ -313,7 +327,9 @@ ru_lst <- function(scales_variables_modules, region_DA_IDs,
 #' @export
 ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
                         scales_sequences = scales_sequences,
-                        approximate_name_match = TRUE) {
+                        approximate_name_match = TRUE,
+                        overwrite = FALSE,
+                        inst_prefix = inst_prefix) {
   # Relevant dimensions
   # Rent ranges temporarily taken out as they are not available for the
   # Rental Univers series (parent vector)
@@ -324,153 +340,171 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
   years <- 2010:2022
   time_regex <- "_\\d{4}$"
 
-  # Retrieval
-  cmhc_vac_rate <-
-    sapply(years, \(yr) {
-      over_year <-
-        mapply(\(x, y) {
-          # Get data
-          out <- cmhc::get_cmhc(
-            survey = "Rms",
-            series = "Vacancy Rate",
-            dimension = x,
-            breakdown = "Survey Zones",
-            geo_uid = geo_uid,
-            year = yr
-          )[, 1:3]
-          # Rename column and update for real percentage
-          names(out)[2] <- y
-          out[3] <- out[3] / 100
+  # Skip data building
+  unique_vars <- c("vac_rate_bachelor_bed", "vac_rate_1_bed_bed", "vac_rate_2_bed_bed",
+                   "vac_rate_3_bed_plus_bed", "vac_rate_total_bed", "vac_rate_before_1960_year",
+                   "vac_rate_1960_1979_year", "vac_rate_1980_1999_year", "vac_rate_2000_or_later_year",
+                   "vac_rate_total_year", "rental_universe_bachelor_bed", "rental_universe_1_bed_bed",
+                   "rental_universe_2_bed_bed", "rental_universe_3_bed_plus_bed",
+                   "rental_universe_total_bed", "rental_universe_before_1960_year",
+                   "rental_universe_1960_1979_year", "rental_universe_1980_1999_year",
+                   "rental_universe_2000_or_later_year", "rental_universe_total_year")
 
-          # Pivot and rename
-          out <- tidyr::pivot_wider(out,
-            names_from = tidyr::all_of(y),
-            values_from = "Value"
-          )
-          names(out) <- gsub("Non-Market/Unknown", "non_market", names(out))
-          names(out) <- gsub(" |-", "_", tolower(names(out)))
-          names(out) <- gsub("___", "_", names(out))
-          names(out) <- gsub("\\+", "plus", names(out))
-          names(out) <- gsub("_units", "", names(out))
-          names(out) <- gsub("bedroom", "bed", names(out))
-          names(out) <- gsub("\\$", "", names(out))
-          names(out) <- gsub("less_than", "less", names(out))
-          names(out) <- gsub(",", "", names(out))
-          names(out) <- paste("vac_rate", names(out), y, yr, sep = "_")
-          names(out)[1] <- "name"
+  scs <- exclude_processed_scales(unique_vars = unique_vars,
+                                  scales = scales_variables_modules$scales["cmhczone"],
+                                  overwrite = overwrite,
+                                  inst_prefix = inst_prefix)
 
-          # Change the name to the closest string in the CMHC zone scale
-          out <- out[!is.na(out$name), ]
-          if (approximate_name_match) {
-            out$name <-
-              sapply(out$name,
-                agrep,
-                x = scales_variables_modules$scales$cmhczone$name,
-                value = TRUE, USE.NAMES = FALSE
-              )
-            if (!all(sapply(out$name, length) == 1)) {
-              stop(paste0(
-                "Approximate name matching matched more than one ",
-                "name in `", yr,
-                "`. Consider using `approximate_name_match = FALSE`"
-              ))
+  if (length(scs) > 0) {
+    # Retrieval
+    cmhc_vac_rate <-
+      sapply(years, \(yr) {
+        over_year <-
+          mapply(\(x, y) {
+            # Get data
+            out <- cmhc::get_cmhc(
+              survey = "Rms",
+              series = "Vacancy Rate",
+              dimension = x,
+              breakdown = "Survey Zones",
+              geo_uid = geo_uid,
+              year = yr
+            )[, 1:3]
+            # Rename column and update for real percentage
+            names(out)[2] <- y
+            out[3] <- out[3] / 100
+
+            # Pivot and rename
+            out <- tidyr::pivot_wider(out,
+                                      names_from = tidyr::all_of(y),
+                                      values_from = "Value"
+            )
+            names(out) <- gsub("Non-Market/Unknown", "non_market", names(out))
+            names(out) <- gsub(" |-", "_", tolower(names(out)))
+            names(out) <- gsub("___", "_", names(out))
+            names(out) <- gsub("\\+", "plus", names(out))
+            names(out) <- gsub("_units", "", names(out))
+            names(out) <- gsub("bedroom", "bed", names(out))
+            names(out) <- gsub("\\$", "", names(out))
+            names(out) <- gsub("less_than", "less", names(out))
+            names(out) <- gsub(",", "", names(out))
+            names(out) <- paste("vac_rate", names(out), y, yr, sep = "_")
+            names(out)[1] <- "name"
+
+            # Change the name to the closest string in the CMHC zone scale
+            out <- out[!is.na(out$name), ]
+            if (approximate_name_match) {
+              out$name <-
+                sapply(out$name,
+                       agrep,
+                       x = scales_variables_modules$scales$cmhczone$name,
+                       value = TRUE, USE.NAMES = FALSE
+                )
+              if (!all(sapply(out$name, length) == 1)) {
+                stop(paste0(
+                  "Approximate name matching matched more than one ",
+                  "name in `", yr,
+                  "`. Consider using `approximate_name_match = FALSE`"
+                ))
+              }
             }
-          }
-          # Return
-          out
-        }, dimensions, dimensions_short, SIMPLIFY = FALSE, USE.NAMES = TRUE)
-      cmhc <- Reduce(merge, over_year)
-      tibble::as_tibble(cmhc)
-    }, simplify = FALSE, USE.NAMES = TRUE)
+            # Return
+            out
+          }, dimensions, dimensions_short, SIMPLIFY = FALSE, USE.NAMES = TRUE)
+        cmhc <- Reduce(merge, over_year)
+        tibble::as_tibble(cmhc)
+      }, simplify = FALSE, USE.NAMES = TRUE)
 
-  cmhc_rental_units <-
-    sapply(years, \(yr) {
-      over_year <-
-        mapply(\(x, y) {
-          # Get data
-          out <- cmhc::get_cmhc(
-            survey = "Rms",
-            series = "Rental Universe",
-            dimension = x,
-            breakdown = "Survey Zones",
-            geo_uid = geo_uid,
-            year = yr
-          )[, 1:3]
-          # Rename column and update for real percentage
-          names(out)[2] <- y
-          out[3] <- out[3]
+    cmhc_rental_units <-
+      sapply(years, \(yr) {
+        over_year <-
+          mapply(\(x, y) {
+            # Get data
+            out <- cmhc::get_cmhc(
+              survey = "Rms",
+              series = "Rental Universe",
+              dimension = x,
+              breakdown = "Survey Zones",
+              geo_uid = geo_uid,
+              year = yr
+            )[, 1:3]
+            # Rename column and update for real percentage
+            names(out)[2] <- y
+            out[3] <- out[3]
 
-          # Pivot and rename
-          out <- tidyr::pivot_wider(out,
-            names_from = tidyr::all_of(y),
-            values_from = "Value"
-          )
-          names(out) <- gsub("Non-Market/Unknown", "non_market", names(out))
-          names(out) <- gsub(" |-", "_", tolower(names(out)))
-          names(out) <- gsub("___", "_", names(out))
-          names(out) <- gsub("\\+", "plus", names(out))
-          names(out) <- gsub("_units", "", names(out))
-          names(out) <- gsub("bedroom", "bed", names(out))
-          names(out) <- gsub("\\$", "", names(out))
-          names(out) <- gsub("less_than", "less", names(out))
-          names(out) <- gsub(",", "", names(out))
-          names(out) <- paste("rental_universe", names(out), y, yr, sep = "_")
-          names(out)[1] <- "name"
+            # Pivot and rename
+            out <- tidyr::pivot_wider(out,
+                                      names_from = tidyr::all_of(y),
+                                      values_from = "Value"
+            )
+            names(out) <- gsub("Non-Market/Unknown", "non_market", names(out))
+            names(out) <- gsub(" |-", "_", tolower(names(out)))
+            names(out) <- gsub("___", "_", names(out))
+            names(out) <- gsub("\\+", "plus", names(out))
+            names(out) <- gsub("_units", "", names(out))
+            names(out) <- gsub("bedroom", "bed", names(out))
+            names(out) <- gsub("\\$", "", names(out))
+            names(out) <- gsub("less_than", "less", names(out))
+            names(out) <- gsub(",", "", names(out))
+            names(out) <- paste("rental_universe", names(out), y, yr, sep = "_")
+            names(out)[1] <- "name"
 
-          # Change the name to the closest string in the CMHC zone scale
-          out <- out[!is.na(out$name), ]
-          if (approximate_name_match) {
-            out$name <-
-              sapply(out$name,
-                agrep,
-                x = scales_variables_modules$scales$cmhczone$name,
-                value = TRUE, USE.NAMES = FALSE
-              )
-            if (!all(sapply(out$name, length) == 1)) {
-              stop(paste0(
-                "Approximate name matching matched more than one ",
-                "name in `", yr,
-                "`. Consider using `approximate_name_match = FALSE`"
-              ))
+            # Change the name to the closest string in the CMHC zone scale
+            out <- out[!is.na(out$name), ]
+            if (approximate_name_match) {
+              out$name <-
+                sapply(out$name,
+                       agrep,
+                       x = scales_variables_modules$scales$cmhczone$name,
+                       value = TRUE, USE.NAMES = FALSE
+                )
+              if (!all(sapply(out$name, length) == 1)) {
+                stop(paste0(
+                  "Approximate name matching matched more than one ",
+                  "name in `", yr,
+                  "`. Consider using `approximate_name_match = FALSE`"
+                ))
+              }
             }
-          }
-          # Return
-          out
-        }, dimensions, dimensions_short, SIMPLIFY = FALSE, USE.NAMES = TRUE)
-      cmhc <- Reduce(merge, over_year)
-      tibble::as_tibble(cmhc)
-    }, simplify = FALSE, USE.NAMES = TRUE)
+            # Return
+            out
+          }, dimensions, dimensions_short, SIMPLIFY = FALSE, USE.NAMES = TRUE)
+        cmhc <- Reduce(merge, over_year)
+        tibble::as_tibble(cmhc)
+      }, simplify = FALSE, USE.NAMES = TRUE)
 
-  # Merge vacancy rate with rental units
-  cmhc <- mapply(merge, cmhc_vac_rate, cmhc_rental_units,
-    SIMPLIFY = FALSE
-  )
-
-  # Merge with the `sf`
-  merged <-
-    Reduce(\(x, y) merge(x, y, by = "name", all.x = TRUE),
-      cmhc,
-      init = sf::st_drop_geometry(
-        scales_variables_modules$scales$cmhczone
-      )[, "name"]
+    # Merge vacancy rate with rental units
+    cmhc <- mapply(merge, cmhc_vac_rate, cmhc_rental_units,
+                   SIMPLIFY = FALSE
     )
 
-  # Variables
-  vars <- names(merged)[!grepl("name|ID|geometry", names(merged))]
-  unique_vars <- unique(gsub("_\\d{4}$", "", vars))
+    # Merge with the `sf`
+    merged <-
+      Reduce(\(x, y) merge(x, y, by = "name", all.x = TRUE),
+             cmhc,
+             init = sf::st_drop_geometry(
+               scales_variables_modules$scales$cmhczone
+             )[, "name"]
+      )
 
-  # Append data
-  merged_to_svm <- scales_variables_modules$scales
-  merged_to_svm$cmhczone <-
-    merge(merged_to_svm$cmhczone,
-      merged,
-      by = "name"
-    )
+    # Variables
+    vars <- names(merged)[!grepl("name|ID|geometry", names(merged))]
+    unique_vars <- unique(gsub("_\\d{4}$", "", vars))
 
-  # Data tibble
-  data_construct(scales_data = merged_to_svm,
-                 unique_var = unique_vars,
-                 time_regex = time_regex)
+    # Append data
+    merged_to_svm <- scales_variables_modules$scales
+    merged_to_svm$cmhczone <-
+      merge(merged_to_svm$cmhczone,
+            merged,
+            by = "name"
+      )
+
+    # Data tibble
+    data_construct(scales_data = merged_to_svm,
+                   unique_var = unique_vars,
+                   time_regex = time_regex,
+                   inst_prefix = inst_prefix)
+  }
 
   # Types
   types <- rep(list("pct"), sum(grepl("^vac_rate", unique_vars)))

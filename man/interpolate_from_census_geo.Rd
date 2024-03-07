@@ -17,7 +17,8 @@ interpolate_from_census_geo(
     all_scales[[base_scale]][all_scales[[base_scale]]$ID \%in\% data[[paste0(base_scale,
     "_ID")]], ], all_scales = all_scales, crs = crs),
   overwrite = FALSE,
-  time_regex = "_\\\\d{4}$"
+  time_regex = "_\\\\d{4}$",
+  inst_prefix
 )
 }
 \arguments{
@@ -61,6 +62,9 @@ overwriten?}
 \item{time_regex}{<\code{character}> Regular expression which corresponds to
 a timeframe, placed at the end of the \code{vars} vector. e.g. \verb{\\\\d\{4\}} for
 years.}
+
+\item{inst_prefix}{<\code{character}> The prefix of the instance, e.g. \code{'mtl'} which
+is the database schema in which the data is saved.}
 }
 \value{
 Returns a list of length 4. The first is the same list that is fed in

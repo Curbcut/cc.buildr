@@ -18,6 +18,8 @@
 #' @export
 save_bslike_sqlite <- function(scale_chr, path = sprintf("data/%s.sqlite", scale_chr),
                                all_scales, keep_cols = c("ID", "name", "name_2", "DA_ID")) {
+  .Deprecated("save_bslike_postgresql")
+
   # Save all scales in the same database
   if (file.exists(path)) unlink(path)
   scale_sql <- DBI::dbConnect(RSQLite::SQLite(), path)
@@ -57,36 +59,42 @@ save_bslike_sqlite <- function(scale_chr, path = sprintf("data/%s.sqlite", scale
   return(invisible(NULL))
 }
 
-#' Save all buildings dataset in a SQLite
+#' Save df to PostgreSQL Database
 #'
-#' This function uses \code{\link{save_bslike_sqlite}}.
+#' This function saves a data frame to a PostgreSQL database table, selecting the
+#' data frame from all_scales based on the scale name (scale_chr). The table
+#' is written using the `db_write_prod` function, which handles the connection,
+#' writing, and primary key setting.
 #'
-#' @param scale_chr <`character`> The name of the scale: "building
-#' @param all_scales <`named list`> A named list of sf data.frame
-#' containing all scales listed with their regions, normally
-#' `scales_variables_modules$scales`.
+#' @param scale_chr <`character`> A character string specifying the scale key in
+#' the `all_scales` list from which the data frame will be selected.
+#' @param all_scales <`character`> A named list of data frames, where each key
+#' represents a scale and each value is a data frame to be saved to the database
+#' under the corresponding scale name.
+#' @param inst_prefix <`character`> A string specifying the database schema, which is
+#' the local prefix which is also the same prefix of tilesets. E.g. for Montreal, `mtl`.
 #'
-#' @return Returns an error or nothing if ran successfully. All existing `building`
-#' data.frame in the fed `all_scales` are saved in the created `.sqlite`.
+#' @return Invisibly returns `NULL`. The primary effect is the side effect of
+#' writing the selected data frame to the PostgreSQL database.
 #' @export
-save_buildings_sqlite <- function(scale_chr = "building", all_scales) {
-  save_bslike_sqlite(scale_chr = scale_chr, all_scales = all_scales)
-}
+save_bslike_postgresql <- function(scale_chr, all_scales, inst_prefix) {
 
-#' Save all streets dataset in a SQLite
-#'
-#' This function uses \code{\link{save_bslike_sqlite}}.
-#'
-#' @param scale_chr <`character`> The name of the scale: street
-#' @param all_scales <`named list`> A named list of sf data.frame
-#' containing all scales listed with their regions, normally
-#' `scales_variables_modules$scales`.
-#'
-#' @return Returns an error or nothing if ran successfully. All existing `streets`
-#' data.frame in the fed `all_scales` are saved in the created `.sqlite`.
-#' @export
-save_streets_sqlite <- function(scale_chr = "street", all_scales) {
-  save_bslike_sqlite(scale_chr = scale_chr, all_scales = all_scales)
+  # Grab df
+  df <- all_scales[[scale_chr]]
+  df <- sf::st_drop_geometry(df)
+
+  # Remove self ID
+  df <- df[names(df) != sprintf("%s_ID", scale_chr)]
+
+  # Remake the centroid list
+  df$centroid <- lapply(df$centroid, function(x) {
+    jsonlite::toJSON(list(lon = as.numeric(x[1]), lat = as.numeric(x[2])),
+                     auto_unbox = TRUE)
+  })
+
+  # Write to the PostgreSQL database
+  db_write_prod(df = df, table_name = scale_chr, schema = prefix)
+
 }
 
 #' Save all scale tables in QS format
@@ -107,9 +115,6 @@ save_all_scales_qs <- function(scales_dictionary, data_folder = "data/") {
   lapply(scales_dictionary$scale, \(scale_name) {
     # Construct the folder path for the scale
     folder <- sprintf("%s%s/", data_folder, scale_name)
-
-    # If the folder doesn't exist, create it
-    if (!dir.exists(folder)) dir.create(folder)
 
     all_files <- list.files(folder)
     all_files <- gsub(".qs$", "", all_files)
@@ -165,7 +170,9 @@ save_all_scales_qs <- function(scales_dictionary, data_folder = "data/") {
     # Keep a 'dictionary' of all available files
     all_files <- list.files(folder)
     all_files <- gsub(".qs$", "", all_files)
-    qs::qsave(all_files, sprintf("%s%s_files.qs", data_folder, scale_name))
+    if (length(all_files) > 0) {
+      qs::qsave(all_files, sprintf("%s%s_files.qs", data_folder, scale_name))
+    }
 
   })
 
@@ -284,11 +291,14 @@ unload_scales <- function(scales, unload) {
 #' @param overwrite <`logical`> If TRUE, no scales are excluded and all are returned.
 #' @param data_folder <`character`> The folder where data files are stored.
 #' Default is "data/".
+#' @param inst_prefix <`character`> The prefix of the instance, e.g. `'mtl'` which
+#' is the database schema in which the data is saved.
 #'
 #' @return <`character vector`> Scales for which data files do not exist
 #' or all scales if 'overwrite' is TRUE.
 #' @export
-exclude_processed_scales <- function(unique_vars, scales, overwrite = FALSE, data_folder = "data/") {
+exclude_processed_scales <- function(unique_vars, scales, overwrite = FALSE,
+                                     data_folder = "data/", inst_prefix) {
   if (overwrite) return(scales)
 
   # We want the function to work both for the named list of scales, or for a
@@ -300,17 +310,24 @@ exclude_processed_scales <- function(unique_vars, scales, overwrite = FALSE, dat
   }
 
   all_files <- list.files(data_folder, recursive = TRUE)
+  scales_db <- db_list_scales(inst_prefix)
 
   # Iterate over scales_name to know which ones already have data stored
   keep_index <- sapply(scales_name, \(sc) {
 
-    # If it's a sqlite
-    sqlite_path <- sprintf("%s%s.sqlite", data_folder, sc)
-    if (sqlite_path %in% all_files) {
-      conn <- DBI::dbConnect(RSQLite::SQLite(), sqlite_path)
-      table <- DBI::dbGetQuery(conn, "SELECT name FROM sqlite_master")$name
-      DBI::dbDisconnect(conn)
-      return(!all(unique_vars %in% table))
+    # If it's in the database
+    if (sc %in% scales_db) {
+
+      # Get all the tables of this scale
+      conn <- db_connect_prod()
+      query <- sprintf(paste0("SELECT table_name FROM information_schema.tables ",
+                              "WHERE table_schema = '%s' AND table_name LIKE ",
+                              "'%s_%%' ESCAPE '\\'"), inst_prefix, sc)
+      tables <- DBI::dbGetQuery(conn, query)$table_name
+      db_disconnect_prod(conn)
+      tables <- gsub(sprintf("%s_", sc), "", tables)
+
+      return(!all(unique_vars %in% tables))
     }
 
     data_files <- paste0(sc, "/", unique_vars, ".qs")
