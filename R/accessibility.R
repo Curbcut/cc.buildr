@@ -130,7 +130,8 @@ ba_accessibility_points <- function(scales_variables_modules,
         crs = crs,
         average_vars = average_vars,
         overwrite = overwrite,
-        time_regex = "_\\d{4}$"
+        time_regex = "_\\d{4}$",
+        inst_prefix = inst_prefix
       )
 
 

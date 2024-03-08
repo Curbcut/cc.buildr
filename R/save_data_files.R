@@ -66,34 +66,45 @@ save_bslike_sqlite <- function(scale_chr, path = sprintf("data/%s.sqlite", scale
 #' is written using the `db_write_prod` function, which handles the connection,
 #' writing, and primary key setting.
 #'
-#' @param scale_chr <`character`> A character string specifying the scale key in
-#' the `all_scales` list from which the data frame will be selected.
 #' @param all_scales <`character`> A named list of data frames, where each key
 #' represents a scale and each value is a data frame to be saved to the database
 #' under the corresponding scale name.
+#' @param tables_to_save_db <`character vector`> Names of the scales that must be
+#' saved in the DB.
 #' @param inst_prefix <`character`> A string specifying the database schema, which is
 #' the local prefix which is also the same prefix of tilesets. E.g. for Montreal, `mtl`.
+#' @param overwrite <`logical`> If table in database should be overwritten or not.
 #'
 #' @return Invisibly returns `NULL`. The primary effect is the side effect of
 #' writing the selected data frame to the PostgreSQL database.
 #' @export
-save_bslike_postgresql <- function(scale_chr, all_scales, inst_prefix) {
+save_bslike_postgresql <- function(all_scales, tables_to_save_db, inst_prefix,
+                                   overwrite = FALSE) {
 
-  # Grab df
-  df <- all_scales[[scale_chr]]
-  df <- sf::st_drop_geometry(df)
+  scales <- all_scales[tables_to_save_db]
 
-  # Remove self ID
-  df <- df[names(df) != sprintf("%s_ID", scale_chr)]
+  scales_saved_in_db <- db_list_scales(inst_prefix)
 
-  # Remake the centroid list
-  df$centroid <- lapply(df$centroid, function(x) {
-    jsonlite::toJSON(list(lon = as.numeric(x[1]), lat = as.numeric(x[2])),
-                     auto_unbox = TRUE)
-  })
+  mapply(\(scale_name, scale_df) {
 
-  # Write to the PostgreSQL database
-  db_write_prod(df = df, table_name = scale_chr, schema = prefix)
+    if (!scale_name %in% scales_saved_in_db | overwrite) {
+      # Grab df
+      df <- scale_df
+
+      # Remove self ID
+      df <- df[names(df) != sprintf("%s_ID", scale_name)]
+
+      # Remake the centroid list
+      df$centroid <- lapply(df$centroid, function(x) {
+        jsonlite::toJSON(list(lon = as.numeric(x[1]), lat = as.numeric(x[2])),
+                         auto_unbox = TRUE)
+      })
+
+      # Write to the PostgreSQL database
+      db_write_prod(df = df, table_name = scale_name, schema = inst_prefix)
+    }
+
+  }, names(scales), scales)
 
 }
 
@@ -187,9 +198,8 @@ save_all_scales_qs <- function(scales_dictionary, data_folder = "data/") {
 #' containing all scales, normally
 #' `scales_variables_modules$scales`.
 #' @param skip_scales <`character vector`> Scales to skip (not to keep as
-#' a short table). These scales should be saved as a sqlite database instead, if
-#' they are too large to be kept on memory. Defaults to an empty vector, no
-#' scales are skipped.
+#' a short table). These scales should be saved in the database instead, if
+#' they are too large to be kept on memory.
 #'
 #' @return Returns an error or nothing if ran successfully. Every `scale` is
 #' its own `.qs` containing a  trimed down  version of its data. Only
@@ -234,15 +244,24 @@ save_short_tables_qs <- function(data_folder = "data/", all_scales,
 #' @param all_scales <`named list`> A named list of sf data.frame
 #' containing all scales listed with their regions, normally
 #' `scales_variables_modules$scales`.
+#' @param skip_scales <`character vector`> Scales to skip (for which not to keep
+#' geometries). These scales should instead be saved in the database, as
+#' they are too large to be kept on memory. Defaults to an empty vector, no
+#' scales are skipped.
 #'
 #' @return Returns an error or nothing if ran succesfully. Every scale is saved
 #' in their most minimal version. Only used for when a user wants to do a
 #' geometry export.
 #' @export
-save_geometry_export <- function(data_folder = "data/", all_scales) {
+save_geometry_export <- function(data_folder = "data/", all_scales,
+                                 skip_scales = c("building", "street", "grd30",
+                                                 "grd60", "grd120", "grd300")) {
   if (!file.exists(paste0(data_folder, "geometry_export/"))) {
     dir.create(paste0(data_folder, "geometry_export/"))
   }
+
+  # Remove scales to skip
+  scales <- all_scales[!names(all_scales) %in% skip_scales]
 
   # For each scale, drop the geometry and save the table
   mapply(\(scale_name, scale_df) {
@@ -253,7 +272,7 @@ save_geometry_export <- function(data_folder = "data/", all_scales) {
     d <- scale_df[, subs]
 
     qs::qsave(d, file = file_link)
-  }, names(all_scales), all_scales)
+  }, names(scales), scales)
 
   return(invisible(NULL))
 }

@@ -96,7 +96,7 @@ db_write_prod <- function(df, table_name, schema, scale = NULL, primary_key = "I
   # seen that tables are 6% smaller when this is true. Idea taken from:
   # https://www.youtube.com/watch?v=m8ogrogKjXo
   # Define the desired order of data types
-  desired_order <- c("logical", "integer", "numeric", "character", "list")
+  desired_order <- c("logical", "integer", "numeric", "character", "list", "sfc")
   # Create a vector of the data types in the order they appear in the DataFrame
   data_types <- sapply(df, class)
   # Create a function to find the index of each data type in the desired order

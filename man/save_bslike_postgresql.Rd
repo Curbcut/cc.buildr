@@ -4,18 +4,25 @@
 \alias{save_bslike_postgresql}
 \title{Save df to PostgreSQL Database}
 \usage{
-save_bslike_postgresql(scale_chr, all_scales, inst_prefix)
+save_bslike_postgresql(
+  all_scales,
+  tables_to_save_db,
+  inst_prefix,
+  overwrite = FALSE
+)
 }
 \arguments{
-\item{scale_chr}{<\code{character}> A character string specifying the scale key in
-the \code{all_scales} list from which the data frame will be selected.}
-
 \item{all_scales}{<\code{character}> A named list of data frames, where each key
 represents a scale and each value is a data frame to be saved to the database
 under the corresponding scale name.}
 
+\item{tables_to_save_db}{<\verb{character vector}> Names of the scales that must be
+saved in the DB.}
+
 \item{inst_prefix}{<\code{character}> A string specifying the database schema, which is
 the local prefix which is also the same prefix of tilesets. E.g. for Montreal, \code{mtl}.}
+
+\item{overwrite}{<\code{logical}> If table in database should be overwritten or not.}
 }
 \value{
 Invisibly returns \code{NULL}. The primary effect is the side effect of

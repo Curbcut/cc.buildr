@@ -4,7 +4,11 @@
 \alias{save_geometry_export}
 \title{Save, for each scale, a table of ID and geometry used for export}
 \usage{
-save_geometry_export(data_folder = "data/", all_scales)
+save_geometry_export(
+  data_folder = "data/",
+  all_scales,
+  skip_scales = c("building", "street", "grd30", "grd60", "grd120", "grd300")
+)
 }
 \arguments{
 \item{data_folder}{<\code{character}> Where the \code{.qsm} files should be
@@ -13,6 +17,11 @@ written to. Defaults to \verb{data/}.}
 \item{all_scales}{<\verb{named list}> A named list of sf data.frame
 containing all scales listed with their regions, normally
 \code{scales_variables_modules$scales}.}
+
+\item{skip_scales}{<\verb{character vector}> Scales to skip (for which not to keep
+geometries). These scales should instead be saved in the database, as
+they are too large to be kept on memory. Defaults to an empty vector, no
+scales are skipped.}
 }
 \value{
 Returns an error or nothing if ran succesfully. Every scale is saved
