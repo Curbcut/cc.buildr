@@ -33,7 +33,7 @@ save_postal_codes <- function(region_DA_IDs, overwrite = FALSE, data_folder = "d
 
   path <- sprintf("%spostal_codes.qs", data_folder)
 
-  if (overwrite | !file.exists(all_files)) {
+  if (overwrite | !file.exists(path)) {
     postal_codes <- build_postal_codes(region_DA_IDs)
     postal_codes <- sf::st_drop_geometry(postal_codes)
     qs::qsave(postal_codes, path)

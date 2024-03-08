@@ -38,6 +38,7 @@ pages_regions <- function(svm, regions_dictionary, inst_prefix) {
           # Go over all scales in the region
           scales_presence <- mapply(\(scale_name, scale_IDs) {
             is_in_db <- scale_name %in% scales_in_db
+            is_grid <- grepl("^grd", scale_name)
             # If there are no features for a scale inside this region, remove it
             # from the count
             if (length(scale_IDs) == 0) return(NULL)
