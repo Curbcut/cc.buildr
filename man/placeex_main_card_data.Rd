@@ -9,6 +9,7 @@ placeex_main_card_data(
   DA_table,
   region_DA_IDs,
   crs,
+  inst_prefix,
   regions_dictionary,
   ignore_scales = c("building", "street", "grd30", "grd60", "grd120", "grd300", "grd600"),
   first_scales
@@ -25,6 +26,9 @@ identifiers in the zone under study. Usually is \code{census_scales$DA$ID}}
 
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}
+
+\item{inst_prefix}{<\code{character}> The prefix of the instance, e.g. \code{'mtl'} which
+is the database schema in which the data is saved.}
 
 \item{regions_dictionary}{<\code{data.frame}> The regions dictionary built using
 \code{\link[cc.buildr]{regions_dictionary}}. Will be used to filter out scales
