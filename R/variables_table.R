@@ -270,7 +270,7 @@ add_variable <- function(variables, var_code, type, var_title,
     rankings_chr = list(rankings_chr),
     rank_name = list(rank_name),
     rank_name_short = list(rank_name_short),
-    var_measurement = list(var_measurement),
+    var_measurement = list(unique(var_measurement)),
     breaks_q5 = list(breaks_q5)
   )
 }

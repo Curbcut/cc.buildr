@@ -434,8 +434,18 @@ tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
 
   all_scales <- sapply(all_scales, \(x) {
     file <- sprintf("data/geometry_export/%s.qs", x)
+    if (x %in% db_scales) {
+      conn <- db_connect_prod()
+      out <- db_try_disconnect(conn = conn,
+                               fun = DBI::dbGetQuery(conn,
+                                                     sprintf("SELECT * FROM %s.%s",
+                                                             inst_prefix, x)))
+      db_disconnect_prod(conn)
+      return(out)
+    }
+
     if (!file.exists(file)) {
-      stop(sprintf("scale geometry file `%s` does not exist", file))
+      stop(sprintf("scale geometry file `%s` does not exist, and scale not in DB.", file))
     }
     qs::qread(file)
   }, simplify = FALSE, USE.NAMES = TRUE)
@@ -1050,10 +1060,33 @@ tileset_upload_ndvi <- function(grids_dir = "dev/data/built/",
 
   grids_size <- c(30, 60, 120, 300, 600)
   all_scales <- sapply(grids_size, \(x) {
-    file <- sprintf("%sgrd%s.qs", grids_dir, x)
-    geo <- qs::qread(file)
-    data_file <- qs::qread(sprintf("data/grd%s/ndvi.qs", x))
-    merge(geo, data_file, by = "ID")
+
+    data_file <- sprintf("data/grd%s/ndvi.qs", x)
+    if (data_file %in% list.files(sprintf("data/grd%s", x), full.names = TRUE)) {
+      file <- sprintf("%sgrd%s.qs", grids_dir, x)
+      geo <- qs::qread(file)
+      data_file <- qs::qread(sprintf("data/grd%s/ndvi.qs", x))
+      return(merge(geo, data_file, by = "ID") |> sf::st_transform(crs))
+    }
+
+    geo_chr <- sprintf("grd%s", x)
+    conn <- db_connect_prod()
+    geo <- db_try_disconnect(conn = conn,
+                             fun = DBI::dbGetQuery(conn,
+                                                   sprintf("SELECT * FROM %s.%s",
+                                                           inst_prefix, geo_chr)))
+    db_disconnect_prod(conn)
+    geo$geometry <- sf::st_as_sfc(geo$geometry, EWKB = TRUE, crs = 4326)
+    geo <- tibble::as_tibble(geo)
+    geo <- sf::st_as_sf(geo)
+
+    conn <- db_connect_prod()
+    dat <- db_try_disconnect(conn = conn,
+                             fun = DBI::dbGetQuery(conn,
+                                                   sprintf("SELECT * FROM %s.%s_ndvi",
+                                                           inst_prefix, geo_chr)))
+
+    merge(geo, dat, by = "ID") |> sf::st_transform(crs)
   }, simplify = FALSE, USE.NAMES = TRUE)
 
   # Switch the geometry for digital

@@ -317,14 +317,14 @@ aws_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
     docker_id,
     tag_to_aws,
     push,
-    restart_service,
     # Remove Docker image after release
     sprintf("docker rmi %s", app_name),
     "del data\\modules_panel_calculated.qs",
     "del global-bundle.pem",
     "del Dockerfile",
     if (GA) "(Get-Content 'ui.R') -replace 'google_analytics', '# google_analytics' | Set-Content 'ui.R'",
-    if (bucket) "Rscript -e \"cc.data::bucket_write_folder('data', 'curbcut.montreal.data')\""
+    if (bucket) "Rscript -e \"cc.data::bucket_write_folder('data', 'curbcut.montreal.data')\"",
+    restart_service
   )
 
   ps_file_path <- file.path(wd, "deploy_script.ps1")

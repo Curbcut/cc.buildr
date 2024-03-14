@@ -196,7 +196,7 @@ db_create_schema_prod <- function(schema_name, allow_read_webapp = TRUE) {
   # Check if the schema exists
   query <- sprintf(paste0("SELECT schema_name FROM information_schema.schemata",
                           " WHERE schema_name = '%s';"), schema_name)
-  exists <- DBI::dbGetQuery(conn, checkSchemaExistsQuery)
+  exists <- DBI::dbGetQuery(conn, query)
 
   # If the schema does not exist, create it
   if (nrow(exists) == 0) {
@@ -205,7 +205,7 @@ db_create_schema_prod <- function(schema_name, allow_read_webapp = TRUE) {
       conn = conn,
       fun = DBI::dbExecute(conn, query)
     )
-    out <- sprintf("Schema '%s' has been created.\n", schema_name)
+    out <- sprintf("Schema '%s' has been created.", schema_name)
 
     # Allow usage access to the readonly_webapp_user the schema
     if (allow_read_webapp) {
@@ -218,7 +218,7 @@ db_create_schema_prod <- function(schema_name, allow_read_webapp = TRUE) {
     }
 
   } else {
-    out <- sprintf("Schema '%s' already exists.\n", schema_name)
+    out <- sprintf("Schema '%s' already exists.", schema_name)
   }
 
 
