@@ -8,7 +8,8 @@ exclude_processed_scales(
   unique_vars,
   scales,
   overwrite = FALSE,
-  data_folder = "data/"
+  data_folder = "data/",
+  inst_prefix
 )
 }
 \arguments{
@@ -21,6 +22,9 @@ list of scales to be checked.}
 
 \item{data_folder}{<\code{character}> The folder where data files are stored.
 Default is "data/".}
+
+\item{inst_prefix}{<\code{character}> The prefix of the instance, e.g. \code{'mtl'} which
+is the database schema in which the data is saved.}
 }
 \value{
 <\verb{character vector}> Scales for which data files do not exist

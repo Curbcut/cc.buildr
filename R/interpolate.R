@@ -158,6 +158,8 @@ scales_greater_than <- function(base_scale, all_scales, crs) {
 #' @param time_regex <`character`> Regular expression which corresponds to
 #' a timeframe, placed at the end of the `vars` vector. e.g. `\\d{4}` for
 #' years.
+#' @param inst_prefix <`character`> The prefix of the instance, e.g. `'mtl'` which
+#' is the database schema in which the data is saved.
 #'
 #' @return Returns a list of length 4. The first is the same list that is fed in
 #' `all_scales`, with the columns from `data` interpolated in. The second is
@@ -182,7 +184,8 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
                                           all_scales = all_scales,
                                           crs = crs),
                                         overwrite = FALSE,
-                                        time_regex = "_\\d{4}$") {
+                                        time_regex = "_\\d{4}$",
+                                        inst_prefix) {
   ## Catch errors
   if (!paste0(base_scale, "_ID") %in% names(data)) {
     stop(paste0(
@@ -217,7 +220,8 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
         name_interpolate_from = base_scale,
         construct_for = construct_for,
         overwrite = overwrite,
-        time_regex = "_\\d{4}$"
+        time_regex = "_\\d{4}$",
+        inst_prefix = inst_prefix
       )
     })
   }
@@ -229,7 +233,8 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
   unique_var <- unique(gsub(time_regex, "", c(additive_vars, average_vars)))
   scales_to_interpolate_exc <- exclude_processed_scales(unique_vars = unique_var,
                                                         scales = scales_to_interpolate,
-                                                        overwrite = overwrite)
+                                                        overwrite = overwrite,
+                                                        inst_prefix = inst_prefix)
 
 
   ## Interpolate over all the scales
@@ -555,6 +560,8 @@ interpolate_from_area <- function(to, from,
 #' @param time_regex <`character`> Regular expression which corresponds to
 #' a timeframe, placed at the end of the `vars` vector. e.g. `\\d{4}` for
 #' years.
+#' @param inst_prefix <`character`> The prefix of the instance, e.g. `'mtl'` which
+#' is the database schema in which the data is saved.
 #'
 #' @return Returns a list of length 4. The first is the same list that is fed in
 #' `all_scales`, with the columns from `data` interpolated in. The second is
@@ -573,7 +580,8 @@ interpolate_custom_geo <- function(data, all_scales, crs,
                                    name_interpolate_from,
                                    construct_for = NULL,
                                    overwrite = FALSE,
-                                   time_regex = "_\\d{4}$") {
+                                   time_regex = "_\\d{4}$",
+                                   inst_prefix = inst_prefix) {
 
   if (is.null(construct_for)) {
     ## Only interpolate for bigger geometries than the base one
@@ -590,7 +598,8 @@ interpolate_custom_geo <- function(data, all_scales, crs,
   unique_var <- unique(gsub(time_regex, "", c(additive_vars, average_vars)))
   scales_to_interpolate_exc <- exclude_processed_scales(unique_vars = unique_var,
                                                         scales = scales_to_interpolate,
-                                                        overwrite = overwrite)
+                                                        overwrite = overwrite,
+                                                        inst_prefix = inst_prefix)
 
   ## Interpolate over all the scales
   interpolated <- lapply(scales_to_interpolate_exc, \(scale_df) {

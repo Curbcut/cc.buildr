@@ -12,11 +12,14 @@
 #' for which data should not be calculated.
 #' @param first_scales <`character vector`> Scales for which place explorer should
 #' be calculated
+#' @param inst_prefix <`character`> The prefix of the instance, e.g. `'mtl'` which
+#' is the database schema in which the data is saved.
 #'
 #' @return Lists containing all the main card indicators. Sub lists of regions
 #' and scales for data values.
 #' @export
 placeex_main_card_data <- function(scales_dictionary, DA_table, region_DA_IDs, crs,
+                                   inst_prefix,
                                    regions_dictionary,
                                    ignore_scales = c(
                                      "building", "street", "grd30", "grd60", "grd120",
@@ -119,7 +122,8 @@ placeex_main_card_data <- function(scales_dictionary, DA_table, region_DA_IDs, c
     crs = crs,
     average_vars = "NO2",
     base_scale = "DA",
-    weight_by = "area"
+    weight_by = "area",
+    inst_prefix = inst_prefix
   )$scales
 
   # Format correctly

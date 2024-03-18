@@ -4,7 +4,7 @@
 \alias{tileset_labels}
 \title{Create CSD labels tileset}
 \usage{
-tileset_labels(scales, crs, prefix, username, access_token)
+tileset_labels(scales, crs, inst_prefix, username, access_token)
 }
 \arguments{
 \item{scales}{<\code{list}> Lists of spatial features dataframes with regions and
@@ -15,7 +15,7 @@ will be used to weight which label to display first.}
 \item{crs}{<\code{numeric}> EPSG coordinate reference system to be assigned, e.g.
 \code{32617} for Toronto.}
 
-\item{prefix}{<\code{character}> Prefix attached to every tile source and
+\item{inst_prefix}{<\code{character}> inst_prefix attached to every tile source and
 created and published tileset. Should correspond to the Curbcut city, e.g. \code{mtl}.}
 
 \item{username}{<\code{character}> Mapbox account username.}

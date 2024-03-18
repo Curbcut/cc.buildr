@@ -19,6 +19,8 @@
 #' @param time_regex <`character`> Regular expression which corresponds to
 #' a timeframe, placed at the end of the `vars` vector. e.g. `\\d{4}` for
 #' years.
+#' @param inst_prefix <`character`> The prefix of the instance, e.g. `'mtl'` which
+#' is the database schema in which the data is saved.
 #' @param additive_vars <`charater`> See \code{\link[cc.buildr]{interpolate_from_census_geo}}.
 #' @param average_vars <`charater`> See \code{\link[cc.buildr]{interpolate_from_census_geo}}.
 #' @param variable_var_code <`charater`> See \code{\link[cc.buildr]{add_variable}}.
@@ -53,7 +55,7 @@ ba_var <- function(data, scales_variables_modules, base_scale,
                    scales_sequences,
                    weight_by = "households", crs,
                    additive_vars = c(), average_vars = c(),
-                   time_regex = "_\\d{4}$", variable_var_code,
+                   time_regex = "_\\d{4}$", inst_prefix, variable_var_code,
                    variable_type, variable_var_title,
                    variable_var_short, variable_explanation,
                    variable_exp_q5,
@@ -102,7 +104,8 @@ ba_var <- function(data, scales_variables_modules, base_scale,
       additive_vars = additive_vars,
       average_vars = average_vars,
       overwrite = overwrite,
-      time_regex = time_regex
+      time_regex = time_regex,
+      inst_prefix = inst_prefix
     )
 
 
@@ -116,7 +119,8 @@ ba_var <- function(data, scales_variables_modules, base_scale,
 
   data_construct(scales_data = data_interpolated$scales,
                  unique_var = unique_var,
-                 time_regex = time_regex)
+                 time_regex = time_regex,
+                 inst_prefix = inst_prefix)
 
 
   # Variables table ---------------------------------------------------------

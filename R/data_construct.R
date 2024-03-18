@@ -20,6 +20,8 @@
 #' of `unique_var` and has as value a complete variable code with schemas. e.g.
 #' for unique_var `alp`, breaks_var would be `list(alp = "alp_2021")`. Defaults to
 #' NULL which will default in using the last ordered column (latest date).
+#' @param inst_prefix <`character`> The prefix of the instance, e.g. `'mtl'` which
+#' is the database schema in which the data is saved.
 #'
 #' @return A merged list containing the processed data tables for each scale and
 #' variable.
@@ -29,7 +31,8 @@
 #' are not adequate, the function stops with an error.
 #' @export
 data_construct <- function(scales_data, unique_var, time_regex, data_folder = "data/",
-                           schema = list(time = time_regex), breaks_var = NULL) {
+                           schema = list(time = time_regex), breaks_var = NULL,
+                           inst_prefix) {
 
   # If time_regex does not end with an dollar sign, flag it.
   if (!grepl("\\$$", time_regex)) {
@@ -141,33 +144,28 @@ data_construct <- function(scales_data, unique_var, time_regex, data_folder = "d
     return(dat)
   }, names(scales_data), scales_data, SIMPLIFY = FALSE)
 
-  # List .sqlite databases
-  sqlite_dbs <- grep("\\.sqlite$", list.files(data_folder), value = TRUE)
-  sqlite_dbs <- gsub("\\.sqlite$", "", sqlite_dbs)
+  # List scales that are found in the database
+  scales_db <- db_list_scales(inst_prefix)
 
   # Save the data
   mapply(\(scale_name, data_list) {
     if (length(data_list) == 0) return()
 
-    # Construct the folder path for the scale
-    folder <- sprintf("%s%s/", data_folder, scale_name)
-
-    # If the folder doesn't exist, create it
-    if (!dir.exists(folder)) dir.create(folder)
-
     mapply(\(data_name, data) {
       if (is.null(data)) return()
 
       # Is it to be saved in the sqlite?
-      if (scale_name %in% sqlite_dbs) {
-        con <- DBI::dbConnect(RSQLite::SQLite(), sprintf("%s%s.sqlite", data_folder, scale_name))
-
+      if (scale_name %in% scales_db) {
         # Write the tibble to the SQLite database as a temporary table
-        DBI::dbWriteTable(con, name = data_name, value = data, overwrite = TRUE)
-
-        # Close the database connection
-        DBI::dbDisconnect(con)
+        db_write_prod(data, table_name = data_name, schema = inst_prefix,
+                      scale = scale_name)
       } else {
+        # Construct the folder path for the scale
+        folder <- sprintf("%s%s/", data_folder, scale_name)
+
+        # If the folder doesn't exist, create it
+        if (!dir.exists(folder)) dir.create(folder)
+
         # Construct the file path for the table
         file <- sprintf("%s%s.qs", folder, data_name)
 

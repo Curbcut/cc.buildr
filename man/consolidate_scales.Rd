@@ -4,7 +4,7 @@
 \alias{consolidate_scales}
 \title{Consolidate Scales}
 \usage{
-consolidate_scales(scales_sequences, all_scales, regions, crs)
+consolidate_scales(scales_sequences, all_scales, regions, crs, large_tables_db)
 }
 \arguments{
 \item{scales_sequences}{<\code{list}> A list of scales sequences representing the
@@ -17,6 +17,11 @@ scale.}
 consolidated data needs to be processed.}
 
 \item{crs}{<\code{character}> A Coordinate Reference System.}
+
+\item{large_tables_db}{<\verb{character vector}> Vector of character of the scales
+that are too large to keep in the global environment. They will be saved in
+the database instead of in the container. These tables WON'T be available
+for dynamic filtering using region in the \code{curbcut::data_get()} function.}
 }
 \value{
 A list containing:

@@ -11,6 +11,10 @@
 #' @param regions <`named list`> A list or unioned polygons of regions for which the
 #' consolidated data needs to be processed.
 #' @param crs <`character`> A Coordinate Reference System.
+#' @param large_tables_db <`character vector`> Vector of character of the scales
+#' that are too large to keep in the global environment. They will be saved in
+#' the database instead of in the container. These tables WON'T be available
+#' for dynamic filtering using region in the `curbcut::data_get()` function.
 #'
 #' @return A list containing:
 #'   \itemize{
@@ -19,7 +23,8 @@
 #'     spatially filtered based on 1% threshold.
 #'   }
 #' @export
-consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
+consolidate_scales <- function(scales_sequences, all_scales, regions, crs,
+                               large_tables_db) {
 
   ## Make sure IDs are unique ------------------------------------------------
 
@@ -161,22 +166,12 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
     # Transform
     region <- sf::st_transform(region, crs)
 
-    # Take out too small scales, like street and building which would make this function
-    # last for hours.
-    take_out_small <- scales[!names(scales) %in% c("street", "building")]
-
-    # Other technique for grid cells (simple spatial filtering)
-    grid_cells <- take_out_small[grepl("^grd\\d", names(take_out_small))]
-    ids_grids <- lapply(grid_cells, \(scale_df) {
-      sf::st_filter(scale_df, region)$ID
-    })
-    names(ids_grids) <- names(grid_cells)
-
-    # Other technique for grid cells (simple spatial filtering)
-    take_out_small <- take_out_small[!grepl("^grd\\d", names(take_out_small))]
+    # Take out scales that are too large to be kept in the global environment,
+    # and so can't by dynamically filtered through `curbcut::data_get()`
+    take_out_small <- scales[!names(scales) %in% large_tables_db]
 
     # Spatialy filter scales that have 10% of their content inside of x region.
-    ids <- lapply(take_out_small, \(scale_df) {
+    ids <- sapply(take_out_small, \(scale_df) {
       spatial_filtering(
         df = scale_df,
         crs = crs,
@@ -184,14 +179,9 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
         ID_col = "ID",
         area_threshold = 0.1
       )$ID
-    })
+    }, simplify = FALSE, USE.NAMES = TRUE)
 
-    # Rename to send, for each region, a named list of all scales with the IDs
-    # that fall within the region.
-    names(ids) <- names(take_out_small)
-
-
-    return(c(ids_grids, ids))
+    return(ids)
 
   })
 
@@ -212,9 +202,6 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs) {
     mapply(
       \(scale_name, scale_df) {
         df <- sf::st_make_valid(scale_df)
-        if (scale_name %in% c("street", "building")) {
-          return(df)
-        }
 
         centroids <- suppressWarnings(lapply(
           sf::st_centroid(df)$geometry,

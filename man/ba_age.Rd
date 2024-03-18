@@ -8,7 +8,8 @@ ba_age(
   scales_variables_modules,
   scales_sequences,
   scales_to_interpolate,
-  overwrite = FALSE
+  overwrite = FALSE,
+  inst_prefix
 )
 }
 \arguments{
@@ -25,6 +26,9 @@ will be used for calculation of the age page data.}
 
 \item{overwrite}{<\code{logical}> Should the data already precessed and stored be
 overwriten?}
+
+\item{inst_prefix}{<\code{character}> The prefix of the instance, e.g. \code{'mtl'} which
+is the database schema in which the data is saved.}
 }
 \value{
 A list of length 4, similar to the one fed to

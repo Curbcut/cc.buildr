@@ -25,9 +25,13 @@
 #' in the place explorer. Defaults to `c("access_foot_20_educational_elementary", "access_foot_20_communitycentres_individual", "access_foot_15_fooddistribution_grocery", "access_car_10_healthcare_hospitals")`.
 #' @param default_var <`character`> The first variable the user will see when
 #' they will lang on the page. Defaults to groceries accessible within a 20 minutes walk.
+#' @param modes <`character vector`> For which mode should accessibility be calculated?
+#' Defaults to all: `c("foot", "bicycle", "car", "transit")`
 #' @param DA_DB <`character`> Which of DA or DB should be used to calculate accessibility.
 #' @param overwrite <`logical`> Should the data already processed and stored be
 #' overwriten?
+#' @param inst_prefix <`character`> The prefix of the instance, e.g. `'mtl'` which
+#' is the database schema in which the data is saved.
 #'
 #' @return A list containing the scales, variables, and modules tables.
 #' @export
@@ -44,10 +48,12 @@ ba_accessibility_points <- function(scales_variables_modules,
                                       "access_car_healthcare_hospitals"
                                     ),
                                     default_var = "access_foot_food_grocery",
+                                    modes = c("foot", "bicycle", "car", "transit"),
                                     scales_sequences,
                                     crs,
                                     DA_DB = "DA",
-                                    overwrite) {
+                                    overwrite = FALSE,
+                                    inst_prefix) {
   if (max(time_intervals) > 60) {
     stop(paste0(
       "The maximum time interval available in the travel time ",
@@ -61,80 +67,109 @@ ba_accessibility_points <- function(scales_variables_modules,
   dict <- cc.data::accessibility_point_dict
   vars <- dict$var[dict$theme %in% themes]
 
-  point_per_DA <- cc.data::db_read_data(
-    table = sprintf("accessibility_point_%s", DA_DB),
-    columns = vars,
-    column_to_select = sprintf("%s_ID", DA_DB),
-    IDs = region_DA_or_DB_IDs,
-    crs = crs
-  )
+  ## EXCLUDE SCALES THAT ALREADY HOLDS DATA!
+  single_time <- modes[modes %in% c("foot", "bicycle", "car")]
+  unique_vars <- sapply(sprintf("access_%s", single_time),
+                        \(x) sprintf("%s_%s", x, vars),
+                        simplify = TRUE, USE.NAMES = FALSE) |>
+    as.vector()
 
+  transit_mode <- modes[modes == "transit"]
+  if (length(transit_mode) > 0) {
+    transit_mode <- sapply(sprintf("access_transit_%s",
+                                   c("nwd", "nwe", "opwd", "opwe", "pwd", "pwe")),
+                           \(x) sprintf("%s_%s", x, vars),
+                           simplify = TRUE, USE.NAMES = FALSE)
+    unique_vars <- c(unique_vars, transit_mode)
+  }
 
-  # Arrange all the point data in final variables ---------------------------
+  only_scales <- scales_greater_than(base_scale = scales_variables_modules$scales[[DA_DB]],
+                                     all_scales = scales_variables_modules$scales, crs = crs)
 
-  ttm_data <- accessibility_add_intervals(
-    point_per_DA = point_per_DA,
-    region_DA_IDs = region_DA_or_DB_IDs,
-    traveltimes = traveltimes,
-    time_intervals = time_intervals,
-    DA_DB = DA_DB
-  )
-  # qs::qsave(ttm_data, "test_build_mtl/ttm_data.qs")
-  # ttm_data <- qs::qread("test_build_mtl/ttm_data.qs")
+  missing_scales <- exclude_processed_scales(unique_vars = unique_vars,
+                                             scales = only_scales,
+                                             overwrite = overwrite,
+                                             inst_prefix = inst_prefix)
 
-  names(ttm_data)[2:ncol(ttm_data)] <- paste0(names(ttm_data)[2:ncol(ttm_data)], "_2023")
+  if (length(missing_scales) > 0) {
 
-  # Interpolate -------------------------------------------------------------
-
-  average_vars <- names(ttm_data)[!grepl("ID$", names(ttm_data))]
-  names(ttm_data)[1] <- sprintf("%s_ID", DA_DB)
-
-  data_interpolated <-
-    interpolate_from_census_geo(
-      data = ttm_data,
-      base_scale = DA_DB,
-      all_scales = scales_variables_modules$scales,
-      weight_by = "population",
-      crs = crs,
-      average_vars = average_vars,
-      overwrite = overwrite,
-      time_regex = "_\\d{4}$"
+    point_per_DA <- cc.data::db_read_data(
+      table = sprintf("accessibility_point_%s", DA_DB),
+      columns = vars,
+      column_to_select = sprintf("%s_ID", DA_DB),
+      IDs = region_DA_or_DB_IDs,
+      crs = crs
     )
 
 
-  # Data tibble -------------------------------------------------------------
+    # Arrange all the point data in final variables ---------------------------
 
-  time_regex <- "_\\d{4}$"
-  unique_var <- gsub(time_regex, "", average_vars)
-  unique_var <- gsub("_\\d{1,2}$", "", unique_var)
-  unique_var <- unique(unique_var)
+    ttm_data <- accessibility_add_intervals(
+      point_per_DA = point_per_DA,
+      region_DA_IDs = region_DA_or_DB_IDs,
+      traveltimes = traveltimes,
+      time_intervals = time_intervals,
+      DA_DB = DA_DB
+    )
+    # qs::qsave(ttm_data, "test_build_mtl/ttm_data.qs")
+    # ttm_data <- qs::qread("test_build_mtl/ttm_data.qs")
 
-  # Construct the breaks_var list (take the breaks from a 20 minutes traject)
-  breaks_var <- lapply(unique_var, paste0, "_20_2023")
-  names(breaks_var) <- unique_var
+    names(ttm_data)[2:ncol(ttm_data)] <- paste0(names(ttm_data)[2:ncol(ttm_data)], "_2023")
 
-  data_construct(scales_data = data_interpolated$scales,
-                 unique_var = unique_var,
-                 time_regex = time_regex,
-                 schema = list(time = time_regex,
-                               transportationtime = "_\\d{1,2}"),
-                 breaks_var = breaks_var)
+    # Interpolate -------------------------------------------------------------
 
+    average_vars <- names(ttm_data)[!grepl("ID$", names(ttm_data))]
+    names(ttm_data)[1] <- sprintf("%s_ID", DA_DB)
+
+    data_interpolated <-
+      interpolate_from_census_geo(
+        data = ttm_data,
+        base_scale = DA_DB,
+        all_scales = scales_variables_modules$scales,
+        weight_by = "population",
+        crs = crs,
+        average_vars = average_vars,
+        overwrite = overwrite,
+        time_regex = "_\\d{4}$",
+        inst_prefix = inst_prefix
+      )
+
+
+    # Data tibble -------------------------------------------------------------
+
+    time_regex <- "_\\d{4}$"
+    unique_vars <- gsub(time_regex, "", average_vars)
+    unique_vars <- gsub("_\\d{1,2}$", "", unique_vars)
+    unique_vars <- unique(unique_vars)
+
+    # Construct the breaks_var list (take the breaks from a 20 minutes traject)
+    breaks_var <- lapply(unique_vars, paste0, "_20_2023")
+    names(breaks_var) <- unique_vars
+
+    data_construct(scales_data = data_interpolated$scales,
+                   unique_var = unique_vars,
+                   time_regex = time_regex,
+                   schema = list(time = time_regex,
+                                 transportationtime = "_\\d{1,2}"),
+                   breaks_var = breaks_var,
+                   inst_prefix = inst_prefix)
+
+  }
 
   # Types and parent vectors ------------------------------------------------
 
-  parent_strings <- rep(list("population"), length(unique_var))
-  names(parent_strings) <- unique_var
+  parent_strings <- rep(list("population"), length(unique_vars))
+  names(parent_strings) <- unique_vars
 
-  types <- rep(list("avg"), length(unique_var))
-  names(types) <- unique_var
+  types <- rep(list("avg"), length(unique_vars))
+  names(types) <- unique_vars
 
 
   # Variable measurements ----------------------------------------------------
 
   var_measurement <- data.frame(
-    scale = data_interpolated$avail_scale,
-    measurement = rep("scalar", length(data_interpolated$avail_scale))
+    scale = only_scales,
+    measurement = rep("scalar", length(only_scales))
   )
 
   var_measurement$measurement[var_measurement$scale == DA_DB] <- "ordinal"
@@ -142,10 +177,17 @@ ba_accessibility_points <- function(scales_variables_modules,
 
   # Variables table ---------------------------------------------------------
 
-  progressr::with_progress({
-    pb <- progressr::progressor(length(unique_var))
+  # Vectorized check for presence of every scale in cc.data::census_scales
+  interpolated_from_vector <- ifelse(only_scales == DA_DB, FALSE, DA_DB)
 
-    new_variables <- future.apply::future_lapply(unique_var, \(var) {
+  # Combining into a data frame (tibble)
+  interpolated_ref <- tibble::tibble(scale = only_scales,
+                                     interpolated_from = interpolated_from_vector)
+
+  progressr::with_progress({
+    pb <- progressr::progressor(length(unique_vars))
+
+    new_variables <- lapply(unique_vars, \(var) {
       dict <- cc.data::accessibility_point_dict
       dict <- dict[sapply(dict$var, grepl, var), ]
 
@@ -288,7 +330,6 @@ ba_accessibility_points <- function(scales_variables_modules,
         group_diff <- c(group_diff, list("Recreation service" = val))
       }
 
-      pb()
       add_variable(
         variables = scales_variables_modules$variables,
         var_code = var,
@@ -304,9 +345,9 @@ ba_accessibility_points <- function(scales_variables_modules,
         private = FALSE,
         pe_include = var %in% pe_include,
         dates = "2023",
-        avail_scale = data_interpolated$avail_scale,
+        avail_scale = only_scales,
         source = dict$source,
-        interpolated = data_interpolated$interpolated_ref,
+        interpolated = interpolated_ref,
         rankings_chr = c(
           "exceptionally sparse", "unusually sparse",
           "just about average", "unusually dense",
@@ -324,7 +365,7 @@ ba_accessibility_points <- function(scales_variables_modules,
 
   avail_scale_combinations <-
     get_avail_scale_combinations(scales_sequences = scales_sequences,
-                                 avail_scales = data_interpolated$avail_scale)
+                                 avail_scales = only_scales)
 
   # Modules table -----------------------------------------------------------
 

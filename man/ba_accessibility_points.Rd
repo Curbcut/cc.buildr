@@ -14,10 +14,12 @@ ba_accessibility_points(
     "access_bicycle_educational_secondary", "access_foot_cultural_total",
     "access_foot_food_grocery", "access_car_healthcare_hospitals"),
   default_var = "access_foot_food_grocery",
+  modes = c("foot", "bicycle", "car", "transit"),
   scales_sequences,
   crs,
   DA_DB = "DA",
-  overwrite
+  overwrite = FALSE,
+  inst_prefix
 )
 }
 \arguments{
@@ -44,6 +46,9 @@ in the place explorer. Defaults to \code{c("access_foot_20_educational_elementar
 \item{default_var}{<\code{character}> The first variable the user will see when
 they will lang on the page. Defaults to groceries accessible within a 20 minutes walk.}
 
+\item{modes}{<\verb{character vector}> For which mode should accessibility be calculated?
+Defaults to all: \code{c("foot", "bicycle", "car", "transit")}}
+
 \item{scales_sequences}{<\code{list}> A list of scales sequences representing the
 hierarchical ordering of scales on an auto-zoom.}
 
@@ -54,6 +59,9 @@ hierarchical ordering of scales on an auto-zoom.}
 
 \item{overwrite}{<\code{logical}> Should the data already processed and stored be
 overwriten?}
+
+\item{inst_prefix}{<\code{character}> The prefix of the instance, e.g. \code{'mtl'} which
+is the database schema in which the data is saved.}
 }
 \value{
 A list containing the scales, variables, and modules tables.

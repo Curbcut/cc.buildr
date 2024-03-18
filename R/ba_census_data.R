@@ -28,6 +28,8 @@
 #' the list of modules.
 #' @param overwrite <`logical`> Should the data already processed and stored be
 #' overwriten?
+#' @param inst_prefix <`character`> The prefix of the instance, e.g. `'mtl'` which
+#' is the database schema in which the data is saved.
 #'
 #' @return A list of length 3, similar to the one fed to
 #' `scales_variables_modules` with census variable added, their addition
@@ -49,7 +51,8 @@ ba_census_data <- function(scales_variables_modules,
                            DB_table,
                            housing_module = TRUE,
                            age_module = TRUE,
-                           overwrite = FALSE) {
+                           overwrite = FALSE,
+                           inst_prefix) {
 
   # Declare all variables from the census -----------------------------------
 
@@ -72,7 +75,8 @@ ba_census_data <- function(scales_variables_modules,
 
   scales_to_interpolate_exc <- exclude_processed_scales(unique_vars = unique_var,
                                                         scales = scales_to_interpolate,
-                                                        overwrite = overwrite)
+                                                        overwrite = overwrite,
+                                                        inst_prefix = inst_prefix)
 
 
   # Build census data for all possible scales -------------------------------
@@ -92,7 +96,8 @@ ba_census_data <- function(scales_variables_modules,
 
   data_construct(scales_data = census_dat$scales,
                  unique_var = unique_var,
-                 time_regex = time_regex)
+                 time_regex = time_regex,
+                 inst_prefix = inst_prefix)
 
 
   # Variables table ---------------------------------------------------------
@@ -237,7 +242,7 @@ ba_census_data <- function(scales_variables_modules,
   if (age_module) {
     svm <- ba_age(scales_variables_modules = svm, scales_sequences = scales_sequences,
                   scales_to_interpolate = scales_to_interpolate,
-                  overwrite = overwrite)
+                  overwrite = overwrite, inst_prefix = inst_prefix)
   }
 
 

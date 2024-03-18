@@ -11,10 +11,13 @@
 #' @return <`list`> An SVM object with the `modules` element updated to include
 #' `regions`, which are the filtered regions based on the data coverage criteria.
 #' @export
-pages_regions <- function(svm, regions_dictionary) {
+pages_regions <- function(svm, regions_dictionary, inst_prefix) {
 
   scales <- svm$scales
   modules <- svm$modules
+
+  scales_in_db <- db_list_scales(inst_prefix)
+  db_conn_prod <- db_connect_prod()
 
   progressr::with_progress({
     pb <- progressr::progressor(length(modules$id))
@@ -34,40 +37,40 @@ pages_regions <- function(svm, regions_dictionary) {
 
           # Go over all scales in the region
           scales_presence <- mapply(\(scale_name, scale_IDs) {
-            is_grid <- grepl("^grd\\d*", scale_name)
-
+            is_in_db <- scale_name %in% scales_in_db
+            is_grid <- grepl("^grd", scale_name)
             # If there are no features for a scale inside this region, remove it
             # from the count
             if (length(scale_IDs) == 0) return(NULL)
             dat <- sprintf("data/%s/%s.qs", scale_name, v)
 
             # If grd and data is in SQLite database
-            if (is_grid & !file.exists(dat)) {
-              sqlite_conn <- sprintf("data/%s.sqlite", scale_name)
-              con <- DBI::dbConnect(RSQLite::SQLite(), sqlite_conn)
+            if (is_in_db & !file.exists(dat)) {
 
-              column_query <- sprintf("PRAGMA table_info(%s);", v)
-              columns_info <- DBI::dbGetQuery(con, column_query)
-              if (nrow(columns_info) == 0) return(NULL)
-              column_names <- columns_info$name
+              column_names <- DBI::dbGetQuery(db_conn_prod,
+                              sprintf(paste0("SELECT column_name FROM ",
+                                             "information_schema.columns WHERE ",
+                                             "table_schema = '%s' AND ",
+                                             "table_name = '%s_%s'"),
+                                      inst_prefix, scale_name, v))$column_name
+
+              if (length(column_names) == 0) return(NULL)
               column_names <- column_names["ID" != column_names]
 
 
               na_check_conditions <- paste0(column_names, " IS NULL", collapse = " AND ")
               sql_query_template <- paste0("SELECT COUNT(*) AS total_rows, ",
                                            "SUM(CASE WHEN %s THEN 1 ELSE 0 END) ",
-                                           "AS na_rows FROM %s WHERE ID IN (%s);")
+                                           "AS na_rows FROM %s.%s_%s WHERE \"ID\" IN (%s);")
 
 
               # Assuming scale_IDs is a vector of IDs
               ids_placeholder <- paste0("'", scale_IDs, "'", collapse = ", ")
-              final_query <- sprintf(sql_query_template, na_check_conditions, v, ids_placeholder)
+              final_query <- sprintf(sql_query_template, na_check_conditions,
+                                     inst_prefix, scale_name, v, ids_placeholder)
 
               # Execute the query
-              result <- DBI::dbGetQuery(con, final_query)
-
-              # Disconnect
-              DBI::dbDisconnect(con)
+              result <- DBI::dbGetQuery(db_conn_prod, final_query)
 
               # Calculate the percentage of NA rows
               percentage_na <- (result$total_rows - result$na_rows) / result$total_rows
@@ -133,6 +136,8 @@ pages_regions <- function(svm, regions_dictionary) {
   })
 
   svm$modules <- modules
+
+  db_disconnect_prod(db_conn_prod)
 
   return(svm)
 

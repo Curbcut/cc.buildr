@@ -4,7 +4,7 @@
 \alias{pages_regions}
 \title{Pages Regions Function}
 \usage{
-pages_regions(svm, regions_dictionary)
+pages_regions(svm, regions_dictionary, inst_prefix)
 }
 \arguments{
 \item{svm}{<\code{list}> List of scales, variables and modules.}

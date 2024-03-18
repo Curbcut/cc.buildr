@@ -10,7 +10,8 @@ data_construct(
   time_regex,
   data_folder = "data/",
   schema = list(time = time_regex),
-  breaks_var = NULL
+  breaks_var = NULL,
+  inst_prefix
 )
 }
 \arguments{
@@ -33,6 +34,9 @@ breaks out of all the values. Every element of the list is using a name
 of \code{unique_var} and has as value a complete variable code with schemas. e.g.
 for unique_var \code{alp}, breaks_var would be \code{list(alp = "alp_2021")}. Defaults to
 NULL which will default in using the last ordered column (latest date).}
+
+\item{inst_prefix}{<\code{character}> The prefix of the instance, e.g. \code{'mtl'} which
+is the database schema in which the data is saved.}
 }
 \value{
 A merged list containing the processed data tables for each scale and

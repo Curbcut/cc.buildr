@@ -19,9 +19,8 @@ containing all scales, normally
 \code{scales_variables_modules$scales}.}
 
 \item{skip_scales}{<\verb{character vector}> Scales to skip (not to keep as
-a short table). These scales should be saved as a sqlite database instead, if
-they are too large to be kept on memory. Defaults to an empty vector, no
-scales are skipped.}
+a short table). These scales should be saved in the database instead, if
+they are too large to be kept on memory.}
 }
 \value{
 Returns an error or nothing if ran successfully. Every \code{scale} is
