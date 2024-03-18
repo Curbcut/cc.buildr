@@ -432,6 +432,7 @@ tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
   all_scales <- sapply(map_zoom_levels, names)
   all_scales <- unique(unlist(all_scales, use.names = FALSE))
 
+  db_scales <- db_list_scales(inst_prefix)
   all_scales <- sapply(all_scales, \(x) {
     file <- sprintf("data/geometry_export/%s.qs", x)
     if (x %in% db_scales) {
@@ -1240,6 +1241,13 @@ tileset_upload_ndvi <- function(grids_dir = "dev/data/built/",
       }, names(all_scales), all_scales, SIMPLIFY = FALSE)
     }, names(regions), regions)
 
+  # Check if all scales have been uploaded succesfully
+  scales_check <- sprintf("%s_%s", inst_prefix, names(all_scales))
+  ind <- scales_check %in% tileset_list_tilesets(username, access_token)$id
+  if (!all(ind)) {
+    warning(paste0("MISSING SCALES IN MAPBOX: ", scales_check[!ind]))
+  }
+
   # Function to calculate on autozoom when the scale starts and when it ends
   calculate_zoom_levels <- function(zoom_levels) {
     # Initialize the output tibble
@@ -1335,6 +1343,13 @@ tileset_upload_ndvi <- function(grids_dir = "dev/data/built/",
                               access_token = access_token
       )
     }, names(regions), regions)
+
+  # Check if all tilesets are uploaded succesfully
+  scales_check <- sprintf("%s_%s", inst_prefix, gsub("^mzl_", "", names(map_zoom_levels)))
+  ind <- scales_check %in% tileset_list_tilesets(username, access_token)$id
+  if (!all(ind)) {
+    warning(paste0("MISSING SCALES IN MAPBOX: ", scales_check[!ind]))
+  }
 
 
   return(invisible(NULL))
