@@ -29,9 +29,6 @@ aws_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
     stop("As of now, this function is only adapted for Windows.")
   }
 
-  # By default do not upload anything to a bucket
-  bucket <- FALSE
-
   # If sending to cc-montreal, request if google analytics should be enabled
   if (app_name == "curbcut-montreal" & !GA) {
     ga_ask <- readline(
@@ -44,15 +41,6 @@ aws_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
     if (ga_ask %in% c("y", "Y", "yes", "YES")) {
       GA <- TRUE
     }
-
-    bucket_ask <- readline(
-      prompt =
-        paste0(
-          "Do you want to add the data to the bucket `curbcut.montreal.data`? Y or N: "
-        )
-    )
-
-    bucket <- bucket_ask %in% c("y", "Y", "yes", "YES")
   }
 
   # Create the UI generation object
@@ -141,7 +129,6 @@ aws_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
     "del global-bundle.pem",
     "del Dockerfile",
     if (GA) "(Get-Content 'ui.R') -replace 'google_analytics', '# google_analytics' | Set-Content 'ui.R'",
-    if (bucket) "Rscript -e \"cc.data::bucket_write_folder('data', 'curbcut.montreal.data')\"",
     restart_service
   )
 
@@ -427,14 +414,81 @@ aws_duplicate_service <- function(new_city, from = "montreal") {
   aws_cli_cmd(paste(create_service, additional))
 
   # Add auto-scaling policies
-  from_policies <- aws_cli_cmd("aws application-autoscaling describe-scaling-policies --service-namespace ecs")$ScalingPolicies
-  from_policies <- from_policies[grepl(from, from_policies$ResourceId), ]
-
   scalable_target <- aws_cli_cmd(sprintf("aws application-autoscaling register-scalable-target --service-namespace ecs --resource-id service/curbcut/curbcut-%s-service --scalable-dimension ecs:service:DesiredCount --min-capacity 1 --max-capacity 4", new_city))
 
-  all_LB <- aws_cli_cmd("aws elbv2 describe-load-balancers")
-  from_LB <- all_LB$LoadBalancers[grepl(from, all_LB$LoadBalancers$LoadBalancerName), ]
-  new_LB <- all_LB$LoadBalancers[grepl(new_city, all_LB$LoadBalancers$LoadBalancerName), ]
+  aws_duplicate_services_auto_scale(new_city = new_city, from = from,
+                                    from_TG = from_TG, new_TG = new_TG)
+
+}
+
+#' Duplicate All AWS Components for a New City
+#'
+#' A wrapper function that duplicates all necessary AWS components for launching
+#' in a new city. This includes task definitions, load balancers, target groups,
+#' and ECS services.
+#'
+#' @param new_city <`character`> The name of the new city for which to duplicate all components.
+#' @param from <`character`> The name of the city from which to duplicate. Optional.
+#'
+#' @return <`character`> A message indicating the outcome of the duplication process.
+#' @export
+aws_duplicate_all <- function(new_city, from = "montreal") {
+  aws_duplicate_task(new_city, from)
+  aws_duplicate_LB(new_city, from)
+  aws_duplicate_service(new_city, from)
+
+  cat(paste0("Note: For the CloudFront distribution, you will need to set it ",
+             "with allowed HTTP methods: GET, HEAD, OPTIONS, PUT, POST, PATCH, ",
+             "DELETE. You then need to configure the Route 53 DNS to include ",
+             "the CloudFront distribution's domain name as an 'A' record ",
+             "configured as an alias. This ensures that the application is ",
+             "accessible via a user-friendly URL, routing through CloudFront ",
+             "for optimized content delivery."))
+}
+
+#' Duplicate AWS Services and Auto-Scale for a new city
+#'
+#' Duplicates AWS auto-scaling configurations and related resources from an
+#' existing city to a new city. This includes duplicating target groups and
+#' load balancers, and updating scaling policies accordingly.
+#'
+#' @param new_city <`character`> string specifying the name of the new city
+#' for which the AWS services should be duplicated.
+#' @param from <`character`> string specifying the name of the original city
+#' from which the AWS services are duplicated. Defaults to "montreal".
+#' @param from_TG An optional `data.frame` specifying the original target group
+#' details. If `NULL`, it will be fetched automatically based on the
+#' `from` parameter.
+#' @param new_TG An optional `data.frame` specifying the new target group details.
+#' If `NULL`, it will be fetched automatically based on the `new_city` parameter.
+#' @param from_LB An optional `data.frame` specifying the original load balancer
+#' details. If `NULL`, it will be fetched automatically based on the
+#' `from` parameter.
+#' @param new_LB An optional `data.frame` specifying the new load balancer details.
+#' If `NULL`, it will be fetched automatically based on the `new_city` parameter.
+#' @details This function automatically identifies and duplicates AWS target groups,
+#' load balancers, and auto-scaling policies from a specified "from" city
+#' to a "new_city". It handles the creation of new target groups and load
+#' balancers if not explicitly provided and updates scaling policies to
+#' reflect the new city's resources.
+#'
+#' @return The function does not return any value but performs operations that
+#' result in the creation and update of AWS resources.
+aws_duplicate_services_auto_scale <- function(new_city, from = "montreal",
+                                              from_TG = NULL, new_TG = NULL,
+                                              from_LB = NULL, new_LB = NULL) {
+  if (is.null(from_TG) & is.null(new_TG)) {
+    all_TGs <- aws_cli_cmd("aws elbv2 describe-target-groups")
+    from_TG <- all_TGs$TargetGroups[grepl(from, all_TGs$TargetGroups$TargetGroupName), ]
+    new_TG <- all_TGs$TargetGroups[grepl(new_city, all_TGs$TargetGroups$TargetGroupName), ]
+  }
+  if (is.null(from_LB) & is.null(new_LB)) {
+    all_LB <- aws_cli_cmd("aws elbv2 describe-load-balancers")
+    from_LB <- all_LB$LoadBalancers[grepl(from, all_LB$LoadBalancers$LoadBalancerName), ]
+    new_LB <- all_LB$LoadBalancers[grepl(new_city, all_LB$LoadBalancers$LoadBalancerName), ]
+  }
+  from_policies <- aws_cli_cmd("aws application-autoscaling describe-scaling-policies --service-namespace ecs")$ScalingPolicies
+  from_policies <- from_policies[grepl(from, from_policies$ResourceId), ]
 
   for (i in seq_along(from_policies$PolicyARN)) {
 
@@ -474,27 +528,12 @@ aws_duplicate_service <- function(new_city, from = "montreal") {
 
 }
 
-#' Duplicate All AWS Components for a New City
-#'
-#' A wrapper function that duplicates all necessary AWS components for launching
-#' in a new city. This includes task definitions, load balancers, target groups,
-#' and ECS services.
-#'
-#' @param new_city <`character`> The name of the new city for which to duplicate all components.
-#' @param from <`character`> The name of the city from which to duplicate. Optional.
-#'
-#' @return <`character`> A message indicating the outcome of the duplication process.
-#' @export
-aws_duplicate_all <- function(new_city, from = "montreal") {
-  aws_duplicate_task(new_city, from)
-  aws_duplicate_LB(new_city, from)
-  aws_duplicate_service(new_city, from)
-
-  cat(paste0("Note: For the CloudFront distribution, you will need to set it ",
-             "with allowed HTTP methods: GET, HEAD, OPTIONS, PUT, POST, PATCH, ",
-             "DELETE. You then need to configure the Route 53 DNS to include ",
-             "the CloudFront distribution's domain name as an 'A' record ",
-             "configured as an alias. This ensures that the application is ",
-             "accessible via a user-friendly URL, routing through CloudFront ",
-             "for optimized content delivery."))
-}
+# from <- "montreal"
+# for (new_city in c("laval", "bckelowna", "bccomoxvalley", "bcfraservalley", "bcvancouver", "bcprincegeorge")) {
+#   all_TGs <- aws_cli_cmd("aws elbv2 describe-target-groups")
+#   from_TG <- all_TGs$TargetGroups[grepl(from, all_TGs$TargetGroups$TargetGroupName), ]
+#   new_TG <- all_TGs$TargetGroups[grepl(new_city, all_TGs$TargetGroups$TargetGroupName), ]
+#
+#   aws_duplicate_services_auto_scale(new_city = new_city, from = from,
+#                                     from_TG = from_TG, new_TG = new_TG)
+# }
