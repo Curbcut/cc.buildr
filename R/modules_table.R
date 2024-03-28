@@ -195,9 +195,84 @@ add_var_right <- function(svm) {
 
     vr <- variables_no_nas$var_code[variables_no_nas$pe_include]
 
-    vr
+    # Only use right vars that are available at all possible scales
+    scales <- modules$avail_scale_combinations[modules$id == id][[1]]
+    splitted <- strsplit(scales, "_")
+    splitted <- unlist(splitted)
+    splitted <- splitted[!grepl("^grd|building", splitted)]
+    possible_scales <- unique(splitted)
+    possible_vr <- sapply(vr, \(v) {
+      var_availability <- variables$avail_scale[variables$var_code == v][[1]]
+      all(possible_scales %in% var_availability)
+    })
+
+    out_vr <- names(possible_vr[possible_vr])
+
+    # Impossible to compare with the same variable
+    out_vr[!out_vr %in% vl]
   })
 
   svm$modules$var_right <- vrs
+  return(svm)
+}
+
+#' Add high correlation combinations to modules object
+#'
+#' This function calculates correlations between variables defined in the
+#' `var_left` and `var_right` of each module within the `modules` dataset of the
+#' provided svm object. It then updates the svm object with these high correlation
+#' combinations (correlation > 0.7) for dropdown styling. The function
+#' specifically targets datasets located within specified scales and excludes
+#' "building" scale when multiple scales are available. It utilizes `future.apply`
+#' for parallel computation of correlations, aiming to enhance performance.
+#'
+#' @param svm <`list`> scales_variables_modules list object.
+#'
+#' @return <`list`> The modified svm object with an added `high_corr_combination` list
+#' to each module within the `modules` data frame. This list contains names of
+#' variables in `var_right` that have a high correlation (> 0.7) with variables in
+#' `var_left`, for the chosen scale.
+#' @export
+add_high_corr_combination <- function(svm) {
+  modules <- svm$modules
+  modules_corr <- lapply(modules$id, \(id) {
+    # Get this module
+    this_mod <- modules[modules$id == id, ]
+    vl <- this_mod$var_left[[1]]
+    if (is.list(vl)) vl <- vl$var_code
+    vr <- this_mod$var_right[[1]]
+
+    # Decide which scale for which to calculate correlations
+    scales <- this_mod$avail_scale_combinations[[1]]
+    if (is.null(scales)) return(NULL)
+    scale <- if (length(scales) == 1 & !grepl("_", scales)[1]) {
+      scales
+    } else {
+      splitted <- strsplit(scales, "_")
+      splitted <- unlist(splitted)
+      splitted <- splitted[!grepl("^grd|building", splitted)]
+      names(strsplit(splitted, "_") |> unlist() |> table() |> which.max())[1]
+    }
+
+    # Calculate all correlations and only keep the ones with a high correlation
+    future.apply::future_sapply(vl, \(l) {
+      correlations <- sapply(vr, \(r) {
+        lv_file_path <- sprintf("data/%s/%s.qs", scale, l)
+        rv_file_path <- sprintf("data/%s/%s.qs", scale, r)
+
+        df_lv <- qs::qread(lv_file_path)
+        df_lv <- df_lv[c("ID", attributes(df_lv)$breaks_var)]
+        df_rv <- qs::qread(rv_file_path)
+        df_rv <- df_rv[c("ID", attributes(df_rv)$breaks_var)]
+
+        merged_df <- merge(df_lv, df_rv, by = "ID")
+        cor_value <- cor(merged_df[[2]], merged_df[[3]], use = "complete.obs")
+        abs(cor_value)
+      })
+      names(which(correlations > 0.7))
+    }, simplify = FALSE, USE.NAMES = TRUE)
+
+  })
+  svm$modules$high_corr_combination <- modules_corr
   return(svm)
 }

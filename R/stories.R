@@ -261,6 +261,7 @@ stories_knit_all <- function(stories_location = "dev/Rmd/stories/",
 #'
 #' @return NULL. The function works by side effects, resizing the images and
 #' overwriting the original files in their original directory.
+#' @export
 resize_image <- function(folder = "www/stories/photos", max_size_in_MB = 1) {
   all_photos <- list.files(folder, recursive = TRUE, full.names = TRUE)
   all_photos <- all_photos[grepl("\\.jpg|\\.jpeg|\\.png|\\.JPG|\\.JPEG|\\.PNG", all_photos)]
