@@ -30,7 +30,8 @@ add_variable(
   var_measurement = data.frame(scale = avail_scale, measurement = rep("scalar",
     length(avail_scale))),
   breaks_q5 = NULL,
-  allow_title_duplicate = FALSE
+  allow_title_duplicate = FALSE,
+  classification
 )
 }
 \arguments{
@@ -119,13 +120,15 @@ factor(">0\%", levels = c(">0\%", ">30\%", ">50\%", ">80\%")),
 class = "slider"))}
 
 \item{theme}{<\code{character}> The theme to which the variable belongs, e.g. "Housing",
-"Urban life", ...}
+"Urban life", ... This will inform the dropdowns title (within opened dropdown)
+and place explorer themes.}
 
 \item{private}{<\code{logical}> If we have permissions to make the variable available
 for public download.}
 
 \item{pe_include}{<\code{logical}> Should this variable be included in the place
-explorer? Defaults to \code{TRUE}.}
+explorer? Defaults to \code{TRUE}. Variables with are TRUE here will also be the ones
+picked to be placed as 'compare' variables within pages.}
 
 \item{dates}{<\verb{character vector}> A vector of dates for which the data is available.}
 
@@ -181,6 +184,15 @@ when selection a unique dropdown choice, and it will crash the app. Defaults
 to \code{FALSE}. If you are certain the duplicated variable title will never be
 used in a dropdown (ex. it is a parent variable), then switch to \code{TRUE} at
 your own risks.}
+
+\item{classification}{<\code{character}> A classification that will be used for
+comparison purposes. We want compare variables to be decided programatically,
+and never want socio-demographic variables to be compared with each other.
+Socio-demo will never be compared with socio-demo, but with physical
+environment. While physical environmentcan be compared with other physical
+variables. Possible options here are: \code{sociodemo}, \code{physical} or \code{other}. Other
+will be consider as a passe-partout, and can be used to be compared with any other
+variable.}
 }
 \value{
 The same \code{variables} data.frame fed, with the added row.

@@ -209,6 +209,7 @@ ba_age <- function(scales_variables_modules, scales_sequences, scales_to_interpo
         explanation = explanation,
         exp_q5 = exp_q5,
         parent_vec = "c_population",
+        classification = "sociodemo",
         theme = "Age",
         private = FALSE,
         pe_include = FALSE,
@@ -264,9 +265,6 @@ ba_age <- function(scales_variables_modules, scales_sequences, scales_to_interpo
                            c("var_code", "group_name", "group_diff")],
       dates = cc.data::census_years,
       main_dropdown_title = NA,
-      var_right = variables$var_code[variables$source == "Canadian census" &
-                                       variables$theme != "Age" &
-                                       !is.na(variables$parent_vec)],
       default_var = "age_agg_0_14_pct",
       avail_scale_combinations = avail_scale_combinations
     )

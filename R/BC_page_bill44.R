@@ -325,7 +325,8 @@ bill44_page <- function(scales_variables_modules, scales_sequences, crs,
         "exceptionally sparse", "unusually sparse",
         "just about average", "unusually dense",
         "exceptionally dense"
-      )
+      ),
+      classification = "physical"
     ) |>
       (\(x) x[nrow(x), ])()
   })
@@ -473,10 +474,6 @@ bill44_page <- function(scales_variables_modules, scales_sequences, crs,
       #                      c("var_code", "group_name", "group_diff")],
       dates = dates,
       main_dropdown_title = "Data representation",
-      var_right = scales_variables_modules$variables$var_code[
-        scales_variables_modules$variables$source == "Canadian census" &
-          !is.na(scales_variables_modules$variables$parent_vec)
-      ],
       default_var = "bill44_sqkm",
       avail_scale_combinations = avail_scale_combinations
     )

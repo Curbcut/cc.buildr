@@ -21,11 +21,16 @@ dyk_prep <- function(svm, scales_dictionary, n = NULL) {
   variables <- svm$variables
   if (!missing(n) && !is.null(n)) modules <- modules[1:n,]
 
+  # Remove the scales that we don't have a geometry export fort. These are directly
+  # in the postgres table, and are too heavy. Unnecessary to calculate DYK for.
+  sd <- scales_dictionary
+  sd <- sd[sd$scale %in% gsub(".qs", "", list.files("data/geometry_export")), ]
+
   # Create a data.frame that mimics a tibble
-  regions <- lapply(names(scales_dictionary$regions), function(name) {
+  regions <- lapply(names(sd$regions), function(name) {
     tibble::tibble(
-      scale = rep(name, length( scales_dictionary$regions[[name]])),
-      region = scales_dictionary$regions[[name]]
+      scale = rep(name, length( sd$regions[[name]])),
+      region = sd$regions[[name]]
     )
   })
 
@@ -713,7 +718,14 @@ dyk_uni_compare <- function(var_left, var_right, region, scale, date, svm,
   }, var_left, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = FALSE)
   val_2 <- mapply(\(var_right, region, scale, date) {
     tb <- qs::qread(sprintf("data/%s/%s.qs", scale, var_right))
-    tb[[paste(var_right, date, sep = "_")]]
+    out <- tb[[paste(var_right, date, sep = "_")]]
+    if (is.null(out)) {
+      time_regex <- attr(tb, "schema")$time
+      bv <- attr(tb, "breaks_var")
+      bv <- gsub(time_regex, "", bv)
+
+      tb[[paste(bv, date, sep = "_")]]
+    } else out
   }, var_right, region, scale, date, USE.NAMES = FALSE, SIMPLIFY = FALSE)
 
   # Correlation

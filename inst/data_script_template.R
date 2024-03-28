@@ -113,9 +113,6 @@ build_and_append__name_ <- function(scales_variables_modules, crs) {
       dataset_info = paste0(),
       var_left = "alp",
       dates = with_breaks$avail_dates[["alp"]],
-      var_right = scales_variables_modules$variables$var_code[
-        scales_variables_modules$variables$source == "Canadian census" &
-          !is.na(scales_variables_modules$variables$parent_vec)]
     )
 
 

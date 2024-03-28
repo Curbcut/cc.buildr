@@ -26,7 +26,6 @@ append_empty_modules_table <- function(scales) {
       var_left = list(),
       dates = list(),
       main_dropdown_title = character(),
-      var_right = list(),
       add_advanced_controls = list(),
       default_var = character(),
       avail_scale_combinations = list(),
@@ -94,8 +93,6 @@ append_empty_modules_table <- function(scales) {
 #' @param main_dropdown_title <`character`> In the case where var_left is used,
 #' supply a character for the label of the main dropdown. NULL if there should be no
 #' dropdown label.
-#' @param var_right <`character vector`> Character vector of variable codes that
-#' there should be in the 'compare' dropdown of the page.
 #' @param add_advanced_controls <`character vector`> Names of additional widgets
 #' that should be placed in the 'Advanced controls' instead of with the 'Indicators'
 #' section (Names of the names list `group_diff` of the `var_left` column.). If
@@ -124,7 +121,7 @@ append_empty_modules_table <- function(scales) {
 add_module <- function(modules, id, theme = "", nav_title, title_text_title,
                        title_text_main, title_text_extra, metadata, dataset_info,
                        regions = NULL, var_left = NULL, dates = NULL,
-                       main_dropdown_title = NA_character_, var_right = NULL,
+                       main_dropdown_title = NA_character_,
                        add_advanced_controls = NULL, default_var = NA,
                        avail_scale_combinations = NULL, additional_schemas = NULL) {
   if (is.data.frame(var_left)) {
@@ -153,10 +150,54 @@ add_module <- function(modules, id, theme = "", nav_title, title_text_title,
     var_left = list(var_left),
     dates = list(dates),
     main_dropdown_title = main_dropdown_title,
-    var_right = list(var_right),
     add_advanced_controls = list(add_advanced_controls),
     default_var = default_var,
     avail_scale_combinations = list(avail_scale_combinations),
     additional_schemas = list(additional_schemas)
   )
+}
+
+#' Add right variables to Modules
+#'
+#' This function iterates over the modules in a `scales_variables_modules` object,
+#' identifying and adding the appropriate right variables based on the classification
+#' of left-side variables. It ensures that all left-side variables within a module
+#' have the same classification before proceeding.
+#'
+#' @param svm <`list`> scales_variables_modules list object.
+#'
+#' @return <`list`> The modified `svm` object with `var_right` added to each
+#' module in the `modules` dataframe.
+#' @export
+add_var_right <- function(svm) {
+  modules <- svm$modules
+  variables <- svm$variables
+
+  vrs <- lapply(modules$id, \(id) {
+    vl <- modules$var_left[modules$id == id][[1]]
+    if (is.list(vl)) vl <- vl$var_code
+
+    classification <- variables$classification[variables$var_code %in% vl]
+    classification <- unique(classification)
+
+    if (length(classification) > 1) {
+      stop(sprintf("`%s` module have left variables with different classification.", id))
+    }
+    if (length(classification) == 0) return()
+
+    variables_no_nas <- variables[!is.na(variables$classification), ]
+    # If the classification is socio-demographic, we do not compare it with
+    # other sociodemographic variables
+    if (classification == "sociodemo")  {
+      variables_no_nas <- variables_no_nas[
+        variables_no_nas$classification != "sociodemo", ]
+    }
+
+    vr <- variables_no_nas$var_code[variables_no_nas$pe_include]
+
+    vr
+  })
+
+  svm$modules$var_right <- vrs
+  return(svm)
 }

@@ -45,6 +45,7 @@ ru_alp <- function(scales_variables_modules, regions_dictionary, region_DA_IDs,
     variable_var_short = "Active living",
     variable_explanation = "the potential for active living",
     variable_exp_q5 = "are living in areas with _X_ potential for active living",
+    variable_classification = "other",
     variable_theme = "Health",
     variable_private = FALSE,
     variable_source = "Curbcut",
@@ -93,10 +94,6 @@ ru_alp <- function(scales_variables_modules, regions_dictionary, region_DA_IDs,
       " of an area's walkability."
     ),
     module_dates = dates,
-    module_var_right = scales_variables_modules$variables$var_code[
-      scales_variables_modules$variables$source == "Canadian census" &
-        !is.na(scales_variables_modules$variables$parent_vec)
-    ],
     overwrite = overwrite
   )
 }
@@ -147,6 +144,7 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs,
     variable_var_short = "Can-BICS",
     variable_explanation = "the comfort and safety of bikeways",
     variable_exp_q5 = "are living in areas with _X_ cycling infrastructure comfort and safety",
+    variable_classification = "physical",
     variable_theme = "Transport",
     variable_pe_include = TRUE,
     variable_private = FALSE,
@@ -189,10 +187,6 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs,
         "The data is initially provided at the dissemination area level.</p>"
       ),
     module_dates = dates,
-    module_var_right = scales_variables_modules$variables$var_code[
-      scales_variables_modules$variables$source == "Canadian census" &
-        !is.na(scales_variables_modules$variables$parent_vec)
-    ],
     overwrite = overwrite
   )
 
@@ -251,6 +245,7 @@ ru_lst <- function(scales_variables_modules, region_DA_IDs,
     variable_var_short = "Land temp.",
     variable_explanation = "the average warm-season land surface temperature",
     variable_exp_q5 = "the average warm-season land surface temperature is _X_ degrees celsius",
+    variable_classification = "physical",
     variable_theme = "Climate",
     variable_pe_include = TRUE,
     variable_private = FALSE,
@@ -283,10 +278,6 @@ ru_lst <- function(scales_variables_modules, region_DA_IDs,
         "represents a 3 years annual maximum mean warm-season land surface temperature.</p>"
       ),
     module_dates = as.numeric(paste0(20, 15:21)),
-    module_var_right = scales_variables_modules$variables$var_code[
-      scales_variables_modules$variables$source == "Canadian census" &
-        !is.na(scales_variables_modules$variables$parent_vec)
-    ],
     overwrite = overwrite
   )
 
@@ -699,6 +690,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
           explanation = explanation,
           exp_q5 = "are vacant or unoccupied",
           parent_vec = parent_strings[[var]],
+          classification = "other",
           theme = "Vacancy rate",
           private = FALSE,
           pe_include = pe_include,
@@ -870,6 +862,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
           explanation = explanation,
           exp_q5 = NA,
           parent_vec = NA,
+          classification = "other",
           theme = "Vacancy rate",
           private = FALSE,
           dates = years,
@@ -912,10 +905,6 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
       var_left = variables[grepl("^vac_rate", variables$var_code), c("var_code", "group_name", "group_diff")],
       dates = years,
       main_dropdown_title = "Vacancy rate distribution",
-      var_right = scales_variables_modules$variables$var_code[
-        scales_variables_modules$variables$source == "Canadian census" &
-          !is.na(scales_variables_modules$variables$parent_vec)
-      ],
       default_var = "vac_rate_2_bed_bed",
       avail_scale_combinations = avail_scale_combinations
     )
