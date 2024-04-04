@@ -3,8 +3,8 @@
 #' @param scales_variables_modules <`named list`> A list of length three.
 #' The first is all the scales, the second is the variables table, and the
 #' third is the modules table.
-#' @param region_DA_IDs <`character vector`> All the current census'
-#' DA IDs present in the region. Only those will be extracted from the database
+#' @param region_DB_IDs <`character vector`> All the current census'
+#' DB IDs present in the region. Only those will be extracted from the database
 #' to do interpolation.
 #' @param scales_sequences <`list`> A list of scales sequences representing the
 #' hierarchical ordering of scales on an auto-zoom.
@@ -19,14 +19,14 @@
 #' `scales_variables_modules` with the ALP variable added, its addition
 #' in the variables table and the module table.
 #' @export
-ru_alp <- function(scales_variables_modules, regions_dictionary, region_DA_IDs,
+ru_alp <- function(scales_variables_modules, regions_dictionary, region_DB_IDs,
                    scales_sequences, crs, overwrite = FALSE,
                    inst_prefix) {
   data <- cc.data::db_read_data("alp_DB",
                                 column_to_select = "DB_ID",
-                                IDs = region_DA_IDs, crs = crs
+                                IDs = region_DB_IDs, crs = crs
   )
-  cols <- names(data)[names(data) != "DA_ID"]
+  cols <- names(data)[names(data) != "DB_ID"]
   dates <- gsub("alp_", "", cols)
 
 
