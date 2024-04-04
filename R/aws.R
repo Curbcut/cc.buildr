@@ -386,15 +386,19 @@ aws_duplicate_LB <- function(new_city, from = "montreal") {
 #' @param new_city <`character`> The name of the new city for which to duplicate the service.
 #' @param from <`character`> The name of the city from which to duplicate.
 #' Defaults to "montreal".
+#' @param suffix <`character`> Issues sometimes when a service has been deleted, it
+#' stays in a draining states for ever. We need to use a different name. Add a suffix
+#' just for the service name.
+#'
 #'
 #' @return <`character`> A message indicating the outcome of the service duplication process.
 #' @export
-aws_duplicate_service <- function(new_city, from = "montreal") {
+aws_duplicate_service <- function(new_city, from = "montreal", suffix = NULL) {
   mtl_service <- aws_cli_cmd(sprintf("aws ecs describe-services --cluster curbcut --services curbcut-%s-service", from))$services
 
   # Create the service with the task definition
-  create_service <- sprintf("aws ecs create-service --cluster curbcut --service-name curbcut-%s-service --task-definition cc-%s",
-                            new_city, new_city)
+  create_service <- sprintf("aws ecs create-service --cluster curbcut --service-name curbcut-%s-service%s --task-definition cc-%s",
+                            new_city, suffix, new_city)
 
   # Get this City's TG
   all_TGs <- aws_cli_cmd("aws elbv2 describe-target-groups")
@@ -414,10 +418,11 @@ aws_duplicate_service <- function(new_city, from = "montreal") {
   aws_cli_cmd(paste(create_service, additional))
 
   # Add auto-scaling policies
-  scalable_target <- aws_cli_cmd(sprintf("aws application-autoscaling register-scalable-target --service-namespace ecs --resource-id service/curbcut/curbcut-%s-service --scalable-dimension ecs:service:DesiredCount --min-capacity 1 --max-capacity 4", new_city))
+  scalable_target <- aws_cli_cmd(sprintf("aws application-autoscaling register-scalable-target --service-namespace ecs --resource-id service/curbcut/curbcut-%s-service%s --scalable-dimension ecs:service:DesiredCount --min-capacity 1 --max-capacity 4", new_city, suffix))
 
   aws_duplicate_services_auto_scale(new_city = new_city, from = from,
-                                    from_TG = from_TG, new_TG = new_TG)
+                                    from_TG = from_TG, new_TG = new_TG,
+                                    suffix = suffix)
 
 }
 
@@ -466,6 +471,10 @@ aws_duplicate_all <- function(new_city, from = "montreal") {
 #' `from` parameter.
 #' @param new_LB An optional `data.frame` specifying the new load balancer details.
 #' If `NULL`, it will be fetched automatically based on the `new_city` parameter.
+#' @param suffix <`character`> Issues sometimes when a service has been deleted, it
+#' stays in a draining states for ever. We need to use a different name. Add a suffix
+#' just for the service name.
+#'
 #' @details This function automatically identifies and duplicates AWS target groups,
 #' load balancers, and auto-scaling policies from a specified "from" city
 #' to a "new_city". It handles the creation of new target groups and load
@@ -476,7 +485,8 @@ aws_duplicate_all <- function(new_city, from = "montreal") {
 #' result in the creation and update of AWS resources.
 aws_duplicate_services_auto_scale <- function(new_city, from = "montreal",
                                               from_TG = NULL, new_TG = NULL,
-                                              from_LB = NULL, new_LB = NULL) {
+                                              from_LB = NULL, new_LB = NULL,
+                                              suffix = NULL) {
   if (is.null(from_TG) & is.null(new_TG)) {
     all_TGs <- aws_cli_cmd("aws elbv2 describe-target-groups")
     from_TG <- all_TGs$TargetGroups[grepl(from, all_TGs$TargetGroups$TargetGroupName), ]
@@ -517,7 +527,7 @@ aws_duplicate_services_auto_scale <- function(new_city, from = "montreal",
     writeLines(json_config, tmp)
 
     call <- paste(sprintf("--policy-name %s", name),
-                  sprintf("--resource-id %s", gsub(from, new_city, from_policies$ResourceId[[i]])),
+                  sprintf("--resource-id %s", paste0(gsub(from, new_city, from_policies$ResourceId[[i]]), suffix)),
                   sprintf("--policy-type %s", from_policies$PolicyType[[i]]),
                   sprintf("--scalable-dimension %s", from_policies$ScalableDimension[[i]]),
                   sprintf("--target-tracking-scaling-policy-configuration file://%s", tmp))
@@ -537,3 +547,10 @@ aws_duplicate_services_auto_scale <- function(new_city, from = "montreal",
 #   aws_duplicate_services_auto_scale(new_city = new_city, from = from,
 #                                     from_TG = from_TG, new_TG = new_TG)
 # }
+#
+
+# lapply(c("laval", "toronto"), \(new_city) {
+#   aws_duplicate_LB(new_city, from)
+#   aws_duplicate_service(new_city, from, suffix = 2)
+# })
+

@@ -1,4 +1,4 @@
-#' Add a ready to use Can-ALE data and module
+#' Add a ready to use ALP data and module
 #'
 #' @param scales_variables_modules <`named list`> A list of length three.
 #' The first is all the scales, the second is the variables table, and the
@@ -22,8 +22,8 @@
 ru_alp <- function(scales_variables_modules, regions_dictionary, region_DA_IDs,
                    scales_sequences, crs, overwrite = FALSE,
                    inst_prefix) {
-  data <- cc.data::db_read_data("alp",
-                                column_to_select = "DA_ID",
+  data <- cc.data::db_read_data("alp_DB",
+                                column_to_select = "DB_ID",
                                 IDs = region_DA_IDs, crs = crs
   )
   cols <- names(data)[names(data) != "DA_ID"]
@@ -34,7 +34,7 @@ ru_alp <- function(scales_variables_modules, regions_dictionary, region_DA_IDs,
     data = data,
     scales_variables_modules = scales_variables_modules,
     scales_sequences = scales_sequences,
-    base_scale = "DA",
+    base_scale = "DB",
     weight_by = "households",
     crs = crs,
     average_vars = cols,
@@ -78,7 +78,7 @@ ru_alp <- function(scales_variables_modules, regions_dictionary, region_DA_IDs,
       "f interest—for which high values collectively describe areas that stro",
       "ngly support active living. The percentile of each variable is calcula",
       "ted at the dissemination area scale, based on dissemination areas acce",
-      "ssible within a 15-minute walk from a dissemination area centroid, and",
+      "ssible within a 15-minute walk from a dissemination block centroid, and",
       " the sum of these percentiles is the ALP index value. The dataset is c",
       "alculated from 2001 through 2021 in five-year intervals (corresponding",
       " to Census years). Our ALP index was highly influenced by the <a href ",
@@ -86,7 +86,7 @@ ru_alp <- function(scales_variables_modules, regions_dictionary, region_DA_IDs,
       "arget = '_blank'>CanALE index developed by Ross et al. (2018)</a>. Our",
       " index differs by calculating a buffer using a 15-minute walk on the s",
       "treet network using our internal travel time matrix dataset instead of",
-      " a 1km buffer around the centroid of dissemination areas. Our index al",
+      " a 1km buffer around the centroid of dissemination blocks. Our index al",
       "so differs by using a sum of percentiles rather than a sum of z-scores",
       ". This method reduces the influence of extreme outliers, especially in",
       " the case of points of interest which have a very large variance. Thus",
