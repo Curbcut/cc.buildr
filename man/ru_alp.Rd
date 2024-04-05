@@ -2,12 +2,12 @@
 % Please edit documentation in R/ready_to_use.R
 \name{ru_alp}
 \alias{ru_alp}
-\title{Add a ready to use Can-ALE data and module}
+\title{Add a ready to use ALP data and module}
 \usage{
 ru_alp(
   scales_variables_modules,
   regions_dictionary,
-  region_DA_IDs,
+  region_DB_IDs,
   scales_sequences,
   crs,
   overwrite = FALSE,
@@ -19,8 +19,8 @@ ru_alp(
 The first is all the scales, the second is the variables table, and the
 third is the modules table.}
 
-\item{region_DA_IDs}{<\verb{character vector}> All the current census'
-DA IDs present in the region. Only those will be extracted from the database
+\item{region_DB_IDs}{<\verb{character vector}> All the current census'
+DB IDs present in the region. Only those will be extracted from the database
 to do interpolation.}
 
 \item{scales_sequences}{<\code{list}> A list of scales sequences representing the
@@ -41,5 +41,5 @@ A list of length 3, similar to the one fed to
 in the variables table and the module table.
 }
 \description{
-Add a ready to use Can-ALE data and module
+Add a ready to use ALP data and module
 }

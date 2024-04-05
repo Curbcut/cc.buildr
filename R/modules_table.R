@@ -159,17 +159,22 @@ add_module <- function(modules, id, theme = "", nav_title, title_text_title,
 
 #' Add right variables to Modules
 #'
-#' This function iterates over the modules in a `scales_variables_modules` object,
+#' This function iterates over the modules in a `scales_variables_modules$modules` object,
 #' identifying and adding the appropriate right variables based on the classification
-#' of left-side variables. It ensures that all left-side variables within a module
-#' have the same classification before proceeding.
+#' of left-side variables. It ensures that all right-side variable are valid and relevant.
 #'
 #' @param svm <`list`> scales_variables_modules list object.
+#' @param exclude_scales <`character vector`> Specifies the scales to be excluded from
+#' the selection process of right variables. This is useful in scenarios where the
+#' absence of data for certain scales (e.g., buildings not containing specific data)
+#' should not affect the determination of right variables for a module. For instance,
+#' if a module's autozoom feature displays buildings with DA data, scales related to
+#' buildings without data can be excluded to ensure relevant right variable selection.
 #'
 #' @return <`list`> The modified `svm` object with `var_right` added to each
 #' module in the `modules` dataframe.
 #' @export
-add_var_right <- function(svm) {
+add_var_right <- function(svm, ignore_to_choose_vr = c("^grd\\d", "^DB$", "^building$")) {
   modules <- svm$modules
   variables <- svm$variables
 
@@ -199,7 +204,7 @@ add_var_right <- function(svm) {
     scales <- modules$avail_scale_combinations[modules$id == id][[1]]
     splitted <- strsplit(scales, "_")
     splitted <- unlist(splitted)
-    splitted <- splitted[!grepl("^grd|building", splitted)]
+    splitted <- splitted[!grepl(paste0(ignore_to_choose_vr, collapse = "|"), splitted)]
     possible_scales <- unique(splitted)
     possible_vr <- sapply(vr, \(v) {
       var_availability <- variables$avail_scale[variables$var_code == v][[1]]

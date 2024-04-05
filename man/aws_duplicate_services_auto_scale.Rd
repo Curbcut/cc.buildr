@@ -10,7 +10,8 @@ aws_duplicate_services_auto_scale(
   from_TG = NULL,
   new_TG = NULL,
   from_LB = NULL,
-  new_LB = NULL
+  new_LB = NULL,
+  suffix = NULL
 )
 }
 \arguments{
@@ -33,6 +34,10 @@ details. If \code{NULL}, it will be fetched automatically based on the
 
 \item{new_LB}{An optional \code{data.frame} specifying the new load balancer details.
 If \code{NULL}, it will be fetched automatically based on the \code{new_city} parameter.}
+
+\item{suffix}{<\code{character}> Issues sometimes when a service has been deleted, it
+stays in a draining states for ever. We need to use a different name. Add a suffix
+just for the service name.}
 }
 \value{
 The function does not return any value but performs operations that

@@ -4,13 +4,17 @@
 \alias{aws_duplicate_service}
 \title{Duplicate an AWS ECS Service for a New City}
 \usage{
-aws_duplicate_service(new_city, from = "montreal")
+aws_duplicate_service(new_city, from = "montreal", suffix = NULL)
 }
 \arguments{
 \item{new_city}{<\code{character}> The name of the new city for which to duplicate the service.}
 
 \item{from}{<\code{character}> The name of the city from which to duplicate.
 Defaults to "montreal".}
+
+\item{suffix}{<\code{character}> Issues sometimes when a service has been deleted, it
+stays in a draining states for ever. We need to use a different name. Add a suffix
+just for the service name.}
 }
 \value{
 <\code{character}> A message indicating the outcome of the service duplication process.

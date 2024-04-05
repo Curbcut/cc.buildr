@@ -10,6 +10,7 @@ tileset_upload_all(
   inst_prefix,
   username,
   access_token,
+  overwrite = FALSE,
   no_reset = NULL
 )
 }
@@ -28,6 +29,8 @@ created and published tileset. Should correspond to the Curbcut city, e.g. \code
 \item{username}{<\code{character}> Mapbox account username.}
 
 \item{access_token}{<\code{character}> Private access token to the Mapbox account.}
+
+\item{overwrite}{<\code{logical}> Should current tilesets be overwritten?}
 
 \item{no_reset}{<\verb{character vector}> Which scale should not be re-uploaded?
 If boundaries change and new tilesets are necessary, potentially buildings would
