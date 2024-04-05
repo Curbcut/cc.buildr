@@ -398,7 +398,7 @@ aws_duplicate_service <- function(new_city, from = "montreal", suffix = NULL) {
 
   # Create the service with the task definition
   create_service <- sprintf("aws ecs create-service --cluster curbcut --service-name curbcut-%s-service%s --task-definition cc-%s",
-                            new_city, suffix, new_city)
+                            new_city, if (is.null(suffix)) "" else suffix, new_city)
 
   # Get this City's TG
   all_TGs <- aws_cli_cmd("aws elbv2 describe-target-groups")
@@ -418,7 +418,7 @@ aws_duplicate_service <- function(new_city, from = "montreal", suffix = NULL) {
   aws_cli_cmd(paste(create_service, additional))
 
   # Add auto-scaling policies
-  scalable_target <- aws_cli_cmd(sprintf("aws application-autoscaling register-scalable-target --service-namespace ecs --resource-id service/curbcut/curbcut-%s-service%s --scalable-dimension ecs:service:DesiredCount --min-capacity 1 --max-capacity 4", new_city, suffix))
+  scalable_target <- aws_cli_cmd(sprintf("aws application-autoscaling register-scalable-target --service-namespace ecs --resource-id service/curbcut/curbcut-%s-service%s --scalable-dimension ecs:service:DesiredCount --min-capacity 1 --max-capacity 4", new_city, if (is.null(suffix)) "" else suffix))
 
   aws_duplicate_services_auto_scale(new_city = new_city, from = from,
                                     from_TG = from_TG, new_TG = new_TG,
@@ -527,7 +527,7 @@ aws_duplicate_services_auto_scale <- function(new_city, from = "montreal",
     writeLines(json_config, tmp)
 
     call <- paste(sprintf("--policy-name %s", name),
-                  sprintf("--resource-id %s", paste0(gsub(from, new_city, from_policies$ResourceId[[i]]), suffix)),
+                  sprintf("--resource-id %s", paste0(gsub(from, new_city, from_policies$ResourceId[[i]]), if (is.null(suffix)) "" else suffix)),
                   sprintf("--policy-type %s", from_policies$PolicyType[[i]]),
                   sprintf("--scalable-dimension %s", from_policies$ScalableDimension[[i]]),
                   sprintf("--target-tracking-scaling-policy-configuration file://%s", tmp))

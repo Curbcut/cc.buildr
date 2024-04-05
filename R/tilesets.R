@@ -450,7 +450,17 @@ tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
     if (!file.exists(file)) {
       stop(sprintf("scale geometry file `%s` does not exist, and scale not in DB.", file))
     }
-    qs::qread(file)
+
+    out <- qs::qread(file)
+
+    # Use digital geometry
+    if ("geometry_digital" %in% names(out)) {
+      out <- sf::st_drop_geometry(out)
+      names(out)[names(out) == "geometry_digital"] <- "geometry"
+      out <- sf::st_as_sf(out)
+    }
+
+    out
   }, simplify = FALSE, USE.NAMES = TRUE)
 
   # Remove from all scales the scales we shouldn't reset the tileset for
