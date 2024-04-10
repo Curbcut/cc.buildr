@@ -4,7 +4,16 @@
 \alias{dyk_uni_compare}
 \title{Generate Bivariate Comparison DYKs}
 \usage{
-dyk_uni_compare(var_left, var_right, region, scale, date, svm, langs)
+dyk_uni_compare(
+  var_left,
+  var_right,
+  region,
+  scale,
+  date,
+  svm,
+  regions_dictionary,
+  langs
+)
 }
 \arguments{
 \item{var_left}{\if{html}{\out{<character>}} A string representing the name of the first
@@ -24,6 +33,9 @@ for which the DYK should be calculated.}
 
 \item{svm}{<\code{list}> A list, usually \code{scales_variables_modules}, containing
 the scales, modules, and variables tables.}
+
+\item{regions_dictionary}{<\code{data.frame}> A data frame with information about
+which feature of every scale fits in which region.}
 }
 \value{
 A data frame with two columns (\code{compare_text} and \code{compare_val}),

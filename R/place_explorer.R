@@ -822,6 +822,12 @@ tilejson <- function(mapbox_username, tileset_prefix, tile, return_error = FALSE
 
 #' Pre-process all the possible Rmds
 #'
+#' This function processes data to knit R Markdown documents for the place explorer,
+#' implementing custom styling features not available in the standard `bslib` package.
+#' It temporarily uses a custom version of `bslib` from GitHub to allow individual styling
+#' of each tab in a navigation bar, which is essential for the visualization requirements of
+#' Curbcut. After processing, it installes the newest version of `bslib`.
+#'
 #' @param pe_main_card_data <`list`> Data and dictionary necessary to knit the
 #' rmds. The output of \code{\link[cc.buildr]{placeex_main_card_data}}.
 #' @param regions_dictionary <`data.frame`> The regions dictionary built using
@@ -845,6 +851,8 @@ tilejson <- function(mapbox_username, tileset_prefix, tile, return_error = FALSE
 #' add `class` arguments to the navigation bar's list creation. This version can
 #' be found at `devtools::install_github('bdbmax/bslib')`. Defaults to `TRUE.`
 #' Set `FALSE` to continue with the version of `bslib` on your system.
+#' @param reinstall_bslib <`logical`> Whether to reinstall the newest version of
+#' bslib on exit, considering 'bdbmax/bslib' must be installed. Defaults to TRUE.
 #' @param overwrite <`logical`> Should the .html files be overwritten? Defaults
 #' to `TRUE`.
 #'
@@ -859,6 +867,7 @@ placeex_main_card_rmd <- function(pe_main_card_data,
                                   mapbox_username = "curbcut",
                                   rev_geocode_from_localhost = TRUE,
                                   check_bslib_version = TRUE,
+                                  reinstall_bslib = TRUE,
                                   overwrite = TRUE,
                                   scales_sequences,
                                   full_data_path = sprintf("%s/data/", getwd())) {
@@ -880,6 +889,7 @@ placeex_main_card_rmd <- function(pe_main_card_data,
       ))
     }
   }
+  if (reinstall_bslib) on.exit(install.packages("bslib"))
 
 
   # Setup -------------------------------------------------------------------

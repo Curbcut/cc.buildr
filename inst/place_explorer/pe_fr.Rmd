@@ -3,9 +3,6 @@ title: "`r params$title`"
 output:
   html_document:
     css: !expr system.file("styles", "fonts.css", package = "curbcut")
-    theme: 
-      primary: "#4a5c83"
-      code-color: skyblue
 params: 
     title: "Main indicators"
     select_id: "24663185"
