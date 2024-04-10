@@ -217,6 +217,7 @@ dyk_uni <- function(vars_dyk, svm, scales_dictionary, regions_dictionary, langs,
     scale = dyk_compare$scale,
     date = dyk_compare$date,
     svm = svm,
+    regions_dictionary = regions_dictionary,
     langs = langs)
   dyk_compare <- dplyr::bind_cols(dyk_compare, dyk_compare_out)
   dyk_compare <-
@@ -706,6 +707,8 @@ dyk_assemble_change <- function(region_start, var_exp, inc_dec, date_ref,
 #' for which the DYK should be calculated.
 #' @param date <`character`> A string representing the name of the date
 #' for which the DYK should be calculated.
+#' @param regions_dictionary <`data.frame`> A data frame with information about
+#' which feature of every scale fits in which region.
 #' @param svm <`list`> A list, usually `scales_variables_modules`, containing
 #' the scales, modules, and variables tables.
 #'
@@ -714,7 +717,7 @@ dyk_assemble_change <- function(region_start, var_exp, inc_dec, date_ref,
 #' values respectively.
 #' @export
 dyk_uni_compare <- function(var_left, var_right, region, scale, date, svm,
-                            langs) {
+                            regions_dictionary, langs) {
 
   # Get class
   vars <- mapply(curbcut::vars_build,
