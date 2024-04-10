@@ -25,6 +25,11 @@
 aws_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
                        GA = FALSE, task_name = "CurbcutDeploy",
                        aws_cli_profile = Sys.getenv("AWS_ADMIN_PROFILE"), tag) {
+
+  if (!grepl("curbcut-", app_name)) {
+    warning("Shouldn't `app_name` start with `curbcut-*` ?")
+  }
+
   if (Sys.info()["sysname"] != "Windows") {
     stop("As of now, this function is only adapted for Windows.")
   }
