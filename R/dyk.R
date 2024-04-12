@@ -128,6 +128,7 @@ dyk_uni <- function(vars_dyk, svm, scales_dictionary, regions_dictionary, langs,
 
   # Prepare translation_df
   assign("translation_df", value = translation_df, envir = as.environment(1))
+  assign("variables", value = svm$variables, envir = as.environment(1))
 
   # Assign scales in global environment to use explore_text_region_val_df
   sapply(unique(vars_dyk$scale), \(x) {
@@ -164,9 +165,12 @@ dyk_uni <- function(vars_dyk, svm, scales_dictionary, regions_dictionary, langs,
     # Remove the other languages from out
     if (i == 1) {
       other_langs <- langs[langs != langs[[i]]]
+      if (length(other_langs) == 0) {
+        dyk_highest_in_build <- out
+        next
+      }
       other_lang_cols <- paste0(sprintf("_%s$", other_langs), collapse = "|")
       out <- out[!grepl(other_lang_cols, names(out))]
-      dyk_highest_in_build <- out
       next
     }
 

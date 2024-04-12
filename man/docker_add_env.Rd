@@ -4,12 +4,15 @@
 \alias{docker_add_env}
 \title{Add Environment Variables to a Dockerfile}
 \usage{
-docker_add_env(dockerfile_path = "Dockerfile")
+docker_add_env(dockerfile_path = "Dockerfile", port = NULL)
 }
 \arguments{
 \item{dockerfile_path}{<\code{character}> Path to the Dockerfile. Default
 is "Dockerfile". The function updates this Dockerfile by inserting
 environment variable definitions.}
+
+\item{port}{<\code{numeric}> On which port will the app be launched? Usually
+Shinyapp launches on 3838.}
 }
 \value{
 <\code{logical}> Returns nothing. In case of missing environment variables,

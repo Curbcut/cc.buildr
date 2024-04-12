@@ -6,6 +6,11 @@
 #'
 #' @param app_name <`character`> Must correspond to an existing ECR repository on
 #' AWS account the user will login.
+#' @param port <`character`> On which port of the container should the app be
+#' launched? Defaults to NULL if the environment variable is set outside of
+#' the container, eg in the task definition of ECS (AWS).
+#' @param tag <`character`> What should be the tag of the ECR image? Defaults
+#' to using the date (yymmdd)
 #' @param curbcut_branch <`character`> Is there a specific branch of Curbcut
 #' that should be installed?
 #' @param wd <`character`> Directory of the Curbcut-city repo.
@@ -17,14 +22,16 @@
 #' @param aws_cli_profile <`character`> The AWS IAM profile which should be used
 #' to upload the container to ECR. Must have the right permissions. Must have
 #' been previously set through the AWS CLI using `aws configure --profile X`.
-#' @param tag <`character`> What should be the tag of the ECR image? Use `latest`
-#' to make it the most up-to-date image of the repository.
+#' @param update_task_and_service <`logical`> Whether the according task and service
+#' should be updated when the container is pushed.
 #'
 #' @return Opens a terminal and disconnect from the current R session.
 #' @export
-aws_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
-                       GA = FALSE, task_name = "CurbcutDeploy",
-                       aws_cli_profile = Sys.getenv("AWS_ADMIN_PROFILE"), tag) {
+aws_deploy <- function(app_name, port = NULL, tag = gsub("^20|-", "", Sys.Date()),
+                            curbcut_branch = "HEAD", wd = getwd(),
+                            GA = FALSE, task_name = "CurbcutDeploy",
+                            aws_cli_profile = Sys.getenv("AWS_ADMIN_PROFILE"),
+                            update_task_and_service = TRUE) {
 
   if (!grepl("curbcut-", app_name)) {
     warning("Shouldn't `app_name` start with `curbcut-*` ?")
@@ -96,7 +103,7 @@ aws_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
                       overwrite = TRUE)
 
   # Update config variables for the database access
-  suppressWarnings(docker_add_env("Dockerfile"))
+  suppressWarnings(docker_add_env("Dockerfile", port))
 
 
   # Codes to push docker image to AWS ECR
@@ -108,16 +115,18 @@ aws_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
                      Sys.getenv("CURBCUT_PROD_DB_REGION"))
   docker_id <- sprintf("$imageID = docker images --filter=reference='%s*' --quiet --all",
                        app_name)
-  tag_to_aws <- sprintf("docker tag $imageID %s.dkr.ecr.%s.amazonaws.com/%s:%s",
-                        Sys.getenv("CURBCUT_AWS_ACCOUNT_ID"),
-                        Sys.getenv("CURBCUT_PROD_DB_REGION"),
-                        app_name, tag)
-  push <- sprintf("docker push %s.dkr.ecr.%s.amazonaws.com/%s:%s",
-                  Sys.getenv("CURBCUT_AWS_ACCOUNT_ID"),
-                  Sys.getenv("CURBCUT_PROD_DB_REGION"),
-                  app_name, tag)
-  restart_service <- sprintf("aws ecs update-service --cluster curbcut --service %s-service --force-new-deployment --profile %s",
-                             app_name, aws_cli_profile)
+  new_URI <- sprintf("%s.dkr.ecr.%s.amazonaws.com/%s:%s",
+                     Sys.getenv("CURBCUT_AWS_ACCOUNT_ID"),
+                     Sys.getenv("CURBCUT_PROD_DB_REGION"),
+                     app_name, tag)
+  tag_to_aws <- sprintf("docker tag $imageID %s", new_URI)
+  push <- sprintf("docker push %s", new_URI)
+
+  # Update the task definition to use the new URI
+  if (update_task_and_service)
+    upts <-
+    sprintf("R -e cc.buildr::update_task_URI(app_name='%s',new_URI='%s',aws_cli_profile='%s')",
+            app_name, new_URI, aws_cli_profile)
 
   cmds <- c(
     paste0("cd ", wd),
@@ -134,7 +143,7 @@ aws_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
     "del global-bundle.pem",
     "del Dockerfile",
     if (GA) "(Get-Content 'ui.R') -replace 'google_analytics', '# google_analytics' | Set-Content 'ui.R'",
-    restart_service
+    if (update_task_and_service) upts
   )
 
   ps_file_path <- file.path(wd, "deploy_script.ps1")
@@ -176,10 +185,12 @@ aws_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
 #' @param dockerfile_path <`character`> Path to the Dockerfile. Default
 #' is "Dockerfile". The function updates this Dockerfile by inserting
 #' environment variable definitions.
+#' @param port <`numeric`> On which port will the app be launched? Usually
+#' Shinyapp launches on 3838.
 #'
 #' @return <`logical`> Returns nothing. In case of missing environment variables,
 #' the function halts with an error message.
-docker_add_env <- function(dockerfile_path = "Dockerfile") {
+docker_add_env <- function(dockerfile_path = "Dockerfile", port = NULL) {
   # Define the environment variables to include
   env_vars <- c("CURBCUT_PROD_DB_HOST", "CURBCUT_PROD_DB_PORT",
                 "CURBCUT_PROD_DB_NAME", "CURBCUT_PROD_DB_USER", "CURBCUT_PROD_DB_REGION",
@@ -187,7 +198,9 @@ docker_add_env <- function(dockerfile_path = "Dockerfile") {
 
   # Start the Dockerfile content with setting environment variables
   env_lines <- "\n# Set environment variables\nENV "
-  env_lines <- paste0(env_lines, "PORT", "='", 3838, "' \\\n    ")
+  if (!is.null(port)) {
+    env_lines <- paste0(env_lines, "PORT", "='", as.numeric(port), "' \\\n    ")
+  }
   env_lines <- paste0(env_lines, "RUNNING_IN_DOCKER", "='", "true", "' \\\n    ")
 
   # Loop through each environment variable and append it to the Dockerfile content
@@ -247,6 +260,62 @@ aws_cli_cmd <- function(call, aws_cli_profile = Sys.getenv("AWS_ADMIN_PROFILE"))
   jsonlite::fromJSON(output)
 }
 
+#' Update ECS task definition with a new image URI and deploy it
+#'
+#' This function modifies the AWS ECS task definition to use a new image URI
+#' and then updates the ECS service to deploy the new task definition. It assumes the
+#' task names follow the pattern 'cc-x' instead of 'curbcut-x' and is designed for use
+#' when a new ECR image is pushed and a force deployment is desired.
+#'
+#' @param app_name <`character`> The application name in ECS.
+#' @param new_URI <`character`> New image URI to be used in the task definition.
+#' @param aws_cli_profile <`character`> The AWS IAM profile which should be used
+#' to upload the container to ECR. Must have the right permissions. Must have
+#' been previously set through the AWS CLI using `aws configure --profile X`.
+#'
+#' @return <`NULL`> This function is called for its side effects and does not return a value.
+#' @export
+update_task_URI <- function(app_name, new_URI, aws_cli_profile = Sys.getenv("AWS_ADMIN_PROFILE")) {
+  # Task names are not curbcut-x but cc-x
+  task_name <- gsub("curbcut", "cc", app_name)
+
+  # Get the definition of th
+  task_def <- aws_cli_cmd(sprintf("aws ecs describe-task-definition --task-definition %s",
+                                  task_name))
+
+  # Reorganise so it can be sent back as is
+  task_def$taskDefinition <-
+    task_def$taskDefinition[
+      names(task_def$taskDefinition) %in% c("family", "taskRoleArn", "executionRoleArn", "networkMode",
+                                            "containerDefinitions", "volumes", "placementConstraints",
+                                            "requiresCompatibilities", "cpu", "memory", "tags", "pidMode",
+                                            "ipcMode", "proxyConfiguration", "inferenceAccelerators",
+                                            "ephemeralStorage", "runtimePlatform")]
+
+  task_def <- task_def$taskDefinition
+  task_def$containerDefinitions$image <- new_URI
+  task_def$requiresCompatibilities <- list(task_def$requiresCompatibilities)
+  task_def <- jsonlite::toJSON(task_def, auto_unbox = TRUE, pretty = TRUE)
+
+  # Save to a temporary file
+  tmp <- tempfile(fileext = ".json")
+  writeLines(task_def, tmp)
+
+  # Save the task
+  query_task_reg <- sprintf("aws ecs register-task-definition --family %s --cli-input-json file://%s",
+                            task_name, tmp)
+  task_def_arn <- aws_cli_cmd(query_task_reg)$taskDefinition$taskDefinitionArn
+
+  # Restart service
+  all_services <- aws_cli_cmd("aws ecs list-services --cluster curbcut --profile %s",
+                              aws_cli_profile = aws_cli_profile)$serviceArns
+  this_service <- grep(sprintf("%s-service", app_name), all_services, value = TRUE)
+  update_service <- sprintf(paste0("aws ecs update-service --cluster curbcut --service %s",
+                                   " --task-definition %s --force-new-deployment"),
+                            this_service, task_def_arn)
+  aws_cli_cmd(update_service)
+}
+
 #' Duplicate an AWS ECS Task Definition for a new city
 #'
 #' Duplicates an existing AWS ECS task definition, substituting the specified city
@@ -258,7 +327,7 @@ aws_cli_cmd <- function(call, aws_cli_profile = Sys.getenv("AWS_ADMIN_PROFILE"))
 #'
 #' @return <`character`> A message indicating the outcome of the task duplication process.
 #' @export
-aws_duplicate_task <- function(new_city, from = "montreal") {
+aws_duplicate_task <- function(new_city, from = "montreal", new_tag) {
 
   # Get the definition of th
   task_def <- aws_cli_cmd(sprintf("aws ecs describe-task-definition --task-definition cc-%s",
