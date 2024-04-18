@@ -26,7 +26,6 @@ append_empty_modules_table <- function(scales) {
       var_left = list(),
       dates = list(),
       main_dropdown_title = character(),
-      var_right = list(),
       add_advanced_controls = list(),
       default_var = character(),
       avail_scale_combinations = list(),
@@ -94,8 +93,6 @@ append_empty_modules_table <- function(scales) {
 #' @param main_dropdown_title <`character`> In the case where var_left is used,
 #' supply a character for the label of the main dropdown. NULL if there should be no
 #' dropdown label.
-#' @param var_right <`character vector`> Character vector of variable codes that
-#' there should be in the 'compare' dropdown of the page.
 #' @param add_advanced_controls <`character vector`> Names of additional widgets
 #' that should be placed in the 'Advanced controls' instead of with the 'Indicators'
 #' section (Names of the names list `group_diff` of the `var_left` column.). If
@@ -124,7 +121,7 @@ append_empty_modules_table <- function(scales) {
 add_module <- function(modules, id, theme = "", nav_title, title_text_title,
                        title_text_main, title_text_extra, metadata, dataset_info,
                        regions = NULL, var_left = NULL, dates = NULL,
-                       main_dropdown_title = NA_character_, var_right = NULL,
+                       main_dropdown_title = NA_character_,
                        add_advanced_controls = NULL, default_var = NA,
                        avail_scale_combinations = NULL, additional_schemas = NULL) {
   if (is.data.frame(var_left)) {
@@ -153,10 +150,134 @@ add_module <- function(modules, id, theme = "", nav_title, title_text_title,
     var_left = list(var_left),
     dates = list(dates),
     main_dropdown_title = main_dropdown_title,
-    var_right = list(var_right),
     add_advanced_controls = list(add_advanced_controls),
     default_var = default_var,
     avail_scale_combinations = list(avail_scale_combinations),
     additional_schemas = list(additional_schemas)
   )
+}
+
+#' Add right variables to Modules
+#'
+#' This function iterates over the modules in a `scales_variables_modules$modules` object,
+#' identifying and adding the appropriate right variables based on the classification
+#' of left-side variables. It ensures that all right-side variable are valid and relevant.
+#'
+#' @param svm <`list`> scales_variables_modules list object.
+#' @param exclude_scales <`character vector`> Specifies the scales to be excluded from
+#' the selection process of right variables. This is useful in scenarios where the
+#' absence of data for certain scales (e.g., buildings not containing specific data)
+#' should not affect the determination of right variables for a module. For instance,
+#' if a module's autozoom feature displays buildings with DA data, scales related to
+#' buildings without data can be excluded to ensure relevant right variable selection.
+#'
+#' @return <`list`> The modified `svm` object with `var_right` added to each
+#' module in the `modules` dataframe.
+#' @export
+add_var_right <- function(svm, ignore_to_choose_vr = c("^grd\\d", "^DB$", "^building$")) {
+  modules <- svm$modules
+  variables <- svm$variables
+
+  vrs <- lapply(modules$id, \(id) {
+    vl <- modules$var_left[modules$id == id][[1]]
+    if (is.list(vl)) vl <- vl$var_code
+
+    classification <- variables$classification[variables$var_code %in% vl]
+    classification <- unique(classification)
+
+    if (length(classification) > 1) {
+      stop(sprintf("`%s` module have left variables with different classification.", id))
+    }
+    if (length(classification) == 0) return()
+
+    variables_no_nas <- variables[!is.na(variables$classification), ]
+    # If the classification is socio-demographic, we do not compare it with
+    # other sociodemographic variables
+    if (classification == "sociodemo")  {
+      variables_no_nas <- variables_no_nas[
+        variables_no_nas$classification != "sociodemo", ]
+    }
+
+    vr <- variables_no_nas$var_code[variables_no_nas$pe_include]
+
+    # Only use right vars that are available at all possible scales
+    scales <- modules$avail_scale_combinations[modules$id == id][[1]]
+    splitted <- strsplit(scales, "_")
+    splitted <- unlist(splitted)
+    splitted <- splitted[!grepl(paste0(ignore_to_choose_vr, collapse = "|"), splitted)]
+    possible_scales <- unique(splitted)
+    possible_vr <- sapply(vr, \(v) {
+      var_availability <- variables$avail_scale[variables$var_code == v][[1]]
+      all(possible_scales %in% var_availability)
+    })
+
+    out_vr <- names(possible_vr[possible_vr])
+
+    # Impossible to compare with the same variable
+    out_vr[!out_vr %in% vl]
+  })
+
+  svm$modules$var_right <- vrs
+  return(svm)
+}
+
+#' Add high correlation combinations to modules object
+#'
+#' This function calculates correlations between variables defined in the
+#' `var_left` and `var_right` of each module within the `modules` dataset of the
+#' provided svm object. It then updates the svm object with these high correlation
+#' combinations (correlation > 0.7) for dropdown styling. The function
+#' specifically targets datasets located within specified scales and excludes
+#' "building" scale when multiple scales are available. It utilizes `future.apply`
+#' for parallel computation of correlations, aiming to enhance performance.
+#'
+#' @param svm <`list`> scales_variables_modules list object.
+#'
+#' @return <`list`> The modified svm object with an added `high_corr_combination` list
+#' to each module within the `modules` data frame. This list contains names of
+#' variables in `var_right` that have a high correlation (> 0.7) with variables in
+#' `var_left`, for the chosen scale.
+#' @export
+add_high_corr_combination <- function(svm) {
+  modules <- svm$modules
+  modules_corr <- lapply(modules$id, \(id) {
+    # Get this module
+    this_mod <- modules[modules$id == id, ]
+    vl <- this_mod$var_left[[1]]
+    if (is.list(vl)) vl <- vl$var_code
+    vr <- this_mod$var_right[[1]]
+
+    # Decide which scale for which to calculate correlations
+    scales <- this_mod$avail_scale_combinations[[1]]
+    if (is.null(scales)) return(NULL)
+    scale <- if (length(scales) == 1 & !grepl("_", scales)[1]) {
+      scales
+    } else {
+      splitted <- strsplit(scales, "_")
+      splitted <- unlist(splitted)
+      splitted <- splitted[!grepl("^grd|building", splitted)]
+      names(strsplit(splitted, "_") |> unlist() |> table() |> which.max())[1]
+    }
+
+    # Calculate all correlations and only keep the ones with a high correlation
+    future.apply::future_sapply(vl, \(l) {
+      correlations <- sapply(vr, \(r) {
+        lv_file_path <- sprintf("data/%s/%s.qs", scale, l)
+        rv_file_path <- sprintf("data/%s/%s.qs", scale, r)
+
+        df_lv <- qs::qread(lv_file_path)
+        df_lv <- df_lv[c("ID", attributes(df_lv)$breaks_var)]
+        df_rv <- qs::qread(rv_file_path)
+        df_rv <- df_rv[c("ID", attributes(df_rv)$breaks_var)]
+
+        merged_df <- merge(df_lv, df_rv, by = "ID")
+        cor_value <- cor(merged_df[[2]], merged_df[[3]], use = "complete.obs")
+        abs(cor_value)
+      })
+      names(which(correlations > 0.7))
+    }, simplify = FALSE, USE.NAMES = TRUE)
+
+  })
+  svm$modules$high_corr_combination <- modules_corr
+  return(svm)
 }

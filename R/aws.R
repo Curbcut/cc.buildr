@@ -6,6 +6,11 @@
 #'
 #' @param app_name <`character`> Must correspond to an existing ECR repository on
 #' AWS account the user will login.
+#' @param port <`character`> On which port of the container should the app be
+#' launched? Defaults to NULL if the environment variable is set outside of
+#' the container, eg in the task definition of ECS (AWS).
+#' @param tag <`character`> What should be the tag of the ECR image? Defaults
+#' to using the date (yymmdd)
 #' @param curbcut_branch <`character`> Is there a specific branch of Curbcut
 #' that should be installed?
 #' @param wd <`character`> Directory of the Curbcut-city repo.
@@ -17,20 +22,24 @@
 #' @param aws_cli_profile <`character`> The AWS IAM profile which should be used
 #' to upload the container to ECR. Must have the right permissions. Must have
 #' been previously set through the AWS CLI using `aws configure --profile X`.
-#' @param tag <`character`> What should be the tag of the ECR image? Use `latest`
-#' to make it the most up-to-date image of the repository.
+#' @param update_task_and_service <`logical`> Whether the according task and service
+#' should be updated when the container is pushed.
 #'
 #' @return Opens a terminal and disconnect from the current R session.
 #' @export
-aws_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
-                       GA = FALSE, task_name = "CurbcutDeploy",
-                       aws_cli_profile = Sys.getenv("AWS_ADMIN_PROFILE"), tag) {
+aws_deploy <- function(app_name, port = NULL, tag = gsub("^20|-", "", Sys.Date()),
+                            curbcut_branch = "HEAD", wd = getwd(),
+                            GA = FALSE, task_name = "CurbcutDeploy",
+                            aws_cli_profile = Sys.getenv("AWS_ADMIN_PROFILE"),
+                            update_task_and_service = TRUE) {
+
+  if (!grepl("curbcut-", app_name)) {
+    warning("Shouldn't `app_name` start with `curbcut-*` ?")
+  }
+
   if (Sys.info()["sysname"] != "Windows") {
     stop("As of now, this function is only adapted for Windows.")
   }
-
-  # By default do not upload anything to a bucket
-  bucket <- FALSE
 
   # If sending to cc-montreal, request if google analytics should be enabled
   if (app_name == "curbcut-montreal" & !GA) {
@@ -44,15 +53,6 @@ aws_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
     if (ga_ask %in% c("y", "Y", "yes", "YES")) {
       GA <- TRUE
     }
-
-    bucket_ask <- readline(
-      prompt =
-        paste0(
-          "Do you want to add the data to the bucket `curbcut.montreal.data`? Y or N: "
-        )
-    )
-
-    bucket <- bucket_ask %in% c("y", "Y", "yes", "YES")
   }
 
   # Create the UI generation object
@@ -103,7 +103,7 @@ aws_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
                       overwrite = TRUE)
 
   # Update config variables for the database access
-  suppressWarnings(docker_add_env("Dockerfile"))
+  suppressWarnings(docker_add_env("Dockerfile", port))
 
 
   # Codes to push docker image to AWS ECR
@@ -115,16 +115,18 @@ aws_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
                      Sys.getenv("CURBCUT_PROD_DB_REGION"))
   docker_id <- sprintf("$imageID = docker images --filter=reference='%s*' --quiet --all",
                        app_name)
-  tag_to_aws <- sprintf("docker tag $imageID %s.dkr.ecr.%s.amazonaws.com/%s:%s",
-                        Sys.getenv("CURBCUT_AWS_ACCOUNT_ID"),
-                        Sys.getenv("CURBCUT_PROD_DB_REGION"),
-                        app_name, tag)
-  push <- sprintf("docker push %s.dkr.ecr.%s.amazonaws.com/%s:%s",
-                  Sys.getenv("CURBCUT_AWS_ACCOUNT_ID"),
-                  Sys.getenv("CURBCUT_PROD_DB_REGION"),
-                  app_name, tag)
-  restart_service <- sprintf("aws ecs update-service --cluster curbcut --service %s-service --force-new-deployment --profile %s",
-                             app_name, aws_cli_profile)
+  new_URI <- sprintf("%s.dkr.ecr.%s.amazonaws.com/%s:%s",
+                     Sys.getenv("CURBCUT_AWS_ACCOUNT_ID"),
+                     Sys.getenv("CURBCUT_PROD_DB_REGION"),
+                     app_name, tag)
+  tag_to_aws <- sprintf("docker tag $imageID %s", new_URI)
+  push <- sprintf("docker push %s", new_URI)
+
+  # Update the task definition to use the new URI
+  if (update_task_and_service)
+    upts <-
+    sprintf(" & R.exe -e \"cc.buildr::update_task_URI(app_name='%s',new_URI='%s',aws_cli_profile='%s')\"",
+            app_name, new_URI, aws_cli_profile)
 
   cmds <- c(
     paste0("cd ", wd),
@@ -141,8 +143,7 @@ aws_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
     "del global-bundle.pem",
     "del Dockerfile",
     if (GA) "(Get-Content 'ui.R') -replace 'google_analytics', '# google_analytics' | Set-Content 'ui.R'",
-    if (bucket) "Rscript -e \"cc.data::bucket_write_folder('data', 'curbcut.montreal.data')\"",
-    restart_service
+    if (update_task_and_service) upts
   )
 
   ps_file_path <- file.path(wd, "deploy_script.ps1")
@@ -184,10 +185,12 @@ aws_deploy <- function(app_name, curbcut_branch = "HEAD", wd = getwd(),
 #' @param dockerfile_path <`character`> Path to the Dockerfile. Default
 #' is "Dockerfile". The function updates this Dockerfile by inserting
 #' environment variable definitions.
+#' @param port <`numeric`> On which port will the app be launched? Usually
+#' Shinyapp launches on 3838.
 #'
 #' @return <`logical`> Returns nothing. In case of missing environment variables,
 #' the function halts with an error message.
-docker_add_env <- function(dockerfile_path = "Dockerfile") {
+docker_add_env <- function(dockerfile_path = "Dockerfile", port = NULL) {
   # Define the environment variables to include
   env_vars <- c("CURBCUT_PROD_DB_HOST", "CURBCUT_PROD_DB_PORT",
                 "CURBCUT_PROD_DB_NAME", "CURBCUT_PROD_DB_USER", "CURBCUT_PROD_DB_REGION",
@@ -195,7 +198,9 @@ docker_add_env <- function(dockerfile_path = "Dockerfile") {
 
   # Start the Dockerfile content with setting environment variables
   env_lines <- "\n# Set environment variables\nENV "
-  env_lines <- paste0(env_lines, "PORT", "='", 3838, "' \\\n    ")
+  if (!is.null(port)) {
+    env_lines <- paste0(env_lines, "PORT", "='", as.numeric(port), "' \\\n    ")
+  }
   env_lines <- paste0(env_lines, "RUNNING_IN_DOCKER", "='", "true", "' \\\n    ")
 
   # Loop through each environment variable and append it to the Dockerfile content
@@ -255,6 +260,62 @@ aws_cli_cmd <- function(call, aws_cli_profile = Sys.getenv("AWS_ADMIN_PROFILE"))
   jsonlite::fromJSON(output)
 }
 
+#' Update ECS task definition with a new image URI and deploy it
+#'
+#' This function modifies the AWS ECS task definition to use a new image URI
+#' and then updates the ECS service to deploy the new task definition. It assumes the
+#' task names follow the pattern 'cc-x' instead of 'curbcut-x' and is designed for use
+#' when a new ECR image is pushed and a force deployment is desired.
+#'
+#' @param app_name <`character`> The application name in ECS.
+#' @param new_URI <`character`> New image URI to be used in the task definition.
+#' @param aws_cli_profile <`character`> The AWS IAM profile which should be used
+#' to upload the container to ECR. Must have the right permissions. Must have
+#' been previously set through the AWS CLI using `aws configure --profile X`.
+#'
+#' @return <`NULL`> This function is called for its side effects and does not return a value.
+#' @export
+update_task_URI <- function(app_name, new_URI, aws_cli_profile = Sys.getenv("AWS_ADMIN_PROFILE")) {
+  # Task names are not curbcut-x but cc-x
+  task_name <- gsub("curbcut", "cc", app_name)
+
+  # Get the definition of th
+  task_def <- aws_cli_cmd(sprintf("aws ecs describe-task-definition --task-definition %s",
+                                  task_name))
+
+  # Reorganise so it can be sent back as is
+  task_def$taskDefinition <-
+    task_def$taskDefinition[
+      names(task_def$taskDefinition) %in% c("family", "taskRoleArn", "executionRoleArn", "networkMode",
+                                            "containerDefinitions", "volumes", "placementConstraints",
+                                            "requiresCompatibilities", "cpu", "memory", "tags", "pidMode",
+                                            "ipcMode", "proxyConfiguration", "inferenceAccelerators",
+                                            "ephemeralStorage", "runtimePlatform")]
+
+  task_def <- task_def$taskDefinition
+  task_def$containerDefinitions$image <- new_URI
+  task_def$requiresCompatibilities <- list(task_def$requiresCompatibilities)
+  task_def <- jsonlite::toJSON(task_def, auto_unbox = TRUE, pretty = TRUE)
+
+  # Save to a temporary file
+  tmp <- tempfile(fileext = ".json")
+  writeLines(task_def, tmp)
+
+  # Save the task
+  query_task_reg <- sprintf("aws ecs register-task-definition --family %s --cli-input-json file://%s",
+                            task_name, tmp)
+  task_def_arn <- aws_cli_cmd(query_task_reg)$taskDefinition$taskDefinitionArn
+
+  # Restart service
+  all_services <- aws_cli_cmd("aws ecs list-services --cluster curbcut --profile %s",
+                              aws_cli_profile = aws_cli_profile)$serviceArns
+  this_service <- grep(sprintf("%s-service", app_name), all_services, value = TRUE)
+  update_service <- sprintf(paste0("aws ecs update-service --cluster curbcut --service %s",
+                                   " --task-definition %s --force-new-deployment"),
+                            this_service, task_def_arn)
+  aws_cli_cmd(update_service)
+}
+
 #' Duplicate an AWS ECS Task Definition for a new city
 #'
 #' Duplicates an existing AWS ECS task definition, substituting the specified city
@@ -266,7 +327,7 @@ aws_cli_cmd <- function(call, aws_cli_profile = Sys.getenv("AWS_ADMIN_PROFILE"))
 #'
 #' @return <`character`> A message indicating the outcome of the task duplication process.
 #' @export
-aws_duplicate_task <- function(new_city, from = "montreal") {
+aws_duplicate_task <- function(new_city, from = "montreal", new_tag) {
 
   # Get the definition of th
   task_def <- aws_cli_cmd(sprintf("aws ecs describe-task-definition --task-definition cc-%s",
@@ -399,15 +460,19 @@ aws_duplicate_LB <- function(new_city, from = "montreal") {
 #' @param new_city <`character`> The name of the new city for which to duplicate the service.
 #' @param from <`character`> The name of the city from which to duplicate.
 #' Defaults to "montreal".
+#' @param suffix <`character`> Issues sometimes when a service has been deleted, it
+#' stays in a draining states for ever. We need to use a different name. Add a suffix
+#' just for the service name.
+#'
 #'
 #' @return <`character`> A message indicating the outcome of the service duplication process.
 #' @export
-aws_duplicate_service <- function(new_city, from = "montreal") {
+aws_duplicate_service <- function(new_city, from = "montreal", suffix = NULL) {
   mtl_service <- aws_cli_cmd(sprintf("aws ecs describe-services --cluster curbcut --services curbcut-%s-service", from))$services
 
   # Create the service with the task definition
-  create_service <- sprintf("aws ecs create-service --cluster curbcut --service-name curbcut-%s-service --task-definition cc-%s",
-                            new_city, new_city)
+  create_service <- sprintf("aws ecs create-service --cluster curbcut --service-name curbcut-%s-service%s --task-definition cc-%s",
+                            new_city, if (is.null(suffix)) "" else suffix, new_city)
 
   # Get this City's TG
   all_TGs <- aws_cli_cmd("aws elbv2 describe-target-groups")
@@ -427,14 +492,87 @@ aws_duplicate_service <- function(new_city, from = "montreal") {
   aws_cli_cmd(paste(create_service, additional))
 
   # Add auto-scaling policies
+  scalable_target <- aws_cli_cmd(sprintf("aws application-autoscaling register-scalable-target --service-namespace ecs --resource-id service/curbcut/curbcut-%s-service%s --scalable-dimension ecs:service:DesiredCount --min-capacity 1 --max-capacity 4", new_city, if (is.null(suffix)) "" else suffix))
+
+  aws_duplicate_services_auto_scale(new_city = new_city, from = from,
+                                    from_TG = from_TG, new_TG = new_TG,
+                                    suffix = suffix)
+
+}
+
+#' Duplicate All AWS Components for a New City
+#'
+#' A wrapper function that duplicates all necessary AWS components for launching
+#' in a new city. This includes task definitions, load balancers, target groups,
+#' and ECS services.
+#'
+#' @param new_city <`character`> The name of the new city for which to duplicate all components.
+#' @param from <`character`> The name of the city from which to duplicate. Optional.
+#'
+#' @return <`character`> A message indicating the outcome of the duplication process.
+#' @export
+aws_duplicate_all <- function(new_city, from = "montreal") {
+  aws_duplicate_task(new_city, from)
+  aws_duplicate_LB(new_city, from)
+  aws_duplicate_service(new_city, from)
+
+  cat(paste0("Note: For the CloudFront distribution, you will need to set it ",
+             "with allowed HTTP methods: GET, HEAD, OPTIONS, PUT, POST, PATCH, ",
+             "DELETE. You then need to configure the Route 53 DNS to include ",
+             "the CloudFront distribution's domain name as an 'A' record ",
+             "configured as an alias. This ensures that the application is ",
+             "accessible via a user-friendly URL, routing through CloudFront ",
+             "for optimized content delivery."))
+}
+
+#' Duplicate AWS Services and Auto-Scale for a new city
+#'
+#' Duplicates AWS auto-scaling configurations and related resources from an
+#' existing city to a new city. This includes duplicating target groups and
+#' load balancers, and updating scaling policies accordingly.
+#'
+#' @param new_city <`character`> string specifying the name of the new city
+#' for which the AWS services should be duplicated.
+#' @param from <`character`> string specifying the name of the original city
+#' from which the AWS services are duplicated. Defaults to "montreal".
+#' @param from_TG An optional `data.frame` specifying the original target group
+#' details. If `NULL`, it will be fetched automatically based on the
+#' `from` parameter.
+#' @param new_TG An optional `data.frame` specifying the new target group details.
+#' If `NULL`, it will be fetched automatically based on the `new_city` parameter.
+#' @param from_LB An optional `data.frame` specifying the original load balancer
+#' details. If `NULL`, it will be fetched automatically based on the
+#' `from` parameter.
+#' @param new_LB An optional `data.frame` specifying the new load balancer details.
+#' If `NULL`, it will be fetched automatically based on the `new_city` parameter.
+#' @param suffix <`character`> Issues sometimes when a service has been deleted, it
+#' stays in a draining states for ever. We need to use a different name. Add a suffix
+#' just for the service name.
+#'
+#' @details This function automatically identifies and duplicates AWS target groups,
+#' load balancers, and auto-scaling policies from a specified "from" city
+#' to a "new_city". It handles the creation of new target groups and load
+#' balancers if not explicitly provided and updates scaling policies to
+#' reflect the new city's resources.
+#'
+#' @return The function does not return any value but performs operations that
+#' result in the creation and update of AWS resources.
+aws_duplicate_services_auto_scale <- function(new_city, from = "montreal",
+                                              from_TG = NULL, new_TG = NULL,
+                                              from_LB = NULL, new_LB = NULL,
+                                              suffix = NULL) {
+  if (is.null(from_TG) & is.null(new_TG)) {
+    all_TGs <- aws_cli_cmd("aws elbv2 describe-target-groups")
+    from_TG <- all_TGs$TargetGroups[grepl(from, all_TGs$TargetGroups$TargetGroupName), ]
+    new_TG <- all_TGs$TargetGroups[grepl(new_city, all_TGs$TargetGroups$TargetGroupName), ]
+  }
+  if (is.null(from_LB) & is.null(new_LB)) {
+    all_LB <- aws_cli_cmd("aws elbv2 describe-load-balancers")
+    from_LB <- all_LB$LoadBalancers[grepl(from, all_LB$LoadBalancers$LoadBalancerName), ]
+    new_LB <- all_LB$LoadBalancers[grepl(new_city, all_LB$LoadBalancers$LoadBalancerName), ]
+  }
   from_policies <- aws_cli_cmd("aws application-autoscaling describe-scaling-policies --service-namespace ecs")$ScalingPolicies
   from_policies <- from_policies[grepl(from, from_policies$ResourceId), ]
-
-  scalable_target <- aws_cli_cmd(sprintf("aws application-autoscaling register-scalable-target --service-namespace ecs --resource-id service/curbcut/curbcut-%s-service --scalable-dimension ecs:service:DesiredCount --min-capacity 1 --max-capacity 4", new_city))
-
-  all_LB <- aws_cli_cmd("aws elbv2 describe-load-balancers")
-  from_LB <- all_LB$LoadBalancers[grepl(from, all_LB$LoadBalancers$LoadBalancerName), ]
-  new_LB <- all_LB$LoadBalancers[grepl(new_city, all_LB$LoadBalancers$LoadBalancerName), ]
 
   for (i in seq_along(from_policies$PolicyARN)) {
 
@@ -463,7 +601,7 @@ aws_duplicate_service <- function(new_city, from = "montreal") {
     writeLines(json_config, tmp)
 
     call <- paste(sprintf("--policy-name %s", name),
-                  sprintf("--resource-id %s", gsub(from, new_city, from_policies$ResourceId[[i]])),
+                  sprintf("--resource-id %s", paste0(gsub(from, new_city, from_policies$ResourceId[[i]]), if (is.null(suffix)) "" else suffix)),
                   sprintf("--policy-type %s", from_policies$PolicyType[[i]]),
                   sprintf("--scalable-dimension %s", from_policies$ScalableDimension[[i]]),
                   sprintf("--target-tracking-scaling-policy-configuration file://%s", tmp))
@@ -474,27 +612,19 @@ aws_duplicate_service <- function(new_city, from = "montreal") {
 
 }
 
-#' Duplicate All AWS Components for a New City
-#'
-#' A wrapper function that duplicates all necessary AWS components for launching
-#' in a new city. This includes task definitions, load balancers, target groups,
-#' and ECS services.
-#'
-#' @param new_city <`character`> The name of the new city for which to duplicate all components.
-#' @param from <`character`> The name of the city from which to duplicate. Optional.
-#'
-#' @return <`character`> A message indicating the outcome of the duplication process.
-#' @export
-aws_duplicate_all <- function(new_city, from = "montreal") {
-  aws_duplicate_task(new_city, from)
-  aws_duplicate_LB(new_city, from)
-  aws_duplicate_service(new_city, from)
+# from <- "montreal"
+# for (new_city in c("laval", "bckelowna", "bccomoxvalley", "bcfraservalley", "bcvancouver", "bcprincegeorge")) {
+#   all_TGs <- aws_cli_cmd("aws elbv2 describe-target-groups")
+#   from_TG <- all_TGs$TargetGroups[grepl(from, all_TGs$TargetGroups$TargetGroupName), ]
+#   new_TG <- all_TGs$TargetGroups[grepl(new_city, all_TGs$TargetGroups$TargetGroupName), ]
+#
+#   aws_duplicate_services_auto_scale(new_city = new_city, from = from,
+#                                     from_TG = from_TG, new_TG = new_TG)
+# }
+#
 
-  cat(paste0("Note: For the CloudFront distribution, you will need to set it ",
-             "with allowed HTTP methods: GET, HEAD, OPTIONS, PUT, POST, PATCH, ",
-             "DELETE. You then need to configure the Route 53 DNS to include ",
-             "the CloudFront distribution's domain name as an 'A' record ",
-             "configured as an alias. This ensures that the application is ",
-             "accessible via a user-friendly URL, routing through CloudFront ",
-             "for optimized content delivery."))
-}
+# lapply(c("laval", "toronto"), \(new_city) {
+#   aws_duplicate_LB(new_city, from)
+#   aws_duplicate_service(new_city, from, suffix = 2)
+# })
+

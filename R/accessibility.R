@@ -353,7 +353,8 @@ ba_accessibility_points <- function(scales_variables_modules,
           "just about average", "unusually dense",
           "exceptionally dense"
         ),
-        var_measurement = var_measurement
+        var_measurement = var_measurement,
+        classification = "other"
       ) |>
         (\(x) x[nrow(x), ])()
     })
@@ -416,10 +417,6 @@ ba_accessibility_points <- function(scales_variables_modules,
       ],
       main_dropdown_title = "Amenity",
       dates = "2023",
-      var_right = scales_variables_modules$variables$var_code[
-        scales_variables_modules$variables$source == "Canadian census" &
-          !is.na(scales_variables_modules$variables$parent_vec)
-      ],
       default_var = default_var,
       avail_scale_combinations = avail_scale_combinations,
       additional_schemas = list(transportationtime = 20)

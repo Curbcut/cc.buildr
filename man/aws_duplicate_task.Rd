@@ -4,7 +4,7 @@
 \alias{aws_duplicate_task}
 \title{Duplicate an AWS ECS Task Definition for a new city}
 \usage{
-aws_duplicate_task(new_city, from = "montreal")
+aws_duplicate_task(new_city, from = "montreal", new_tag)
 }
 \arguments{
 \item{new_city}{<\code{character}> The name of the new city for which to duplicate the task.}

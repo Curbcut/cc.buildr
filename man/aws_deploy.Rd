@@ -6,17 +6,26 @@
 \usage{
 aws_deploy(
   app_name,
+  port = NULL,
+  tag = gsub("^20|-", "", Sys.Date()),
   curbcut_branch = "HEAD",
   wd = getwd(),
   GA = FALSE,
   task_name = "CurbcutDeploy",
   aws_cli_profile = Sys.getenv("AWS_ADMIN_PROFILE"),
-  tag
+  update_task_and_service = TRUE
 )
 }
 \arguments{
 \item{app_name}{<\code{character}> Must correspond to an existing ECR repository on
 AWS account the user will login.}
+
+\item{port}{<\code{character}> On which port of the container should the app be
+launched? Defaults to NULL if the environment variable is set outside of
+the container, eg in the task definition of ECS (AWS).}
+
+\item{tag}{<\code{character}> What should be the tag of the ECR image? Defaults
+to using the date (yymmdd)}
 
 \item{curbcut_branch}{<\code{character}> Is there a specific branch of Curbcut
 that should be installed?}
@@ -34,8 +43,8 @@ container and upload to ECR AWS.}
 to upload the container to ECR. Must have the right permissions. Must have
 been previously set through the AWS CLI using \verb{aws configure --profile X}.}
 
-\item{tag}{<\code{character}> What should be the tag of the ECR image? Use \code{latest}
-to make it the most up-to-date image of the repository.}
+\item{update_task_and_service}{<\code{logical}> Whether the according task and service
+should be updated when the container is pushed.}
 }
 \value{
 Opens a terminal and disconnect from the current R session.

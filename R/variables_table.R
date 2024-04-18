@@ -20,6 +20,7 @@ append_empty_variables_table <- function(scales_consolidated) {
       explanation_nodet = character(),
       exp_q5 = character(),
       parent_vec = character(),
+      classification = character(),
       theme = character(),
       private = logical(),
       pe_include = logical(),
@@ -94,11 +95,21 @@ append_empty_variables_table <- function(scales_consolidated) {
 #' Tenant households (%), the parent variable would be the number of
 #' private households (denominator of the percentage) : `private_households`.
 #' @param theme <`character`> The theme to which the variable belongs, e.g. "Housing",
-#' "Urban life", ...
+#' "Urban life", ... This will inform the dropdowns title (within opened dropdown)
+#' and place explorer themes.
+#' @param classification <`character`> A classification that will be used for
+#' comparison purposes. We want compare variables to be decided programatically,
+#' and never want socio-demographic variables to be compared with each other.
+#' Socio-demo will never be compared with socio-demo, but with physical
+#' environment. While physical environmentcan be compared with other physical
+#' variables. Possible options here are: `sociodemo`, `physical` or `other`. Other
+#' will be consider as a passe-partout, and can be used to be compared with any other
+#' variable.
 #' @param private <`logical`> If we have permissions to make the variable available
 #' for public download.
 #' @param pe_include <`logical`> Should this variable be included in the place
-#' explorer? Defaults to `TRUE`.
+#' explorer? Defaults to `TRUE`. Variables with are TRUE here will also be the ones
+#' picked to be placed as 'compare' variables within pages.
 #' @param group_name <`character`> The name of the larger group to which the
 #' variable belongs. e.g. for the variable accessibility to public schools by bike,
 #' the group_name would be \code{"Accessibility to schools"}
@@ -184,7 +195,8 @@ add_variable <- function(variables, var_code, type, var_title,
                            scale = avail_scale,
                            measurement = rep("scalar", length(avail_scale))
                          ), breaks_q5 = NULL,
-                         allow_title_duplicate = FALSE) {
+                         allow_title_duplicate = FALSE,
+                         classification) {
   if (var_code %in% variables$var_code) {
     stop(paste0("`", var_code, "` is a duplicate."))
   }
@@ -248,6 +260,11 @@ add_variable <- function(variables, var_code, type, var_title,
     }
   }
 
+  if (!classification %in% c("sociodemo", "physical", "other")) {
+    if (!is.na(classification))
+      stop("`classification` must be one of `sociodemo`, `physical`, `other`.")
+  }
+
   tibble::add_row(
     variables,
     var_code = as.character(var_code),
@@ -259,6 +276,7 @@ add_variable <- function(variables, var_code, type, var_title,
     exp_q5 = as.character(exp_q5),
     parent_vec = as.character(parent_vec),
     theme = as.character(theme),
+    classification = as.character(classification),
     private = as.logical(private),
     pe_include = as.logical(pe_include),
     source = as.character(source),

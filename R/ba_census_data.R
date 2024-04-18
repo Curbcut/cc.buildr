@@ -143,6 +143,7 @@ ba_census_data <- function(scales_variables_modules,
         parent_vec = cc.data::census_vectors_table$parent_vec[
           cc.data::census_vectors_table$var_code == u_var
         ],
+        classification = "sociodemo",
         theme = cc.data::census_vectors_table$theme[
           cc.data::census_vectors_table$var_code == u_var
         ],
@@ -220,9 +221,6 @@ ba_census_data <- function(scales_variables_modules,
           var_left = unique_var[grepl("^housing_", unique_var)],
           dates = census_years,
           main_dropdown_title = NA,
-          var_right = variables$var_code[variables$source == "Canadian census" &
-                                           variables$theme != "Housing" &
-                                           !is.na(variables$parent_vec)],
           default_var = "housing_tenant",
           avail_scale_combinations = avail_scale_combinations
         )

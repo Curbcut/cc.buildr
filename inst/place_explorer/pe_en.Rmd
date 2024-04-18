@@ -4,7 +4,6 @@ output:
   html_document:
     css: !expr system.file("styles", "fonts.css", package = "curbcut")
     theme: 
-      primary: "#4a5c83"
       code-color: skyblue
 params: 
     title: "Main indicators"
@@ -93,6 +92,18 @@ params:
   background-color:#22222222;
     color:#ffffff;
     border-radius: 5px;
+}
+
+.nav-pills>li.active>a {
+  background-color: #4a5c83 !important
+}
+
+.nav-link, .nav-tabs>li>a, .nav-pills>li>a, ul.nav.navbar-nav>li>a {
+  color: #4a5c83 !important
+}
+
+.nav-pills>li.active>a {
+  color: white !important;
 }
 
 ```

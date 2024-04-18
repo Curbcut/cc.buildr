@@ -29,6 +29,7 @@
 #' @param variable_var_short <`charater`> See \code{\link[cc.buildr]{add_variable}}.
 #' @param variable_explanation <`charater`> See \code{\link[cc.buildr]{add_variable}}.
 #' @param variable_exp_q5 <`character`> See \code{\link[cc.buildr]{add_variable}}.
+#' @param variable_classification <`charater`> See \code{\link[cc.buildr]{add_variable}}.
 #' @param variable_theme <`charater`> See \code{\link[cc.buildr]{add_variable}}.
 #' @param variable_private <`charater`> See \code{\link[cc.buildr]{add_variable}}.
 #' @param variable_source <`charater`> See \code{\link[cc.buildr]{add_variable}}.
@@ -43,7 +44,6 @@
 #' @param module_dataset_info <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
 #' @param module_dates <`numeric vector`> Optional. See \code{\link[cc.buildr]{add_module}}.
 #' @param module_main_dropdown_title <`charater`> Optional. See \code{\link[cc.buildr]{add_module}}.
-#' @param module_var_right <`character vector`> Optional. See \code{\link[cc.buildr]{add_module}}.
 #' @param overwrite <`logical`> Should the data already processed and stored be
 #' overwriten?
 #'
@@ -56,6 +56,7 @@ ba_var <- function(data, scales_variables_modules, base_scale,
                    weight_by = "households", crs,
                    additive_vars = c(), average_vars = c(),
                    time_regex = "_\\d{4}$", inst_prefix, variable_var_code,
+                   variable_classification,
                    variable_type, variable_var_title,
                    variable_var_short, variable_explanation,
                    variable_exp_q5,
@@ -71,7 +72,6 @@ ba_var <- function(data, scales_variables_modules, base_scale,
                    module_dataset_info = NULL,
                    module_dates = NULL,
                    module_main_dropdown_title = NULL,
-                   module_var_right = NULL,
                    overwrite = FALSE) {
   # Get list of data variables ----------------------------------------------
 
@@ -140,6 +140,7 @@ ba_var <- function(data, scales_variables_modules, base_scale,
       exp_q5 = variable_exp_q5,
       parent_vec = weight_by,
       theme = variable_theme,
+      classification = variable_classification,
       private = variable_private,
       pe_include = variable_pe_include,
       dates = dates,
@@ -180,7 +181,6 @@ ba_var <- function(data, scales_variables_modules, base_scale,
           var_left = variable_var_code,
           dates = module_dates,
           main_dropdown_title = module_main_dropdown_title,
-          var_right = module_var_right,
           default_var = variable_var_code,
           avail_scale_combinations = avail_scale_combinations
         )

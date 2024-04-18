@@ -4,7 +4,14 @@
 \alias{dyk_uni}
 \title{Create a Table of Univariate DYKs}
 \usage{
-dyk_uni(vars_dyk, svm, scales_dictionary, langs, translation_df = NULL)
+dyk_uni(
+  vars_dyk,
+  svm,
+  scales_dictionary,
+  regions_dictionary,
+  langs,
+  translation_df = NULL
+)
 }
 \arguments{
 \item{vars_dyk}{<\code{data.frame}> A data frame with columns \code{module},
@@ -16,6 +23,9 @@ the scales, modules, and variables tables.}
 
 \item{scales_dictionary}{<\code{data.frame}> A data frame with information about
 scale names and text strings}
+
+\item{regions_dictionary}{<\code{data.frame}> A data frame with information about
+which feature of every scale fits in which region.}
 
 \item{langs}{<\code{character}> A character vector specifying for which languages
 DYK strings should be produced. Allowable values are "en" and "fr".}

@@ -169,6 +169,7 @@ ba_ndvi <- function(scales_variables_modules,
       explanation = "the presence and intensity of vegetation",
       exp_q5 = "are living in areas with _X_ level of presence and intensity of vegetation",
       parent_vec = "households",
+      classification = "physical",
       theme = "Ecology",
       private = FALSE,
       pe_include = TRUE,
@@ -234,10 +235,6 @@ ba_ndvi <- function(scales_variables_modules,
       ),
       var_left = c("ndvi"),
       dates = years,
-      var_right = scales_variables_modules$variables$var_code[
-        scales_variables_modules$variables$source == "Canadian census" &
-          !is.na(scales_variables_modules$variables$parent_vec)
-      ],
       default_var = "ndvi",
       avail_scale_combinations = avail_scale_combinations
     )

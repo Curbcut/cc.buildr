@@ -121,6 +121,7 @@ ndvi_grids <- function(census_scales, base_polygons,
   # Return
   return(grids)
 }
+
 #' Append NDVI scales to the scales dictionary.
 #'
 #' This function adds multiple NDVI scale entries to a given dictionary. Each

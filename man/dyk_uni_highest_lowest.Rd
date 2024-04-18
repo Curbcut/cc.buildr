@@ -11,6 +11,7 @@ dyk_uni_highest_lowest(
   date,
   svm,
   scales_dictionary,
+  regions_dictionary,
   langs
 )
 }
@@ -32,6 +33,9 @@ the scales, modules, and variables tables.}
 
 \item{scales_dictionary}{<\code{data.frame}> A data frame with information about
 scale names and text strings}
+
+\item{regions_dictionary}{<\code{data.frame}> A data frame with information about
+which feature of every scale fits in which region.}
 
 \item{langs}{<\code{character}> A character vector specifying for which languages
 DYK strings should be produced. Allowable values are "en" and "fr".}

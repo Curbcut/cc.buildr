@@ -18,7 +18,6 @@ add_module(
   var_left = NULL,
   dates = NULL,
   main_dropdown_title = NA_character_,
-  var_right = NULL,
   add_advanced_controls = NULL,
   default_var = NA,
   avail_scale_combinations = NULL,
@@ -96,9 +95,6 @@ a time slider widget on the module.}
 \item{main_dropdown_title}{<\code{character}> In the case where var_left is used,
 supply a character for the label of the main dropdown. NULL if there should be no
 dropdown label.}
-
-\item{var_right}{<\verb{character vector}> Character vector of variable codes that
-there should be in the 'compare' dropdown of the page.}
 
 \item{add_advanced_controls}{<\verb{character vector}> Names of additional widgets
 that should be placed in the 'Advanced controls' instead of with the 'Indicators'

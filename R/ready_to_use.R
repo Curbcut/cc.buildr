@@ -1,10 +1,10 @@
-#' Add a ready to use Can-ALE data and module
+#' Add a ready to use ALP data and module
 #'
 #' @param scales_variables_modules <`named list`> A list of length three.
 #' The first is all the scales, the second is the variables table, and the
 #' third is the modules table.
-#' @param region_DA_IDs <`character vector`> All the current census'
-#' DA IDs present in the region. Only those will be extracted from the database
+#' @param region_DB_IDs <`character vector`> All the current census'
+#' DB IDs present in the region. Only those will be extracted from the database
 #' to do interpolation.
 #' @param scales_sequences <`list`> A list of scales sequences representing the
 #' hierarchical ordering of scales on an auto-zoom.
@@ -19,14 +19,14 @@
 #' `scales_variables_modules` with the ALP variable added, its addition
 #' in the variables table and the module table.
 #' @export
-ru_alp <- function(scales_variables_modules, regions_dictionary, region_DA_IDs,
+ru_alp <- function(scales_variables_modules, regions_dictionary, region_DB_IDs,
                    scales_sequences, crs, overwrite = FALSE,
                    inst_prefix) {
-  data <- cc.data::db_read_data("alp",
-                                column_to_select = "DA_ID",
-                                IDs = region_DA_IDs, crs = crs
+  data <- cc.data::db_read_data("alp_DB",
+                                column_to_select = "DB_ID",
+                                IDs = region_DB_IDs, crs = crs
   )
-  cols <- names(data)[names(data) != "DA_ID"]
+  cols <- names(data)[names(data) != "DB_ID"]
   dates <- gsub("alp_", "", cols)
 
 
@@ -34,7 +34,7 @@ ru_alp <- function(scales_variables_modules, regions_dictionary, region_DA_IDs,
     data = data,
     scales_variables_modules = scales_variables_modules,
     scales_sequences = scales_sequences,
-    base_scale = "DA",
+    base_scale = "DB",
     weight_by = "households",
     crs = crs,
     average_vars = cols,
@@ -45,6 +45,7 @@ ru_alp <- function(scales_variables_modules, regions_dictionary, region_DA_IDs,
     variable_var_short = "Active living",
     variable_explanation = "the potential for active living",
     variable_exp_q5 = "are living in areas with _X_ potential for active living",
+    variable_classification = "other",
     variable_theme = "Health",
     variable_private = FALSE,
     variable_source = "Curbcut",
@@ -62,7 +63,7 @@ ru_alp <- function(scales_variables_modules, regions_dictionary, region_DA_IDs,
       "<p>The datasets visualized on this page come from Curbcut using data from",
       " the Canadian Censuses and DMTI. Our index considers street connectivity",
       ", building density, and points of interest. Active Living Potential is",
-      " then calculated based on dissemination areas accessible within a 15-m",
+      " then calculated based on dissemination blocks accessible within a 15-m",
       "inute walk. The work on this page was highly influenced by the <a href",
       " = 'http://canue.ca/wp-content/uploads/2018/03/CanALE_UserGuide.pdf', ",
       "target = '_blank'>CanALE index</a> developed by Prof. Nancy Ross and h",
@@ -76,27 +77,23 @@ ru_alp <- function(scales_variables_modules, regions_dictionary, region_DA_IDs,
       "rs three variables—street connectivity, building density, and points o",
       "f interest—for which high values collectively describe areas that stro",
       "ngly support active living. The percentile of each variable is calcula",
-      "ted at the dissemination area scale, based on dissemination areas acce",
-      "ssible within a 15-minute walk from a dissemination area centroid, and",
-      " the sum of these percentiles is the ALP index value. The dataset is c",
-      "alculated from 2001 through 2021 in five-year intervals (corresponding",
-      " to Census years). Our ALP index was highly influenced by the <a href ",
-      "= 'http://canue.ca/wp-content/uploads/2018/03/CanALE_UserGuide.pdf', t",
-      "arget = '_blank'>CanALE index developed by Ross et al. (2018)</a>. Our",
-      " index differs by calculating a buffer using a 15-minute walk on the s",
-      "treet network using our internal travel time matrix dataset instead of",
-      " a 1km buffer around the centroid of dissemination areas. Our index al",
-      "so differs by using a sum of percentiles rather than a sum of z-scores",
-      ". This method reduces the influence of extreme outliers, especially in",
-      " the case of points of interest which have a very large variance. Thus",
-      ", this percentile approach offers a balanced and nuanced understanding",
-      " of an area's walkability."
+      "ted at the dissemination block scale, based on dissemination blocks ac",
+      "cessible within a 15-minute walk from a dissemination block centroid, ",
+      "and the sum of these percentiles is the ALP index value. The dataset i",
+      "s calculated from 2001 through 2021 in five-year intervals (correspond",
+      "ing to Census years). Our ALP index was highly influenced by the <a hr",
+      "ef = 'http://canue.ca/wp-content/uploads/2018/03/CanALE_UserGuide.pdf'",
+      ", target = '_blank'>CanALE index developed by Ross et al. (2018)</a>. ",
+      "Our index differs by calculating a buffer using a 15-minute walk on th",
+      "e street network using our internal travel time matrix dataset instead",
+      " of a 1km buffer around the centroid of dissemination blocks. Our inde",
+      "x also differs by using a sum of percentiles rather than a sum of z-sc",
+      "ores. This method reduces the influence of extreme outliers, especiall",
+      "y in the case of points of interest which have a very large variance. ",
+      "Thus, this percentile approach offers a balanced and nuanced understan",
+      "ding of an area's walkability."
     ),
     module_dates = dates,
-    module_var_right = scales_variables_modules$variables$var_code[
-      scales_variables_modules$variables$source == "Canadian census" &
-        !is.na(scales_variables_modules$variables$parent_vec)
-    ],
     overwrite = overwrite
   )
 }
@@ -147,6 +144,7 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs,
     variable_var_short = "Can-BICS",
     variable_explanation = "the comfort and safety of bikeways",
     variable_exp_q5 = "are living in areas with _X_ cycling infrastructure comfort and safety",
+    variable_classification = "physical",
     variable_theme = "Transport",
     variable_pe_include = TRUE,
     variable_private = FALSE,
@@ -189,10 +187,6 @@ ru_canbics <- function(scales_variables_modules, region_DA_IDs,
         "The data is initially provided at the dissemination area level.</p>"
       ),
     module_dates = dates,
-    module_var_right = scales_variables_modules$variables$var_code[
-      scales_variables_modules$variables$source == "Canadian census" &
-        !is.na(scales_variables_modules$variables$parent_vec)
-    ],
     overwrite = overwrite
   )
 
@@ -251,6 +245,7 @@ ru_lst <- function(scales_variables_modules, region_DA_IDs,
     variable_var_short = "Land temp.",
     variable_explanation = "the average warm-season land surface temperature",
     variable_exp_q5 = "the average warm-season land surface temperature is _X_ degrees celsius",
+    variable_classification = "physical",
     variable_theme = "Climate",
     variable_pe_include = TRUE,
     variable_private = FALSE,
@@ -283,10 +278,6 @@ ru_lst <- function(scales_variables_modules, region_DA_IDs,
         "represents a 3 years annual maximum mean warm-season land surface temperature.</p>"
       ),
     module_dates = as.numeric(paste0(20, 15:21)),
-    module_var_right = scales_variables_modules$variables$var_code[
-      scales_variables_modules$variables$source == "Canadian census" &
-        !is.na(scales_variables_modules$variables$parent_vec)
-    ],
     overwrite = overwrite
   )
 
@@ -699,6 +690,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
           explanation = explanation,
           exp_q5 = "are vacant or unoccupied",
           parent_vec = parent_strings[[var]],
+          classification = "other",
           theme = "Vacancy rate",
           private = FALSE,
           pe_include = pe_include,
@@ -870,6 +862,7 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
           explanation = explanation,
           exp_q5 = NA,
           parent_vec = NA,
+          classification = "other",
           theme = "Vacancy rate",
           private = FALSE,
           dates = years,
@@ -912,10 +905,6 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
       var_left = variables[grepl("^vac_rate", variables$var_code), c("var_code", "group_name", "group_diff")],
       dates = years,
       main_dropdown_title = "Vacancy rate distribution",
-      var_right = scales_variables_modules$variables$var_code[
-        scales_variables_modules$variables$source == "Canadian census" &
-          !is.na(scales_variables_modules$variables$parent_vec)
-      ],
       default_var = "vac_rate_2_bed_bed",
       avail_scale_combinations = avail_scale_combinations
     )

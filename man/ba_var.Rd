@@ -16,6 +16,7 @@ ba_var(
   time_regex = "_\\\\d{4}$",
   inst_prefix,
   variable_var_code,
+  variable_classification,
   variable_type,
   variable_var_title,
   variable_var_short,
@@ -35,7 +36,6 @@ ba_var(
   module_dataset_info = NULL,
   module_dates = NULL,
   module_main_dropdown_title = NULL,
-  module_var_right = NULL,
   overwrite = FALSE
 )
 }
@@ -75,6 +75,8 @@ is the database schema in which the data is saved.}
 
 \item{variable_var_code}{<\code{charater}> See \code{\link[cc.buildr]{add_variable}}.}
 
+\item{variable_classification}{<\code{charater}> See \code{\link[cc.buildr]{add_variable}}.}
+
 \item{variable_type}{<\code{charater}> See \code{\link[cc.buildr]{add_variable}}.}
 
 \item{variable_var_title}{<\code{charater}> See \code{\link[cc.buildr]{add_variable}}.}
@@ -112,8 +114,6 @@ is the database schema in which the data is saved.}
 \item{module_dates}{<\verb{numeric vector}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 
 \item{module_main_dropdown_title}{<\code{charater}> Optional. See \code{\link[cc.buildr]{add_module}}.}
-
-\item{module_var_right}{<\verb{character vector}> Optional. See \code{\link[cc.buildr]{add_module}}.}
 
 \item{overwrite}{<\code{logical}> Should the data already processed and stored be
 overwriten?}

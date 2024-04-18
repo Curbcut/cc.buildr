@@ -414,6 +414,7 @@ tileset_create_recipe <- function(layer_names, source, minzoom, maxzoom,
 #' created and published tileset. Should correspond to the Curbcut city, e.g. `mtl`.
 #' @param username <`character`> Mapbox account username.
 #' @param access_token <`character`> Private access token to the Mapbox account.
+#' @param overwrite <`logical`> Should current tilesets be overwritten?
 #' @param no_reset <`character vector`> Which scale should not be re-uploaded?
 #' If boundaries change and new tilesets are necessary, potentially buildings would
 #' not be re-uploaded as it's costly and they don't change. Defaults to NULL for
@@ -423,7 +424,8 @@ tileset_create_recipe <- function(layer_names, source, minzoom, maxzoom,
 #' ready to be used.
 #' @export
 tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
-                               inst_prefix, username, access_token, no_reset = NULL) {
+                               inst_prefix, username, access_token, overwrite = FALSE,
+                               no_reset = NULL) {
 
   # Remove grids (they have their own tileset upload function)
   map_zoom_levels <- map_zoom_levels[!grepl("^mzl_grd", names(map_zoom_levels))]
@@ -448,13 +450,29 @@ tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
     if (!file.exists(file)) {
       stop(sprintf("scale geometry file `%s` does not exist, and scale not in DB.", file))
     }
-    qs::qread(file)
+
+    out <- qs::qread(file)
+
+    # Use digital geometry
+    if ("geometry_digital" %in% names(out)) {
+      out <- sf::st_drop_geometry(out)
+      names(out)[names(out) == "geometry_digital"] <- "geometry"
+      out <- sf::st_as_sf(out)
+    }
+
+    out
   }, simplify = FALSE, USE.NAMES = TRUE)
 
   # Remove from all scales the scales we shouldn't reset the tileset for
   if (!is.null(no_reset)) {
     all_scales <- all_scales[!names(all_scales) %in% no_reset]
   }
+
+  tileset_sources <- tileset_list_tile_sources(username, access_token)
+  tileset_sources <- grep(paste0("^", inst_prefix), tileset_sources$id, value = TRUE)
+
+  tilesets <- tileset_list_tilesets(username, access_token)
+  tilesets <- grep(paste0("^", inst_prefix), tilesets$id, value = TRUE)
 
   # # Switch the geometry for digital
   # all_scales <- lapply(all_scales, \(scale_df) {
@@ -468,20 +486,26 @@ tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
   # })
 
   # Reset
-  mapply(\(scale_name, scale_df) {
+  mapply(function(scale_name, scale_df) {
     name <- paste(inst_prefix, scale_name, sep = "_")
 
-    tileset_delete_tileset_source(
-      id = name,
-      username = username,
-      access_token = access_token
-    )
+    # Check if source exists and overwrite is TRUE
+    if (name %in% tileset_sources & overwrite) {
+      tileset_delete_tileset_source(
+        id = name,
+        username = username,
+        access_token = access_token
+      )
+    }
 
-    tileset_delete_tileset(
-      id = name,
-      username = username,
-      access_token = access_token
-    )
+    if (name %in% tilesets & overwrite) {
+      tileset_delete_tileset(
+        id = name,
+        username = username,
+        access_token = access_token
+      )
+    }
+
   }, names(all_scales), all_scales, SIMPLIFY = FALSE)
 
   # DO THE SAME FOR AUTOZOOMS
@@ -489,22 +513,28 @@ tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
     x <- gsub("mzl_", "", x)
     x <- paste(inst_prefix, x, sep = "_")
 
-    tileset_delete_tileset_source(
-      id = x,
-      username = username,
-      access_token = access_token
-    )
+    if (x %in% tileset_sources & overwrite) {
+      tileset_delete_tileset_source(
+        id = x,
+        username = username,
+        access_token = access_token
+      )
+    }
 
-    tileset_delete_tileset(
-      id = x,
-      username = username,
-      access_token = access_token
-    )
+    if (x %in% tilesets & overwrite) {
+      tileset_delete_tileset(
+        id = x,
+        username = username,
+        access_token = access_token
+      )
+    }
   })
 
   # Tileset sources
   mapply(function(scale_name, scale_df) {
     scale_name <- paste(inst_prefix, scale_name, sep = "_")
+
+    if (scale_name %in% tileset_sources & !overwrite) return()
 
     # We can detect too large data to pass by the normal flow by the fact
     # they don't have population and households interpolated
@@ -525,6 +555,7 @@ tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
       df$ID_color <- df$ID
       df <- sf::st_transform(df, 4326)
       df <- sf::st_set_agr(df, "constant")
+      df <- sf::st_cast(df, "MULTIPOLYGON")
 
       tileset_upload_tile_source(df,
                                  id = scale_name,
@@ -557,6 +588,9 @@ tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
     mapply(\(scale_name, scale_df) {
 
       source_names <- paste(inst_prefix, scale_name, sep = "_")
+
+      if (source_names %in% tilesets & !overwrite) return()
+
       sources <- paste0("mapbox://tileset-source/", username, "/", source_names)
       names(sources) <- source_names
       minzooms <- 3
@@ -632,6 +666,7 @@ tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
       az_name <- gsub("^mzl", inst_prefix, mzl_name)
       scale_names <- paste(inst_prefix, names(zoom_levels), sep = "_")
 
+      if (az_name %in% tilesets & !overwrite) return()
 
       sources <- stats::setNames(paste0(
         "mapbox://tileset-source/", username, "/",
@@ -659,16 +694,14 @@ tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
         )
 
       # Reset
-      tileset_delete_tileset_source(
-        id = az_name,
-        username = username,
-        access_token = access_token
-      )
-      tileset_delete_tileset(
-        id = az_name,
-        username = username,
-        access_token = access_token
-      )
+      if (az_name %in% tilesets & overwrite) {
+        tileset_delete_tileset(
+          id = az_name,
+          username = username,
+          access_token = access_token
+        )
+      }
+
       # Give some time so the deletion is completed
       Sys.sleep(5)
 
@@ -687,7 +720,6 @@ tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
 
   return(invisible(NULL))
 }
-
 #' Create CSD labels tileset
 #'
 #' @param scales <`list`> Lists of spatial features dataframes with regions and

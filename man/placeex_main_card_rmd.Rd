@@ -13,6 +13,7 @@ placeex_main_card_rmd(
   mapbox_username = "curbcut",
   rev_geocode_from_localhost = TRUE,
   check_bslib_version = TRUE,
+  reinstall_bslib = TRUE,
   overwrite = TRUE,
   scales_sequences,
   full_data_path = sprintf("\%s/data/", getwd())
@@ -50,6 +51,9 @@ add \code{class} arguments to the navigation bar's list creation. This version c
 be found at \code{devtools::install_github('bdbmax/bslib')}. Defaults to \code{TRUE.}
 Set \code{FALSE} to continue with the version of \code{bslib} on your system.}
 
+\item{reinstall_bslib}{<\code{logical}> Whether to reinstall the newest version of
+bslib on exit, considering 'bdbmax/bslib' must be installed. Defaults to TRUE.}
+
 \item{overwrite}{<\code{logical}> Should the .html files be overwritten? Defaults
 to \code{TRUE}.}
 }
@@ -58,5 +62,9 @@ Returns nothing if successful. All place explorer possibilities are
 saved in the \code{out_folder}.
 }
 \description{
-Pre-process all the possible Rmds
+This function processes data to knit R Markdown documents for the place explorer,
+implementing custom styling features not available in the standard \code{bslib} package.
+It temporarily uses a custom version of \code{bslib} from GitHub to allow individual styling
+of each tab in a navigation bar, which is essential for the visualization requirements of
+Curbcut. After processing, it installes the newest version of \code{bslib}.
 }
