@@ -125,7 +125,7 @@ aws_deploy <- function(app_name, port = NULL, tag = gsub("^20|-", "", Sys.Date()
   # Update the task definition to use the new URI
   if (update_task_and_service)
     upts <-
-    sprintf("R -e cc.buildr::update_task_URI(app_name='%s',new_URI='%s',aws_cli_profile='%s')",
+    sprintf(" & R.exe -e \"cc.buildr::update_task_URI(app_name='%s',new_URI='%s',aws_cli_profile='%s')\"",
             app_name, new_URI, aws_cli_profile)
 
   cmds <- c(
