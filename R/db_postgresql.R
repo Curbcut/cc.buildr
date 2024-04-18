@@ -130,7 +130,7 @@ db_write_prod <- function(df, table_name, schema, scale = NULL, primary_key = "I
 
   # If a column was a list and now JSONB, alter the table
   for (c in list_cols) {
-    query <- sprintf("ALTER TABLE %s.%s ALTER COLUMN %s TYPE JSONB USING %s::jsonb;",
+    query <- sprintf('ALTER TABLE %s."%s" ALTER COLUMN "%s" TYPE JSONB USING "%s"::jsonb;',
                      schema, tn, c, c)
     DBI::dbExecute(conn, query)
   }
@@ -140,7 +140,7 @@ db_write_prod <- function(df, table_name, schema, scale = NULL, primary_key = "I
     db_try_disconnect(
       conn = conn,
       fun = DBI::dbExecute(conn = conn,
-                           statement = sprintf('ALTER TABLE %s.%s ADD PRIMARY KEY ("%s");',
+                           statement = sprintf('ALTER TABLE %s."%s" ADD PRIMARY KEY ("%s");',
                                                schema, tn, primary_key))
     )
   }
@@ -155,7 +155,7 @@ db_write_prod <- function(df, table_name, schema, scale = NULL, primary_key = "I
       # Define index name based on table name and column name
       index_name <- paste0("idx_", tn, "_", idx)
       # Generate SQL command to create index
-      create_index_sql <- sprintf('CREATE INDEX %s ON %s.%s ("%s");',
+      create_index_sql <- sprintf('CREATE INDEX %s ON %s."%s" ("%s");',
                                   index_name, schema, tn, idx)
       # Execute SQL command to create index
       db_try_disconnect(
