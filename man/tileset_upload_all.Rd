@@ -11,7 +11,8 @@ tileset_upload_all(
   username,
   access_token,
   overwrite = FALSE,
-  no_reset = NULL
+  no_reset = NULL,
+  scales_with_DA_ID_color = c("DB", "building")
 )
 }
 \arguments{
@@ -36,6 +37,9 @@ created and published tileset. Should correspond to the Curbcut city, e.g. \code
 If boundaries change and new tilesets are necessary, potentially buildings would
 not be re-uploaded as it's costly and they don't change. Defaults to NULL for
 resetting all scales.}
+
+\item{scales_with_DA_ID_color}{<\verb{character vector}> Which are the scales for
+which to use the ID of the DA in which it falls to use as the ID_color.}
 
 \item{all_scales}{<\verb{named list}> A named list of sf data.frame
 containing all scales listed with their regions, normally

@@ -90,6 +90,10 @@ db_write_prod <- function(df, table_name, schema, scale = NULL, primary_key = "I
 
   # Name the table inside the postgresql
   tn <- if (is.null(scale)) table_name else paste(scale, table_name, sep = "_")
+  if (nchar(tn) > 63) {
+    stop(sprintf("Table name `%s` is too long. It shouldn't exceed length 63",
+                 tn))
+  }
 
   # Arrange the columns for efficiency. Place the fixed size data type first
   # (integer, logical) ad the variable ones last (character). We tested and have

@@ -106,6 +106,8 @@ save_bslike_postgresql <- function(all_scales, tables_to_save_db, inst_prefix,
 
   }, names(scales), scales)
 
+  qs::qsave(db_list_scales(inst_prefix), "data/db_scales.qs")
+
 }
 
 #' Save all scale tables in QS format

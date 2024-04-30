@@ -419,13 +419,15 @@ tileset_create_recipe <- function(layer_names, source, minzoom, maxzoom,
 #' If boundaries change and new tilesets are necessary, potentially buildings would
 #' not be re-uploaded as it's costly and they don't change. Defaults to NULL for
 #' resetting all scales.
+#' @param scales_with_DA_ID_color <`character vector`> Which are the scales for
+#' which to use the ID of the DA in which it falls to use as the ID_color.
 #'
 #' @return Returns nothing if succeeds. Tilesets are created and published and
 #' ready to be used.
 #' @export
 tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
                                inst_prefix, username, access_token, overwrite = FALSE,
-                               no_reset = NULL) {
+                               no_reset = NULL, scales_with_DA_ID_color = c("DB", "building")) {
 
   # Remove grids (they have their own tileset upload function)
   map_zoom_levels <- map_zoom_levels[!grepl("^mzl_grd", names(map_zoom_levels))]
@@ -441,9 +443,19 @@ tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
       conn <- db_connect_prod()
       out <- db_try_disconnect(conn = conn,
                                fun = DBI::dbGetQuery(conn,
-                                                     sprintf("SELECT * FROM %s.%s",
+                                                     sprintf('SELECT * FROM %s."%s"',
                                                              inst_prefix, x)))
       db_disconnect_prod(conn)
+      out$geometry <- sf::st_as_sfc(out$geometry, EWKB = TRUE, crs = 4326)
+      out <- tibble::as_tibble(out)
+      out <- sf::st_as_sf(out)
+
+      if ("geometry_digital" %in% names(out)) {
+        out$geometry_digital <- sf::st_as_sfc(out$geometry_digital, EWKB = TRUE, crs = 4326)
+        out <- sf::st_drop_geometry(out)
+        names(out)[names(out) == "geometry_digital"] <- "geometry"
+        out <- sf::st_as_sf(out)
+      }
       return(out)
     }
 
@@ -473,17 +485,6 @@ tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
 
   tilesets <- tileset_list_tilesets(username, access_token)
   tilesets <- grep(paste0("^", inst_prefix), tilesets$id, value = TRUE)
-
-  # # Switch the geometry for digital
-  # all_scales <- lapply(all_scales, \(scale_df) {
-  #   # If there is no digital geometry, return raw
-  #   if (!"geometry_digital" %in% names(scale_df)) return(scale_df)
-  #
-  #   # Switch the geometry to the digital one
-  #   scale_df <- sf::st_drop_geometry(scale_df)
-  #   names(scale_df)[names(scale_df) == "geometry_digital"] <- "geometry"
-  #   sf::st_as_sf(scale_df)
-  # })
 
   # Reset
   mapply(function(scale_name, scale_df) {
@@ -538,7 +539,8 @@ tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
 
     # We can detect too large data to pass by the normal flow by the fact
     # they don't have population and households interpolated
-    if (grepl("_building$", scale_name)) {
+    if (grepl(paste0(sprintf("_%s$", scales_with_DA_ID_color), collapse = "|"),
+              scale_name)) {
       df <- scale_df[, grepl("ID$", names(scale_df))]
       df <- df[, c("ID", "DA_ID")]
       names(df) <- c("ID", "ID_color", "geometry")
@@ -720,6 +722,7 @@ tileset_upload_all <- function(map_zoom_levels, tweak_max_zoom = NULL,
 
   return(invisible(NULL))
 }
+
 #' Create CSD labels tileset
 #'
 #' @param scales <`list`> Lists of spatial features dataframes with regions and

@@ -45,6 +45,7 @@ digital_to_cartographic <- function(scale, DA_carto, crs) {
   }
 
   # New geometry using cartographic, keep digital
+  scale <- sf::st_transform(scale, crs = 4326)
   scale_no_geo <- sf::st_drop_geometry(scale)
   scale_no_geo$geometry <- cartographic$geometry
   scale_no_geo <- sf::st_as_sf(scale_no_geo, crs = crs)

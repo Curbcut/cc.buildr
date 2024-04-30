@@ -4,7 +4,13 @@
 \alias{interpolate_fast_additive_sum}
 \title{Fast Summation for Interpolation}
 \usage{
-interpolate_fast_additive_sum(col_name, data, id_col, weight_col = NULL)
+interpolate_fast_additive_sum(
+  col_name,
+  data,
+  id_col,
+  weight_col = NULL,
+  .round = FALSE
+)
 }
 \arguments{
 \item{col_name}{<\code{character}> A string representing the name of the column
@@ -19,6 +25,9 @@ in the input data frame.}
 \item{weight_col}{<\code{character}> A string representing the name of the weight
 column in the input data frame. Used only when the weight_col is using areas.
 Defaults to NULL.}
+
+\item{.round}{<\code{logical}> If variables should be rounded,
+e.g. the population or count of households.}
 }
 \value{
 A data frame with two columns: the ID column (with the same name as

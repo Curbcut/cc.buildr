@@ -56,12 +56,14 @@ interpolate_fast_weighted_mean <- function(df, id_col, weight_col, value_col) {
 #' @param weight_col <`character`> A string representing the name of the weight
 #' column in the input data frame. Used only when the weight_col is using areas.
 #' Defaults to NULL.
+#' @param .round <`logical`> If variables should be rounded,
+#' e.g. the population or count of households.
 #'
 #' @return A data frame with two columns: the ID column (with the same name as
 #' in the input data frame) and a column containing the summed values, named
 #' after the input col_name.
 interpolate_fast_additive_sum <- function(col_name, data, id_col,
-                                          weight_col = NULL) {
+                                          weight_col = NULL, .round = FALSE) {
   # Remove rows with NA in col_name and weight_col (if weight_col is not NULL)
   nas <- if (!is.null(weight_col)) {
     which(is.na(data[[col_name]]) & is.na(data[[weight_col]]))
@@ -79,6 +81,7 @@ interpolate_fast_additive_sum <- function(col_name, data, id_col,
 
   # Calculate the sum for each group using tapply
   summed_data <- tapply(weighted_col, data[[id_col]], sum, na.rm = TRUE)
+  if (.round) summed_data <- round(summed_data)
 
   # Convert to a data frame and set column names
   result <- data.frame(ID = names(summed_data),
@@ -490,7 +493,7 @@ interpolate_from_area <- function(to, from,
   }
   summarized_add <- lapply(additive_vars, interpolate_fast_additive_sum,
                            data = intersected_table, id_col = "ID",
-                           weight_col = weight_by
+                           weight_col = weight_by, .round = round_additive
   )
 
   # Concatenate both
