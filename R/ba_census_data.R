@@ -100,6 +100,43 @@ ba_census_data <- function(scales_variables_modules,
                  inst_prefix = inst_prefix)
 
 
+  # Add population and households of dissemination blocks to the db --------
+
+  if (!all(c("DB_private_households", "DB_c_population" ) %in%
+           cc.buildr::db_list_tables_of_scale(inst_prefix, "DB")) | overwrite) {
+
+    recent_DB <- DB_table[[which.max(names(DB_table))]]
+    previous_DB <- DB_table[-which.max(names(DB_table))]
+    DB_table_interpolated <- DB_table
+
+    for (i in names(previous_DB)) {
+      DB_table_interpolated[[i]] <-
+        interpolate_from_area(to = recent_DB, from = DB_table_interpolated[[i]],
+                              additive_vars = c("dwellings", "population"),
+                              round_additive = TRUE, crs = 32618)
+    }
+
+    all_cols <- mapply(\(year, df) {
+      df <- sf::st_drop_geometry(df)
+      names(df)[names(df) == "dwellings"] <-
+        sprintf("private_households_%s", year)
+      names(df)[names(df) == "population"] <-
+        sprintf("c_population_%s", year)
+      df[c(sprintf("private_households_%s", year),
+           sprintf("c_population_%s", year))]
+    }, names(DB_table_interpolated), DB_table_interpolated, SIMPLIFY = FALSE)
+
+    data_binded <- cbind(DB_table_interpolated$`2021`["ID"], Reduce(cbind, all_cols)) |>
+      tibble::as_tibble()
+
+    data_construct(scales_data = list(DB = data_binded),
+                   unique_var = c("private_households", "c_population"),
+                   time_regex = time_regex,
+                   inst_prefix = inst_prefix)
+
+  }
+
+
   # Variables table ---------------------------------------------------------
 
   # Vectorized check for presence of every scale in cc.data::census_scales

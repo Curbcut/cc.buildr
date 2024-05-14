@@ -61,7 +61,7 @@ pages_regions <- function(svm, regions_dictionary, inst_prefix) {
               na_check_conditions <- paste0(column_names, " IS NULL", collapse = " AND ")
               sql_query_template <- paste0("SELECT COUNT(*) AS total_rows, ",
                                            "SUM(CASE WHEN %s THEN 1 ELSE 0 END) ",
-                                           "AS na_rows FROM %s.%s_%s WHERE \"ID\" IN (%s);")
+                                           'AS na_rows FROM %s."%s_%s" WHERE \"ID\" IN (%s);')
 
 
               # Assuming scale_IDs is a vector of IDs

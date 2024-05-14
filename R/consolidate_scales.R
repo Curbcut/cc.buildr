@@ -97,6 +97,7 @@ consolidate_scales <- function(scales_sequences, all_scales, regions, crs,
         # Transfer the lower `df` to points and perform a spatial join
         df_points_on_surface <- suppressWarnings(sf::st_point_on_surface(lower))
         merged_centroids <- sf::st_join(df_points_on_surface, hi_df)
+        merged_centroids <- sf::st_transform(merged_centroids, crs = crs)
 
         # For the NA result, spatial filter
         missing <- merged_centroids[is.na(merged_centroids[[id_name]]), ]
