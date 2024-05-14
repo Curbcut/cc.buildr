@@ -146,7 +146,8 @@ ba_var <- function(data, scales_variables_modules, base_scale,
       dates = dates,
       avail_scale = data_interpolated$avail_scale,
       source = variable_source,
-      interpolated = data_interpolated$interpolated_ref
+      interpolated = data_interpolated$interpolated_ref,
+      schema = list(time = time_regex)
     )
 
 

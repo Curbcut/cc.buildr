@@ -34,7 +34,9 @@ append_empty_variables_table <- function(scales_consolidated) {
       rank_name = list(),
       rank_name_short = list(),
       var_measurement = list(),
-      breaks_q5 = list()
+      breaks_q5 = list(),
+      schema = list(),
+      breaks_var = character()
     )
 
   list(scales = scales_consolidated, variables = variables)
@@ -176,6 +178,12 @@ append_empty_variables_table <- function(scales_consolidated) {
 #' to `FALSE`. If you are certain the duplicated variable title will never be
 #' used in a dropdown (ex. it is a parent variable), then switch to `TRUE` at
 #' your own risks.
+#' @param schema <`named list`> Named list of schemas available for the live app.
+#' It must be a regular expression grabbing said info from the variable name. e.g.
+#' `list(time = '_\\d{4}$')` for grabbing year.
+#' @param breaks_var <`character`> The specific column with schema from which to draw the
+#' breaks out of all the values. Defaults to NA which will default in using the
+#' last ordered column (latest date).
 #'
 #' @return The same `variables` data.frame fed, with the added row.
 #' @export
@@ -196,7 +204,8 @@ add_variable <- function(variables, var_code, type, var_title,
                            measurement = rep("scalar", length(avail_scale))
                          ), breaks_q5 = NULL,
                          allow_title_duplicate = FALSE,
-                         classification) {
+                         classification,
+                         schema, breaks_var = NA) {
   if (var_code %in% variables$var_code) {
     stop(paste0("`", var_code, "` is a duplicate."))
   }
@@ -265,6 +274,29 @@ add_variable <- function(variables, var_code, type, var_title,
       stop("`classification` must be one of `sociodemo`, `physical`, `other`.")
   }
 
+  if (!is.list(schema)) {
+    stop("`schema` must be a list.")
+  }
+
+  # If schema$time does not end with an dollar sign, flag it.
+  if ("time" %in% names(schema) & !grepl("\\$$", schema$time)) {
+    warning(paste0(
+      "Location of `time` in the variables needs to be at the end of the vari",
+      "able string, e.g. `alp_2001`. `time_regex` needs to end with a dollar ",
+      "sign, indicating the location of time at the end of the string. It has",
+      " been automatically added to the `time_regex` input."
+    ))
+    schema$time <- sprintf("%s$", schema$time)
+  }
+  # If schema$time does not start with an underscore, flag it
+  if ("time" %in% names(schema) & !grepl("^_", schema$time)) {
+    warning(paste0(
+      "Location of `time` in the variables needs to be separated by an underscore",
+      ", e.g. `alp_2001`. It has been automatically added to the `time_regex` input."
+    ))
+    schema$time <- sprintf("_%s", schema$time)
+  }
+
   tibble::add_row(
     variables,
     var_code = as.character(var_code),
@@ -289,7 +321,9 @@ add_variable <- function(variables, var_code, type, var_title,
     rank_name = list(rank_name),
     rank_name_short = list(rank_name_short),
     var_measurement = list(unique(var_measurement)),
-    breaks_q5 = list(breaks_q5)
+    breaks_q5 = list(breaks_q5),
+    schema = schema,
+    breaks_var = as.character(breaks_var)
   )
 }
 

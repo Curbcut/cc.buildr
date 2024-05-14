@@ -46,7 +46,7 @@ ba_ndvi <- function(scales_variables_modules,
   scales <- scales[exclude_processed_scales("ndvi", scales = names(scales),
                                             overwrite = overwrite,
                                             inst_prefix = inst_prefix)]
-
+  time_regex <- "_\\d{4}$"
 
   # Add it to all the scales ------------------------------------------------
 
@@ -143,7 +143,6 @@ ba_ndvi <- function(scales_variables_modules,
 
     # Data tibble -------------------------------------------------------------
 
-    time_regex <- "_\\d{4}$"
     data_construct(scales_data = interpolated,
                    unique_var = "ndvi",
                    time_regex = time_regex,
@@ -177,7 +176,8 @@ ba_ndvi <- function(scales_variables_modules,
       avail_scale = avail_scale,
       source = "Curbcut",
       interpolated = interpolated_ref,
-      breaks_q5 = c(0, 0.2, 0.4, 0.6, 0.8, 1)
+      breaks_q5 = c(0, 0.2, 0.4, 0.6, 0.8, 1),
+      schema = list(time = time_regex)
     )
 
 

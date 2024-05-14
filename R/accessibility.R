@@ -354,7 +354,10 @@ ba_accessibility_points <- function(scales_variables_modules,
           "exceptionally dense"
         ),
         var_measurement = var_measurement,
-        classification = "other"
+        classification = "other",
+        schema = list(time = time_regex,
+                      transportationtime = "_\\d{1,2}"),
+        breaks_var = paste0(var, "_20_2023")
       ) |>
         (\(x) x[nrow(x), ])()
     })

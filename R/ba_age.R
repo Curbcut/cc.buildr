@@ -220,7 +220,8 @@ ba_age <- function(scales_variables_modules, scales_sequences, scales_to_interpo
           scales_variables_modules$variables$var_code == "age_0_14"][[1]],
         allow_title_duplicate = TRUE,
         group_name = group_name,
-        group_diff = group_diff
+        group_diff = group_diff,
+        schema = list(time = time_regex)
       )
       out[out$var_code == u_var, ]
     })

@@ -709,7 +709,8 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
             "a just about average vacancy rate",
             "an unusually high vacancy rate",
             "an exceptionally high vacancy rate"
-          )
+          ),
+          schema = list(time = time_regex)
         )
 
       out[out$var_code == var, ]
@@ -871,7 +872,8 @@ ru_vac_rate <- function(scales_variables_modules, crs, geo_uid,
           interpolated = tibble::tibble(
             scale = "cmhczone",
             interpolated_from = FALSE
-          )
+          ),
+          schema = list(time = time_regex)
         )
 
       out[out$var_code == var, ]

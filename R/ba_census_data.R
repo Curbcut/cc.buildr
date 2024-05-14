@@ -192,7 +192,8 @@ ba_census_data <- function(scales_variables_modules,
         interpolated = interpolated_ref,
         rankings_chr = cc.data::census_vectors_table$rankings_chr[
           cc.data::census_vectors_table$var_code == u_var
-        ][[1]]
+        ][[1]],
+        schema = list(time = time_regex)
       )
       out[out$var_code == u_var, ]
     })
