@@ -31,7 +31,9 @@ add_variable(
     length(avail_scale))),
   breaks_q5 = NULL,
   allow_title_duplicate = FALSE,
-  classification
+  classification,
+  schema,
+  breaks_var = NA
 )
 }
 \arguments{
@@ -193,6 +195,14 @@ environment. While physical environmentcan be compared with other physical
 variables. Possible options here are: \code{sociodemo}, \code{physical} or \code{other}. Other
 will be consider as a passe-partout, and can be used to be compared with any other
 variable.}
+
+\item{schema}{<\verb{named list}> Named list of schemas available for the live app.
+It must be a regular expression grabbing said info from the variable name. e.g.
+\code{list(time = '_\\\\d{4}$')} for grabbing year.}
+
+\item{breaks_var}{<\code{character}> The specific column with schema from which to draw the
+breaks out of all the values. Defaults to NA which will default in using the
+last ordered column (latest date).}
 }
 \value{
 The same \code{variables} data.frame fed, with the added row.
