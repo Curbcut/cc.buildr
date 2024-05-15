@@ -170,7 +170,7 @@ dyk_uni <- function(vars_dyk, svm, scales_dictionary, regions_dictionary, langs,
         next
       }
       other_lang_cols <- paste0(sprintf("_%s$", other_langs), collapse = "|")
-      out <- out[!grepl(other_lang_cols, names(out))]
+      dyk_highest_in_build <- out[!grepl(other_lang_cols, names(out))]
       next
     }
 

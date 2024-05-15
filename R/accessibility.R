@@ -83,6 +83,8 @@ ba_accessibility_points <- function(scales_variables_modules,
     unique_vars <- c(unique_vars, transit_mode)
   }
 
+  time_regex <- "_\\d{4}$"
+
   only_scales <- scales_greater_than(base_scale = scales_variables_modules$scales[[DA_DB]],
                                      all_scales = scales_variables_modules$scales, crs = crs)
 
@@ -137,7 +139,6 @@ ba_accessibility_points <- function(scales_variables_modules,
 
     # Data tibble -------------------------------------------------------------
 
-    time_regex <- "_\\d{4}$"
     unique_vars <- gsub(time_regex, "", average_vars)
     unique_vars <- gsub("_\\d{1,2}$", "", unique_vars)
     unique_vars <- unique(unique_vars)

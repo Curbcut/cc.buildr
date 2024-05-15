@@ -270,30 +270,36 @@ add_variable <- function(variables, var_code, type, var_title,
   }
 
   if (!classification %in% c("sociodemo", "physical", "other")) {
-    if (!is.na(classification))
+    if (!is.na(classification)) {
       stop("`classification` must be one of `sociodemo`, `physical`, `other`.")
+    }
   }
 
   if (!is.list(schema)) {
     stop("`schema` must be a list.")
   }
 
+  if (identical(schema, list())) schema <- list(NULL)
   # If schema$time does not end with an dollar sign, flag it.
-  if ("time" %in% names(schema) & !grepl("\\$$", schema$time)) {
-    warning(paste0(
-      "Location of `time` in the variables needs to be at the end of the vari",
-      "able string, e.g. `alp_2001`. `time_regex` needs to end with a dollar ",
-      "sign, indicating the location of time at the end of the string. It has",
-      " been automatically added to the `time_regex` input."
-    ))
+  if ("time" %in% names(schema)) {
+    if (!grepl("\\$$", schema$time)) {
+      warning(paste0(
+        "Location of `time` in the variables needs to be at the end of the vari",
+        "able string, e.g. `alp_2001`. `time_regex` needs to end with a dollar ",
+        "sign, indicating the location of time at the end of the string. It has",
+        " been automatically added to the `time_regex` input."
+      ))
+    }
     schema$time <- sprintf("%s$", schema$time)
   }
   # If schema$time does not start with an underscore, flag it
-  if ("time" %in% names(schema) & !grepl("^_", schema$time)) {
-    warning(paste0(
-      "Location of `time` in the variables needs to be separated by an underscore",
-      ", e.g. `alp_2001`. It has been automatically added to the `time_regex` input."
-    ))
+  if ("time" %in% names(schema)) {
+    if (!grepl("^_", schema$time)) {
+      warning(paste0(
+        "Location of `time` in the variables needs to be separated by an underscore",
+        ", e.g. `alp_2001`. It has been automatically added to the `time_regex` input."
+      ))
+    }
     schema$time <- sprintf("_%s", schema$time)
   }
 
@@ -326,4 +332,3 @@ add_variable <- function(variables, var_code, type, var_title,
     breaks_var = as.character(breaks_var)
   )
 }
-
