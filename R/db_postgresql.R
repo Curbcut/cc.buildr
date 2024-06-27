@@ -301,6 +301,9 @@ db_list_tables <- function(schema) {
 #'
 #' @export
 db_list_scales <- function(schema) {
+  # warning("TKTKTKTKT db_list_scales IS OVERWRITTEN TO BE ABLE TO BUILD NOW")
+  # c("grd25", "grd50", "grd100", "grd30", "grd60",
+  #   "grd120", "grd300")
   conn <- db_connect_prod()
   query <- sprintf(paste0("SELECT table_name FROM information_schema.tables ",
                           "WHERE table_schema = '%s' AND table_name NOT LIKE ",

@@ -1057,6 +1057,7 @@ placeex_main_card_rmd <- function(pe_main_card_data,
               } else {
                 df$name
               }
+            print(get0("translation_df", envir = .GlobalEnv))
 
             tryCatch(
               rmarkdown::render(
@@ -1078,7 +1079,8 @@ placeex_main_card_rmd <- function(pe_main_card_data,
                   title_card_data = title_card_data,
                   variables = variables,
                   scale_df = sf::st_drop_geometry(scale_df),
-                  data_path = full_data_path
+                  data_path = full_data_path,
+                  translation_df = get0("translation_df", envir = .GlobalEnv)
                 ), envir = new.env(), quiet = TRUE
               ),
               error = function(e) {

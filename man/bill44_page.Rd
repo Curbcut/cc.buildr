@@ -4,7 +4,13 @@
 \alias{bill44_page}
 \title{Bill 44 Zoning Analysis Page Function}
 \usage{
-bill44_page(scales_variables_modules, scales_sequences, crs, overwrite)
+bill44_page(
+  scales_variables_modules,
+  scales_sequences,
+  crs,
+  overwrite,
+  inst_prefix
+)
 }
 \arguments{
 \item{scales_variables_modules}{<\code{list}> A list containing scales, variables, and
@@ -15,6 +21,9 @@ modules data structures.}
 \item{crs}{<\code{numeric}> Coordinate reference system to be used for spatial data.}
 
 \item{overwrite}{<\code{logical}> Flag to determine if existing data should be overwritten.}
+
+\item{inst_prefix}{<\code{character}> The prefix of the instance, e.g. \code{'mtl'} which
+is the database schema in which the data is saved.}
 }
 \value{
 <\code{list}> A list containing updated scales, variables, and modules.

@@ -19,6 +19,7 @@ params:
     variables: ""
     scale_df: ""
     data_path: ""
+    translation_df: ""
 ---
   
 ```{css, echo=FALSE}

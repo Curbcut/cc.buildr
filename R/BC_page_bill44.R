@@ -10,11 +10,13 @@
 #' @param scales_sequences <`list`> A list of scale sequences for data representation.
 #' @param crs <`numeric`> Coordinate reference system to be used for spatial data.
 #' @param overwrite <`logical`> Flag to determine if existing data should be overwritten.
+#' @param inst_prefix <`character`> The prefix of the instance, e.g. `'mtl'` which
+#' is the database schema in which the data is saved.
 #'
 #' @return <`list`> A list containing updated scales, variables, and modules.
 #' @export
 bill44_page <- function(scales_variables_modules, scales_sequences, crs,
-                        overwrite) {
+                        overwrite, inst_prefix) {
 
   # Get list of data variables ----------------------------------------------
 
@@ -275,7 +277,8 @@ bill44_page <- function(scales_variables_modules, scales_sequences, crs,
                  unique_var = unique_var,
                  time_regex = time_regex,
                  breaks_var = list(bill44_count = "bill44_count_000",
-                                   bill44_sqkm = "bill44_sqkm_000"))
+                                   bill44_sqkm = "bill44_sqkm_000"),
+                 inst_prefix = inst_prefix)
 
 
   # Variables table ---------------------------------------------------------
@@ -326,7 +329,8 @@ bill44_page <- function(scales_variables_modules, scales_sequences, crs,
         "just about average", "unusually dense",
         "exceptionally dense"
       ),
-      classification = "physical"
+      classification = "physical",
+      schema = list()
     ) |>
       (\(x) x[nrow(x), ])()
   })

@@ -19,6 +19,7 @@ params:
     variables: ""
     scale_df: ""
     data_path: ""
+    translation_df: ""
 ---
 
 ```{css, echo=FALSE}
@@ -246,6 +247,7 @@ all_themes <- unique(params$variables$theme[params$variables$pe_include])
 # Necessary so `curbcut` functions work (They go grab the `variables` table
 # in the global environment)
 assign("variables", params$variables, envir = .GlobalEnv)
+assign("translation_df", params$translation_df, envir = .GlobalEnv)
 
 # Grab the scale df, no geometry
 scale_df <- sf::st_drop_geometry(params$scale_df)

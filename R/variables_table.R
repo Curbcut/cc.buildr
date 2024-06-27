@@ -289,8 +289,8 @@ add_variable <- function(variables, var_code, type, var_title,
         "sign, indicating the location of time at the end of the string. It has",
         " been automatically added to the `time_regex` input."
       ))
+      schema$time <- sprintf("%s$", schema$time)
     }
-    schema$time <- sprintf("%s$", schema$time)
   }
   # If schema$time does not start with an underscore, flag it
   if ("time" %in% names(schema)) {
@@ -299,8 +299,8 @@ add_variable <- function(variables, var_code, type, var_title,
         "Location of `time` in the variables needs to be separated by an underscore",
         ", e.g. `alp_2001`. It has been automatically added to the `time_regex` input."
       ))
+      schema$time <- sprintf("_%s", schema$time)
     }
-    schema$time <- sprintf("_%s", schema$time)
   }
 
   tibble::add_row(
@@ -328,7 +328,7 @@ add_variable <- function(variables, var_code, type, var_title,
     rank_name_short = list(rank_name_short),
     var_measurement = list(unique(var_measurement)),
     breaks_q5 = list(breaks_q5),
-    schema = schema,
+    schema = list(schema),
     breaks_var = as.character(breaks_var)
   )
 }
