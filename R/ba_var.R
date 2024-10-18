@@ -62,6 +62,9 @@ ba_var <- function(data, scales_variables_modules, base_scale,
                    variable_exp_q5,
                    variable_theme, variable_private, variable_source,
                    variable_pe_include = TRUE,
+                   variable_measurement = "scalar",
+                   variable_rank_name = NULL,
+                   variable_rank_name_short = NULL,
                    module_id = NULL,
                    module_theme = NULL,
                    module_nav_title = NULL,
@@ -129,6 +132,12 @@ ba_var <- function(data, scales_variables_modules, base_scale,
   dates <- curbcut::s_extract(time_regex, var)
   dates <- gsub("^_", "", dates)
 
+  avail_scale <-  data_interpolated$avail_scale
+  var_measurement <-  data.frame(
+    scale = avail_scale,
+    measurement = rep(variable_measurement, length(avail_scale))
+  )
+
   variables <-
     add_variable(
       variables = scales_variables_modules$variables,
@@ -144,10 +153,13 @@ ba_var <- function(data, scales_variables_modules, base_scale,
       private = variable_private,
       pe_include = variable_pe_include,
       dates = dates,
-      avail_scale = data_interpolated$avail_scale,
+      avail_scale = avail_scale,
+      var_measurement = var_measurement,
       source = variable_source,
       interpolated = data_interpolated$interpolated_ref,
-      schema = list(time = time_regex)
+      schema = list(time = time_regex),
+      rank_name = variable_rank_name,
+      rank_name_short = variable_rank_name_short
     )
 
 

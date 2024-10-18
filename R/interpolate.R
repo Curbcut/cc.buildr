@@ -526,6 +526,95 @@ interpolate_from_area <- function(to, from,
   )
 }
 
+#' Interpolate variables using a custom weighting factor, with the weighting
+#' factor itself interpolated based on area proportions
+#'
+#' @param to <`sf data.frame`> Table for which data must be interpolated
+#' @param from <`sf data.frame`> A \code{DA} sf data.frame from which
+#' variables will be interpolated.
+#' @param average_vars <`character vector`> Corresponds to the column names
+#' of the variables that are to be interpolated as an average, like a percentage,
+#' a median, an index, etc. weighted by the `weight_by` argument.
+#' @param additive_vars <`character vector`> Corresponds to the column names of
+#' the variables that are 'count' variables.
+#' @param weight_by <`character`> Column name in `from` data to be used for weighting
+#' the interpolation of both average and additive variables.
+#' @param round_additive <`logical`> If additive variables should be rounded,
+#' e.g. the population or count of households.
+#' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
+#' \code{32618} for Montreal.
+#'
+#' @return Returns the `to` data.frame with the added or modified columns that
+#' have been interpolated from the `from`.
+#' @export
+interpolate_from_variable <- function(to, from,
+                                      average_vars = c(),
+                                      additive_vars = c(),
+                                      weight_by,
+                                      round_additive = TRUE,
+                                      crs) {
+  # Ensure that the weight_by column exists
+  if (!(weight_by %in% names(from))) {
+    stop(paste("The weight_by column", weight_by, "is missing from the `from` table."))
+  }
+
+  # Interpolate the `from` table to get additive variables, and interpolate that
+  # variable to do the other interpolation.
+  das <- from[, c(average_vars, additive_vars, weight_by)]
+  das <- sf::st_transform(das, crs)
+  das <- sf::st_set_agr(das, "constant")
+  # Add DA area
+  das$DA_area <- get_area(das$geometry)
+  # Add new table area
+  destination <- sf::st_transform(to, crs)
+  destination <-
+    destination[, names(destination)[!names(destination) %in% additive_vars]]
+  intersected_table <- suppressWarnings(sf::st_intersection(destination, das))
+  intersected_table$new_area <- get_area(intersected_table$geometry)
+  # Get proportion of area per zone
+  intersected_table$area_prop <-
+    intersected_table$new_area / intersected_table$DA_area
+  intersected_table <- sf::st_drop_geometry(intersected_table)
+
+
+  # Calculate weighted proportion using the provided weight_by
+  intersected_table$weight_by_prop <- intersected_table[[weight_by]] * intersected_table$area_prop
+
+  summarized_avg <- lapply(average_vars, \(col_name) {
+    col_df <- intersected_table[c("ID", "weight_by_prop", col_name)]
+    interpolate_fast_weighted_mean(col_df, "ID", "weight_by_prop", col_name)
+  })
+
+  summarized_add <- lapply(additive_vars, interpolate_fast_additive_sum,
+                           data = intersected_table, id_col = "ID",
+                           weight_col = "weight_by_prop", .round = round_additive
+  )
+
+  # Concatenate both
+  summarized <- c(summarized_avg, summarized_add)
+
+  out <- if (length(summarized) > 1) {
+    merg_ <- function(x, y) {
+      x <- x[!is.na(x$ID), ]
+      y <- y[!is.na(y$ID), ]
+      if (identical(x$ID, y$ID)) {
+        cbind(x, y[2])
+      } else {
+        merge(x, y, by = "ID", all = TRUE)
+      }
+    }
+    Reduce(merg_, summarized)
+  } else {
+    summarized[[1]]
+  }
+
+  # Return
+  merge(to[, names(to)[!names(to) %in% c(additive_vars, average_vars)]], out,
+        by = "ID", all.x = TRUE
+  )
+}
+
+
 #' Interpolate variables from any geometry to all scales bigger in area
 #'
 #' Used to interpolate any polygons to all the used scale in the instance of

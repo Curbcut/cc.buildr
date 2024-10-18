@@ -26,6 +26,7 @@ ba_var(
   variable_private,
   variable_source,
   variable_pe_include = TRUE,
+  variable_measurement = "scalar",
   module_id = NULL,
   module_theme = NULL,
   module_nav_title = NULL,

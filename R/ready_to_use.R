@@ -98,6 +98,171 @@ ru_alp <- function(scales_variables_modules, regions_dictionary, region_DB_IDs,
   )
 }
 
+#' Add a ready to use ALP data and module
+#'
+#' @param scales_variables_modules <`named list`> A list of length three.
+#' The first is all the scales, the second is the variables table, and the
+#' third is the modules table.
+#' @param region_DA_IDs <`character vector`> All the current census'
+#' DA IDs present in the region. Only those will be extracted from the database
+#' to do interpolation.
+#' @param scales_sequences <`list`> A list of scales sequences representing the
+#' hierarchical ordering of scales on an auto-zoom.
+#' @param crs <`numeric`> EPSG coordinate reference system to be assigned, e.g.
+#' \code{32617} for Toronto.
+#' @param overwrite <`logical`> Should the data already processed and stored be
+#' overwriten?
+#' @param inst_prefix <`character`> The prefix of the instance, e.g. `'mtl'` which
+#' is the database schema in which the data is saved.
+#'
+#' @return A list of length 3, similar to the one fed to
+#' `scales_variables_modules` with the ALP variable added, its addition
+#' in the variables table and the module table.
+#' @export
+ru_deprivation <- function(scales_variables_modules, regions_dictionary, region_DA_IDs,
+                           scales_sequences, crs, overwrite = FALSE,
+                           inst_prefix) {
+  data <- cc.data::db_read_data("defav",
+                                column_to_select = "DA_ID",
+                                IDs = region_DA_IDs, crs = crs
+  )
+
+
+
+  cols <- grep("defav_material", names(data), value = TRUE)
+  dates <- gsub("defav_material_", "", cols) |> unique()
+  scales_variables_modules <- ba_var(
+    data = data[c("DA_ID", cols)],
+    scales_variables_modules = scales_variables_modules,
+    scales_sequences = scales_sequences,
+    base_scale = "DA",
+    weight_by = "population",
+    crs = crs,
+    average_vars = cols,
+    inst_prefix = inst_prefix,
+    variable_var_code = "defav_material",
+    variable_type = "ind",
+    variable_var_title = "Material deprivation",
+    variable_var_short = "Mat. dep.",
+    variable_explanation = "the material deprivation index",
+    variable_exp_q5 = "are living in areas with material deprivation levels ranging from _X_",
+    variable_classification = "other",
+    variable_theme = "Health",
+    variable_private = FALSE,
+    variable_source = "Institut national de santé publique du Québec",
+    variable_pe_include = TRUE,
+    variable_rank_name = rev(c("Very disadvantaged", "Disadvantaged", "Intermediate", "Advantaged", "Very advantaged")),
+    variable_rank_name_short = rev(c("V. Dis.", "Dis.", "Int.", "Adv.", "V. Adv.")),
+    overwrite = overwrite
+  )
+
+  cols <- grep("defav_social", names(data), value = TRUE)
+  dates <- gsub("defav_social_", "", cols) |> unique()
+  scales_variables_modules <- ba_var(
+    data = data[c("DA_ID", cols)],
+    scales_variables_modules = scales_variables_modules,
+    scales_sequences = scales_sequences,
+    base_scale = "DA",
+    weight_by = "population",
+    crs = crs,
+    average_vars = cols,
+    inst_prefix = inst_prefix,
+    variable_var_code = "defav_social",
+    variable_type = "ind",
+    variable_var_title = "Social deprivation",
+    variable_var_short = "Soc. dep.",
+    variable_explanation = "the social deprivation index",
+    variable_exp_q5 = "are living in areas with social deprivation levels ranging from _X_",
+    variable_classification = "other",
+    variable_theme = "Health",
+    variable_private = FALSE,
+    variable_source = "Institut national de santé publique du Québec",
+    variable_pe_include = TRUE,
+    variable_rank_name = rev(c("Very disadvantaged", "Disadvantaged", "Intermediate", "Advantaged", "Very advantaged")),
+    variable_rank_name_short = rev(c("V. Dis.", "Dis.", "Int.", "Adv.", "V. Adv.")),
+    module_id = "defav",
+    module_theme = "Health",
+    module_nav_title = "Deprivation index",
+    module_title_text_title = "Material and social deprivation",
+    module_title_text_main = paste0(
+      "<p>According to public health and socio-economic research, deprivation, ",
+      "both social and material, is recognized as a key measure of inequality. ",
+      "The Deprivation Index, developped by the INSPQ, provides a comprehensive look at areas facing socio-economic disadvantages. ",
+      "It helps to identify regions where populations may be most at risk and in need of additional resources."
+    ),
+    module_title_text_extra = paste0(
+      "<p>The datasets visualized on this page are sourced from the Institut national ",
+      "de santé publique du Québec (INSPQ) and are based on the Quebec Deprivation Index. ",
+      "The index measures two main forms of deprivation: material deprivation, which relates to the lack of ",
+      "access to basic goods and services, and social deprivation, which refers to the lack of social networks ",
+      "and community ties. These indices allow us to understand and target inequalities more effectively."
+    ),
+    module_metadata = TRUE,
+    module_dataset_info = paste0(
+      "<p>The data presented here is sourced from the Quebec Deprivation Index, developed by ",
+      "INSPQ and made available through Données Québec. This index captures two main dimensions of deprivation: ",
+      "material and social. Material deprivation refers to limited access to goods, services, and resources that ",
+      "are necessary for day-to-day life, such as income and housing quality. Social deprivation, on the other hand, ",
+      "measures the extent to which individuals are socially isolated, with fewer family, friends, or community ties to rely on. ",
+      "Both dimensions are calculated at the dissemination area (DA) level and provide a quintile score from 1 to 5, ",
+      "with 1 representing the least deprived and 5 the most deprived areas. ",
+      "<p>INSPQ’s methodology involves calculating these deprivation indices based on census data, including income, employment, ",
+      "and housing statistics for material deprivation, and indicators such as marital status, single-parent families, and living alone ",
+      "for social deprivation. The index is produced for multiple census years to track changes in deprivation over time. ",
+      "To create the index, INSPQ applies standard normalization techniques, assigning each dissemination area to a quintile for each dimension. ",
+      "This allows for comparisons between regions and helps monitor socio-economic changes over time. ",
+      "<p>The data displayed here uses the 'Région sociosanitaire' (RSS) deprivation index. This regional-level index is calculated ",
+      "for each of Quebec's health regions, allowing for a higher-level understanding of socio-economic disparities in these areas.",
+      "<p>The data used on this page covers the years 2021, 2016, and 2011, as published by INSPQ. Originally, these indices were calculated for dissemination areas, ",
+      "but Curbcut has interpolated the index for larger geographic units using population as the weighting factor. ",
+      "Curbcut has also interpolated the indices from previous census years to the most recent year using the same interpolation technique. ",
+      "This ensures consistency and comparability of the deprivation data over time, allowing for a comprehensive analysis of changes in socio-economic conditions."
+    ),
+    module_main_dropdown_title = "Deprivation category",
+    module_dates = rev(as.numeric(dates)),
+    overwrite = overwrite
+  )
+
+  scales_variables_modules$modules$var_left[
+    scales_variables_modules$modules$id == "defav"
+  ] <- list(c("defav_material", "defav_social"))
+
+  # Update var measurement. at DA, it's ordinal.
+  var_measurement <- scales_variables_modules$variables$var_measurement[
+    scales_variables_modules$variables$var_code == "defav_material"
+  ]
+  var_measurement[[1]]$measurement[var_measurement[[1]]$scale == "DA"] <- "ordinal"
+  scales_variables_modules$variables$var_measurement[
+    scales_variables_modules$variables$var_code == "defav_material"
+  ] <- var_measurement
+  scales_variables_modules$variables$var_measurement[
+    scales_variables_modules$variables$var_code == "defav_social"
+  ] <- var_measurement
+
+  # Force a breaks for q5, scale dependent
+  breaks_q5 <- scales_variables_modules$variables$breaks_q5[
+    scales_variables_modules$variables$var_code == "defav_material"
+  ]
+  breaks_q5 <- var_measurement[[1]]
+  names(breaks_q5)[2] <- "breaks"
+  breaks_q5$breaks <- lapply(1:nrow(breaks_q5), \(x) NULL)
+  breaks_q5$breaks[breaks_q5$scale == "DA"] <- list(c(0.5, 1.5, 2.5, 3.5, 4.5, 5.5))
+  breaks_q5$breaks[breaks_q5$scale == "CT"] <- list(c(0.5, 1.5, 2.5, 3.5, 4.5, 5.5))
+
+  scales_variables_modules$variables$breaks_q5[
+    scales_variables_modules$variables$var_code == "defav_material"
+  ] <- list(breaks_q5)
+  scales_variables_modules$variables$breaks_q5[
+    scales_variables_modules$variables$var_code == "defav_social"
+  ] <- list(breaks_q5)
+
+  # Update default var
+  scales_variables_modules$modules$default_var <- "defav_material"
+
+  scales_variables_modules
+}
+
+
 #' Add a ready to use Can-BICS data and module
 #'
 #' @param scales_variables_modules <`named list`> A list of length three.
