@@ -19,8 +19,11 @@ ba_census_data(
   DB_table,
   housing_module = TRUE,
   age_module = TRUE,
+  householdsize_module = TRUE,
+  citizenship_module = TRUE,
   overwrite = FALSE,
-  inst_prefix
+  inst_prefix,
+  large_tables_db = NULL
 )
 }
 \arguments{

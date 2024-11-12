@@ -32,7 +32,7 @@
 #' @export
 data_construct <- function(scales_data, unique_var, time_regex, data_folder = "data/",
                            schema = list(time = time_regex), breaks_var = NULL,
-                           inst_prefix) {
+                           inst_prefix, large_tables_db = NULL) {
 
   # If time_regex does not end with an dollar sign, flag it.
   if (!grepl("\\$$", time_regex)) {
@@ -55,6 +55,7 @@ data_construct <- function(scales_data, unique_var, time_regex, data_folder = "d
 
   trimed <- mapply(\(scale_name, scale_df) {
     dat <- lapply(unique_var, \(v) {
+
 
       # Construct the data table
       df <- sf::st_drop_geometry(scale_df)
@@ -145,7 +146,8 @@ data_construct <- function(scales_data, unique_var, time_regex, data_folder = "d
   }, names(scales_data), scales_data, SIMPLIFY = FALSE)
 
   # List scales that are found in the database
-  scales_db <- db_list_scales(inst_prefix)
+  scales_db <-
+    if (is.null(large_tables_db)) db_list_scales(inst_prefix) else large_tables_db
 
   # Save the data
   mapply(\(scale_name, data_list) {

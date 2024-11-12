@@ -11,7 +11,8 @@ data_construct(
   data_folder = "data/",
   schema = list(time = time_regex),
   breaks_var = NULL,
-  inst_prefix
+  inst_prefix,
+  large_tables_db = NULL
 )
 }
 \arguments{

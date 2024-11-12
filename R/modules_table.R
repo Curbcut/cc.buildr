@@ -203,8 +203,10 @@ add_var_right <- function(svm, ignore_to_choose_vr = c("^grd\\d", "^DB$", "^buil
     # Only use right vars that are available at all possible scales
     scales <- modules$avail_scale_combinations[modules$id == id][[1]]
     splitted <- strsplit(scales, "_")
+    first_scales <- sapply(splitted, `[[`, 1) |> unlist()
     splitted <- unlist(splitted)
     splitted <- splitted[!grepl(paste0(ignore_to_choose_vr, collapse = "|"), splitted)]
+    splitted <- unique(c(first_scales, splitted))
     possible_scales <- unique(splitted)
     possible_vr <- sapply(vr, \(v) {
       var_availability <- variables$avail_scale[variables$var_code == v][[1]]

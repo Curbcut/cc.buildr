@@ -1,4 +1,4 @@
-#' Build and append age from census data
+#' Build and append household sizes from census data
 #'
 #' @param scales_variables_modules <`named list`> A list of length three.
 #' The first is all the scales, the second is the variables table, and the
@@ -17,14 +17,15 @@
 #' `scales_variables_modules` with age data added, their addition
 #' in the variables table and the module table.
 #' @export
-ba_age <- function(scales_variables_modules, scales_sequences, scales_to_interpolate,
-                   overwrite = FALSE, inst_prefix, large_tables_db) {
+ba_householdsize <- function(scales_variables_modules, scales_sequences,
+                             scales_to_interpolate, overwrite = FALSE,
+                             inst_prefix, large_tables_db) {
   # Declare all variables from the census -----------------------------------
 
   time_regex <- "_\\d{4}$"
 
-  age_dat <- cc.data::census_vectors_age$var_code
-  age_dat <- age_dat[!age_dat %in% c("age_0_14", "age_15_64", "age_65_plus")]
+  hou_dat <- cc.data::census_vectors_householdsize$var_code
+  hou_dat <- hou_dat[grepl("household_size_", hou_dat)]
 
   # Function to generate all sequences
   generate_sequences <- function(data) {
@@ -42,18 +43,17 @@ ba_age <- function(scales_variables_modules, scales_sequences, scales_to_interpo
   }
 
   # Generate all sequences
-  vars <- generate_sequences(age_dat)
+  vars <- generate_sequences(hou_dat)
 
   names(vars) <- sapply(vars, \(x) {
-    if (length(x) == 1 && x == "age_0_4") return("age_agg_0_4")
-    if (length(x) == 1 && x == "age_85") return("age_agg_85plus")
-    start <- stringr::str_extract(x[[1]], "(?<=age_).*(?=_)")
+    if (length(x) == 1) return(x)
+    start <- gsub("household_size_", "", x[[1]])
+    end <- gsub("household_size_", "", x[[length(x)]])
 
-    last <- x[[length(x)]]
-    end <- if (last == "age_85") "85plus" else stringr::str_extract(last, "(?<=age_\\d{1,2}_).*")
-
-    sprintf("age_agg_%s_%s", start, end)
+    sprintf("household_size_agg_%s_%s", start, end)
   })
+
+  vars <- vars[lengths(vars) > 1]
 
 
   # Build census data for all possible scales -------------------------------
@@ -72,45 +72,45 @@ ba_age <- function(scales_variables_modules, scales_sequences, scales_to_interpo
   svm_scales <- mapply(\(scale_name, scale_df) {
 
     all_files <- list.files(paste0("data/", scale_name, "/"), full.names = TRUE)
-    age_files <- all_files[grepl(sprintf("%s/age_\\d", scale_name), all_files)]
+    householdsize_files <- all_files[grepl(sprintf("%s/household_size_\\d", scale_name), all_files)]
 
-    if (length(age_files) == 0) return(scale_df)
+    if (length(householdsize_files) == 0) return(scale_df)
 
     # Add c_population
-    age_files <- c(age_files, paste0("data/", scale_name, "/c_population.qs"))
+    householdsize_files <- c(householdsize_files, paste0("data/", scale_name, "/private_households.qs"))
 
-    age_data <- lapply(age_files, qs::qread)
-    age_data <- Reduce(\(x, y) merge(x, y, by = "ID"), age_data)
+    householdsize_data <- lapply(householdsize_files, qs::qread)
+    householdsize_data <- Reduce(\(x, y) merge(x, y, by = "ID"), householdsize_data)
 
-    merge(scale_df, age_data, by = "ID")
+    merge(scale_df, householdsize_data, by = "ID")
 
   }, names(svm_scales), svm_scales)
 
   final_dat <- lapply(svm_scales, \(scale) {
-    if (!"age_0_14_2021" %in% names(scale)) return(scale)
+    if (!"household_size_1_2021" %in% names(scale)) return(scale)
 
     # Iterate over all years
     for (year in cc.data::census_years) {
       for (new_var_name in names(vars)) {
-        if (new_var_name == "age_agg_0_85plus") {
+        if (new_var_name == "householdsize_agg_1_4") {
           # In percentage
           scale[[paste(new_var_name, "pct", year, sep = "_")]] <- 1
 
           # In count value
           scale[[paste(new_var_name, "count", year, sep = "_")]] <-
-            scale[[paste("c_population", year, sep = "_")]]
+            scale[[paste("private_households", year, sep = "_")]]
           next
         }
 
 
-        age_var_codes <- vars[[new_var_name]]
-        pct_val <- rowSums(sf::st_drop_geometry(scale)[paste(age_var_codes, year, sep = "_")])
+        householdsize_var_codes <- vars[[new_var_name]]
+        pct_val <- rowSums(sf::st_drop_geometry(scale)[paste(householdsize_var_codes, year, sep = "_")])
 
         # in percentage
         scale[[paste(new_var_name, "pct", year, sep = "_")]] <- pct_val
         # in count value
         scale[[paste(new_var_name, "count", year, sep = "_")]] <-
-          pct_val * scale[[paste("c_population", year, sep = "_")]]
+          pct_val * scale[[paste("private_households", year, sep = "_")]]
       }
     }
 
@@ -140,59 +140,41 @@ ba_age <- function(scales_variables_modules, scales_sequences, scales_to_interpo
       var <- gsub("_pct|_count", "", u_var)
 
       title <- (\(x) {
-        if (grepl("age_agg_85plus", var)) {
-          out <- "Aged over 85"
-          if (pct) out <- paste(out, "(%)")
-          return(out)
-        }
-        start <- stringr::str_extract(var, "(?<=age_agg_).*(?=_)")
-        end <- stringr::str_extract(var, "(?<=age_agg_\\d{1,2}_).*")
-        if (end == "85plus") end <- "over 85"
+        start <- stringr::str_extract(var, "(?<=household_size_agg_).*(?=_)")
+        end <- stringr::str_extract(var, "(?<=household_size_agg_\\d{1,2}_).*")
+        if (end == "4") end <- "4 and above"
 
 
-        out <- sprintf("Aged between %s and %s", start, end)
+        out <- sprintf("Household size between %s and %s", start, end)
         if (pct) out <- paste(out, "(%)")
         out
       })()
 
       short <- (\(x) {
-        if (grepl("age_agg_85plus", var)) {
-          out <- "85+ yo"
-          if (pct) out <- paste(out, "(%)")
-          return(out)
-        }
-        start <- stringr::str_extract(var, "(?<=age_agg_).*(?=_)")
-        end <- stringr::str_extract(var, "(?<=age_agg_\\d{1,2}_).*")
-        if (end == "85plus") end <- "85+"
+        start <- stringr::str_extract(var, "(?<=household_size_agg_).*(?=_)")
+        end <- stringr::str_extract(var, "(?<=household_size_agg_\\d{1,2}_).*")
+        if (end == "4") end <- "4+"
 
 
-        sprintf("%s-%s yo", start, end)
+        sprintf("%s-%s", start, end)
       })()
 
       explanation <- (\(x) {
-        if (grepl("age_agg_85plus", var)) {
-          out <- "aged over 85 years old"
+        start <- stringr::str_extract(var, "(?<=household_size_agg_).*(?=_)")
+        end <- stringr::str_extract(var, "(?<=household_size_agg_\\d{1,2}_).*")
+        if (end == "4") end <- "4 or more"
 
-          beg <- if (pct) "percentage of the population" else "number of individuals"
-          return(sprintf("the %s %s", beg, out))
-        }
-        start <- stringr::str_extract(var, "(?<=age_agg_).*(?=_)")
-        end <- stringr::str_extract(var, "(?<=age_agg_\\d{1,2}_).*")
-        if (end == "85plus") end <- "over 85"
-
-        beg <- if (pct) "percentage of the population" else "number of individuals"
-        sprintf("the %s aged between %s and %s years old", beg, start, end)
+        beg <- if (pct) "percentage of households" else "number of households"
+        sprintf("the %s that are occupied by %s to %s people", beg, start, end)
       })()
 
       exp_q5 <- (\(x) {
-        if (grepl("age_agg_85plus", var))
-          return("are aged over 85 years old")
-        start <- stringr::str_extract(var, "(?<=age_agg_).*(?=_)")
-        end <- stringr::str_extract(var, "(?<=age_agg_\\d{1,2}_).*")
-        if (end == "85plus") end <- "over 85"
+        start <- stringr::str_extract(var, "(?<=household_size_agg_).*(?=_)")
+        end <- stringr::str_extract(var, "(?<=household_size_agg_\\d{1,2}_).*")
+        if (end == "4") end <- "4 or more"
 
 
-        sprintf("are aged between %s and %s years old", start, end)
+        sprintf("are occupied by %s to %s people", start, end)
       })()
 
       group_name <- title
@@ -209,16 +191,16 @@ ba_age <- function(scales_variables_modules, scales_sequences, scales_to_interpo
         var_short = short,
         explanation = explanation,
         exp_q5 = exp_q5,
-        parent_vec = "c_population",
+        parent_vec = "private_households",
         classification = "sociodemo",
-        theme = "Age",
+        theme = "Household",
         private = FALSE,
         pe_include = FALSE,
         dates = cc.data::census_years,
         avail_scale = scales_to_interpolate,
         source = "Canadian census",
         interpolated = scales_variables_modules$variables$interpolated[
-          scales_variables_modules$variables$var_code == "age_0_14"][[1]],
+          scales_variables_modules$variables$var_code == "household_size_1"][[1]],
         allow_title_duplicate = TRUE,
         group_name = group_name,
         group_diff = group_diff,
@@ -242,32 +224,31 @@ ba_age <- function(scales_variables_modules, scales_sequences, scales_to_interpo
   modules <-
     scales_variables_modules$modules |>
     add_module(
-      id = "age",
+      id = "householdsize",
       theme = "Demographics",
-      nav_title = "Age demographics",
-      title_text_title = "Age distribution",
+      nav_title = "Household size",
+      title_text_title = "Household size distribution",
       title_text_main = paste0(
-        "<p>Understanding the age distribution of a population is crucial for policy ",
-        "making and resource allocation. It helps in planning for education, health",
-        "care, and social services."
+        "<p>Understanding the distribution of household sizes is crucial for ",
+        "policy making and resource allocation. It helps in planning for housing, ",
+        "community services, and infrastructure development."
       ),
       title_text_extra = paste0(
-        "<p>The age distribution data visualized on this page come from the Canadian C",
+        "<p>The household size distribution data visualized on this page come from the Canadian C",
         "ensus from 1996 to the present. These datasets provide insights into ",
-        "demographic trends and shifts over time. Key initiatives to address age-",
-        "related challenges include healthcare reforms and educational reforms."
+        "demographic trends and shifts over time."
       ),
       metadata = TRUE,
       dataset_info = paste0(
         "<p>This module presents <a href = 'https://www.statcan.gc.ca/en/census/cen",
-        "sus-engagement/about'>age distribution data from the 1996 to the latest C",
+        "sus-engagement/about'>household size distribution data from the 1996 to the latest C",
         "anadian Censuses</a></p>"
       ),
-      var_left = variables[grepl("^age_agg_", variables$var_code),
+      var_left = variables[grepl("^household_size_agg_", variables$var_code),
                            c("var_code", "group_name", "group_diff")],
       dates = cc.data::census_years,
       main_dropdown_title = NA,
-      default_var = "age_agg_0_14_pct",
+      default_var = "household_size_2_3",
       avail_scale_combinations = avail_scale_combinations
     )
 

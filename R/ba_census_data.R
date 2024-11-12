@@ -51,8 +51,12 @@ ba_census_data <- function(scales_variables_modules,
                            DB_table,
                            housing_module = TRUE,
                            age_module = TRUE,
+                           householdsize_module = TRUE,
+                           citizenship_module = TRUE,
+                           dwellingchar_module = TRUE,
                            overwrite = FALSE,
-                           inst_prefix) {
+                           inst_prefix,
+                           large_tables_db = NULL) {
 
   # Declare all variables from the census -----------------------------------
 
@@ -97,7 +101,8 @@ ba_census_data <- function(scales_variables_modules,
   data_construct(scales_data = census_dat$scales,
                  unique_var = unique_var,
                  time_regex = time_regex,
-                 inst_prefix = inst_prefix)
+                 inst_prefix = inst_prefix,
+                 large_tables_db = large_tables_db)
 
 
   # Add population and households of dissemination blocks to the db --------
@@ -266,6 +271,97 @@ ba_census_data <- function(scales_variables_modules,
       scales_variables_modules$modules
     }
 
+  modules <-
+    if (citizenship_module) {
+      modules |>
+        add_module(
+          id = "citizenship",
+          theme = "Citizenship",
+          nav_title = "Citizenship and Identity",
+          title_text_title = "Citizenship and Immigration Status",
+          title_text_main = paste0(
+            "<p>Understanding the distribution of citizenship and immigration status ",
+            "is crucial for comprehending the diversity of the population. "
+          ),
+          title_text_extra = paste0(
+            "<p>The datasets visualized on this page come from the Canadian Census ",
+            "from 1996 to the present. These datasets provide insights into trends related ",
+            "to immigration and citizenship, and the changing demographics over time."
+          ),
+          metadata = TRUE,
+          dataset_info = paste0(
+            "<p>This page presents <a href='https://www.statcan.gc.ca/en/census/census-engagement/about'>",
+            "data related to citizenship and immigration status from the 1996 to the latest ",
+            "Canadian Censuses</a></p>"
+          ),
+          var_left = unique_var[grepl("^citizenship_", unique_var)],
+          dates = census_years,
+          main_dropdown_title = NA,
+          default_var = "citizenship_cit",
+          avail_scale_combinations = avail_scale_combinations
+        )
+    } else {
+      modules
+    }
+
+
+  # Dwelling characteristics modules table  ---------------------------------
+
+  if (dwellingchar_module) {
+  dweeling_char <- variables$var_code[
+    variables$theme %in% c("Building typology", "Dwelling size",
+                           "Housing period of construction")]
+
+  for (var in dweeling_char) {
+    theme <- variables$theme[variables$var_code == var]
+    variables$group_name[variables$var_code == var] <- theme
+
+    diff <- list(variables$var_title[variables$var_code == var])
+    names(diff) <- theme
+
+    variables$group_diff[
+      variables$var_code == var
+    ] <- list(diff)
+  }
+
+  modules <-
+    add_module(
+      modules,
+      id = "dwelling",
+      theme = "Housing",
+      nav_title = "Dwelling characteristics",
+      title_text_title = "Dwelling characteristics",
+      title_text_main = paste0(
+        "<p>Understanding the characteristics of dwellings, such as building typology, ",
+        "number of bedrooms, and period of construction, is essential for comprehending ",
+        "housing availability, suitability, and trends over time. These characteristics ",
+        "provide insights into the types of homes people live in, the adequacy of space ",
+        "for families, and the historical development of residential areas."
+      ),
+      title_text_extra = paste0(
+        "<p>The datasets visualized on this page come from the Canadian Census from 1996 ",
+        "to the present, allowing for an analysis of how dwelling characteristics have ",
+        "evolved over time. Key features include the diversity in building types, the ",
+        "availability of various sizes of housing (e.g., number of bedrooms), and the ",
+        "age of the building stock, which all play a crucial role in meeting housing needs."
+      ),
+      metadata = TRUE,
+      dataset_info = paste0(
+        "<p>This page presents <a href='https://www.statcan.gc.ca/en/census/census-engagement/about'>",
+        "data related to dwelling characteristics from the 1996 to the latest Canadian Censuses</a>. ",
+        "The variables included allow for detailed insights into building typology, ",
+        "dwelling sizes, and construction periods.</p>"
+      ),
+      var_left = variables[variables$theme %in% c("Building typology", "Dwelling size",
+                                                  "Housing period of construction"),
+                           c("var_code", "group_name", "group_diff")
+      ],
+      main_dropdown_title = "Dwelling characteristic",
+      dates = census_years,
+      default_var = default_var,
+      avail_scale_combinations = avail_scale_combinations
+    )
+  }
 
   # Age page and data formatting --------------------------------------------
 
@@ -278,7 +374,15 @@ ba_census_data <- function(scales_variables_modules,
   if (age_module) {
     svm <- ba_age(scales_variables_modules = svm, scales_sequences = scales_sequences,
                   scales_to_interpolate = scales_to_interpolate,
-                  overwrite = overwrite, inst_prefix = inst_prefix)
+                  overwrite = overwrite, inst_prefix = inst_prefix,
+                  large_tables_db = large_tables_db)
+  }
+  if (householdsize_module) {
+    svm <- ba_householdsize(scales_variables_modules = svm,
+                            scales_sequences = scales_sequences,
+                            scales_to_interpolate = scales_to_interpolate,
+                            overwrite = overwrite, inst_prefix = inst_prefix,
+                            large_tables_db = large_tables_db)
   }
 
 
