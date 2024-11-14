@@ -345,8 +345,11 @@ interpolate_from_census_geo <- function(data, base_scale, all_scales,
           get_area(intersected$geometry) / intersected$area
 
         # Proportion of 'weight_by' in the base scale
-        intersected$n_weight_by <-
-          intersected[[weight_by]] * intersected$area_prop
+        if (weight_by == "area") {
+          intersected$n_weight_by <- intersected$area_prop
+        } else {
+          intersected$n_weight_by <- intersected[[weight_by]] * intersected$area_prop
+        }
 
         # Group by ID, and calculate a weighted.mean using `weight_by`
         intersected <- sf::st_drop_geometry(intersected)

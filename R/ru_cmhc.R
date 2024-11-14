@@ -782,23 +782,84 @@ ru_starts_completions <- function(scales_variables_modules, crs, geo_uid,
   housing_dev_wide <- Reduce(\(x, y) merge(x, y, by = "ID", all = TRUE), housing_dev_wide)
   housing_dev_wide <- tibble::as_tibble(housing_dev_wide)
 
+  # Do the same but for the CMHC zones
+  housing_dev_CMHC <-
+    lapply(names(cat), \(cat_name) {
+      series <- cat_name
+      lapply(names(subcat), \(subcat_name) {
+        lapply(years, \(yr) {
+          cmhc::get_cmhc(
+            survey = "Scss",
+            series = cat_name,
+            dimension = subcat_name,
+            breakdown = "Survey Zones",
+            geo_uid = geo_uid,
+            year = yr
+          ) |> dplyr::mutate(year = yr)
+        })
+      })
+    })
+  housing_dev_wide_CMHC <-
+    sapply(housing_dev_CMHC, \(cat) {
+      sub_df <-
+        sapply(cat, \(subcat) {
+
+          binded <- Reduce(rbind, subcat)
+          dw <- sum(grepl("Dwelling Type", names(binded)))
+          serie <- unique(binded$Series)
+          serie <- if (serie == "Starts") "s" else if (serie == "Completions") "c" else "au"
+
+          if (dw) {
+            binded$`Dwelling Type` <- dw_dict[as.character(binded$`Dwelling Type`)]
+          } else {
+            binded$`Intended Market` <- im_dict[as.character(binded$`Intended Market`)]
+          }
+
+          # Make it wider
+          out <- tidyr::pivot_wider(binded, id_cols = "Survey Zones",
+                                    names_from = c(if (dw) "Dwelling Type" else "Intended Market", year),
+                                    values_from = Value)
+
+          # Rename cols
+          names(out)[2:ncol(out)] <- sapply(names(out)[2:ncol(out)], \(x) {
+            paste("housingdev", serie, if (dw) "dw" else "im", x,
+                  sep = "_")
+          }, USE.NAMES = FALSE)
+          names(out)[names(out) == "Survey Zones"] <- "name"
+          out
+        }, simplify = FALSE)
+      Reduce(\(x, y) merge(x, y, by = "name", all = TRUE), sub_df)
+    }, simplify = FALSE)
+  housing_dev_wide_CMHC <- Reduce(\(x, y) merge(x, y, by = "name", all = TRUE), housing_dev_wide_CMHC)
+  housing_dev_wide_CMHC <- tibble::as_tibble(housing_dev_wide_CMHC)
+
   # Interpolate data to all possible scales ---------------------------------
 
   names(housing_dev_wide)[names(housing_dev_wide) == "ID"] <- "CT_ID"
   vars_years <- names(housing_dev_wide)[names(housing_dev_wide) != "CT_ID"]
+  unique_vars <- unique(gsub(time_regex, "", vars_years))
 
   data_interpolated <-
     interpolate_from_census_geo(
       data = housing_dev_wide,
       base_scale = "CT",
       all_scales = scales_variables_modules$scales,
-      # weight_by = weight_by,
+      weight_by = "area",
       crs = crs,
       additive_vars = vars_years,
       overwrite = overwrite,
       time_regex = time_regex,
       inst_prefix = inst_prefix
     )
+
+
+  # Use CMHC zones real values
+  data_interpolated$scales$cmhczone <-
+    data_interpolated$scales$cmhczone[, !names(data_interpolated$scales$cmhczone) %in% vars_years] |>
+    merge(housing_dev_wide_CMHC, by = "name", all.x = TRUE)
+  data_interpolated$interpolated_ref$interpolated_from[
+    data_interpolated$interpolated_ref$scale == "cmhczone"
+  ] <- "FALSE"
 
 
   # Declare the types of the variables in a named list ----------------------
@@ -848,6 +909,7 @@ ru_starts_completions <- function(scales_variables_modules, crs, geo_uid,
 
       # exp_q5
       exp_q5 = tolower(paste("were", group_dw, "dwellings"))
+      if (group_dw == "All") exp_q5 <- "were distributed across all dwelling types"
 
       # Development type
       group_dev <- (\(x) {
@@ -946,6 +1008,7 @@ ru_starts_completions <- function(scales_variables_modules, crs, geo_uid,
 
       # exp_q5
       exp_q5 = tolower(paste("were intended to the", group_dw, "market"))
+      if (group_dw == "All") exp_q5 <- "were distributed across all intended markets"
 
       # Development type
       group_dev <- (\(x) {
@@ -1114,7 +1177,7 @@ ru_starts_completions <- function(scales_variables_modules, crs, geo_uid,
                             "CMHC."),
       var_left = var_left,
       dates = years,
-      main_dropdown_title = "Dimension",
+      main_dropdown_title = "Housing development phase",
       default_var = "housingdev_s_dw_total",
       avail_scale_combinations = avail_scale_combinations
     )

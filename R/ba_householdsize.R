@@ -46,14 +46,15 @@ ba_householdsize <- function(scales_variables_modules, scales_sequences,
   vars <- generate_sequences(hou_dat)
 
   names(vars) <- sapply(vars, \(x) {
-    if (length(x) == 1) return(x)
+    if (length(x) == 1) return({
+      v <- gsub("household_size_", "", x)
+      paste0("household_size_agg_", v)
+    })
     start <- gsub("household_size_", "", x[[1]])
     end <- gsub("household_size_", "", x[[length(x)]])
 
     sprintf("household_size_agg_%s_%s", start, end)
   })
-
-  vars <- vars[lengths(vars) > 1]
 
 
   # Build census data for all possible scales -------------------------------
@@ -107,7 +108,7 @@ ba_householdsize <- function(scales_variables_modules, scales_sequences,
         pct_val <- rowSums(sf::st_drop_geometry(scale)[paste(householdsize_var_codes, year, sep = "_")])
 
         # in percentage
-        scale[[paste(new_var_name, "pct", year, sep = "_")]] <- pct_val
+        scale[[paste(new_var_name, "pct", year, sep = "_")]] <- pmin(1, pct_val)
         # in count value
         scale[[paste(new_var_name, "count", year, sep = "_")]] <-
           pct_val * scale[[paste("private_households", year, sep = "_")]]
@@ -139,49 +140,87 @@ ba_householdsize <- function(scales_variables_modules, scales_sequences,
       pct <- grepl("_pct$", u_var)
       var <- gsub("_pct|_count", "", u_var)
 
+      vals <- unlist(stringr::str_extract_all(u_var, "\\d"))
+
       title <- (\(x) {
-        start <- stringr::str_extract(var, "(?<=household_size_agg_).*(?=_)")
-        end <- stringr::str_extract(var, "(?<=household_size_agg_\\d{1,2}_).*")
-        if (end == "4") end <- "4 and above"
+        out <- if (length(vals) == 1) {
+          (\(y) {
+            if (vals == "4") return("Household size of 4 individuals or more")
+            if (vals == "1") return("Household size of a single individual")
+            return(sprintf("Household size of %s individuals", vals))
+          })()
+        } else {
+          start <- vals[[1]]
+          end <- vals[[2]]
+          if (end == "4") {
+            if (start == "1") {
+              sprintf("Household size of a single individual or more")
+            } else {
+              sprintf("Household size of %s individuals or more", start)
+            }
+          } else {
+            sprintf("Household size between %s and %s individuals", start, end)
+          }
+        }
 
 
-        out <- sprintf("Household size between %s and %s", start, end)
         if (pct) out <- paste(out, "(%)")
         out
       })()
 
       short <- (\(x) {
-        start <- stringr::str_extract(var, "(?<=household_size_agg_).*(?=_)")
-        end <- stringr::str_extract(var, "(?<=household_size_agg_\\d{1,2}_).*")
-        if (end == "4") end <- "4+"
+        if (length(vals) == 1) {
+          if (vals == "4") return("4+ individuals")
+          if (vals == "1") return("1 individual")
+          return(sprintf("%s individuals", vals))
+        }
+        start <- vals[[1]]
+        end <- vals[[2]]
+        if (end == "4") return({
+          sprintf("%s+ individuals", start)
+        })
 
-
-        sprintf("%s-%s", start, end)
+        sprintf("%s-%s individuals", start, end)
       })()
 
       explanation <- (\(x) {
-        start <- stringr::str_extract(var, "(?<=household_size_agg_).*(?=_)")
-        end <- stringr::str_extract(var, "(?<=household_size_agg_\\d{1,2}_).*")
-        if (end == "4") end <- "4 or more"
-
         beg <- if (pct) "percentage of households" else "number of households"
-        sprintf("the %s that are occupied by %s to %s people", beg, start, end)
+        if (length(vals) == 1) {
+          if (vals == "4") return(sprintf("the %s that are occupied by 4 individuals or more", beg))
+          if (vals == "1") return(sprintf("the %s that are occupied by a single individual", beg))
+          return(sprintf("the %s that are ocupied by %s individuals", beg, vals))
+        }
+        start <- vals[[1]]
+        end <- vals[[2]]
+        if (end == "4") return({
+          if (start == "1") {
+            sprintf("the %s that are occupied by a single individual or more", beg)
+          } else {
+            sprintf("the %s that are occupied by %s individuals or more", beg, start)
+          }
+        })
+
+        sprintf("the %s that are occupied by %s to %s individuals", beg, start, end)
       })()
 
       exp_q5 <- (\(x) {
-        start <- stringr::str_extract(var, "(?<=household_size_agg_).*(?=_)")
-        end <- stringr::str_extract(var, "(?<=household_size_agg_\\d{1,2}_).*")
-        if (end == "4") end <- "4 or more"
+        if (length(vals) == 1) {
+          if (vals == "4") return(sprintf("are occupied by 4 individuals or more"))
+          if (vals == "1") return(sprintf("are occupied by a single individual"))
+          return(sprintf("are ocupied by %s individuals", vals))
+        }
+        start <- vals[[1]]
+        end <- vals[[2]]
+        if (end == "4") return({
+          if (start == "1") {
+            sprintf("are occupied by a single individual or more")
+          } else {
+            sprintf("are occupied by %s individuals or more", start)
+          }
+        })
 
-
-        sprintf("are occupied by %s to %s people", start, end)
+        sprintf("are occupied by %s to %s individuals", start, end)
       })()
-
-      group_name <- title
-      group_diff <- list(
-        "Data representation" = (\(x) {
-          if (!pct) "Number" else "Percentage"
-        })())
 
       out <- add_variable(
         variables = scales_variables_modules$variables,
@@ -202,8 +241,6 @@ ba_householdsize <- function(scales_variables_modules, scales_sequences,
         interpolated = scales_variables_modules$variables$interpolated[
           scales_variables_modules$variables$var_code == "household_size_1"][[1]],
         allow_title_duplicate = TRUE,
-        group_name = group_name,
-        group_diff = group_diff,
         schema = list(time = time_regex)
       )
       out[out$var_code == u_var, ]
@@ -244,11 +281,11 @@ ba_householdsize <- function(scales_variables_modules, scales_sequences,
         "sus-engagement/about'>household size distribution data from the 1996 to the latest C",
         "anadian Censuses</a></p>"
       ),
-      var_left = variables[grepl("^household_size_agg_", variables$var_code),
-                           c("var_code", "group_name", "group_diff")],
+      var_left = grep("^household_size_agg_", variables$var_code, value = TRUE),
       dates = cc.data::census_years,
       main_dropdown_title = NA,
-      default_var = "household_size_2_3",
+      add_advanced_controls = "Data representation",
+      default_var = "household_size_agg_2_3_count",
       avail_scale_combinations = avail_scale_combinations
     )
 

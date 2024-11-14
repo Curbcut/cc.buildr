@@ -276,7 +276,7 @@ ba_census_data <- function(scales_variables_modules,
       modules |>
         add_module(
           id = "citizenship",
-          theme = "Citizenship",
+          theme = "Demographics",
           nav_title = "Citizenship and Identity",
           title_text_title = "Citizenship and Immigration Status",
           title_text_main = paste0(
@@ -358,7 +358,7 @@ ba_census_data <- function(scales_variables_modules,
       ],
       main_dropdown_title = "Dwelling characteristic",
       dates = census_years,
-      default_var = default_var,
+      default_var = "buildingage_1960constr",
       avail_scale_combinations = avail_scale_combinations
     )
   }

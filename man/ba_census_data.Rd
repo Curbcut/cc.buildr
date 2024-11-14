@@ -21,6 +21,7 @@ ba_census_data(
   age_module = TRUE,
   householdsize_module = TRUE,
   citizenship_module = TRUE,
+  dwellingchar_module = TRUE,
   overwrite = FALSE,
   inst_prefix,
   large_tables_db = NULL
