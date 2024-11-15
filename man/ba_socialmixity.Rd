@@ -9,8 +9,10 @@ ba_socialmixity(
   scales_sequences,
   scales_to_interpolate,
   overwrite = FALSE,
+  region_DA_IDs,
+  crs,
   inst_prefix,
-  large_tables_db
+  large_tables_db = NULL
 )
 }
 \arguments{
@@ -27,6 +29,11 @@ will be used for calculation of the age page data.}
 
 \item{overwrite}{<\code{logical}> Should the data already precessed and stored be
 overwriten?}
+
+\item{region_DA_IDs}{<\code{vector}> Vector of DA (Dissemination Area) IDs
+for extracting frequent bus stops.}
+
+\item{crs}{<\code{numeric}> Coordinate Reference System code for spatial transformations.}
 
 \item{inst_prefix}{<\code{character}> The prefix of the instance, e.g. \code{'mtl'} which
 is the database schema in which the data is saved.}

@@ -12,6 +12,9 @@
 #' overwriten?
 #' @param inst_prefix <`character`> The prefix of the instance, e.g. `'mtl'` which
 #' is the database schema in which the data is saved.
+#' @param region_DA_IDs <`vector`> Vector of DA (Dissemination Area) IDs
+#' for extracting frequent bus stops.
+#' @param crs <`numeric`> Coordinate Reference System code for spatial transformations.
 #'
 #' @return A list of length 4, similar to the one fed to
 #' `scales_variables_modules` with education data added, their addition
@@ -19,7 +22,8 @@
 #' @export
 ba_socialmixity <- function(scales_variables_modules, scales_sequences,
                             scales_to_interpolate, overwrite = FALSE,
-                            inst_prefix, large_tables_db) {
+                            region_DA_IDs, crs,
+                            inst_prefix, large_tables_db = NULL) {
   # Get list of data variables ----------------------------------------------
 
   time_regex <-  "_\\d{4}$"
@@ -66,7 +70,7 @@ ba_socialmixity <- function(scales_variables_modules, scales_sequences,
   # Variables table ---------------------------------------------------------
 
   ## Dates at which the data is available
-  dates <- curbcut::s_extract(time_regex, var)
+  dates <- curbcut::s_extract(time_regex, cols)
   dates <- gsub("^_", "", dates)
   unique_var <- unique_var[unique_var != "composite"]
 
