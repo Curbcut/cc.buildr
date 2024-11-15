@@ -459,9 +459,6 @@ ba_census_data <- function(scales_variables_modules,
                         large_tables_db = large_tables_db)
   }
 
-  education
-  language
-
 
   # Return ------------------------------------------------------------------
 
