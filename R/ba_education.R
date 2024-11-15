@@ -1,4 +1,4 @@
-#' Build and append household sizes from census data
+#' Build and append education from census data
 #'
 #' @param scales_variables_modules <`named list`> A list of length three.
 #' The first is all the scales, the second is the variables table, and the
@@ -17,15 +17,18 @@
 #' `scales_variables_modules` with education data added, their addition
 #' in the variables table and the module table.
 #' @export
-ba_householdsize <- function(scales_variables_modules, scales_sequences,
-                             scales_to_interpolate, overwrite = FALSE,
-                             inst_prefix, large_tables_db) {
+ba_education <- function(scales_variables_modules, scales_sequences,
+                         scales_to_interpolate, overwrite = FALSE,
+                         inst_prefix, large_tables_db) {
   # Declare all variables from the census -----------------------------------
 
   time_regex <- "_\\d{4}$"
 
-  hou_dat <- cc.data::census_vectors_householdsize$var_code
-  hou_dat <- hou_dat[grepl("household_size_", hou_dat)]
+  edu_dat <- cc.data::census_vectors_education$var_code
+  edu_dat <- edu_dat[grepl("edu_", edu_dat)]
+
+  edu_dat_n <- seq_along(edu_dat)
+  names(edu_dat_n) <- edu_dat
 
   # Function to generate all sequences
   generate_sequences <- function(data) {
@@ -43,17 +46,13 @@ ba_householdsize <- function(scales_variables_modules, scales_sequences,
   }
 
   # Generate all sequences
-  vars <- generate_sequences(hou_dat)
+  vars <- generate_sequences(edu_dat)
 
   names(vars) <- sapply(vars, \(x) {
-    if (length(x) == 1) return({
-      v <- gsub("household_size_", "", x)
-      paste0("household_size_agg_", v)
-    })
-    start <- gsub("household_size_", "", x[[1]])
-    end <- gsub("household_size_", "", x[[length(x)]])
+    if (length(x) == 1) return(x)
+    end <- gsub("edu_", "", x[[length(x)]])
 
-    sprintf("household_size_agg_%s_%s", start, end)
+    sprintf("%s_to_%s", x[[1]], end)
   })
 
 
@@ -73,45 +72,45 @@ ba_householdsize <- function(scales_variables_modules, scales_sequences,
   svm_scales <- mapply(\(scale_name, scale_df) {
 
     all_files <- list.files(paste0("data/", scale_name, "/"), full.names = TRUE)
-    householdsize_files <- all_files[grepl(sprintf("%s/household_size_\\d", scale_name), all_files)]
+    education_files <- all_files[grepl(sprintf("%s/edu_.", scale_name), all_files)]
 
-    if (length(householdsize_files) == 0) return(scale_df)
+    if (length(education_files) == 0) return(scale_df)
 
     # Add c_population
-    householdsize_files <- c(householdsize_files, paste0("data/", scale_name, "/private_households.qs"))
+    education_files <- c(education_files, paste0("data/", scale_name, "/population_15plus.qs"))
 
-    householdsize_data <- lapply(householdsize_files, qs::qread)
-    householdsize_data <- Reduce(\(x, y) merge(x, y, by = "ID"), householdsize_data)
+    education_data <- lapply(education_files, qs::qread)
+    education_data <- Reduce(\(x, y) merge(x, y, by = "ID"), education_data)
 
-    merge(scale_df, householdsize_data, by = "ID")
+    merge(scale_df, education_data, by = "ID")
 
   }, names(svm_scales), svm_scales)
 
   final_dat <- lapply(svm_scales, \(scale) {
-    if (!"household_size_1_2021" %in% names(scale)) return(scale)
+    if (!"edu_no_degree_2021" %in% names(scale)) return(scale)
 
     # Iterate over all years
     for (year in cc.data::census_years) {
       for (new_var_name in names(vars)) {
-        if (new_var_name == "householdsize_agg_1_4") {
+        if (new_var_name == "edu_no_degree_to_bachelor_above") {
           # In percentage
           scale[[paste(new_var_name, "pct", year, sep = "_")]] <- 1
 
           # In count value
           scale[[paste(new_var_name, "count", year, sep = "_")]] <-
-            scale[[paste("private_households", year, sep = "_")]]
+            scale[[paste("population_15plus", year, sep = "_")]]
           next
         }
 
 
-        householdsize_var_codes <- vars[[new_var_name]]
-        pct_val <- rowSums(sf::st_drop_geometry(scale)[paste(householdsize_var_codes, year, sep = "_")])
+        education_var_codes <- vars[[new_var_name]]
+        pct_val <- rowSums(sf::st_drop_geometry(scale)[paste(education_var_codes, year, sep = "_")])
 
         # in percentage
         scale[[paste(new_var_name, "pct", year, sep = "_")]] <- pmin(1, pct_val)
         # in count value
         scale[[paste(new_var_name, "count", year, sep = "_")]] <-
-          pct_val * scale[[paste("private_households", year, sep = "_")]]
+          pct_val * scale[[paste("population_15plus", year, sep = "_")]]
       }
     }
 
@@ -134,92 +133,72 @@ ba_householdsize <- function(scales_variables_modules, scales_sequences,
 
   # Variables table ---------------------------------------------------------
 
+  edu_dat <- gsub("edu_", "", edu_dat)
+  vartitles <- cc.data::census_vectors_education[1:5, c("var_code", "var_title", "explanation", "exp_q5")]
+  vartitles$var_code <- gsub("edu_", "", vartitles$var_code)
+  vartitles$var_title <- gsub(" \\(\\%\\)$", "", vartitles$var_title)
+  vartitles$var_short <- c("No degree", "Secondary", "College", "Uni. below bachelor",
+                           "Bachelor+")
+  vartitles$explanation <- gsub("the percentage of the population aged 15 and over ",
+                                "", vartitles$explanation)
+
   variables <-
     lapply(unique_var, \(u_var) {
 
       pct <- grepl("_pct$", u_var)
       var <- gsub("_pct|_count", "", u_var)
 
-      vals <- unlist(stringr::str_extract_all(u_var, "\\d"))
+      v <- gsub("edu_", "", u_var)
+      vals <- stringr::str_extract_all(v, paste0(edu_dat, collapse = "|"))[[1]]
 
       title <- (\(x) {
         out <- if (length(vals) == 1) {
           (\(y) {
-            if (vals == "4") return("Household size of 4 individuals or more")
-            if (vals == "1") return("Household size of a single individual")
-            return(sprintf("Household size of %s individuals", vals))
+            vartitles$var_title[vartitles$var_code == vals]
           })()
         } else {
-          start <- vals[[1]]
-          end <- vals[[2]]
-          if (end == "4") {
-            if (start == "1") {
-              sprintf("Household size of a single individual or more")
-            } else {
-              sprintf("Household size of %s individuals or more", start)
-            }
-          } else {
-            sprintf("Household size between %s and %s individuals", start, end)
-          }
-        }
+          start <- vartitles$var_title[vartitles$var_code == vals[[1]]]
+          end <- vartitles$var_title[vartitles$var_code == vals[[2]]]
+          if (vals[[2]] == "bachelor_above") return(sprintf("%s or any higher level of education", start))
 
+          sprintf("%s, up to to %s", start, end)
+        }
 
         if (pct) out <- paste(out, "(%)")
-        out
-      })()
+        out})()
 
       short <- (\(x) {
-        if (length(vals) == 1) {
-          if (vals == "4") return("4+ individuals")
-          if (vals == "1") return("1 individual")
-          return(sprintf("%s individuals", vals))
-        }
-        start <- vals[[1]]
-        end <- vals[[2]]
-        if (end == "4") return({
-          sprintf("%s+ individuals", start)
-        })
+        if (length(vals) == 1) return(vartitles$var_short[vartitles$var_code == vals])
+        start <- vartitles$var_short[vartitles$var_code == vals[[1]]]
+        end <- vartitles$var_short[vartitles$var_code == vals[[2]]]
 
-        sprintf("%s-%s individuals", start, end)
+        if (vals[[2]] == "bachelor_above") return(sprintf("%s+", start))
+
+        sprintf("%s - %s", start, end)
       })()
 
       explanation <- (\(x) {
-        beg <- if (pct) "percentage of households" else "number of households"
+        beg <- if (pct) "percentage" else "number"
+        beg <- sprintf("the %s of individuals aged 15 and over", beg)
         if (length(vals) == 1) {
-          if (vals == "4") return(sprintf("the %s that are occupied by 4 individuals or more", beg))
-          if (vals == "1") return(sprintf("the %s that are occupied by a single individual", beg))
-          return(sprintf("the %s that are ocupied by %s individuals", beg, vals))
+          return(sprintf("%s %s", beg, vartitles$explanation[vartitles$var_code == vals]))
         }
-        start <- vals[[1]]
-        end <- vals[[2]]
-        if (end == "4") return({
-          if (start == "1") {
-            sprintf("the %s that are occupied by a single individual or more", beg)
-          } else {
-            sprintf("the %s that are occupied by %s individuals or more", beg, start)
-          }
-        })
+        start <- vartitles$explanation[vartitles$var_code == vals[[1]]]
+        end <- vartitles$explanation[vartitles$var_code == vals[[2]]]
+        if (vals[[2]] == "bachelor_above") return(sprintf("%s %s or any higher level of education", beg, start))
 
-        sprintf("the %s that are occupied by %s to %s individuals", beg, start, end)
+        sprintf("%s %s, up to a %s", beg, start, gsub("holding ", "", end))
       })()
 
       exp_q5 <- (\(x) {
         if (length(vals) == 1) {
-          if (vals == "4") return(sprintf("are occupied by 4 individuals or more"))
-          if (vals == "1") return(sprintf("are occupied by a single individual"))
-          return(sprintf("are ocupied by %s individuals", vals))
+          return(vartitles$exp_q5[vartitles$var_code == vals])
         }
-        start <- vals[[1]]
-        end <- vals[[2]]
-        if (end == "4") return({
-          if (start == "1") {
-            sprintf("are occupied by a single individual or more")
-          } else {
-            sprintf("are occupied by %s individuals or more", start)
-          }
-        })
+        start <- vartitles$exp_q5[vartitles$var_code == vals[[1]]]
+        end <- vartitles$exp_q5[vartitles$var_code == vals[[2]]]
+        if (vals[[2]] == "bachelor_above") return(sprintf("%s or any higher level of education", start))
 
-        sprintf("are occupied by %s to %s individuals", start, end)
+        sprintf("%s, up to %s", start, gsub("hold ", "", end))
       })()
 
       out <- add_variable(
@@ -230,16 +209,16 @@ ba_householdsize <- function(scales_variables_modules, scales_sequences,
         var_short = short,
         explanation = explanation,
         exp_q5 = exp_q5,
-        parent_vec = "private_households",
+        parent_vec = "population_15plus",
         classification = "sociodemo",
-        theme = "Household",
+        theme = "Education",
         private = FALSE,
         pe_include = FALSE,
         dates = cc.data::census_years,
         avail_scale = scales_to_interpolate,
         source = "Canadian census",
         interpolated = scales_variables_modules$variables$interpolated[
-          scales_variables_modules$variables$var_code == "household_size_1"][[1]],
+          scales_variables_modules$variables$var_code == "edu_no_degree"][[1]],
         allow_title_duplicate = TRUE,
         schema = list(time = time_regex)
       )
@@ -258,34 +237,37 @@ ba_householdsize <- function(scales_variables_modules, scales_sequences,
 
   # Modules table -----------------------------------------------------------
 
+  varlefts <- grepl("^edu_", variables$var_code) & grepl("_pct$|_count$", variables$var_code)
+
   modules <-
     scales_variables_modules$modules |>
     add_module(
-      id = "householdsize",
+      id = "education",
       theme = "Demographics",
-      nav_title = "Household size",
-      title_text_title = "Household size distribution",
+      nav_title = "Education levels",
+      title_text_title = "Education levels",
       title_text_main = paste0(
-        "<p>Understanding the distribution of household sizes is crucial for ",
-        "policy making and resource allocation. It helps in planning for housing, ",
-        "community services, and infrastructure development."
+        "<p>Understanding how education levels are distributed helps us better ",
+        "plan for effective policies, ensure equitable resource distribution, ",
+        "and tailor community programs to meet real needs."
       ),
       title_text_extra = paste0(
-        "<p>The household size distribution data visualized on this page come from the Canadian C",
-        "ensus from 1996 to the present. These datasets provide insights into ",
-        "demographic trends and shifts over time."
+        "<p>The education data showcased here provide insights into trends over ",
+        "time. By examining data from the Canadian Census spanning 1996 to the ",
+        "present, we can see how educational attainment has shifted and evolved ",
+        "across different regions and communities."
       ),
       metadata = TRUE,
       dataset_info = paste0(
         "<p>This module presents <a href = 'https://www.statcan.gc.ca/en/census/cen",
-        "sus-engagement/about'>household size distribution data from the 1996 to the latest C",
+        "sus-engagement/about'>education distribution data from the 1996 to the latest C",
         "anadian Censuses</a></p>"
       ),
-      var_left = grep("^household_size_agg_", variables$var_code, value = TRUE),
+      var_left = variables$var_code[varlefts],
       dates = cc.data::census_years,
       main_dropdown_title = NA,
       add_advanced_controls = "Data representation",
-      default_var = "household_size_agg_2_3_count",
+      default_var = "edu_secondary_to_nonuni_pct",
       avail_scale_combinations = avail_scale_combinations
     )
 

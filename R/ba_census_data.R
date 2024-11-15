@@ -54,6 +54,8 @@ ba_census_data <- function(scales_variables_modules,
                            householdsize_module = TRUE,
                            citizenship_module = TRUE,
                            dwellingchar_module = TRUE,
+                           education_module = TRUE,
+                           language_module = TRUE,
                            overwrite = FALSE,
                            inst_prefix,
                            large_tables_db = NULL) {
@@ -217,6 +219,11 @@ ba_census_data <- function(scales_variables_modules,
       variables$explanation_nodet[variables$var_code == "inc_limat"]
     )
 
+  # Change the classification for dwelling characteristics
+  variables$classification[
+    variables$theme %in% c("Building typology", "Dwelling size",
+                           "Housing period of construction")] <- "physical"
+
 
   # Possible sequences ------------------------------------------------------
 
@@ -308,59 +315,119 @@ ba_census_data <- function(scales_variables_modules,
   # Dwelling characteristics modules table  ---------------------------------
 
   if (dwellingchar_module) {
-  dweeling_char <- variables$var_code[
-    variables$theme %in% c("Building typology", "Dwelling size",
-                           "Housing period of construction")]
+    dweeling_char <- variables$var_code[
+      variables$theme %in% c("Building typology", "Dwelling size",
+                             "Housing period of construction")]
 
-  for (var in dweeling_char) {
-    theme <- variables$theme[variables$var_code == var]
-    variables$group_name[variables$var_code == var] <- theme
+    for (var in dweeling_char) {
+      theme <- variables$theme[variables$var_code == var]
+      variables$group_name[variables$var_code == var] <- theme
 
-    diff <- list(variables$var_title[variables$var_code == var])
-    names(diff) <- theme
+      diff <- list(variables$var_title[variables$var_code == var])
+      names(diff) <- theme
 
-    variables$group_diff[
-      variables$var_code == var
-    ] <- list(diff)
+      variables$group_diff[
+        variables$var_code == var
+      ] <- list(diff)
+    }
+
+    modules <-
+      add_module(
+        modules,
+        id = "dwelling",
+        theme = "Housing",
+        nav_title = "Dwelling characteristics",
+        title_text_title = "Dwelling characteristics",
+        title_text_main = paste0(
+          "<p>Understanding the characteristics of dwellings, such as building typology, ",
+          "number of bedrooms, and period of construction, is essential for comprehending ",
+          "housing availability, suitability, and trends over time. These characteristics ",
+          "provide insights into the types of homes people live in, the adequacy of space ",
+          "for families, and the historical development of residential areas."
+        ),
+        title_text_extra = paste0(
+          "<p>The datasets visualized on this page come from the Canadian Census from 1996 ",
+          "to the present, allowing for an analysis of how dwelling characteristics have ",
+          "evolved over time. Key features include the diversity in building types, the ",
+          "availability of various sizes of housing (e.g., number of bedrooms), and the ",
+          "age of the building stock, which all play a crucial role in meeting housing needs."
+        ),
+        metadata = TRUE,
+        dataset_info = paste0(
+          "<p>This page presents <a href='https://www.statcan.gc.ca/en/census/census-engagement/about'>",
+          "data related to dwelling characteristics from the 1996 to the latest Canadian Censuses</a>. ",
+          "The variables included allow for detailed insights into building typology, ",
+          "dwelling sizes, and construction periods.</p>"
+        ),
+        var_left = variables[variables$theme %in% c("Building typology", "Dwelling size",
+                                                    "Housing period of construction"),
+                             c("var_code", "group_name", "group_diff")
+        ],
+        main_dropdown_title = "Dwelling characteristic",
+        dates = census_years,
+        default_var = "buildingage_1960constr",
+        avail_scale_combinations = avail_scale_combinations
+      )
   }
 
-  modules <-
-    add_module(
-      modules,
-      id = "dwelling",
-      theme = "Housing",
-      nav_title = "Dwelling characteristics",
-      title_text_title = "Dwelling characteristics",
-      title_text_main = paste0(
-        "<p>Understanding the characteristics of dwellings, such as building typology, ",
-        "number of bedrooms, and period of construction, is essential for comprehending ",
-        "housing availability, suitability, and trends over time. These characteristics ",
-        "provide insights into the types of homes people live in, the adequacy of space ",
-        "for families, and the historical development of residential areas."
-      ),
-      title_text_extra = paste0(
-        "<p>The datasets visualized on this page come from the Canadian Census from 1996 ",
-        "to the present, allowing for an analysis of how dwelling characteristics have ",
-        "evolved over time. Key features include the diversity in building types, the ",
-        "availability of various sizes of housing (e.g., number of bedrooms), and the ",
-        "age of the building stock, which all play a crucial role in meeting housing needs."
-      ),
-      metadata = TRUE,
-      dataset_info = paste0(
-        "<p>This page presents <a href='https://www.statcan.gc.ca/en/census/census-engagement/about'>",
-        "data related to dwelling characteristics from the 1996 to the latest Canadian Censuses</a>. ",
-        "The variables included allow for detailed insights into building typology, ",
-        "dwelling sizes, and construction periods.</p>"
-      ),
-      var_left = variables[variables$theme %in% c("Building typology", "Dwelling size",
-                                                  "Housing period of construction"),
-                           c("var_code", "group_name", "group_diff")
-      ],
-      main_dropdown_title = "Dwelling characteristic",
-      dates = census_years,
-      default_var = "buildingage_1960constr",
-      avail_scale_combinations = avail_scale_combinations
-    )
+  # Language modules table  --------------------------------- -----------
+
+  if (language_module) {
+    language_vecs <- variables$var_code[
+      variables$theme %in% c("Language")]
+
+    for (var in language_vecs) {
+      home <- grepl("lang_home_", var)
+      theme <- if (home) "Language most often spoken at home" else "Knowledge of official languages"
+      variables$group_name[variables$var_code == var] <- theme
+
+      diff <- list(variables$var_title[variables$var_code == var])
+      names(diff) <- theme
+
+      variables$group_diff[
+        variables$var_code == var
+      ] <- list(diff)
+    }
+
+    modules <-
+      add_module(
+        modules,
+        id = "language",
+        theme = "Demographics",
+        nav_title = "Language characteristics",
+        title_text_title = "Language characteristics",
+        title_text_main = paste0(
+          "<p>Understanding language characteristics, including languages spoken ",
+          "at home and knowledge of official languages, helps in comprehending ",
+          "cultural diversity and communication needs within communities. It ",
+          "provides insights into the linguistic landscape, language preferences, ",
+          "and the level of multilingualism across different regions."
+        ),
+        title_text_extra = paste0(
+          "<p>The datasets visualized on this page come from the Canadian Census ",
+          "from 1996 to the present, allowing for an analysis of how language ",
+          "usage has evolved over time. Key features include the prevalence of ",
+          "different languages spoken at home and the knowledge of Canada's ",
+          "official languages (English and French), as defined by Statistics ",
+          "Canada. The definitions and classifications used here are those ",
+          "provided by Statistics Canada, which include both English and French ",
+          "as official languages."
+        ),
+        metadata = TRUE,
+        dataset_info = paste0(
+          "<p>This page presents <a href='https://www.statcan.gc.ca/en/census/census-engagement/about'>",
+          "data related to languages spoken at home and knowledge of official languages from the 1996 to the latest Canadian Censuses</a>. ",
+          "The variables included provide detailed insights into linguistic diversity and multilingual proficiency in Canada, according to ",
+          "the definitions used by Statistics Canada.</p>"
+        ),
+        var_left = variables[variables$theme %in% c("Language"),
+                             c("var_code", "group_name", "group_diff")
+        ],
+        main_dropdown_title = "Language characteristic",
+        dates = census_years,
+        default_var = "lang_french_eng",
+        avail_scale_combinations = avail_scale_combinations
+      )
   }
 
   # Age page and data formatting --------------------------------------------
@@ -384,6 +451,16 @@ ba_census_data <- function(scales_variables_modules,
                             overwrite = overwrite, inst_prefix = inst_prefix,
                             large_tables_db = large_tables_db)
   }
+  if (education_module) {
+    svm <- ba_education(scales_variables_modules = svm,
+                        scales_sequences = scales_sequences,
+                        scales_to_interpolate = scales_to_interpolate,
+                        overwrite = overwrite, inst_prefix = inst_prefix,
+                        large_tables_db = large_tables_db)
+  }
+
+  education
+  language
 
 
   # Return ------------------------------------------------------------------

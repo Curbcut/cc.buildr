@@ -1178,6 +1178,7 @@ ru_starts_completions <- function(scales_variables_modules, crs, geo_uid,
       var_left = var_left,
       dates = years,
       main_dropdown_title = "Housing development phase",
+      add_advanced_controls = c("Dimension", "Dwelling type", "Intended market"),
       default_var = "housingdev_s_dw_total",
       avail_scale_combinations = avail_scale_combinations
     )
