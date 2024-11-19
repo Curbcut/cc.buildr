@@ -284,7 +284,7 @@ ba_census_data <- function(scales_variables_modules,
         add_module(
           id = "citizenship",
           theme = "Demographics",
-          nav_title = "Citizenship and Identity",
+          nav_title = "Citizenship and identity",
           title_text_title = "Citizenship and Immigration Status",
           title_text_main = paste0(
             "<p>Understanding the distribution of citizenship and immigration status ",
