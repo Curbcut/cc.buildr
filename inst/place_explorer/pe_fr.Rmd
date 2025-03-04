@@ -3,10 +3,8 @@ title: "`r params$title`"
 output:
   html_document:
     css: !expr system.file("styles", "fonts.css", package = "curbcut")
-    theme: 
-      code-color: skyblue
 params: 
-    title: "Main indicators"
+    title: "Fiche principale"
     select_id: "24663185"
     region: "CMA"
     scale: "DA"
@@ -23,6 +21,24 @@ params:
 ---
 
 ```{css, echo=FALSE}
+
+p.value-box-value {
+    font-size: 12px !important
+}
+.bslib-value-box .value-box-title {
+    font-weight: 600;
+    font-size:14px !important
+}
+p {
+    font-size: 14px
+}
+
+.nav-pills {
+    font-size: 14px
+}
+
+
+
 .bg-col_pe_1 {
   background-color:#CA002095;
   color:#ffffff;
@@ -431,59 +447,59 @@ which_class <- sapply(ranks[ordered_index], \(r) {
 
 ```{r main_card, echo = FALSE, warning = FALSE}
 
-boxes <- mapply(\(ind, ind_name) {
+# boxes <- mapply(\(ind, ind_name) {
   
-  # Construct link
-  if (!ind$percentile == "Aucune donnée.") {
-    link <- 
-      if (!is.na(ind$link_module)) {
-        out <- paste0("/?tb=", ind$link_module, 
-                      "&zm=", params$map_zoom, 
-                      "&crds=", paste0(round(params$map_loc[1], digits = 2), 
-                                       ";", round(params$map_loc[2], digits = 2)), 
-                      "&sid=", params$select_id)
-        if (!is.na(ind$link_dropdown)) {
-          variables <- get_from_globalenv("variables")
-          code_n <- which(variables$var_code == ind$link_var_code)
-          out <- paste0(out, "&wgt=", ind$link_dropdown, ":", code_n)
-        }
-        out
-      } else NULL
+#   # Construct link
+#   if (!ind$percentile == "Aucune donnée.") {
+#     link <- 
+#       if (!is.na(ind$link_module)) {
+#         out <- paste0("/?tb=", ind$link_module, 
+#                       "&zm=", params$map_zoom, 
+#                       "&crds=", paste0(round(params$map_loc[1], digits = 2), 
+#                                        ";", round(params$map_loc[2], digits = 2)), 
+#                       "&sid=", params$select_id)
+#         if (!is.na(ind$link_dropdown)) {
+#           variables <- get_from_globalenv("variables")
+#           code_n <- which(variables$var_code == ind$link_var_code)
+#           out <- paste0(out, "&wgt=", ind$link_dropdown, ":", code_n)
+#         }
+#         out
+#       } else NULL
     
-    if (!is.null(link)) {
-      ind$text <- paste0(ind$text, " <a href = ", link, " target='_parent'>[VOIR SUR CARTE]</a>")
-    }}
+#     if (!is.null(link)) {
+#       ind$text <- paste0(ind$text, " <a href = ", link, " target='_parent'>[VOIR SUR CARTE]</a>")
+#     }}
   
   
-  # If no data
-  if (ind$percentile == "Aucune donnée.") {
-    bslib::value_box(
-      title = htmltools::p(ind$row_title, bsicons::bs_icon(ind$bs_icon)),
-      value = ind$percentile,
-      theme_color = paste0("col_pe_", "no_data"),
-      full_screen = FALSE
-    )
-    # If data
-  } else {
-    bslib::value_box(
-      title = htmltools::p(ind$row_title, bsicons::bs_icon(ind$bs_icon)),
-      value = ind$percentile,
-      showcase = plotlies[[ind_name]],
-      htmltools::p(htmltools::HTML(ind$text)),
-      full_screen = TRUE,
-      theme_color = paste0("col_pe_", ind$hex_cat)
-    )
-  }
+#   # If no data
+#   if (ind$percentile == "Aucune donnée.") {
+#     bslib::value_box(
+#       title = htmltools::p(ind$row_title, bsicons::bs_icon(ind$bs_icon)),
+#       value = ind$percentile,
+#       theme_color = paste0("col_pe_", "no_data"),
+#       full_screen = FALSE
+#     )
+#     # If data
+#   } else {
+#     bslib::value_box(
+#       title = htmltools::p(ind$row_title, bsicons::bs_icon(ind$bs_icon)),
+#       value = ind$percentile,
+#       showcase = plotlies[[ind_name]],
+#       htmltools::p(htmltools::HTML(ind$text)),
+#       full_screen = TRUE,
+#       theme_color = paste0("col_pe_", ind$hex_cat)
+#     )
+#   }
   
-}, params$title_card_data, names(params$title_card_data), SIMPLIFY = FALSE)
+# }, params$title_card_data, names(params$title_card_data), SIMPLIFY = FALSE)
 
-main_card <- do.call(bslib::layout_column_wrap, c(list(width = 1/2), unname(boxes)))
+# main_card <- do.call(bslib::layout_column_wrap, c(list(width = 1/2), unname(boxes)))
 main_card <- bslib::nav(
   "Fiche principale",
-  htmltools::br(),
+#   htmltools::br(),
   # bslib::card_body_fill(map),
-  bslib::card_body_fill(main_card),
-  htmltools::br(),
+#   bslib::card_body_fill(main_card),
+#   htmltools::br(),
   if (!is.null(main_card_outliers)) htmltools::h3("Qu'est-ce qui rend cette région unique ?"),
   if (!is.null(main_card_outliers)) bslib::card_body_fill(main_card_outliers),
   if (!is.null(main_card_normal)) htmltools::h3("Qu'est-ce qui rend cette région semblable aux autres ?"),
@@ -494,6 +510,14 @@ main_card <- bslib::nav(
 
 ```{r navbar, echo = FALSE, warning = FALSE}
 
-do.call(bslib::navs_pill, c(list(li_classes = c(paste0("bg-col_pe_", mean_hex), which_class)), list(main_card), contents))
+navs_with_classes <- function(...) {
+  tabs <- list(...)
+  bslib::navset_pill_list(!!!tabs, widths = c(3, 9))
+}
+
+do.call(navs_with_classes, 
+        c(list(main_card), 
+          contents))
+
 
 ```

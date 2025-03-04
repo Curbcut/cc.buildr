@@ -3,8 +3,6 @@ title: "`r params$title`"
 output:
   html_document:
     css: !expr system.file("styles", "fonts.css", package = "curbcut")
-    theme: 
-      code-color: skyblue
 params: 
     title: "Main indicators"
     select_id: "24663185"
@@ -23,6 +21,17 @@ params:
 ---
   
 ```{css, echo=FALSE}
+
+p.value-box-value {
+    font-size: 17px !important
+}
+p {
+    font-size: 12px
+}
+.nav-pills {
+    font-size: 14px
+}
+
 .bg-col_pe_1 {
   background-color:#CA002095;
     color:#ffffff;
@@ -506,6 +515,14 @@ main_card <- bslib::nav(
 
 ```{r navbar, echo = FALSE, warning = FALSE}
 
-do.call(bslib::navs_pill, c(list(li_classes = c(paste0("bg-col_pe_", mean_hex), which_class)), list(main_card), contents))
+navs_with_classes <- function(...) {
+  tabs <- list(...)
+  bslib::navset_pill_list(!!!tabs, widths = c(3, 9))
+}
+
+do.call(navs_with_classes, 
+        c(list(main_card), 
+          contents))
+
 
 ```
