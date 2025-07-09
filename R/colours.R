@@ -19,6 +19,7 @@
 #' @param qual <`colours vector`> for a qualitative scale of 6 values.
 #' @param col_NA <`colours vector`> for missing values.
 #' @param viridis <`colours vector`> for a viridis color scale.
+#' @param brandbook <`colours vector`> for a brandbook color scale.
 #'
 #' @return A list of tibbles with color scales to be used for the rdeck map,
 #' legend and other plots.
@@ -142,6 +143,12 @@ build_colours <- function(
     fill = scales::viridis_pal()(10)
   )
 
+  brandbook <- tibble::tibble(
+    group = c("greydata", "blueexplorer", "greenecology", "redhousing", 
+              "pinkhealth", "purpletransport", "yellowclimate",
+              "greenurbanlife", "browndemographics"),
+    fill = c("#F0F0F0", "#A3B0D1", "#73AD80", "#E08565", "#CD718C", 
+             "#C9C3FA", "#F5D574", "#ADB033", "#9E9090"))
 
   # Return ------------------------------------------------------------------
 
@@ -154,6 +161,7 @@ build_colours <- function(
     delta_pos = delta_pos,
     variant_5 = variant_5,
     qual = qual,
-    viridis = viridis
+    viridis = viridis,
+    brandbook = brandbook
   ))
 }
